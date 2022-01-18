@@ -1,0 +1,12 @@
+[book]
+authors = ["Klaus Ostermann"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Programming Languages I"
+
+[output.html]
+mathjax-support = true
+git-repository-url = "https://github.com/ps-tuebingen-courses/pl1-lecture-nodes"
+git-repository-icon = "fa-github"
+edit-url-template = "https://github.com/ps-tuebingen-courses/pl1-lecture-nodes/{path}"
