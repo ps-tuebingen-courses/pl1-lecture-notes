@@ -4,21 +4,23 @@
 
 This is an advanced programming course that focuses on the design and semantics of programming languages.
 The goals of this course are:
-  + To change the way you solve problems in programming: By principled design,  with a rich toolbox of abstract concepts, rather than by tinkering.
-  + Enable you to think beyond the currently fashionable programming languages.
-  + Enable you to evaluate and discuss programming languages in a principled way.
-  + To show you where computer languages come from and potential future directions.
-  + To demonstrate why languages should be regarded as the ultimate form of abstraction.
-  + To teach you how to recognize abstractions and how to turn them into a language design.
-  + Teach you different ways how to realize a language design and make it practically useful.
-  + To convey a sense of aesthetics in programming.
-  + To introduce you into one of the most beautiful theories in theoretical computer science.
-  + To turn you into a better programmer!
+
++ To change the way you solve problems in programming: By principled design,  with a rich toolbox of abstract concepts, rather than by tinkering.
++ Enable you to think beyond the currently fashionable programming languages.
++ Enable you to evaluate and discuss programming languages in a principled way.
++ To show you where computer languages come from and potential future directions.
++ To demonstrate why languages should be regarded as the ultimate form of abstraction.
++ To teach you how to recognize abstractions and how to turn them into a language design.
++ Teach you different ways how to realize a language design and make it practically useful.
++ To convey a sense of aesthetics in programming.
++ To introduce you into one of the most beautiful theories in theoretical computer science.
++ To turn you into a better programmer!
 
 Non-goals of this course are:
-  + Learn X different programming languages. Rather, you'll learn to decompose a PL into its features and discuss the merits of the features independently of the concrete PL.
-  + Write parsers or implement full-fledged compilers (although we will touch some compiler issues).
-  + Turn you into an evangelist for a particular PL.
+
++ Learn X different programming languages. Rather, you'll learn to decompose a PL into its features and discuss the merits of the features independently of the concrete PL.
++ Write parsers or implement full-fledged compilers (although we will touch some compiler issues).
++ Turn you into an evangelist for a particular PL.
 
 ## How will we get there?
 
