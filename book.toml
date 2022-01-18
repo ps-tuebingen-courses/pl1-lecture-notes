@@ -9,4 +9,4 @@ title = "Programming Languages I"
 mathjax-support = true
 git-repository-url = "https://github.com/ps-tuebingen-courses/pl1-lecture-nodes"
 git-repository-icon = "fa-github"
-edit-url-template = "https://github.com/ps-tuebingen-courses/pl1-lecture-nodes/{path}"
+edit-url-template = "https://github.com/ps-tuebingen-courses/pl1-lecture-nodes/blob/master/{path}"
