@@ -1,6 +1,6 @@
 # Scala Basics
 
-```scala
+```scala mdoc
 // val für Konstanten
 // def für Methoden
 // var für Variablen
