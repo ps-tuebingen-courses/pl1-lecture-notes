@@ -143,6 +143,102 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="church-encodings"><a class="header" href="#church-encodings">Church Encodings</a></h1>
+<pre><code class="language-scala">/**
+Church Encoding
+===============
+Today we shrink our language. It does not seem to be big, but today we want to  illustrate how powerful our core language,
+the lambda calculus, is. Here is a shrinked version of FAE that does not even have numbers anymore. For testing purposes,
+we introduce a new expression ``PrintDot`` whose semantics is to print a dot on the screen. 
+*/
+sealed abstract class Exp
+case class Id(name: String) extends Exp
+implicit def id2exp(s: String) = Id(s)
+case class Fun(param: String, body: Exp) extends Exp
+case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class PrintDot() extends Exp
+
+abstract class Value // the only values are closures
+type Env = Map[String, Value]
+case class ClosureV(f:Fun, env:Env) extends Value
+
+/** 
+Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,
+say, a number but get in fact a closure. Hence, this language has the fascinating property that  no dynamic type errors can occur. 
+*/
+ 
+def eval(e: Exp, env: Env) : Value = e match {
+  // We give the identity function as dummy value for PrintDot
+  case PrintDot() =&gt; print(&quot;.&quot;); ClosureV(Fun(&quot;x&quot;,&quot;x&quot;), Map.empty) 
+  case Id(x) =&gt; env(x)
+  case f@Fun(param,body) =&gt; ClosureV(f, env)
+  case App(f,a) =&gt; eval(f,env) match {
+    case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
+  }
+}
+
+/** 
+Now we want to illustrate that we can, in principle, bootstrap a full programming language from this small core.
+To do so, we use the technique of Church encoding. This means that each datum is represented by its own fold function.
+Church Encoding of Booleans
+---------------------------
+Let&quot;s&quot; start with booleans and boolean arithmetic. 
+*/
+val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
+val t = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;t&quot;))  // true
+val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
+val or = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;a&quot;, &quot;a&quot;), &quot;b&quot;)))
+val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(&quot;a&quot;,&quot;f&quot;),&quot;t&quot;))))
+
+/** 
+We can now write our own control structures, such as if/then/else 
+*/
+val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
+
+/**
+Church Encoding of Numbers
+--------------------------
+ 
+Let&quot;s&quot; now consider Numbers. We encode them as Peano numbers.  These encodings of numbers are often called _Church numbers_. 
+*/
+val zero = Fun(&quot;s&quot;, Fun(&quot;z&quot;, &quot;z&quot;))
+val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(&quot;s&quot;, App(App(&quot;n&quot;, &quot;s&quot;),&quot;z&quot;)))))
+val one = App(succ, zero)
+val two = App(succ, one)
+val three = App(succ, two)
+val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(&quot;a&quot;,&quot;s&quot;), App(App(&quot;b&quot;, &quot;s&quot;),&quot;z&quot;))))))
+val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(&quot;a&quot;, App(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
+val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;b&quot;, App(mult, &quot;a&quot;)), one)))
+val iszero = Fun(&quot;a&quot;, App(App(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
+/** 
+The predecessor function is more complicated (why?). We do not show it here. 
+For testing, here is a function that prints a unary representation of a number. */
+val printnum = Fun(&quot;a&quot;, App(App(&quot;a&quot;, Fun(&quot;x&quot;, PrintDot())), f))
+
+/** 
+Church encoding of lists
+------------------------
+Again straightforward, except &quot;tail&quot;, which we do not show here. It needs the same kind of trick (called &quot;pairing trick&quot;)
+as the predecessor function. 
+*/
+val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
+val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, App(App(&quot;c&quot;, &quot;h&quot;), App(App(&quot;r&quot;,&quot;c&quot;),&quot;e&quot;))))))
+val head = Fun(&quot;l&quot;, App(App(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
+
+/** 
+For instance, we can multiply all numbers in a list 
+*/
+val multlist = Fun(&quot;l&quot;, App(App(&quot;l&quot;, mult), one))
+/* Here is the list 3,2,3 */
+val list323 = App(App(cons, three), App(App(cons, two), App(App(cons,three),emptylist)))
+
+val test = App(printnum, App(multlist, list323))
+/* Calling exec should yield 18 dots before the dummy result */
+def exec = eval(test, Map.empty) 
+
+/** 
+Topic for class discussion: Can we do these encodings directly in Scala or Haskell? 
+*/
+</code></pre>
 
                     </main>
 

@@ -143,6 +143,197 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="simply-typed-lambda-calculus"><a class="header" href="#simply-typed-lambda-calculus">Simply Typed Lambda Calculus</a></h1>
+<pre><code class="language-scala">import scala.language.implicitConversions
+
+/**
+The Simply-Typed Lambda Calculus
+================================
+We start with the untyped substitution-based lambda calculus augmented by the possibility to add type annotations to function definitions.
+The type annotation is ignored by the interpreter.
+Why are we using the substitution-based interpreter? Because it is simpler to state the type soundness
+theorem. If we had values that are separate from expressions, we would need to define a type system for
+these values. This is particularly tricky for closures with their embedded environments.
+We also show a couple of standard extensions to the simply-typed lambda calculus:
+1. A unit type JunitType() with associated term JUnit()
+2. Let-bindings (which don't need type annotations)
+3. Type Ascription (corresponding to &quot;::&quot; in Scala, like &quot;5 + 3 :: Int&quot;)
+4. Products (or Pairs, more specifically)
+5. Sums (binary sums, more specifically)
+To avoid the problem of &quot;guessing&quot; the &quot;from&quot; type in a function definition, we annotate
+function definitions with the expected argument type.
+*/
+
+sealed abstract class Type
+
+sealed abstract class Exp
+case class Num(n: Int) extends Exp
+case class Id(name: String) extends Exp
+case class Add(lhs: Exp, rhs: Exp) extends Exp
+implicit def num2exp(n: Int) = Num(n)
+implicit def id2exp(s: String) = Id(s)
+case class Fun(param: String, t: Type, body: Exp) extends Exp
+case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Junit() extends Exp
+case class Let(x: String, xdef: Exp, body: Exp) extends Exp
+case class TypeAscription(e: Exp, t: Type) extends Exp
+
+case class Product(e1: Exp, e2: Exp) extends Exp
+case class Fst(e: Exp) extends Exp
+case class Snd(e: Exp) extends Exp
+
+case class SumLeft(left: Exp, right: Type) extends Exp
+case class SumRight(left: Type, right: Exp) extends Exp
+case class EliminateSum(e: Exp, fl: Exp, fr: Exp) extends Exp
+
+
+def freshName(names: Set[String], default: String) : String = {
+  var last : Int = 0
+  var freshName = default
+  while (names contains freshName) { freshName = default+last.toString; last += 1; }
+  freshName
+}
+
+def freeVars(e: Exp) : Set[String] =  e match {
+   case Id(x) =&gt; Set(x)
+   case Add(l,r) =&gt; freeVars(l) ++ freeVars(r)
+   case Fun(x,_,body) =&gt; freeVars(body) - x
+   case App(f,a) =&gt; freeVars(f) ++ freeVars(a)
+   case Num(n) =&gt; Set.empty
+   case Junit() =&gt; Set.empty
+   case TypeAscription(e,t) =&gt; freeVars(e)
+   case Let(x,xdef,body) =&gt; freeVars(xdef) ++ (freeVars(body) - x)
+   case Product(e1,e2) =&gt; freeVars(e1) ++ freeVars(e2)
+   case Fst(e) =&gt; freeVars(e)
+   case Snd(e) =&gt; freeVars(e)
+   case SumLeft(e,_) =&gt; freeVars(e)
+   case SumRight(_,e) =&gt; freeVars(e)
+   case EliminateSum(e,fl,fr) =&gt; freeVars(e) ++ freeVars(fl) ++ freeVars(fr)
+}
+
+def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+  case Num(n) =&gt; e1
+  case Junit() =&gt; e1
+  case Add(l,r) =&gt; Add(subst(l,x,e2), subst(r,x,e2))
+  case Id(y) =&gt; if (x == y) e2 else Id(y)
+  case App(f,a) =&gt; App(subst(f,x,e2),subst(a,x,e2))
+  case TypeAscription(e,t) =&gt; TypeAscription(subst(e,x,e2),t)
+  case Fun(param,t,body) =&gt;
+    if (param == x) e1 else {
+      val fvs = freeVars(body) ++ freeVars(e2)
+      val newvar = freshName(fvs, param)
+      Fun(newvar, t,subst(subst(body, param, Id(newvar)), x, e2))
+    }
+  case Let(y,ydef,body) =&gt;
+    if (x == y) Let(y,subst(ydef,x,e2),body) else {
+      val fvs = freeVars(body) ++ freeVars(e2)
+      val newvar = freshName(fvs,y)
+      Let(newvar,subst(ydef,x,e2),subst(subst(body,y,Id(newvar)),x,e2))
+    }
+  case Product(a,b) =&gt; Product(subst(a,x,e2),subst(b,x,e2))
+  case Fst(e) =&gt; Fst(subst(e,x,e2))
+  case Snd(e) =&gt; Snd(subst(e,x,e2))
+  case SumLeft(e,t) =&gt; SumLeft(subst(e,x,e2),t)
+  case SumRight(t,e) =&gt; SumRight(t,subst(e,x,e2))
+  case EliminateSum(e,fl,fr) =&gt; EliminateSum(subst(e,x,e2),subst(fl,x,e2),subst(fr,x,e2))
+}
+
+def eval(e: Exp) : Exp = e match {
+  case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v.name)
+  case Add(l,r) =&gt; (eval(l), eval(r)) match {
+                     case (Num(x),Num(y)) =&gt; Num(x+y)
+                     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
+                    }
+  case App(f,a) =&gt; eval(f) match {
+     case Fun(x,_,body) =&gt; eval( subst(body,x, eval(a)))  // call-by-value
+     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+  }
+  case TypeAscription(e,_) =&gt; eval(e)
+  case Let(x,xdef,body) =&gt; eval(subst(body,x,eval(xdef)))
+  case Product(a,b) =&gt; Product(eval(a),eval(b))
+  case Fst(e) =&gt; eval(e) match {
+    case Product(a,b) =&gt; a
+    case _ =&gt; sys.error(&quot;can only apply Fst to products&quot;)
+  }
+  case Snd(e) =&gt; eval(e) match {
+    case Product(a,b) =&gt; b
+    case _ =&gt; sys.error(&quot;can only apply Snd to products&quot;)
+  }
+  case SumLeft(e,t) =&gt; SumLeft(eval(e),t)
+  case SumRight(t,e) =&gt; SumRight(t,eval(e))
+  case EliminateSum(e,fl,fr) =&gt; eval(e) match {
+    case SumLeft(e2,_) =&gt; eval(App(fl,e2))
+    case SumRight(_,e2) =&gt; eval(App(fr,e2))
+    case _ =&gt; sys.error(&quot;can only eliminate sums&quot;)
+  }
+  case _ =&gt; e // numbers and functions evaluate to themselves
+}
+
+/**
+We classify values into three types: Booleans, integers, and function types. For function types, we need some abstraction for its input
+and output; otherwise the type checker cannot be compositional. Luckily we do already have such an abstraction, namely types.
+Hence ``Funtype`` becomes a recursive data type.
+*/
+
+case class NumType() extends Type
+case class FunType(from: Type, to: Type) extends Type
+case class JunitType() extends Type
+case class ProductType(fst: Type, snd: Type) extends Type
+
+case class SumType(left: Type, right: Type) extends Type
+
+/**
+The type checker for the so-called _Simply-Typed Lambda Calculus_  (STLC). To deal with identifiers, we need an abstraction of environments.
+A type environment has the form ``Map[String,Type]``.
+The type checker for the STLC is as follows:
+*/
+
+
+def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
+  case Num(n) =&gt; NumType()
+  case Junit() =&gt; JunitType()
+  case Id(x) =&gt; gamma.get(x) match {
+    case Some(t) =&gt; t
+    case _ =&gt; sys.error(&quot;free variable: &quot; ++ x.toString)
+  }
+  case Add(l,r) =&gt; (typeCheck(l,gamma),typeCheck(r,gamma)) match {
+    case (NumType(),NumType()) =&gt; NumType()
+    case _ =&gt; sys.error(&quot;Type error in Add&quot;)
+  }
+  case Fun(x,t,body) =&gt; FunType(t, typeCheck(body, gamma + (x -&gt; t)))
+  case App(f,a) =&gt; {
+    typeCheck(f,gamma) match {
+      case FunType(from,to) =&gt; if (from == typeCheck(a,gamma)) to else sys.error(&quot;type error: arg does not match expected type&quot;)
+      case _ =&gt; sys.error(&quot;first operand of app must be a function&quot;)
+    }
+  }
+  case Let(x,xdef,body) =&gt; typeCheck(body, gamma + (x -&gt; typeCheck(xdef,gamma)))
+  case TypeAscription(e,t) =&gt; if (typeCheck(e,gamma) == t) t else sys.error(&quot;type error in ascription&quot;)
+  case Product(e1,e2) =&gt; ProductType(typeCheck(e1,gamma),typeCheck(e2,gamma))
+  case Fst(e) =&gt; typeCheck(e,gamma) match {
+    case ProductType(t1,t2) =&gt; t1
+    case _ =&gt; sys.error(&quot;can only project Products&quot;)
+  }
+  case Snd(e) =&gt; typeCheck(e,gamma) match {
+    case ProductType(t1,t2) =&gt; t2
+    case _ =&gt; sys.error(&quot;can only project Products&quot;)
+  }
+  case SumLeft(e,t) =&gt; SumType(typeCheck(e,gamma), t)
+  case SumRight(t,e) =&gt; SumType(t, typeCheck(e,gamma))
+  case EliminateSum(e,fl,fr) =&gt; typeCheck(e,gamma) match {
+    case SumType(left,right) =&gt; (typeCheck(fl,gamma), typeCheck(fr,gamma)) match {
+      case (FunType(leftf,t1),FunType(rightf,t2)) if ((left == leftf) &amp;&amp; (right == rightf)) =&gt;
+        if (t1 == t2) t1 else sys.error(&quot;type error: functions must have same return type&quot;)
+      case _ =&gt; sys.error(&quot;type error in EliminateSum: second and third argument must be functions&quot;)
+    }
+    case _ =&gt; sys.error(&quot;type error: can only eliminate sums&quot;)
+  }
+
+}
+
+/* Soundness of Simply-Typed Lambda Calculus (STLC) :
+If e : Exp und typeCheck(e,Map.empty) == t, then typeCheck(eval(e),Map.empty) == t
+*/
+</code></pre>
 
                     </main>
 
