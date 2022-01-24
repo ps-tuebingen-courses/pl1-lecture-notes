@@ -2,14 +2,15 @@
 
 ```scala
 import scala.language.implicitConversions
+```
 
-/**
-Arithmetic expressions with variables
-=====================================
+## Arithmetic expressions with variables
+
 Let us now consider an extension of the arithmetic expression language with variables. We do this by a new kind of expression, which we
 call Identifier, or Id.
-*/
 
+
+```scala mdoc
 object AEId {
 
 sealed abstract class Exp
@@ -79,9 +80,8 @@ We can automatically test our evaluator using assert :
 assert(eval(test, testEnv) == 14)
 
 }
+```
 
-
-/**
 We will now learn a different way to encode algorithms that operate on expressions (like the evaluator). To this end, we will now use
 so-called "folds". Folds are well-known for lists, but the concept is more general and applies to arbitrary algebraic data types.
 We will present folds in such a style that they resemble visitors as known from the OO design pattern literature. They correspond to
@@ -90,8 +90,8 @@ An internal visitor consists of one function for each syntactic construct of the
 "return type" of invoking the visitor on an expression. This type parameter is used in all positions in which the original syntax
 specifies a subexpression.
 Internal visitors also correspond to a "bottom-up" traversal of the syntax tree.
-*/
 
+```scala mdoc
 object Visitors {
   case class Visitor[T](num: Int => T, add: (T, T) => T)
   // an alternative to this design is to define num and add as abstract methods
@@ -145,11 +145,11 @@ We can of course also apply other algorithms using visitors, such as counting th
   val printVisitor = Visitor[String](_.toString, "("+_+"+"+_+")")
 
 }
+```
 
-/**
 Let's now try the same with the AE language with identifiers. It all works in the same way:
-*/
 
+```scala mdoc
 object AEIdVisitor {
   import AEId._
 
