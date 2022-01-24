@@ -1,11 +1,11 @@
 # First order functions
 
-```scala
+```scala mdoc
 import scala.language.implicitConversions
+```
 
-/**
-First-Order Functions
-=====================
+## First-Order Functions
+
 In the last lecture we have seen how we can give commonly occuring (sub)expressions a name via the "with" construct. Often, however,
 we can identify _patterns_ of expressions that occur in many places, such as ``5*5/2``, ``7*7/2`` and ``3*3/2``, the common pattern
 being ``x*x/2``. In this case, the abstraction capabilities of ``with`` are not sufficient.
@@ -16,7 +16,8 @@ to or be returned from other functions. First-order functions are simply called 
 To introduce first-order functions, we need two new things: The possibility to define functions, and the possibility to call functions.
 A call to a function is an expression, whereas functions are defined separately. Functions can have an arbitrary number of arguments.
 The following definitions are the language we have analyzed so far
-*/
+
+```scala mdoc
 object Syntax {
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
@@ -44,10 +45,11 @@ name explicit, we store functions in the form of a map from function names to Fu
   type Funs = Map[String,FunDef]
 }
 import Syntax._
-/**
-The substitution for the new language is a straightforward extension of the former one.
-*/
+```
 
+The substitution for the new language is a straightforward extension of the former one.
+
+```scala mdoc
 def subst(e: Exp,i: String,v: Num) : Exp =  e match {
     case Num(n) => e
     case Id(x) => if (x == i) v else e
@@ -58,12 +60,12 @@ def subst(e: Exp,i: String,v: Num) : Exp =  e match {
                                    if (x == i) body else subst(body,i,v))
     case Call(f,args) => Call(f, args.map(subst(_,i,v)))
 }
+```
 
-/**
 We will first study a "reference interpreter" based on substitution.
 We pass the map of functions as an additional parameter.
-*/
 
+```scala mdoc
 def eval(funs: Funs, e: Exp) : Int = e match {
   case Num(n) => n
   case Id(x) => sys.error("unbound identifier: " + x)
@@ -83,57 +85,60 @@ def eval(funs: Funs, e: Exp) : Int = e match {
      eval(funs,substbody)
   }
 }
+```
 
-/**
 Is the extension really so straightforward?  It can be seen in the last line of our definition for ``subst`` that variable substitution
 deliberately ignores the function name ``f``.  The substitution for ``f`` instead is handled separately inside ``eval``.  We say in this
 case that function names and variable names live in different "name spaces".  An alternative would be to have them share one namespace.
 As an exercise, think about how to support a common namespace for function names and variable names.
-*/
 
-/* A test case */
+
+A test case:
+
+```scala mdoc
 val someFuns = Map( "adder" -> FunDef(List("a","b"), Add("a","b")),
                  "doubleadder" -> FunDef(List("a","x"), Add(Call("adder", List("a",5)),Call("adder", List("x",7)))))
 assert( eval(someFuns,Call("doubleadder",List(2,3))) == 17)
+```
 
-/**
-The scope of function definitions:
-----------------------------------
+
+### The scope of function definitions:
+
 As can be seen in the example above, each function can "see" the other functions. We say that in this language functions have a _global scope_.
 Exercise: Can a function also invoke itself? Is this useful?
 We will now study an environment-based version of the interpreter. To motivate environments, consider the following sample program:
-*/
 
+```scala mdoc
 val testProg = With("x", 1, With("y", 2, With("z", 3, Add("x",Add("y","z")))))
+```
 
-/**
 When considering the ``With`` case of the interpreter, the interpreter will subsequently produce and evaluate the following intermediate expressions:
-*/
 
+```scala mdoc
 val testProgAfterOneStep     = With("y", 2, With("z", 3, Add(1,Add("y","z"))))
 val testProgAfterTwoSteps    = With("z", 3, Add(1,Add(2,"z")))
 val testProgAfterThreeSteps  = Add(1,Add(2,3))
+```
 
-/**
 At this point only pure arithmetic is left. But we see that the interpreter had to apply subsitution three times. In general, if the
 program size is n, then the interpreter may perform up to O(n) substitutions, each of which takes O(n) time. This quadratic complexity
 seems rather wasteful. Can we do better?
 We can avoid the redundancy by deferring the substitutions until they are really needed. Concretely, we define a repository of deferred
 substitutions, called _environment_. It tells us which identifiers are supposed to be eventually substituted by which value. This idea
 is captured in the following type definition:
-*/
 
- type Env = Map[String,Int]
+```scala mdoc
+type Env = Map[String,Int]
+```
 
-/**
 Initially, we have no substitutions to perform, so the repository is empty. Every time we encounter a construct (a with or application)
 that requires substitution, we augment the repository with one more entry, recording the identiﬁer’s name and the value (if eager) or
 expression (if lazy) it should eventually be substituted with. We continue to evaluate without actually performing the substitution.
 This strategy breaks a key invariant we had established earlier, which is that any identiﬁer the interpreter could encounter must be
 free, for had it been bound, it would have already been substituted.  Now that we’re longer using the substitution-based model, we may
 encounter bound identiﬁers during interpretation.  How do we handle them?  We must substitute them by consulting the repository.
-*/
 
+```scala mdoc
 def evalWithEnv(funs: Funs, env: Env, e: Exp) : Int = e match {
   case Num(n) => n
   case Id(x) => env(x) // look up in repository of deferred substitutions
@@ -151,12 +156,12 @@ def evalWithEnv(funs: Funs, env: Env, e: Exp) : Int = e match {
 }
 
 assert( evalWithEnv(someFuns,Map.empty, Call("doubleadder",List(2,3))) == 17)
+```
 
-/**
 In the interpreter above, we have extended the empty environment when constructing ``newenv``. A conceivable alternative is to
 extend ``env`` instead, like so:
-*/
 
+```scala mdoc
 def evalDynScope(funs: Funs, env: Env, e: Exp) : Int = e match {
   case Num(n) => n
   case Id(x) => env(x)
@@ -173,21 +178,26 @@ def evalDynScope(funs: Funs, env: Env, e: Exp) : Int = e match {
 }
 
 assert( evalDynScope(someFuns,Map.empty, Call("doubleadder",List(2,3))) == 17)
+```
 
-/**
 Does this make a difference? Yes, it does. Here is an example:
-*/
 
+```scala mdoc
 val funnyFun = Map( "funny" -> FunDef(List("a"), Add("a","b")))
 assert(evalDynScope(funnyFun, Map.empty, With("b", 3, Call("funny",List(4)))) == 7)
+```
 
-/**
 Obviously this interpreter is "buggy" in the sense that it does not agree with the substitution-based interpreter. But is this semantics reasonable?
 Let's introduce some terminology to make the discussion simpler:
-__Deﬁnition (Static Scope)__: In a language with static scope, the scope of an identiﬁer’s binding is a syntactically delimited region.
+
+**Deﬁnition (Static Scope)**:
+In a language with static scope, the scope of an identiﬁer’s binding is a syntactically delimited region.
 A typical region would be the body of a function or other binding construct.
-__Deﬁnition (Dynamic Scope)__: In a language with dynamic scope, the scope of an identiﬁer’s binding is the entire remainder of the
+
+**Deﬁnition (Dynamic Scope)**: In a language with dynamic scope, the scope of an identiﬁer’s binding is the entire remainder of the
 execution during which that binding is in effect.
+
+
 We see that ``eval`` and ``evalWithEnv`` give our language static scoping, whereas evalDynScope gives our language dynamic scoping.
 Armed with this terminology, we claim that dynamic scope is entirely unreasonable. The problem is that we simply cannot determine what
 the value of a program will be without knowing everything about its execution history. If the function f were invoked by some other
@@ -198,5 +208,3 @@ identiﬁer was bound. You can only imagine the mayhem this would cause in a lar
 and complex ﬂows of control. We will therefore regard dynamic scope as an error. That said, there are facets of dynamic binding
 that are quite useful. For instance, exception handlers are typically dynamically scoped: A thrown exception is dispatched to the
 most recently encountered active exception handler for that exception type. 
-*/
-```
