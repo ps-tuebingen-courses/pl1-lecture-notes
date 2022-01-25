@@ -1,13 +1,20 @@
-# Arithmetic Expressions
+# Arithmetic Expressions With Variables
 
-```scala
+```scala mdoc:invisible
 import scala.language.implicitConversions
 ```
 
-## Arithmetic expressions with variables
-
 Let us now consider an extension of the arithmetic expression language with variables. We do this by a new kind of expression, which we
 call Identifier, or Id.
+
+\\[
+  \begin{array}{lclr}
+    e & := & n & \textit{Numeric Literals} \\\\
+    & | & (e + e) & \textit{Addition} \\\\
+    & | & (e * e) & \textit{Multiplication} \\\\
+    & | & x & \textit{Identifier}
+  \end{array}
+\\]
 
 
 ```scala mdoc
