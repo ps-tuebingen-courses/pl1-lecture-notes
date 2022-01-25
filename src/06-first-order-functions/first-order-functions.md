@@ -190,12 +190,12 @@ assert(evalDynScope(funnyFun, Map.empty, With("b", 3, Call("funny",List(4)))) ==
 Obviously this interpreter is "buggy" in the sense that it does not agree with the substitution-based interpreter. But is this semantics reasonable?
 Let's introduce some terminology to make the discussion simpler:
 
-**Deﬁnition (Static Scope)**:
-In a language with static scope, the scope of an identiﬁer’s binding is a syntactically delimited region.
-A typical region would be the body of a function or other binding construct.
+> **Deﬁnition (Static Scope)**:
+> In a language with static scope, the scope of an identiﬁer’s binding is a syntactically delimited region.
+> A typical region would be the body of a function or other binding construct.
 
-**Deﬁnition (Dynamic Scope)**: In a language with dynamic scope, the scope of an identiﬁer’s binding is the entire remainder of the
-execution during which that binding is in effect.
+> **Deﬁnition (Dynamic Scope)**: In a language with dynamic scope, the scope of an identiﬁer’s binding is the entire remainder of the
+> execution during which that binding is in effect.
 
 
 We see that ``eval`` and ``evalWithEnv`` give our language static scoping, whereas evalDynScope gives our language dynamic scoping.
