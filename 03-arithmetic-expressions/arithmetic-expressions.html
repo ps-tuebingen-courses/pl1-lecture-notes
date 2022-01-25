@@ -142,12 +142,17 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="arithmetic-expressions"><a class="header" href="#arithmetic-expressions">Arithmetic Expressions</a></h1>
-<pre><code class="language-scala">import scala.language.implicitConversions
-</code></pre>
-<h2 id="arithmetic-expressions-with-variables"><a class="header" href="#arithmetic-expressions-with-variables">Arithmetic expressions with variables</a></h2>
+                        <h1 id="arithmetic-expressions-with-variables"><a class="header" href="#arithmetic-expressions-with-variables">Arithmetic Expressions With Variables</a></h1>
 <p>Let us now consider an extension of the arithmetic expression language with variables. We do this by a new kind of expression, which we
 call Identifier, or Id.</p>
+<p>\[
+\begin{array}{lclr}
+e &amp; := &amp; n &amp; \textit{Numeric Literals} \\
+&amp; | &amp; (e + e) &amp; \textit{Addition} \\
+&amp; | &amp; (e * e) &amp; \textit{Multiplication} \\
+&amp; | &amp; x &amp; \textit{Identifier}
+\end{array}
+\]</p>
 <pre><code class="language-scala">object AEId {
 
 sealed abstract class Exp
