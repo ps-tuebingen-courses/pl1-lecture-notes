@@ -1015,11 +1015,15 @@ assert(evalDynScope(funnyFun, Map.empty, With(&quot;b&quot;, 3, Call(&quot;funny
 </code></pre>
 <p>Obviously this interpreter is &quot;buggy&quot; in the sense that it does not agree with the substitution-based interpreter. But is this semantics reasonable?
 Let's introduce some terminology to make the discussion simpler:</p>
+<blockquote>
 <p><strong>Deﬁnition (Static Scope)</strong>:
 In a language with static scope, the scope of an identiﬁer’s binding is a syntactically delimited region.
 A typical region would be the body of a function or other binding construct.</p>
+</blockquote>
+<blockquote>
 <p><strong>Deﬁnition (Dynamic Scope)</strong>: In a language with dynamic scope, the scope of an identiﬁer’s binding is the entire remainder of the
 execution during which that binding is in effect.</p>
+</blockquote>
 <p>We see that <code>eval</code> and <code>evalWithEnv</code> give our language static scoping, whereas evalDynScope gives our language dynamic scoping.
 Armed with this terminology, we claim that dynamic scope is entirely unreasonable. The problem is that we simply cannot determine what
 the value of a program will be without knowing everything about its execution history. If the function f were invoked by some other
