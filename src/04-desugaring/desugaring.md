@@ -1,6 +1,6 @@
 # Desugaring
 
-
+The content of this chapter is available as a scala file [here.](./desugaring.scala)
 
 ## Desugaring
 

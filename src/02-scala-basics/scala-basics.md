@@ -1,6 +1,6 @@
 # Scala Basics
 
-The content of this chapter is available as a scala file [here](./scala-basics.scala)
+The content of this chapter is available as a scala file [here.](./scala-basics.scala)
 
 ```scala mdoc
 val x = 2 + 2;
