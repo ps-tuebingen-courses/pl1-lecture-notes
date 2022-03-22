@@ -11,7 +11,7 @@
 # ```
 #
 echo "Creating .scala files..."
-for d in $(find ./src -name "*.md" -type f ! -name SUMMARY.md ! -name preface.md ! -name furtherreading.md ! -name intro.md)
+for d in $(find ./src -name "*.md" -type f ! -name SUMMARY.md ! -name preface.md ! -name furtherreading.md ! -name intro.md ! -name monadic-reflection.md ! -name letcc.md)
 do
   echo "Create .scala file for $d..."
   sed -n '/```scala/,/```/{/```\(scala\)\?/n;p}' $d > "$(dirname $d)/$(basename -- "$d" .md).scala"

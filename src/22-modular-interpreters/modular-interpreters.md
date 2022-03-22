@@ -1,5 +1,7 @@
 # Modular Interpreters
 
+The content of this chapter is available as a scala file [here.](./modular-interpreters.scala)
+
 ```scala
 import scala.language.higherKinds
 import scala.language.implicitConversions

@@ -1,5 +1,8 @@
 # Shift Reset
 
+The content of this chapter is available as a scala file [here.](./shift-reset.scala)
+
+
 ```scala
 /**
 Delimited Continuations

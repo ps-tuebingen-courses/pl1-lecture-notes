@@ -1,5 +1,7 @@
 # IO Monad
 
+The content of this chapter is available as a scala file [here.](./io-monad.scala)
+
 ```scala
 trait IOMonad {
   type IO[_]

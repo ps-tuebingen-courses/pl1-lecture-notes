@@ -1,5 +1,7 @@
 # First Class Continuations
 
+The content of this chapter is available as a scala file [here.](./first-class-continuations.scala)
+
 ```scala
 import scala.language.implicitConversions
 

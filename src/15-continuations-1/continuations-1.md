@@ -1,5 +1,7 @@
 # Continuations 1
 
+The content of this chapter is available as a scala file [here.](./continuations-1.scala)
+
 ```scala
 import scala.io.StdIn.readLine
 /*

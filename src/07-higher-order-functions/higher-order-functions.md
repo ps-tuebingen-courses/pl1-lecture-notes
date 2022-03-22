@@ -1,5 +1,7 @@
 # Higher order functions
 
+The content of this chapter is available as a scala file [here.](./higher-order-functions.scala)
+
 ```scala
 /**
 Higher-Order Functions

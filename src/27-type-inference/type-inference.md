@@ -1,5 +1,7 @@
 # Type Inference
 
+The content of this chapter is available as a scala file [here.](./type-inference.scala)
+
 ```scala
 
 import scala.language.implicitConversions

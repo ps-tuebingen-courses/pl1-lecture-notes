@@ -1,5 +1,7 @@
 # Mutation
 
+The content of this chapter is available as a scala file [here.](./mutation.scala)
+
 ```scala
 import scala.language.implicitConversions
 

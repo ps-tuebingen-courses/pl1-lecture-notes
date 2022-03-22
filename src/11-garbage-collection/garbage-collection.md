@@ -1,5 +1,7 @@
 # Garbage Collection
 
+The content of this chapter is available as a scala file [here.](./garbage-collection.scala)
+
 ```scala
 import scala.language.implicitConversions
 /**

@@ -1,5 +1,7 @@
 # Lazy Evaluation
 
+The content of this chapter is available as a scala file [here.](./lazy-evaluation.scala)
+
 ```scala
 // load 07-fae.scala before loading this file or copy&paste it here 
 

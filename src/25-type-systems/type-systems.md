@@ -1,5 +1,7 @@
 # Type Systems
 
+The content of this chapter is available as a scala file [here.](./type-systems.scala)
+
 ```scala
 import scala.language.implicitConversions
 /**

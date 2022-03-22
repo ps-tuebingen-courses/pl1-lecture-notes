@@ -1,5 +1,7 @@
 # Continuations 2
 
+The content of this chapter is available as a scala file [here.](./continuations-2.scala)
+
 ```scala
 import scala.language.implicitConversions
 

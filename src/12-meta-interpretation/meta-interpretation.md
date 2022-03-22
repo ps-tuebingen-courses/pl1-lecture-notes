@@ -1,5 +1,7 @@
 # Syntactic and Meta Interpretation
 
+The content of this chapter is available as a scala file [here.](./meta-interpretation.scala)
+
 ```scala
 /**
 Syntactic interpretation vs meta intepretation

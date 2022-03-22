@@ -1,5 +1,7 @@
 # Recursive Functions
 
+The content of this chapter is available as a scala file [here.](./recursive-functions.scala)
+
 ```scala
 import scala.language.implicitConversions
 
