@@ -41,7 +41,7 @@ knowing, hence we encourage you, independently of this course, to study it!
 Rather than use vague labels such as "object-oriented" or "functional", we will decompose languages into small features, similar to how
 matter can be explained and decomposed into atoms, cells into DNA fragments, or organisms into the biological taxonomy. 
 In addition to the decomposition into small-grained features, we will use a conceptual technique called "desugaring" to distinguish
-essentional from non-essential language parts and identify the core constructs of a language.
+essential from non-essential language parts and identify the core constructs of a language.
 
 ## Topics for class discussion:
 
