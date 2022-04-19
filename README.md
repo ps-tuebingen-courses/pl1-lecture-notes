@@ -18,3 +18,5 @@ Run the following in your console:
 ```console
 mdbook serve --open
 ```
+## How to add Questionnaire / interactive questions to this script
+For more information look at the [documentation of the Questionnaire Module](https://github.com/se-tuebingen/interactive-textbooks#how-to-use).

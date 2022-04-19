@@ -2,7 +2,7 @@
 
 [Preface](./preface.md)
 
-# Introduction 
+# Introduction
 
 - [Introduction](./01-intro/intro.md)
 - [Scala Basics](./02-scala-basics/scala-basics.md)
@@ -49,5 +49,6 @@
 - [Type Systems](./25-type-systems/type-systems.md)
 - [Simply Typed Lambda Calculus (STLC)](./26-stlc/stlc.md)
 - [Type Inference](./27-type-inference/type-inference.md)
+
 
 [Further Reading](./furtherreading.md)
