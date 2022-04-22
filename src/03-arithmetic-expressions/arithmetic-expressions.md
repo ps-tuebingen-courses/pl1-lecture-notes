@@ -18,7 +18,9 @@ call Identifier, or Id.
   \end{array}
 \\]
 
-
+```scala
+object AEId {
+```
 ```scala mdoc
 sealed abstract class Exp
 
@@ -88,6 +90,9 @@ We can automatically test our evaluator using assert :
 val exa = eval(test, testEnv)
 assert(eval(test, testEnv) == 14)
 ```
+```scala
+}
+```
 
 We will now learn a different way to encode algorithms that operate on expressions (like the evaluator). To this end, we will now use
 so-called "folds". Folds are well-known for lists, but the concept is more general and applies to arbitrary algebraic data types.
@@ -98,6 +103,9 @@ An internal visitor consists of one function for each syntactic construct of the
 specifies a subexpression.
 Internal visitors also correspond to a "bottom-up" traversal of the syntax tree.
 
+```scala
+object Visitors {
+```
 ```scala mdoc
 case class VisitorAE[T](num: Int => T, add: (T, T) => T)
 // an alternative to this design is to define num and add as abstract methods
@@ -154,9 +162,16 @@ We can also apply other algorithms using visitors, such as counting the number o
 val countVisitorAE = VisitorAE[Int]( _=>1, _+_)
 val printVisitorAE = VisitorAE[String](_.toString, "("+_+"+"+_+")")
 ```
+```scala
+}
+```
 
 Let's now try the same with the AE language with identifiers. It all works in the same way:
 
+```scala
+object AEIdVisitor {
+import AEId._
+```
 ```scala mdoc:silent
 case class Visitor[T](num: Int => T, add: (T, T) => T, mul: (T, T) => T, id: String => T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
@@ -192,4 +207,7 @@ val evalVisitor = Visitor[Env=>Int](
      a(env) * b(env),
    x => env =>
      env(x))
+```
+```scala
+}
 ```
