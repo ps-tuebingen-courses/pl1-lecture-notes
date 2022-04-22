@@ -28,8 +28,6 @@ case class Num(n: Int) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Mul(lhs: Exp, rhs: Exp) extends Exp
 case class Id(x: String) extends Exp
-
-
 // Strings are similar to strings, but they are implicitly "canonicalized"
 // (meaning all instances of the same String point to a unique copy, in other words,
 // they are not cloned but shared) and  can hence be compared efficiently.
