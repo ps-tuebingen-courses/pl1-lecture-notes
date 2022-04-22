@@ -30,8 +30,8 @@ case class Id(x: String) extends Exp
 
 Here is a sample program written in this language, directly written down using case class constructors:
 
-```scala mdoc
- val test0 = Add(Mul(Id("x"),Num(2)),Add(Id("y"),Id("y")))
+```scala mdoc:silent
+val test0 = Add(Mul(Id("x"),Num(2)),Add(Id("y"),Id("y")))
 ```
 
 With a proper parser we could choose a syntax like `x*2+y+y`. We do not care much about concrete syntax and parsing, though.
@@ -46,8 +46,8 @@ implicit def sym2exp(x: String) = Id(x)
 
 to lift integers and Strings to expressions. Using these implicits, the example can be written as:
 
-```scala mdoc
- val test = Add(Mul("x",2),Add("y","y"))
+```scala mdoc:silent
+val test = Add(Mul("x",2),Add("y","y"))
 ```
 
 To give meaning to identifiers, we use _environments_. Environments are mappings from Identifiers (which we represent as Strings) to Values.
@@ -78,7 +78,7 @@ topics in the lecture. To try the example, we need a sample environment that giv
 
 The test environment also illustrates how Scala supports direct definitions of constant maps.
 
-```scala mdoc
+```scala mdoc:silent
 val testEnv = Map("x" -> 3, "y" -> 4)
 ```
 
@@ -131,7 +131,7 @@ def foldExp[T](v: VisitorAE[T], e: ExpAE): T = {
 
 Here is our evaluator from above rephrased using the visitor infrastructure.
 
-```scala mdoc
+```scala mdoc:silent
 val evalVisitorAE = VisitorAE[Int](x => x, (a, b) => a + b)
 ```
 
@@ -150,14 +150,14 @@ assert(exaVisitorAE == 6)
 
 We can also apply other algorithms using visitors, such as counting the number of `NumAE` literals, or printing to a string:
 
-```scala mdoc
+```scala mdoc:silent
 val countVisitorAE = VisitorAE[Int]( _=>1, _+_)
 val printVisitorAE = VisitorAE[String](_.toString, "("+_+"+"+_+")")
 ```
 
 Let's now try the same with the AE language with identifiers. It all works in the same way:
 
-```scala mdoc
+```scala mdoc:silent
 case class Visitor[T](num: Int => T, add: (T, T) => T, mul: (T, T) => T, id: String => T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
 val countVisitor = Visitor[Int](_=>1, _ + _, _ + _, _ => 0)
@@ -171,7 +171,8 @@ def foldExp[T](v: Visitor[T], e: Exp) : T = {
     case Id(x) => v.id(x)
   }
 }
-
+```
+```scala mdoc
 def countNums(e: Exp) = foldExp(countVisitor, e)
 
 val exaCount = countNums(test)
@@ -182,7 +183,7 @@ However, what about the evaluator? If we instantiate `T` = `Int`, then how can w
 instantiate `T` with a function type `Env => Int`! This way of transforming a multi-argument function into a single-argument
 higher-order function is called _currying_.
 
-```scala mdoc
+```scala mdoc:silent
 val evalVisitor = Visitor[Env=>Int](
    env => _ ,
    (a, b) => env =>
