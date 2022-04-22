@@ -11,3 +11,4 @@ mathjax-support = true
 git-repository-url = "https://github.com/ps-tuebingen-courses/pl1-lecture-notes"
 git-repository-icon = "fa-github"
 edit-url-template = "https://github.com/ps-tuebingen-courses/pl1-lecture-notes/blob/master/{path}"
+additional-js =["questionnaire.js"]

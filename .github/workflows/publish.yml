@@ -13,6 +13,9 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Download Latest Version Questionnaire Module
+      run: sh download_questionnaire_module.sh
+
     - name: Install mdbook
       run: |
         mkdir mdbook
@@ -21,12 +24,13 @@ jobs:
 
     - name: Run mdoc
       run: ./generateMarkdown.sh
-    
+
     - name: Create Downloadable Scala Files.
       run: ./create_scala_files.sh
 
     - name: Copy Scala files from src to out
       run: ./copy_scala_files.sh
+
 
     - name: Create mdBook page
       run: mdbook build
