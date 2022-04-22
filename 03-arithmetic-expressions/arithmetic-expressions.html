@@ -154,31 +154,26 @@ e &amp; := &amp; n &amp; \textit{Numeric Literals} \\
 &amp; | &amp; x &amp; \textit{Identifier}
 \end{array}
 \]</p>
-<pre><code class="language-scala">object AEId {
-
-sealed abstract class Exp
+<pre><code class="language-scala">sealed abstract class Exp
 
 case class Num(n: Int) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Mul(lhs: Exp, rhs: Exp) extends Exp
 case class Id(x: String) extends Exp
 </code></pre>
-<p>Strings are similar to strings, but they are implicitly &quot;canonicalized&quot;
-(meaning all instances of the same String point to a unique copy, in other words,
-they are not cloned but shared) and  can hence be compared efficiently.</p>
-<p>Unlike strings, they can not be manipulated.
-They can be constructed by prefixing an identifier with a '</p>
 <p>Here is a sample program written in this language, directly written down using case class constructors:</p>
-<pre><code class="language-scala"> val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
+<pre><code class="language-scala">val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
+// test0: Add = Add(Mul(Id(&quot;x&quot;), Num(2)), Add(Id(&quot;y&quot;), Id(&quot;y&quot;)))
 </code></pre>
-<p>With a proper parser we could choose a syntax like &quot;x*2+y+y&quot;. We do not care much about concrete syntax and parsing, though.</p>
+<p>With a proper parser we could choose a syntax like <code>x*2+y+y</code>. We do not care much about concrete syntax and parsing, though.</p>
 <p>That said, to make writing examples less verbose, Scala's implicits come to the rescue.
 Calls to implicit functions are inserted automatically by the compiler if they help to restore well-typedness. For instance, we can define</p>
 <pre><code class="language-scala">implicit def num2exp(n: Int) = Num(n)
 implicit def sym2exp(x: String) = Id(x)
 </code></pre>
 <p>to lift integers and Strings to expressions. Using these implicits, the example can be written as:</p>
-<pre><code class="language-scala"> val test = Add(Mul(&quot;x&quot;,2),Add(&quot;y&quot;,&quot;y&quot;))
+<pre><code class="language-scala">val test = Add(Mul(&quot;x&quot;,2),Add(&quot;y&quot;,&quot;y&quot;))
+// test: Add = Add(Mul(Id(&quot;x&quot;), Num(2)), Add(Id(&quot;y&quot;), Id(&quot;y&quot;)))
 </code></pre>
 <p>To give meaning to identifiers, we use <em>environments</em>. Environments are mappings from Identifiers (which we represent as Strings) to Values.
 In our simple language the only values are integers, hence:</p>
@@ -186,7 +181,7 @@ In our simple language the only values are integers, hence:</p>
 </code></pre>
 <p>An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
 &quot;Int&quot;. This interpreter uses pattern matching over case classes.</p>
-<pre><code class="language-scala"> def eval(e: Exp, env: Env) : Int = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env) : Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x)
   case Add(l,r) =&gt; eval(l,env) + eval(r,env)
@@ -200,11 +195,12 @@ between these alternatives matters, since they support different dimensions of e
 topics in the lecture. To try the example, we need a sample environment that gives values to the (free) variables in the sample expression.</p>
 <p>The test environment also illustrates how Scala supports direct definitions of constant maps.</p>
 <pre><code class="language-scala">val testEnv = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
+// testEnv: Map[String, Int] = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
 </code></pre>
 <p>We can automatically test our evaluator using assert :</p>
-<pre><code class="language-scala">assert(eval(test, testEnv) == 14)
-
-}
+<pre><code class="language-scala">val exa = eval(test, testEnv)
+// exa: Int = 14
+assert(eval(test, testEnv) == 14)
 </code></pre>
 <p>We will now learn a different way to encode algorithms that operate on expressions (like the evaluator). To this end, we will now use
 so-called &quot;folds&quot;. Folds are well-known for lists, but the concept is more general and applies to arbitrary algebraic data types.
@@ -214,10 +210,7 @@ An internal visitor consists of one function for each syntactic construct of the
 &quot;return type&quot; of invoking the visitor on an expression. This type parameter is used in all positions in which the original syntax
 specifies a subexpression.
 Internal visitors also correspond to a &quot;bottom-up&quot; traversal of the syntax tree.</p>
-<pre><code class="language-scala">object Visitors {
-  case class Visitor[T](num: Int =&gt; T, add: (T, T) =&gt; T)
-  // an alternative to this design is to define num and add as abstract methods
-  // and then create concrete visitors by subclassing or trait composition.
+<pre><code class="language-scala">case class VisitorAE[T](num: Int =&gt; T, add: (T, T) =&gt; T)
 </code></pre>
 <p>The fold function itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
 are not recursive.</p>
@@ -227,70 +220,92 @@ semantics (in terms of the meta-language) of a composite expression is determine
 the subexpressions is irrelevant.</p>
 <p>Compositional specifications are particularly nice because they enable &quot;equational reasoning&quot;: Subexpressions can be replaced by other
 subexpressions with the same semantics without changing the semantics of the whole.</p>
-<pre><code class="language-scala">  sealed abstract class Exp
+<pre><code class="language-scala">sealed abstract class ExpAE
 
-  case class Num(n: Int) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
+case class NumAE(n: Int) extends ExpAE
+case class AddAE(lhs: ExpAE, rhs: ExpAE) extends ExpAE
 
-  def foldExp[T](v: Visitor[T], e: Exp): T = {
-    e match {
-      case Num(n) =&gt; v.num(n)
-      case Add(l, r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
-    }
+def foldExp[T](v: VisitorAE[T], e: ExpAE): T = {
+  e match {
+    case NumAE(n) =&gt; v.num(n)
+    case AddAE(l, r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
   }
-```scala
-
-Here is our evaluator from above rephrased using the visitor infrastructure.
-
-```scala
-  val evalVisitor = Visitor[Int](x =&gt; x, (a, b) =&gt; a + b)
+}
 </code></pre>
-<p>We can of course also restore the original interface of eval:</p>
-<pre><code class="language-scala">  def eval(e: Exp) = foldExp(evalVisitor, e)
+<p>Here is our evaluator from above rephrased using the visitor infrastructure.</p>
+<pre><code class="language-scala">val evalVisitorAE = VisitorAE[Int](x =&gt; x, (a, b) =&gt; a + b)
+// evalVisitorAE: VisitorAE[Int] = VisitorAE(&lt;function1&gt;, &lt;function2&gt;)
+</code></pre>
+<p>We can of course restore the original interface of <code>eval</code> using <code>foldExp</code>:</p>
+<pre><code class="language-scala">def eval(e: ExpAE) = foldExp(evalVisitorAE, e)
 </code></pre>
 <p>Let's test whether it works.</p>
-<pre><code class="language-scala">  assert(eval(Add(Add(Num(1),Num(2)),Num(3))) == 6)
+<pre><code class="language-scala">val exaVisitorAE = eval(AddAE(AddAE(NumAE(1),NumAE(2)),NumAE(3)))
+// exaVisitorAE: Int = 6
+assert(exaVisitorAE == 6)
 </code></pre>
-<p>We can of course also apply other algorithms using visitors, such as counting the number of &quot;Num&quot; literals, or printing to a string:</p>
-<pre><code class="language-scala">  val countVisitor = Visitor[Int]( _=&gt;1, _+_)
-  val printVisitor = Visitor[String](_.toString, &quot;(&quot;+_+&quot;+&quot;+_+&quot;)&quot;)
-
-}
+<p>We can also apply other algorithms using visitors, such as counting the number of <code>NumAE</code> literals, or printing to a string:</p>
+<pre><code class="language-scala">val countVisitorAE = VisitorAE[Int]( _=&gt;1, _+_)
+// countVisitorAE: VisitorAE[Int] = VisitorAE(&lt;function1&gt;, &lt;function2&gt;)
+val printVisitorAE = VisitorAE[String](_.toString, &quot;(&quot;+_+&quot;+&quot;+_+&quot;)&quot;)
+// printVisitorAE: VisitorAE[String] = VisitorAE(&lt;function1&gt;, &lt;function2&gt;)
 </code></pre>
 <p>Let's now try the same with the AE language with identifiers. It all works in the same way:</p>
-<pre><code class="language-scala">object AEIdVisitor {
-  import AEId._
+<pre><code class="language-scala">case class Visitor[T](num: Int =&gt; T, add: (T, T) =&gt; T, mul: (T, T) =&gt; T, id: String =&gt; T)
+val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
+// expVisitor: Visitor[Exp] = Visitor(
+//   &lt;function1&gt;,
+//   &lt;function2&gt;,
+//   &lt;function2&gt;,
+//   &lt;function1&gt;
+// )
+val countVisitor = Visitor[Int](_=&gt;1, _ + _, _ + _, _ =&gt; 0)
+// countVisitor: Visitor[Int] = Visitor(
+//   &lt;function1&gt;,
+//   &lt;function2&gt;,
+//   &lt;function2&gt;,
+//   &lt;function1&gt;
+// )
+val printVisitor = Visitor[String](_.toString, &quot;(&quot; + _ + &quot;+&quot; + _ + &quot;)&quot;, _ + &quot;*&quot; + _, _.x)
+// printVisitor: Visitor[String] = Visitor(
+//   &lt;function1&gt;,
+//   &lt;function2&gt;,
+//   &lt;function2&gt;,
+//   &lt;function1&gt;
+// )
 
-  case class Visitor[T](num: Int =&gt; T, add: (T, T) =&gt; T, mul: (T, T) =&gt; T, id: String =&gt; T)
-  val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
-  val countVisitor = Visitor[Int](_=&gt;1, _ + _, _ + _, _ =&gt; 0)
-  val printVisitor = Visitor[String](_.toString, &quot;(&quot; + _ + &quot;+&quot; + _ + &quot;)&quot;, _ + &quot;*&quot; + _, _.x)
-
-  def foldExp[T](v: Visitor[T], e: Exp) : T = {
-    e match {
-      case Num(n) =&gt; v.num(n)
-      case Add(l,r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
-      case Mul(l,r) =&gt; v.mul(foldExp(v, l), foldExp(v, r))
-      case Id(x) =&gt; v.id(x)
-    }
+def foldExp[T](v: Visitor[T], e: Exp) : T = {
+  e match {
+    case Num(n) =&gt; v.num(n)
+    case Add(l,r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
+    case Mul(l,r) =&gt; v.mul(foldExp(v, l), foldExp(v, r))
+    case Id(x) =&gt; v.id(x)
   }
-
-  def countNums(e: Exp) = foldExp(countVisitor, e)
-
-  assert(countNums(test) == 1)
-</code></pre>
-<p>However, what about the evaluator? If we instantiate T = Int, then how can we access the environment? Insight: For evaluation, we must
-instantiate T with a function type <code>Env =&gt; Int</code>! This way of transforming a multi-argument function into a single-argument
-higher-order function is called <em>currying</em>.</p>
-<pre><code class="language-scala">  val evalVisitor = Visitor[Env=&gt;Int](
-     env =&gt; _ ,
-     (a, b) =&gt; env =&gt;
-       a(env) + b(env),
-     (a, b) =&gt; env =&gt;
-       a(env) * b(env),
-     x =&gt; env =&gt;
-       env(x))
 }
+
+def countNums(e: Exp) = foldExp(countVisitor, e)
+
+val exaCount = countNums(test)
+// exaCount: Int = 1
+assert(exaCount == 1)
+</code></pre>
+<p>However, what about the evaluator? If we instantiate <code>T</code> = <code>Int</code>, then how can we access the environment? Insight: For evaluation, we must
+instantiate <code>T</code> with a function type <code>Env =&gt; Int</code>! This way of transforming a multi-argument function into a single-argument
+higher-order function is called <em>currying</em>.</p>
+<pre><code class="language-scala">val evalVisitor = Visitor[Env=&gt;Int](
+   env =&gt; _ ,
+   (a, b) =&gt; env =&gt;
+     a(env) + b(env),
+   (a, b) =&gt; env =&gt;
+     a(env) * b(env),
+   x =&gt; env =&gt;
+     env(x))
+// evalVisitor: Visitor[Env =&gt; Int] = Visitor(
+//   &lt;function1&gt;,
+//   &lt;function2&gt;,
+//   &lt;function2&gt;,
+//   &lt;function1&gt;
+// )
 </code></pre>
 
                     </main>

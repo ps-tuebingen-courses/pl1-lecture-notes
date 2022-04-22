@@ -1,7 +1,5 @@
 import scala.language.implicitConversions
 
-object AEId {
-
 sealed abstract class Exp
 
 case class Num(n: Int) extends Exp
@@ -18,7 +16,7 @@ implicit def sym2exp(x: String) = Id(x)
 
 type Env = Map[String,Int]
 
- def eval(e: Exp, env: Env) : Int = e match {
+def eval(e: Exp, env: Env) : Int = e match {
   case Num(n) => n
   case Id(x) => env(x)
   case Add(l,r) => eval(l,env) + eval(r,env)
@@ -27,65 +25,59 @@ type Env = Map[String,Int]
 
 val testEnv = Map("x" -> 3, "y" -> 4)
 
+val exa = eval(test, testEnv)
 assert(eval(test, testEnv) == 14)
 
-}
+case class VisitorAE[T](num: Int => T, add: (T, T) => T)
+// an alternative to this design is to define num and add as abstract methods
+// and then create concrete visitors by subclassing or trait composition.
 
-object Visitors {
-  case class Visitor[T](num: Int => T, add: (T, T) => T)
-  // an alternative to this design is to define num and add as abstract methods
-  // and then create concrete visitors by subclassing or trait composition.
+sealed abstract class ExpAE
 
-  sealed abstract class Exp
+case class NumAE(n: Int) extends ExpAE
+case class AddAE(lhs: ExpAE, rhs: ExpAE) extends ExpAE
 
-  case class Num(n: Int) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
-
-  def foldExp[T](v: Visitor[T], e: Exp): T = {
-    e match {
-      case Num(n) => v.num(n)
-      case Add(l, r) => v.add(foldExp(v, l), foldExp(v, r))
-    }
+def foldExp[T](v: VisitorAE[T], e: ExpAE): T = {
+  e match {
+    case NumAE(n) => v.num(n)
+    case AddAE(l, r) => v.add(foldExp(v, l), foldExp(v, r))
   }
-
-  val evalVisitor = Visitor[Int](x => x, (a, b) => a + b)
-
-  def eval(e: Exp) = foldExp(evalVisitor, e)
-
-  assert(eval(Add(Add(Num(1),Num(2)),Num(3))) == 6)
-
-  val countVisitor = Visitor[Int]( _=>1, _+_)
-  val printVisitor = Visitor[String](_.toString, "("+_+"+"+_+")")
-
 }
 
-object AEIdVisitor {
-  import AEId._
+val evalVisitorAE = VisitorAE[Int](x => x, (a, b) => a + b)
 
-  case class Visitor[T](num: Int => T, add: (T, T) => T, mul: (T, T) => T, id: String => T)
-  val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
-  val countVisitor = Visitor[Int](_=>1, _ + _, _ + _, _ => 0)
-  val printVisitor = Visitor[String](_.toString, "(" + _ + "+" + _ + ")", _ + "*" + _, _.x)
+def eval(e: ExpAE) = foldExp(evalVisitorAE, e)
 
-  def foldExp[T](v: Visitor[T], e: Exp) : T = {
-    e match {
-      case Num(n) => v.num(n)
-      case Add(l,r) => v.add(foldExp(v, l), foldExp(v, r))
-      case Mul(l,r) => v.mul(foldExp(v, l), foldExp(v, r))
-      case Id(x) => v.id(x)
-    }
+val exaVisitorAE = eval(AddAE(AddAE(NumAE(1),NumAE(2)),NumAE(3)))
+assert(exaVisitorAE == 6)
+
+val countVisitorAE = VisitorAE[Int]( _=>1, _+_)
+val printVisitorAE = VisitorAE[String](_.toString, "("+_+"+"+_+")")
+
+case class Visitor[T](num: Int => T, add: (T, T) => T, mul: (T, T) => T, id: String => T)
+val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
+val countVisitor = Visitor[Int](_=>1, _ + _, _ + _, _ => 0)
+val printVisitor = Visitor[String](_.toString, "(" + _ + "+" + _ + ")", _ + "*" + _, _.x)
+
+def foldExp[T](v: Visitor[T], e: Exp) : T = {
+  e match {
+    case Num(n) => v.num(n)
+    case Add(l,r) => v.add(foldExp(v, l), foldExp(v, r))
+    case Mul(l,r) => v.mul(foldExp(v, l), foldExp(v, r))
+    case Id(x) => v.id(x)
   }
-
-  def countNums(e: Exp) = foldExp(countVisitor, e)
-
-  assert(countNums(test) == 1)
-
-  val evalVisitor = Visitor[Env=>Int](
-     env => _ ,
-     (a, b) => env =>
-       a(env) + b(env),
-     (a, b) => env =>
-       a(env) * b(env),
-     x => env =>
-       env(x))
 }
+
+def countNums(e: Exp) = foldExp(countVisitor, e)
+
+val exaCount = countNums(test)
+assert(exaCount == 1)
+
+val evalVisitor = Visitor[Env=>Int](
+   env => _ ,
+   (a, b) => env =>
+     a(env) + b(env),
+   (a, b) => env =>
+     a(env) * b(env),
+   x => env =>
+     env(x))
