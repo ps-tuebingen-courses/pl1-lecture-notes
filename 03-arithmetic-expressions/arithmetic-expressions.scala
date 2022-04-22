@@ -1,12 +1,7 @@
 import scala.language.implicitConversions
 
-sealed abstract class Exp
-
-case class Num(n: Int) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Mul(lhs: Exp, rhs: Exp) extends Exp
-case class Id(x: String) extends Exp
-
+object AEId {
+```scala mdoc
 val test0 = Add(Mul(Id("x"),Num(2)),Add(Id("y"),Id("y")))
 
 implicit def num2exp(n: Int) = Num(n)
@@ -27,11 +22,9 @@ val testEnv = Map("x" -> 3, "y" -> 4)
 
 val exa = eval(test, testEnv)
 assert(eval(test, testEnv) == 14)
-
-case class VisitorAE[T](num: Int => T, add: (T, T) => T)
-// an alternative to this design is to define num and add as abstract methods
-// and then create concrete visitors by subclassing or trait composition.
-
+```scala
+object Visitors {
+```scala mdoc
 sealed abstract class ExpAE
 
 case class NumAE(n: Int) extends ExpAE
@@ -53,21 +46,15 @@ assert(exaVisitorAE == 6)
 
 val countVisitorAE = VisitorAE[Int]( _=>1, _+_)
 val printVisitorAE = VisitorAE[String](_.toString, "("+_+"+"+_+")")
+```scala
+object AEIdVisitor {
+import AEId._
+```scala mdoc:silent
+def countNums(e: Exp) = foldExp(countVisitor, e)
 
-case class Visitor[T](num: Int => T, add: (T, T) => T, mul: (T, T) => T, id: String => T)
-val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
-val countVisitor = Visitor[Int](_=>1, _ + _, _ + _, _ => 0)
-val printVisitor = Visitor[String](_.toString, "(" + _ + "+" + _ + ")", _ + "*" + _, _.x)
+val exaCount = countNums(test)
+assert(exaCount == 1)
 
-def foldExp[T](v: Visitor[T], e: Exp) : T = {
-  e match {
-    case Num(n) => v.num(n)
-    case Add(l,r) => v.add(foldExp(v, l), foldExp(v, r))
-    case Mul(l,r) => v.mul(foldExp(v, l), foldExp(v, r))
-    case Id(x) => v.id(x)
-  }
-}
-```scala mdoc
 val evalVisitor = Visitor[Env=>Int](
    env => _ ,
    (a, b) => env =>
@@ -76,3 +63,4 @@ val evalVisitor = Visitor[Env=>Int](
      a(env) * b(env),
    x => env =>
      env(x))
+```scala

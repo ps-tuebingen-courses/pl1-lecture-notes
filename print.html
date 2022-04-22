@@ -281,6 +281,8 @@ e &amp; := &amp; n &amp; \textit{Numeric Literals} \\
 &amp; | &amp; x &amp; \textit{Identifier}
 \end{array}
 \]</p>
+<pre><code class="language-scala">object AEId {
+</code></pre>
 <pre><code class="language-scala">sealed abstract class Exp
 
 case class Num(n: Int) extends Exp
@@ -326,6 +328,8 @@ topics in the lecture. To try the example, we need a sample environment that giv
 // exa: Int = 14
 assert(eval(test, testEnv) == 14)
 </code></pre>
+<pre><code class="language-scala">}
+</code></pre>
 <p>We will now learn a different way to encode algorithms that operate on expressions (like the evaluator). To this end, we will now use
 so-called &quot;folds&quot;. Folds are well-known for lists, but the concept is more general and applies to arbitrary algebraic data types.
 We will present folds in such a style that they resemble visitors as known from the OO design pattern literature. They correspond to
@@ -334,6 +338,8 @@ An internal visitor consists of one function for each syntactic construct of the
 &quot;return type&quot; of invoking the visitor on an expression. This type parameter is used in all positions in which the original syntax
 specifies a subexpression.
 Internal visitors also correspond to a &quot;bottom-up&quot; traversal of the syntax tree.</p>
+<pre><code class="language-scala">object Visitors {
+</code></pre>
 <pre><code class="language-scala">case class VisitorAE[T](num: Int =&gt; T, add: (T, T) =&gt; T)
 </code></pre>
 <p>The fold function itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
@@ -371,7 +377,12 @@ assert(exaVisitorAE == 6)
 <pre><code class="language-scala">val countVisitorAE = VisitorAE[Int]( _=&gt;1, _+_)
 val printVisitorAE = VisitorAE[String](_.toString, &quot;(&quot;+_+&quot;+&quot;+_+&quot;)&quot;)
 </code></pre>
+<pre><code class="language-scala">}
+</code></pre>
 <p>Let's now try the same with the AE language with identifiers. It all works in the same way:</p>
+<pre><code class="language-scala">object AEIdVisitor {
+import AEId._
+</code></pre>
 <pre><code class="language-scala">case class Visitor[T](num: Int =&gt; T, add: (T, T) =&gt; T, mul: (T, T) =&gt; T, id: String =&gt; T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
 val countVisitor = Visitor[Int](_=&gt;1, _ + _, _ + _, _ =&gt; 0)
@@ -403,6 +414,8 @@ higher-order function is called <em>currying</em>.</p>
      a(env) * b(env),
    x =&gt; env =&gt;
      env(x))
+</code></pre>
+<pre><code class="language-scala">}
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="desugaring"><a class="header" href="#desugaring">Desugaring</a></h1>
 <p>The content of this chapter is available as a scala file <a href="04-desugaring/./desugaring.scala">here.</a></p>
