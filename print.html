@@ -289,65 +289,47 @@ case class Num(n: Int) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Mul(lhs: Exp, rhs: Exp) extends Exp
 case class Id(x: String) extends Exp
-// Strings are similar to strings, but they are implicitly &quot;canonicalized&quot;
-// (meaning all instances of the same String point to a unique copy, in other words,
-// they are not cloned but shared) and  can hence be compared efficiently.
-// Unlike strings, they can not be manipulated.
-// They can be constructed by prefixing an identifier with a '
-
-/**
-Here is a sample program written in this language, directly written down using case class constructors
-*/
-
- val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
-
-/**
-With a proper parser we could choose a syntax like &quot;x*2+y+y&quot;. We do not care much about concrete syntax and parsing, though. That said,
-to make writing examples less verbose, Scala's implicits come to the rescue.
-Calls to implicit functions are inserted automatically by the compiler if they help to restore well-typedness. For instance, we can define:
-*/
-implicit def num2exp(n: Int) = Num(n)
+</code></pre>
+<p>Strings are similar to strings, but they are implicitly &quot;canonicalized&quot;
+(meaning all instances of the same String point to a unique copy, in other words,
+they are not cloned but shared) and  can hence be compared efficiently.</p>
+<p>Unlike strings, they can not be manipulated.
+They can be constructed by prefixing an identifier with a '</p>
+<p>Here is a sample program written in this language, directly written down using case class constructors:</p>
+<pre><code class="language-scala"> val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
+</code></pre>
+<p>With a proper parser we could choose a syntax like &quot;x*2+y+y&quot;. We do not care much about concrete syntax and parsing, though.</p>
+<p>That said, to make writing examples less verbose, Scala's implicits come to the rescue.
+Calls to implicit functions are inserted automatically by the compiler if they help to restore well-typedness. For instance, we can define</p>
+<pre><code class="language-scala">implicit def num2exp(n: Int) = Num(n)
 implicit def sym2exp(x: String) = Id(x)
-
-/**
-to lift integers and Strings to expressions. Using these implicits, the example can be written as: */
-
- val test = Add(Mul(&quot;x&quot;,2),Add(&quot;y&quot;,&quot;y&quot;))
-
-/**
-To give meaning to identifiers, we use _environments_. Environments are mappings from Identifiers (which we represent as Strings) to Values.
-In our simple language the only values are integers, hence:
-*/
-
-type Env = Map[String,Int]
-
-/**
-An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
-&quot;Int&quot;. This interpreter uses pattern matching over case classes.
-*/
-
- def eval(e: Exp, env: Env) : Int = e match {
+</code></pre>
+<p>to lift integers and Strings to expressions. Using these implicits, the example can be written as:</p>
+<pre><code class="language-scala"> val test = Add(Mul(&quot;x&quot;,2),Add(&quot;y&quot;,&quot;y&quot;))
+</code></pre>
+<p>To give meaning to identifiers, we use <em>environments</em>. Environments are mappings from Identifiers (which we represent as Strings) to Values.
+In our simple language the only values are integers, hence:</p>
+<pre><code class="language-scala">type Env = Map[String,Int]
+</code></pre>
+<p>An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
+&quot;Int&quot;. This interpreter uses pattern matching over case classes.</p>
+<pre><code class="language-scala"> def eval(e: Exp, env: Env) : Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x)
   case Add(l,r) =&gt; eval(l,env) + eval(r,env)
   case Mul(l,r) =&gt; eval(l,env) * eval(r,env)
 }
-
-/**
-A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract &quot;eval&quot; method to the Exp
+</code></pre>
+<p>A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract &quot;eval&quot; method to the Exp
 class and override it in all subclasses, each implementation corresponding to its corresponding case in the pattern match. The choice
-between these alternatives matters, since they support different dimensions of extensibility.
-We will mainly use the more functional style using pattern matching, because it matches better to the order in which we present these
-topics in the lecture. To try the example, we need a sample environment that gives values to the (free) variables in the sample expression.
-The test environment also illustrates how Scala supports direct definitions of constant maps.
-*/
-
-val testEnv = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
-
-/**
-We can automatically test our evaluator using assert :
-*/
-assert(eval(test, testEnv) == 14)
+between these alternatives matters, since they support different dimensions of extensibility.</p>
+<p>We will mainly use the more functional style using pattern matching, because it matches better to the order in which we present these
+topics in the lecture. To try the example, we need a sample environment that gives values to the (free) variables in the sample expression.</p>
+<p>The test environment also illustrates how Scala supports direct definitions of constant maps.</p>
+<pre><code class="language-scala">val testEnv = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
+</code></pre>
+<p>We can automatically test our evaluator using assert :</p>
+<pre><code class="language-scala">assert(eval(test, testEnv) == 14)
 
 }
 </code></pre>
@@ -363,19 +345,16 @@ Internal visitors also correspond to a &quot;bottom-up&quot; traversal of the sy
   case class Visitor[T](num: Int =&gt; T, add: (T, T) =&gt; T)
   // an alternative to this design is to define num and add as abstract methods
   // and then create concrete visitors by subclassing or trait composition.
-
-/**
-The fold function itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
-are not recursive.
-Also note that this design enforces that all algorithms specified via this visitor interfaces are compositional by design. This means that
+</code></pre>
+<p>The fold function itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
+are not recursive.</p>
+<p>Also note that this design enforces that all algorithms specified via this visitor interfaces are compositional by design. This means that
 the recursion structure of the algorithm corresponds to the recursion structure of the expression. Put in another way, it means that the
 semantics (in terms of the meta-language) of a composite expression is determined by the semantics of the subexpressions; the syntax of
-the subexpressions is irrelevant.
-Compositional specifications are particularly nice because they enable &quot;equational reasoning&quot;: Subexpressions can be replaced by other
-subexpressions with the same semantics without changing the semantics of the whole.
-*/
-
-  sealed abstract class Exp
+the subexpressions is irrelevant.</p>
+<p>Compositional specifications are particularly nice because they enable &quot;equational reasoning&quot;: Subexpressions can be replaced by other
+subexpressions with the same semantics without changing the semantics of the whole.</p>
+<pre><code class="language-scala">  sealed abstract class Exp
 
   case class Num(n: Int) extends Exp
   case class Add(lhs: Exp, rhs: Exp) extends Exp
@@ -386,29 +365,21 @@ subexpressions with the same semantics without changing the semantics of the who
       case Add(l, r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
     }
   }
+```scala
 
-/**
 Here is our evaluator from above rephrased using the visitor infrastructure.
-*/
 
+```scala
   val evalVisitor = Visitor[Int](x =&gt; x, (a, b) =&gt; a + b)
-
-/**
-We can of course also restore the original interface of eval
-*/
-
-  def eval(e: Exp) = foldExp(evalVisitor, e)
-
-/**
-Let's test whether it works.
-*/
-
-  assert(eval(Add(Add(Num(1),Num(2)),Num(3))) == 6)
-
-/**
-We can of course also apply other algorithms using visitors, such as counting the number of &quot;Num&quot; literals, or printing to a string:
-*/
-  val countVisitor = Visitor[Int]( _=&gt;1, _+_)
+</code></pre>
+<p>We can of course also restore the original interface of eval:</p>
+<pre><code class="language-scala">  def eval(e: Exp) = foldExp(evalVisitor, e)
+</code></pre>
+<p>Let's test whether it works.</p>
+<pre><code class="language-scala">  assert(eval(Add(Add(Num(1),Num(2)),Num(3))) == 6)
+</code></pre>
+<p>We can of course also apply other algorithms using visitors, such as counting the number of &quot;Num&quot; literals, or printing to a string:</p>
+<pre><code class="language-scala">  val countVisitor = Visitor[Int]( _=&gt;1, _+_)
   val printVisitor = Visitor[String](_.toString, &quot;(&quot;+_+&quot;+&quot;+_+&quot;)&quot;)
 
 }
@@ -434,14 +405,11 @@ We can of course also apply other algorithms using visitors, such as counting th
   def countNums(e: Exp) = foldExp(countVisitor, e)
 
   assert(countNums(test) == 1)
-
-/**
-However, what about the evaluator? If we instantiate T = Int, then how can we access the environment? Insight: For evaluation, we must
-instantiate T with a function type ``Env =&gt; Int``! This way of transforming a multi-argument function into a single-argument
-higher-order function is called _currying_.
-*/
-
-  val evalVisitor = Visitor[Env=&gt;Int](
+</code></pre>
+<p>However, what about the evaluator? If we instantiate T = Int, then how can we access the environment? Insight: For evaluation, we must
+instantiate T with a function type <code>Env =&gt; Int</code>! This way of transforming a multi-argument function into a single-argument
+higher-order function is called <em>currying</em>.</p>
+<pre><code class="language-scala">  val evalVisitor = Visitor[Env=&gt;Int](
      env =&gt; _ ,
      (a, b) =&gt; env =&gt;
        a(env) + b(env),
@@ -1041,61 +1009,52 @@ that are quite useful. For instance, exception handlers are typically dynamicall
 most recently encountered active exception handler for that exception type. </p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="higher-order-functions"><a class="header" href="#higher-order-functions">Higher order functions</a></h1>
 <p>The content of this chapter is available as a scala file <a href="07-higher-order-functions/./higher-order-functions.scala">here.</a></p>
-<pre><code class="language-scala">/**
-Higher-Order Functions
-======================
-F1-WAE, the language with first-order functions, lets us abstract over patterns that involve numbers. But what if we want to abstract
+<h1 id="higher-order-functions-1"><a class="header" href="#higher-order-functions-1">Higher-Order Functions</a></h1>
+<p>F1-WAE, the language with first-order functions, lets us abstract over patterns that involve numbers. But what if we want to abstract
 over patterns that involve functions, such as the &quot;list fold&quot; pattern, whose instantiations include summing or multiplying a list of
-integers?
-To enable this kind of abstraction, we need to make functions &quot;first-class&quot;, which means that they become values that can be passed to
+integers?</p>
+<p>To enable this kind of abstraction, we need to make functions &quot;first-class&quot;, which means that they become values that can be passed to
 or returned from functions or stored in data structures. Languages with first-class functions enable so-called &quot;higher-order functions&quot;,
-which are functions that accept or return a (possibly again higher-order) function.
-We will see that this extension will make our language both simpler and much more powerful. This seeming contradiction is famously
-addressed by the first sentence of the Scheme language specification:
-&quot;Programming languages should be designed not by piling feature on top of feature, but by removing the weaknesses and restrictions that
-make additional features appear necessary.&quot;
-The simplicity is due to the fact that this language is so expressive that many other language features can be &quot;encoded&quot;, i.e., they do
-not need to be added to the language but can be expressed with the existing features.
-This language, which we call &quot;FAE&quot;, is basically the so-called &quot;lambda calculus&quot;, a minimal but powerful programming language that has
-been highly influential in the design and theory of programming languages.
-FAE is the language of arithmetic expressions, AE, plus only two additional language constructs: Function abstraction and function
-application.
-*/
-
-object Syntax {
+which are functions that accept or return a (possibly again higher-order) function.</p>
+<p>We will see that this extension will make our language both simpler and much more powerful. This seeming contradiction is famously
+addressed by the first sentence of the Scheme language specification:</p>
+<blockquote>
+<p>&quot;Programming languages should be designed not by piling feature on top of feature, but by removing the weaknesses and restrictions that
+make additional features appear necessary.&quot;</p>
+</blockquote>
+<p>The simplicity is due to the fact that this language is so expressive that many other language features can be &quot;encoded&quot;, i.e., they do
+not need to be added to the language but can be expressed with the existing features.</p>
+<p>This language, which we call &quot;FAE&quot;, is basically the so-called &quot;lambda calculus&quot;, a minimal but powerful programming language that has
+been highly influential in the design and theory of programming languages.</p>
+<p>FAE is the language of arithmetic expressions, AE, plus only two additional language constructs: Function abstraction and function
+application.</p>
+<pre><code class="language-scala">object Syntax {
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
   case class Add(lhs: Exp, rhs: Exp) extends Exp
   implicit def num2exp(n: Int) = Num(n)
   implicit def id2exp(s: String) = Id(s)
-
-  /**
-  Both function definitions and applications are expressions.
-  */
-  case class Fun(param: String, body: Exp) extends Exp
+</code></pre>
+<p>Both function definitions and applications are expressions.</p>
+<pre><code class="language-scala">  case class Fun(param: String, body: Exp) extends Exp
   case class App (funExpr: Exp, argExpr: Exp) extends Exp
-
-  /**
-  Due to the lambda calculus, the concrete syntax for function abstraction is often written with a lambda, such as ``lambda x. x+3``,
-  thus also called lambda abstraction. The Scala syntax for lambda terms is ``(x) =&gt; x+3``, the Haskell syntax is ``\x -&gt; x+3``.
-  The concrete syntax for function application is often either  juxtaposition ``f a`` or using brackets ``f(a)``. Haskell and the
-  lambda calculus use the former, Scala uses the latter.
-  The ``with`` construct is not needed anymore since it can be encoded using ``App`` and ``Fun``. For instance, ``with x = 7 in x+3``
-  can be encoded (using Scala syntax) as ``((x) =&gt; x+3)(7)``
-  We make this idea explicit by giving a constructive translation. Such translations are also often called &quot;desugaring&quot;.
-  */
-
-   // &quot;with&quot; would be a better name for this function, but it is reserved in Scala
+</code></pre>
+<p>Due to the lambda calculus, the concrete syntax for function abstraction is often written with a lambda, such as <code>lambda x. x+3</code>,
+thus also called lambda abstraction. The Scala syntax for lambda terms is <code>(x) =&gt; x+3</code>, the Haskell syntax is <code>\x -&gt; x+3</code>.</p>
+<p>The concrete syntax for function application is often either  juxtaposition <code>f a</code> or using brackets <code>f(a)</code>. Haskell and the
+lambda calculus use the former, Scala uses the latter.</p>
+<p>The <code>with</code> construct is not needed anymore since it can be encoded using <code>App</code> and <code>Fun</code>. For instance, <code>with x = 7 in x+3</code>
+can be encoded (using Scala syntax) as <code>((x) =&gt; x+3)(7)</code>
+We make this idea explicit by giving a constructive translation. Such translations are also often called &quot;desugaring&quot;.</p>
+<pre><code class="language-scala">   // &quot;with&quot; would be a better name for this function, but it is reserved in Scala
   def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
 }
-import Syntax._
-
-/**
-Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.
-*/
-
-def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+</code></pre>
+<pre><code class="language-scala">import Syntax._
+</code></pre>
+<p>Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
+<pre><code class="language-scala">def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) =&gt; e1
   case Add(l,r) =&gt; Add(subst(l,x,e2), subst(r,x,e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
@@ -1103,37 +1062,33 @@ def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Fun(param,body) =&gt;
     if (param == x) e1  else Fun(param, subst(body, x, e2))
 }
-
-/**
-Let's try whether subst produces reasonable results.
-*/
-
-assert( subst(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
+</code></pre>
+<p>Let's try whether subst produces reasonable results.</p>
+<pre><code class="language-scala">assert( subst(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
 assert( subst(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
 assert( subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
-
-/**
-However, what happens if ``e2`` contains free variables? The danger here is that they may be accidentially &quot;captured&quot; by the substitution.
-For instance, consider
-    ``subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))``
-The result is ``Fun(&quot;x&quot;,Add(&quot;x&quot;,Add(&quot;x&quot;,5)))``
-This is not desirable, since it violates again static scoping.
-Note that this problem did not show up in earlier languages, because there we only substituted variables by numbers, but not by
-expressions that may contain free variables: The type of ``e2`` was ``Num`` and not ``Exp``.
-Hence we are still not done with defining substitution. But what is the desired result of the substitution above? The answer is that
-we must avoid the name clash by renaming the variable bound by the &quot;lambda&quot; if the variable name occurs free in ``e2``.
-This new variable name should be &quot;fresh&quot;, i.e., not occur free in ``e2``.
-For instance, in the example above, we could first rename ``&quot;x&quot;`` to the fresh name ``&quot;x&quot;0`` and only then substitute, i.e.
-   ``subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x&quot;0,Add(Id(&quot;x&quot;0),Add(Id(&quot;x&quot;),Num(5))))``
-Let's do this step by step.
-*/
-
-def freshName(names: Set[String], default: String) : String = {
+</code></pre>
+<p>However, what happens if <code>e2</code> contains free variables? The danger here is that they may be accidentially &quot;captured&quot; by the substitution.
+For instance, consider</p>
+<pre><code>``subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))``
+</code></pre>
+<p>The result is <code>Fun(&quot;x&quot;,Add(&quot;x&quot;,Add(&quot;x&quot;,5)))</code>
+This is not desirable, since it violates again static scoping.</p>
+<p>Note that this problem did not show up in earlier languages, because there we only substituted variables by numbers, but not by
+expressions that may contain free variables: The type of <code>e2</code> was <code>Num</code> and not <code>Exp</code>.</p>
+<p>Hence we are still not done with defining substitution. But what is the desired result of the substitution above?
+The answer is that we must avoid the name clash by renaming the variable bound by the &quot;lambda&quot; if the variable name occurs free in <code>e2</code>.
+This new variable name should be &quot;fresh&quot;, i.e., not occur free in <code>e2</code>.</p>
+<p>For instance, in the example above, we could first rename <code>&quot;x&quot;</code> to the fresh name <code>&quot;x&quot;0</code> and only then substitute, i.e.</p>
+<p><code>subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x&quot;0,Add(Id(&quot;x&quot;0),Add(Id(&quot;x&quot;),Num(5))))</code></p>
+<p>Let's do this step by step.</p>
+<pre><code class="language-scala">def freshName(names: Set[String], default: String) : String = {
   var last : Int = 0
   var freshName = default
   while (names contains freshName) { freshName = default+last; last += 1; }
   freshName
 }
+
 
 assert( freshName(Set(&quot;y&quot;,&quot;z&quot;),&quot;x&quot;) == &quot;x&quot;)
 assert( freshName(Set(&quot;x2&quot;,&quot;x0&quot;,&quot;x4&quot;,&quot;x&quot;,&quot;x1&quot;),&quot;x&quot;) == &quot;x3&quot;)
@@ -1166,20 +1121,17 @@ assert( subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot
 // test capture-avoiding substitution
 assert( subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x0&quot;,Add(Id(&quot;x0&quot;),Add(Id(&quot;x&quot;),Num(5)))))
 assert( subst(Fun(&quot;x&quot;, Add(Id(&quot;x0&quot;), Id(&quot;y&quot;))), &quot;y&quot;, Add(Id(&quot;x&quot;), 5)) == Fun(&quot;x1&quot;, Add(Id(&quot;x0&quot;), Add(Id(&quot;x&quot;), Num(5)))) )
-
-/**
-OK, equipped with this new version of substitution we can now define the interpreter for this language.
-But how do we evaluate a function abstraction? Obviously we cannot return a number.
-We realize that functions are also values! Hence we have to broaden the return type of our evaluator to also allow functions as values.
+</code></pre>
+<p>OK, equipped with this new version of substitution we can now define the interpreter for this language.
+But how do we evaluate a function abstraction? Obviously we cannot return a number.</p>
+<p>We realize that functions are also values! Hence we have to broaden the return type of our evaluator to also allow functions as values.
 For simplicity, we use &quot;Exp&quot; as our return type since it allows us to return both numbers and functions. Later we will become more
-sophisticated.
-This means that a new class of errors can occur: A subexpression evaluates to a number where a function is expected, or vice versa.
-Such errors are called _type errors_, and we will talk about them in much more detail later. For now, it means that we need to analyze
-(typically by pattern matching) the result of recursive invocations of eval to check whether the result has the right type.
-The remainder of the interpreter is unsurprising.
-*/
-
-def eval(e: Exp) : Exp = e match {
+sophisticated.</p>
+<p>This means that a new class of errors can occur: A subexpression evaluates to a number where a function is expected, or vice versa.
+Such errors are called <em>type errors</em>, and we will talk about them in much more detail later.</p>
+<p>For now, it means that we need to analyze (typically by pattern matching) the result of recursive invocations of eval to check whether the result has the right type.</p>
+<p>The remainder of the interpreter is unsurprising:</p>
+<pre><code class="language-scala">def eval(e: Exp) : Exp = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v.name)
   case Add(l,r) =&gt; (eval(l), eval(r)) match {
                      case (Num(x),Num(y)) =&gt; Num(x+y)
@@ -1192,11 +1144,9 @@ def eval(e: Exp) : Exp = e match {
   }
   case _ =&gt; e // numbers and functions evaluate to themselves
 }
-
-/**
-We can also make the return type more precise to verify the invariant  that numbers and functions are the only values.
-*/
-def eval2(e: Exp) : Either[Num,Fun] = e match {
+</code></pre>
+<p>We can also make the return type more precise to verify the invariant  that numbers and functions are the only values.</p>
+<pre><code class="language-scala">def eval2(e: Exp) : Either[Num,Fun] = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v.name)
   case Add(l,r) =&gt; (eval2(l), eval2(r)) match {
                      case (Left(Num(x)),Left(Num(y))) =&gt; Left(Num(x+y))
@@ -1209,30 +1159,21 @@ def eval2(e: Exp) : Either[Num,Fun] = e match {
   case f@Fun(_,_) =&gt; Right(f)
   case n@Num(_) =&gt; Left(n)
 }
-
-/**
-Let's test.
-*/
-
-val test = App( Fun(&quot;x&quot;,Add(&quot;x&quot;,5)), 7)
-
+</code></pre>
+<p>Let's test:</p>
+<pre><code class="language-scala">val test = App( Fun(&quot;x&quot;,Add(&quot;x&quot;,5)), 7)
 assert( eval(test) == Num(12))
-
-/**
-FAE is a computationally (Turing)-complete language. For instance, we can define  a non-terminating program. This program is commonly
-called Omega */
-
-val omega = App(Fun(&quot;x&quot;,App(&quot;x&quot;,&quot;x&quot;)), Fun(&quot;x&quot;,App(&quot;x&quot;,&quot;x&quot;)))
-
+</code></pre>
+<p>FAE is a computationally (Turing)-complete language. For instance, we can define  a non-terminating program. This program is commonly
+called Omega:</p>
+<pre><code class="language-scala">val omega = App(Fun(&quot;x&quot;,App(&quot;x&quot;,&quot;x&quot;)), Fun(&quot;x&quot;,App(&quot;x&quot;,&quot;x&quot;)))
 // try eval(omega) to crash the interpreter ;-)
-
-/**
-Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We come back to
-this topic later.
-Let's now discuss what an environment-based version of this interpreter looks like.
-Here is a first attempt.
-*/
-type Env0 = Map[String, Exp]
+</code></pre>
+<p>Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We come back to
+this topic later.</p>
+<p>Let's now discuss what an environment-based version of this interpreter looks like.
+Here is a first attempt:</p>
+<pre><code class="language-scala">type Env0 = Map[String, Exp]
 
 def evalWithEnv0(e: Exp, env: Env0) : Exp = e match {
   case Id(x) =&gt; env(x)
@@ -1250,42 +1191,33 @@ def evalWithEnv0(e: Exp, env: Env0) : Exp = e match {
 }
 
 assert( evalWithEnv0(test, Map.empty) == Num(12))
-
-/**
-However, consider the following example.
-*/
-val test2 = wth(&quot;x&quot;, 5, App(Fun(&quot;f&quot;, App(&quot;f&quot;,3)), Fun(&quot;y&quot;,Add(&quot;x&quot;,&quot;y&quot;))))
-
-/**
-It works fine in the substitution-based interpreter.
-*/
-assert(eval(test2) == Num(8))
-
-/**
-but ``evalWithEnv0(test2,Map.empty)`` yields an &quot;identifier not found: &quot;x&quot;&quot; error.
-The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.
-What can we do to fix this problem?
-We could try to replace the second line in the &quot;App&quot; case by
-     case Fun(x,body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a,env)))
-but this would again introduce dynamic scoping.
-Hence, when we evaluate a function, we do not only have to store the function, but also the environment active when the function was
-created. This pair of function and environment is called a _closure_. The environment stored in the closure is used when the function
-is eventually applied.
-Hint: If you cannot answer what a closure is and how it is used in the  interpreter, you will be toast in the exam!
-Since closures are not expressible in the language syntax, we now come to the point where we need a separate category of _values_.
-The values in FAE can be either numbers or closures.
-*/
-
-sealed abstract class Value
+</code></pre>
+<p>However, consider the following example:</p>
+<pre><code class="language-scala">val test2 = wth(&quot;x&quot;, 5, App(Fun(&quot;f&quot;, App(&quot;f&quot;,3)), Fun(&quot;y&quot;,Add(&quot;x&quot;,&quot;y&quot;))))
+</code></pre>
+<p>It works fine in the substitution-based interpreter,</p>
+<pre><code class="language-scala">assert(eval(test2) == Num(8))
+</code></pre>
+<p>but <code>evalWithEnv0(test2,Map.empty)</code> yields an <code>&quot;identifier not found: &quot;x&quot;&quot; error</code>.
+The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.</p>
+<p>What can we do to fix this problem?
+We could try to replace the second line in the &quot;App&quot; case by</p>
+<pre><code> ``case Fun(x,body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a,env)))``
+</code></pre>
+<p>but this would again introduce dynamic scoping.</p>
+<p>Hence, when we evaluate a function, we do not only have to store the function, but also the environment active when the function was
+created. This pair of function and environment is called a <em>closure</em>. The environment stored in the closure is used when the function
+is eventually applied.</p>
+<p>Hint: If you cannot answer what a closure is and how it is used in the  interpreter, you will be toast in the exam!
+Since closures are not expressible in the language syntax, we now come to the point where we need a separate category of <em>values</em>.
+The values in FAE can be either numbers or closures.</p>
+<pre><code class="language-scala">sealed abstract class Value
 type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
-
-/**
-The evaluator becomes :
-*/
-
-def evalWithEnv(e: Exp, env: Env) : Value = e match {
+</code></pre>
+<p>The evaluator becomes :</p>
+<pre><code class="language-scala">def evalWithEnv(e: Exp, env: Env) : Value = e match {
   case Num(n: Int) =&gt; NumV(n)
   case Id(x) =&gt; env(x)
   case Add(l,r) =&gt; {
@@ -5185,6 +5117,7 @@ assert(doTypeCheck(Let(&quot;id&quot;, Fun(&quot;x&quot;,&quot;x&quot;), App(App
         <script src="book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
+        <script type="text/javascript" src="questionnaire.js"></script>
         <script type="text/javascript">
         window.addEventListener('load', function() {
             MathJax.Hub.Register.StartupHook('End', function() {

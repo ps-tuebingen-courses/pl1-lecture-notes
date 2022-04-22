@@ -162,65 +162,47 @@ case class Num(n: Int) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Mul(lhs: Exp, rhs: Exp) extends Exp
 case class Id(x: String) extends Exp
-// Strings are similar to strings, but they are implicitly &quot;canonicalized&quot;
-// (meaning all instances of the same String point to a unique copy, in other words,
-// they are not cloned but shared) and  can hence be compared efficiently.
-// Unlike strings, they can not be manipulated.
-// They can be constructed by prefixing an identifier with a '
-
-/**
-Here is a sample program written in this language, directly written down using case class constructors
-*/
-
- val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
-
-/**
-With a proper parser we could choose a syntax like &quot;x*2+y+y&quot;. We do not care much about concrete syntax and parsing, though. That said,
-to make writing examples less verbose, Scala's implicits come to the rescue.
-Calls to implicit functions are inserted automatically by the compiler if they help to restore well-typedness. For instance, we can define:
-*/
-implicit def num2exp(n: Int) = Num(n)
+</code></pre>
+<p>Strings are similar to strings, but they are implicitly &quot;canonicalized&quot;
+(meaning all instances of the same String point to a unique copy, in other words,
+they are not cloned but shared) and  can hence be compared efficiently.</p>
+<p>Unlike strings, they can not be manipulated.
+They can be constructed by prefixing an identifier with a '</p>
+<p>Here is a sample program written in this language, directly written down using case class constructors:</p>
+<pre><code class="language-scala"> val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
+</code></pre>
+<p>With a proper parser we could choose a syntax like &quot;x*2+y+y&quot;. We do not care much about concrete syntax and parsing, though.</p>
+<p>That said, to make writing examples less verbose, Scala's implicits come to the rescue.
+Calls to implicit functions are inserted automatically by the compiler if they help to restore well-typedness. For instance, we can define</p>
+<pre><code class="language-scala">implicit def num2exp(n: Int) = Num(n)
 implicit def sym2exp(x: String) = Id(x)
-
-/**
-to lift integers and Strings to expressions. Using these implicits, the example can be written as: */
-
- val test = Add(Mul(&quot;x&quot;,2),Add(&quot;y&quot;,&quot;y&quot;))
-
-/**
-To give meaning to identifiers, we use _environments_. Environments are mappings from Identifiers (which we represent as Strings) to Values.
-In our simple language the only values are integers, hence:
-*/
-
-type Env = Map[String,Int]
-
-/**
-An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
-&quot;Int&quot;. This interpreter uses pattern matching over case classes.
-*/
-
- def eval(e: Exp, env: Env) : Int = e match {
+</code></pre>
+<p>to lift integers and Strings to expressions. Using these implicits, the example can be written as:</p>
+<pre><code class="language-scala"> val test = Add(Mul(&quot;x&quot;,2),Add(&quot;y&quot;,&quot;y&quot;))
+</code></pre>
+<p>To give meaning to identifiers, we use <em>environments</em>. Environments are mappings from Identifiers (which we represent as Strings) to Values.
+In our simple language the only values are integers, hence:</p>
+<pre><code class="language-scala">type Env = Map[String,Int]
+</code></pre>
+<p>An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
+&quot;Int&quot;. This interpreter uses pattern matching over case classes.</p>
+<pre><code class="language-scala"> def eval(e: Exp, env: Env) : Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x)
   case Add(l,r) =&gt; eval(l,env) + eval(r,env)
   case Mul(l,r) =&gt; eval(l,env) * eval(r,env)
 }
-
-/**
-A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract &quot;eval&quot; method to the Exp
+</code></pre>
+<p>A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract &quot;eval&quot; method to the Exp
 class and override it in all subclasses, each implementation corresponding to its corresponding case in the pattern match. The choice
-between these alternatives matters, since they support different dimensions of extensibility.
-We will mainly use the more functional style using pattern matching, because it matches better to the order in which we present these
-topics in the lecture. To try the example, we need a sample environment that gives values to the (free) variables in the sample expression.
-The test environment also illustrates how Scala supports direct definitions of constant maps.
-*/
-
-val testEnv = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
-
-/**
-We can automatically test our evaluator using assert :
-*/
-assert(eval(test, testEnv) == 14)
+between these alternatives matters, since they support different dimensions of extensibility.</p>
+<p>We will mainly use the more functional style using pattern matching, because it matches better to the order in which we present these
+topics in the lecture. To try the example, we need a sample environment that gives values to the (free) variables in the sample expression.</p>
+<p>The test environment also illustrates how Scala supports direct definitions of constant maps.</p>
+<pre><code class="language-scala">val testEnv = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
+</code></pre>
+<p>We can automatically test our evaluator using assert :</p>
+<pre><code class="language-scala">assert(eval(test, testEnv) == 14)
 
 }
 </code></pre>
@@ -236,19 +218,16 @@ Internal visitors also correspond to a &quot;bottom-up&quot; traversal of the sy
   case class Visitor[T](num: Int =&gt; T, add: (T, T) =&gt; T)
   // an alternative to this design is to define num and add as abstract methods
   // and then create concrete visitors by subclassing or trait composition.
-
-/**
-The fold function itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
-are not recursive.
-Also note that this design enforces that all algorithms specified via this visitor interfaces are compositional by design. This means that
+</code></pre>
+<p>The fold function itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
+are not recursive.</p>
+<p>Also note that this design enforces that all algorithms specified via this visitor interfaces are compositional by design. This means that
 the recursion structure of the algorithm corresponds to the recursion structure of the expression. Put in another way, it means that the
 semantics (in terms of the meta-language) of a composite expression is determined by the semantics of the subexpressions; the syntax of
-the subexpressions is irrelevant.
-Compositional specifications are particularly nice because they enable &quot;equational reasoning&quot;: Subexpressions can be replaced by other
-subexpressions with the same semantics without changing the semantics of the whole.
-*/
-
-  sealed abstract class Exp
+the subexpressions is irrelevant.</p>
+<p>Compositional specifications are particularly nice because they enable &quot;equational reasoning&quot;: Subexpressions can be replaced by other
+subexpressions with the same semantics without changing the semantics of the whole.</p>
+<pre><code class="language-scala">  sealed abstract class Exp
 
   case class Num(n: Int) extends Exp
   case class Add(lhs: Exp, rhs: Exp) extends Exp
@@ -259,29 +238,21 @@ subexpressions with the same semantics without changing the semantics of the who
       case Add(l, r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
     }
   }
+```scala
 
-/**
 Here is our evaluator from above rephrased using the visitor infrastructure.
-*/
 
+```scala
   val evalVisitor = Visitor[Int](x =&gt; x, (a, b) =&gt; a + b)
-
-/**
-We can of course also restore the original interface of eval
-*/
-
-  def eval(e: Exp) = foldExp(evalVisitor, e)
-
-/**
-Let's test whether it works.
-*/
-
-  assert(eval(Add(Add(Num(1),Num(2)),Num(3))) == 6)
-
-/**
-We can of course also apply other algorithms using visitors, such as counting the number of &quot;Num&quot; literals, or printing to a string:
-*/
-  val countVisitor = Visitor[Int]( _=&gt;1, _+_)
+</code></pre>
+<p>We can of course also restore the original interface of eval:</p>
+<pre><code class="language-scala">  def eval(e: Exp) = foldExp(evalVisitor, e)
+</code></pre>
+<p>Let's test whether it works.</p>
+<pre><code class="language-scala">  assert(eval(Add(Add(Num(1),Num(2)),Num(3))) == 6)
+</code></pre>
+<p>We can of course also apply other algorithms using visitors, such as counting the number of &quot;Num&quot; literals, or printing to a string:</p>
+<pre><code class="language-scala">  val countVisitor = Visitor[Int]( _=&gt;1, _+_)
   val printVisitor = Visitor[String](_.toString, &quot;(&quot;+_+&quot;+&quot;+_+&quot;)&quot;)
 
 }
@@ -307,14 +278,11 @@ We can of course also apply other algorithms using visitors, such as counting th
   def countNums(e: Exp) = foldExp(countVisitor, e)
 
   assert(countNums(test) == 1)
-
-/**
-However, what about the evaluator? If we instantiate T = Int, then how can we access the environment? Insight: For evaluation, we must
-instantiate T with a function type ``Env =&gt; Int``! This way of transforming a multi-argument function into a single-argument
-higher-order function is called _currying_.
-*/
-
-  val evalVisitor = Visitor[Env=&gt;Int](
+</code></pre>
+<p>However, what about the evaluator? If we instantiate T = Int, then how can we access the environment? Insight: For evaluation, we must
+instantiate T with a function type <code>Env =&gt; Int</code>! This way of transforming a multi-argument function into a single-argument
+higher-order function is called <em>currying</em>.</p>
+<pre><code class="language-scala">  val evalVisitor = Visitor[Env=&gt;Int](
      env =&gt; _ ,
      (a, b) =&gt; env =&gt;
        a(env) + b(env),
@@ -362,5 +330,6 @@ higher-order function is called _currying_.
         <script src="../book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
+        <script type="text/javascript" src="../questionnaire.js"></script>
     </body>
 </html>
