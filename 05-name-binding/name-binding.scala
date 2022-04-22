@@ -15,8 +15,10 @@ implicit def string2exp(x: String) = Id(x)
 
 val test = With("x", 5, Add("x","x"))
 
+case With(x, xdef, body) => eval(subst(body,x,Num(eval(xdef))))
+for a function `subst` with signature
 subst: (Exp,String,Num) => Exp
-The type of the third parameter is "Num" instead of "Exp" because it is more difficult to get substitution correct when arbitrary
+The type of the third parameter is `Num` instead of `Exp` because it is more difficult to get substitution correct when arbitrary
 def makeEval(subst: (Exp,String,Num)=>Exp) : Exp=>Int = {
   def eval(e: Exp) : Int = e match {
     case Num(n) => n
@@ -33,7 +35,7 @@ val subst1 : (Exp,String,Num) => Exp = (e,i,v) => e match {
   case Id(x) => if (x == i) v else e
   case Add(l,r) => Add( subst1(l,i,v), subst1(r,i,v))
   case Mul(l,r) => Mul( subst1(l,i,v), subst1(r,i,v))
-  case With(x,xdef,body) => With( if (x ==i) v else x,
+  case With(x,xdef,body) => With( if (x == i) v else x,
                                     subst1(xdef,i,v),
                                     subst1(body,i,v))
   }
@@ -57,11 +59,11 @@ def eval2 = makeEval(subst2)
 
 assert(eval2(test) == 10) // it works!
 
-val test2 = With("x", 5, Add("x", With("x", 3,10))) // another test
+val test2 = With("x", 5, Add("x", With("x", 3, 10))) // another test
 
 assert(eval2(test2) == 15) // works as expected
 
-val test3 = With("x", 5, Add("x", With("x", 3,"x"))) // another test
+val test3 = With("x", 5, Add("x", With("x", 3, "x"))) // another test
 
 // assert(eval2(test3) == 8) // Bang! Result is 10 instead!
 
@@ -87,7 +89,7 @@ assert(eval3(test3) == 8) // Success!
 val test4 = With("x", 5, Add("x", With("y", 3,"x")))
 
 // assert(eval3(test4) == 10) // Bang! unbound variable: "x"
-The inner expression should result in an error, because x has no value. Once again, substitution has changed a correct program into
+The inner expression should result in an error, because `x` has no value. Once again, substitution has changed a correct program into
 val subst4 : (Exp,String,Num) => Exp = (e,i,v) => e match {
     case Num(n) => e
     case Id(x) => if (x == i) v else e

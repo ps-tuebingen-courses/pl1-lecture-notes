@@ -151,7 +151,7 @@
 One important milestone on this way is the ability to deal with names. While our previous language allowed expressions with identifiers
 in them, it had no <em>binders</em>: Constructs that allow to give meaning to a new name.
 In this variant of the language, called WAE, we introduce such a binder called &quot;with&quot; with which we can give an expression a name that
-can be used in the body of the &quot;with&quot; expression. This intuition is captured in the  definition of the &quot;With&quot; case class below,
+can be used in the body of the &quot;with&quot; expression. This intuition is captured in the  definition of the <code>With</code> case class below,
 which extends our previous  language.
 We study this WAE language to better understand what names mean in  programming languages, and how they can be implemented.</p>
 <pre><code class="language-scala">object Syntax {
@@ -170,7 +170,6 @@ implicit def string2exp(x: String) = Id(x)
 </code></pre>
 <p>A first example program in WAE.</p>
 <pre><code class="language-scala">val test = With(&quot;x&quot;, 5, Add(&quot;x&quot;,&quot;x&quot;))
-// test: With = With(&quot;x&quot;, Num(5), Add(Id(&quot;x&quot;), Id(&quot;x&quot;)))
 </code></pre>
 <p>Note that we deal with <em>two</em> languages here:</p>
 <ol>
@@ -196,13 +195,13 @@ Note that these two programs -- before and after the substitution -- are certain
 they are <em>equivalent</em> in the sense that when evaluated, they will produce the same number. Such transformations between different but
 somehow equivalent programs are an important tool for the study of programs, and of programming languages. Often, if we know which
 programs behave identically, we understand better how programs behave in general. We will see more examples of this in this lecture.
-Hence, the implementation of the &quot;With&quot; case of our interpreter should be something like:</p>
-<pre><code>  case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef))))
+Hence, the implementation of the <code>With</code> case of our interpreter should be something like:</p>
+<pre><code class="language-scala">case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef))))
 </code></pre>
-<p>for a function subst with signature</p>
+<p>for a function <code>subst</code> with signature</p>
 <pre><code class="language-scala">subst: (Exp,String,Num) =&gt; Exp
 </code></pre>
-<p>The type of the third parameter is &quot;Num&quot; instead of &quot;Exp&quot; because it is more difficult to get substitution correct when arbitrary
+<p>The type of the third parameter is <code>Num</code> instead of <code>Exp</code> because it is more difficult to get substitution correct when arbitrary
 expressions can be inserted (accidential name capture problem, more about that later).
 Since we want to experiment with different versions of substitution, we write the interpreter in such a way that we can parameterize
 it with a substitution function:</p>
@@ -218,14 +217,14 @@ it with a substitution function:</p>
 }
 </code></pre>
 <h3 id="substitution-take-1"><a class="header" href="#substitution-take-1">Substitution, take 1</a></h3>
-<p>To substitute identiﬁer i in e with expression v, replace all identiﬁers in e that have the name i with the expression v.
+<p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all identifiers in <code>e</code> that have the name <code>i</code> with the expression <code>v</code>.
 Let's try to formalize this definition:</p>
 <pre><code class="language-scala">val subst1 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
   case Num(n) =&gt; e
   case Id(x) =&gt; if (x == i) v else e
   case Add(l,r) =&gt; Add( subst1(l,i,v), subst1(r,i,v))
   case Mul(l,r) =&gt; Mul( subst1(l,i,v), subst1(r,i,v))
-  case With(x,xdef,body) =&gt; With( if (x ==i) v else x,
+  case With(x,xdef,body) =&gt; With( if (x == i) v else x,
                                     subst1(xdef,i,v),
                                     subst1(body,i,v))
   }
@@ -249,8 +248,8 @@ with-expression.  This renders the expression illegal because after substitution
 is now occupied by a Num.
 To correct this mistake, we make another take at substitution:</p>
 <h3 id="substitution-take-2"><a class="header" href="#substitution-take-2">Substitution, take 2</a></h3>
-<p>To substitute identiﬁer i in e with expression v, replace all identiﬁers in e which are not binding
-instances that have the name i with the expression v.
+<p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all identifiers in <code>e</code> which are not binding
+instances that have the name <code>i</code> with the expression <code>v</code>.
 Here is the formalization of this definition.</p>
 <pre><code class="language-scala">val subst2 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
     case Num(n) =&gt; e
@@ -271,22 +270,22 @@ Here is the formalization of this definition.</p>
 <p>Let's create an interpreter that uses this substitution function.</p>
 <pre><code class="language-scala">def eval2 = makeEval(subst2)
 
-assert(eval2(test) == 10) // it works! // it works!
+assert(eval2(test) == 10) // it works!
 
-val test2 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;x&quot;, 3,10))) // another test
-// test2: With = With(&quot;x&quot;, Num(5), Add(Id(&quot;x&quot;), With(&quot;x&quot;, Num(3), Num(10)))) // another test
+val test2 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;x&quot;, 3, 10))) // another test
 
-assert(eval2(test2) == 15) // works as expected // works as expected
+assert(eval2(test2) == 15) // works as expected
 
-val test3 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;x&quot;, 3,&quot;x&quot;))) // another test
-// test3: With = With(&quot;x&quot;, Num(5), Add(Id(&quot;x&quot;), With(&quot;x&quot;, Num(3), Id(&quot;x&quot;))))
+val test3 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;x&quot;, 3, &quot;x&quot;))) // another test
+
+// assert(eval2(test3) == 8) // Bang! Result is 10 instead!
 </code></pre>
 <p>What went wrong here? Our substitution algorithm respected binding instances, but not their scope. In the sample expression, the with
-introduces a new scope for the inner x . The scope of the outer x is shadowed or masked by the inner binding. Because substitution
-doesn’t recognize this possibility, it incorrectly substitutes the inner x.</p>
+introduces a new scope for the inner <code>x</code>. The scope of the outer <code>x</code> is shadowed or masked by the inner binding. Because substitution
+doesn’t recognize this possibility, it incorrectly substitutes the inner <code>x</code>.</p>
 <h3 id="substitution-take-3"><a class="header" href="#substitution-take-3">Substitution, take 3</a></h3>
-<p>To substitute identiﬁer i in e with expression v, replace all non-binding identiﬁers in e having
-the name i with the expression v, unless the identiﬁer is in a scope different from that introduced by i.</p>
+<p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all non-binding identifiers in <code>e</code> having
+the name <code>i</code> with the expression <code>v</code>, unless the identiﬁer is in a scope different from that introduced by <code>i</code>.</p>
 <pre><code class="language-scala">val subst3 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
@@ -297,7 +296,6 @@ the name i with the expression v, unless the identiﬁer is in a scope different
                                     // what if we forget to substitute into the body?
                                     body)
 }
-// subst3: (Exp, String, Num) =&gt; Exp = &lt;function3&gt;
 
 def eval3 = makeEval(subst3)
 
@@ -305,23 +303,24 @@ assert(eval3(test) == 10)
 
 assert(eval3(test2) == 15)
 
-assert(eval3(test3) == 8) // Success! // Success!
+assert(eval3(test3) == 8) // Success!
 
 val test4 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;y&quot;, 3,&quot;x&quot;)))
-// test4: With = With(&quot;x&quot;, Num(5), Add(Id(&quot;x&quot;), With(&quot;y&quot;, Num(3), Id(&quot;x&quot;))))
+
+// assert(eval3(test4) == 10) // Bang! unbound variable: &quot;x&quot;
 </code></pre>
-<p>The inner expression should result in an error, because x has no value. Once again, substitution has changed a correct program into
+<p>The inner expression should result in an error, because <code>x</code> has no value. Once again, substitution has changed a correct program into
 an incorrect one!
-Let’s understand what went wrong. Why didn’t we substitute the inner x? Substitution halts at the with because, by deﬁnition, every
-with introduces a new scope, which we said should delimit substitution. But this with contains an instance of x, which we very much
-want substituted! So which is it — substitute within nested scopes or not? Actually, the two examples above should reveal that our
-latest deﬁnition for substitution, which may have seemed sensible at ﬁrst blush, is too draconian: it rules out substitution within
+Let’s understand what went wrong. Why didn’t we substitute the inner <code>x</code>? Substitution halts at the with because, by deﬁnition, every
+with introduces a new scope, which we said should delimit substitution. But this with contains an instance of <code>x</code>, which we very much
+want substituted! So which is it - substitute within nested scopes or not? Actually, the two examples above should reveal that our
+latest deﬁnition for substitution, which may have seemed sensible at first blush, is too draconian: it rules out substitution within
 any nested scopes.</p>
 <h3 id="substitution-take-4"><a class="header" href="#substitution-take-4">Substitution, take 4</a></h3>
-<p>To substitute identiﬁer i in e with expression v, replace all non-binding identiﬁers in e having
-the name i with the expression v, except within nested scopes of i.
+<p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all non-binding identifiers in <code>e</code> having
+the name <code>i</code> with the expression <code>v</code>, except within nested scopes of <code>i</code>.
 Finally, we have a version of substitution that works. A different, more succinct way of phrasing this deﬁnition is:
-&quot;To substitute identiﬁer i in e with expression v, replace all free instances of i in e with v.&quot;</p>
+&quot;To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all free instances of <code>i</code> in <code>e</code> with <code>v</code>.&quot;</p>
 <pre><code class="language-scala">val subst4 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
@@ -333,7 +332,6 @@ Finally, we have a version of substitution that works. A different, more succinc
                                            subst4(xdef,i,v),
                                            subst4(body,i,v))
 }
-// subst4: (Exp, String, Num) =&gt; Exp = &lt;function3&gt;
 
 def eval4 = makeEval(subst4)
 
@@ -343,16 +341,17 @@ assert(eval4(test2) == 15)
 
 assert(eval4(test3) == 8)
 
-assert(eval4(test4) == 10) // Success! // Success!
+assert(eval4(test4) == 10) // Success!
 
 val test5 = With(&quot;x&quot;, 5, With(&quot;x&quot;, &quot;x&quot;, &quot;x&quot;))
-// test5: With = With(&quot;x&quot;, Num(5), With(&quot;x&quot;, Id(&quot;x&quot;), Id(&quot;x&quot;)))
+
+// assert(eval4(test5) == 5) // Bang! unbound variable &quot;x&quot;
 </code></pre>
-<p>This program should evaluate to 5, but it too halts with an error. This is because we prematurely stopped substituting for x occuring in
+<p>This program should evaluate to <code>5</code>, but it too halts with an error. This is because we prematurely stopped substituting for <code>x</code> occuring in
 a bound position. We should substitute in the named expression of a with even if the with in question deﬁnes a new scope for the identiﬁer
 being substituted, because its named expression is still in the scope of the enclosing binding of the identiﬁer.</p>
 <h3 id="substitution-take-5"><a class="header" href="#substitution-take-5">Substitution, take 5</a></h3>
-<p>We ﬁnally get a valid
+<p>We finally get a valid
 programmatic deﬁnition of substitution (relative to the language we have so far):</p>
 <pre><code class="language-scala">val subst5 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
     case Num(n) =&gt; e
@@ -364,7 +363,6 @@ programmatic deﬁnition of substitution (relative to the language we have so fa
                                    subst5(xdef,i,v),
                                    if (x == i) body else subst5(body,i,v))
 }
-// subst5: (Exp, String, Num) =&gt; Exp = &lt;function3&gt;
 
 def eval5 = makeEval(subst5)
 
