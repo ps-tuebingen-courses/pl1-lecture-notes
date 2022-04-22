@@ -4,7 +4,7 @@ The content of this chapter is available as a scala file [here.](./desugaring.sc
 
 ## Desugaring
 
-You have already seen the basic structure of an interpreter by means of an interpreter for a language of arithmetic `Exp`s:
+You have already seen the basic structure of an interpreter by means of an interpreter for a language of arithmetic `Exps`:
 
 ```scala mdoc
 object AE {
