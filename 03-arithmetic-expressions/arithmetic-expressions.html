@@ -163,7 +163,6 @@ case class Id(x: String) extends Exp
 </code></pre>
 <p>Here is a sample program written in this language, directly written down using case class constructors:</p>
 <pre><code class="language-scala">val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
-// test0: Add = Add(Mul(Id(&quot;x&quot;), Num(2)), Add(Id(&quot;y&quot;), Id(&quot;y&quot;)))
 </code></pre>
 <p>With a proper parser we could choose a syntax like <code>x*2+y+y</code>. We do not care much about concrete syntax and parsing, though.</p>
 <p>That said, to make writing examples less verbose, Scala's implicits come to the rescue.
@@ -173,7 +172,6 @@ implicit def sym2exp(x: String) = Id(x)
 </code></pre>
 <p>to lift integers and Strings to expressions. Using these implicits, the example can be written as:</p>
 <pre><code class="language-scala">val test = Add(Mul(&quot;x&quot;,2),Add(&quot;y&quot;,&quot;y&quot;))
-// test: Add = Add(Mul(Id(&quot;x&quot;), Num(2)), Add(Id(&quot;y&quot;), Id(&quot;y&quot;)))
 </code></pre>
 <p>To give meaning to identifiers, we use <em>environments</em>. Environments are mappings from Identifiers (which we represent as Strings) to Values.
 In our simple language the only values are integers, hence:</p>
@@ -195,7 +193,6 @@ between these alternatives matters, since they support different dimensions of e
 topics in the lecture. To try the example, we need a sample environment that gives values to the (free) variables in the sample expression.</p>
 <p>The test environment also illustrates how Scala supports direct definitions of constant maps.</p>
 <pre><code class="language-scala">val testEnv = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
-// testEnv: Map[String, Int] = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
 </code></pre>
 <p>We can automatically test our evaluator using assert :</p>
 <pre><code class="language-scala">val exa = eval(test, testEnv)
@@ -234,7 +231,6 @@ def foldExp[T](v: VisitorAE[T], e: ExpAE): T = {
 </code></pre>
 <p>Here is our evaluator from above rephrased using the visitor infrastructure.</p>
 <pre><code class="language-scala">val evalVisitorAE = VisitorAE[Int](x =&gt; x, (a, b) =&gt; a + b)
-// evalVisitorAE: VisitorAE[Int] = VisitorAE(&lt;function1&gt;, &lt;function2&gt;)
 </code></pre>
 <p>We can of course restore the original interface of <code>eval</code> using <code>foldExp</code>:</p>
 <pre><code class="language-scala">def eval(e: ExpAE) = foldExp(evalVisitorAE, e)
@@ -246,33 +242,13 @@ assert(exaVisitorAE == 6)
 </code></pre>
 <p>We can also apply other algorithms using visitors, such as counting the number of <code>NumAE</code> literals, or printing to a string:</p>
 <pre><code class="language-scala">val countVisitorAE = VisitorAE[Int]( _=&gt;1, _+_)
-// countVisitorAE: VisitorAE[Int] = VisitorAE(&lt;function1&gt;, &lt;function2&gt;)
 val printVisitorAE = VisitorAE[String](_.toString, &quot;(&quot;+_+&quot;+&quot;+_+&quot;)&quot;)
-// printVisitorAE: VisitorAE[String] = VisitorAE(&lt;function1&gt;, &lt;function2&gt;)
 </code></pre>
 <p>Let's now try the same with the AE language with identifiers. It all works in the same way:</p>
 <pre><code class="language-scala">case class Visitor[T](num: Int =&gt; T, add: (T, T) =&gt; T, mul: (T, T) =&gt; T, id: String =&gt; T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
-// expVisitor: Visitor[Exp] = Visitor(
-//   &lt;function1&gt;,
-//   &lt;function2&gt;,
-//   &lt;function2&gt;,
-//   &lt;function1&gt;
-// )
 val countVisitor = Visitor[Int](_=&gt;1, _ + _, _ + _, _ =&gt; 0)
-// countVisitor: Visitor[Int] = Visitor(
-//   &lt;function1&gt;,
-//   &lt;function2&gt;,
-//   &lt;function2&gt;,
-//   &lt;function1&gt;
-// )
 val printVisitor = Visitor[String](_.toString, &quot;(&quot; + _ + &quot;+&quot; + _ + &quot;)&quot;, _ + &quot;*&quot; + _, _.x)
-// printVisitor: Visitor[String] = Visitor(
-//   &lt;function1&gt;,
-//   &lt;function2&gt;,
-//   &lt;function2&gt;,
-//   &lt;function1&gt;
-// )
 
 def foldExp[T](v: Visitor[T], e: Exp) : T = {
   e match {
@@ -282,8 +258,8 @@ def foldExp[T](v: Visitor[T], e: Exp) : T = {
     case Id(x) =&gt; v.id(x)
   }
 }
-
-def countNums(e: Exp) = foldExp(countVisitor, e)
+</code></pre>
+<pre><code class="language-scala">def countNums(e: Exp) = foldExp(countVisitor, e)
 
 val exaCount = countNums(test)
 // exaCount: Int = 1
@@ -300,12 +276,6 @@ higher-order function is called <em>currying</em>.</p>
      a(env) * b(env),
    x =&gt; env =&gt;
      env(x))
-// evalVisitor: Visitor[Env =&gt; Int] = Visitor(
-//   &lt;function1&gt;,
-//   &lt;function2&gt;,
-//   &lt;function2&gt;,
-//   &lt;function1&gt;
-// )
 </code></pre>
 
                     </main>

@@ -7,12 +7,12 @@ case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Mul(lhs: Exp, rhs: Exp) extends Exp
 case class Id(x: String) extends Exp
 
- val test0 = Add(Mul(Id("x"),Num(2)),Add(Id("y"),Id("y")))
+val test0 = Add(Mul(Id("x"),Num(2)),Add(Id("y"),Id("y")))
 
 implicit def num2exp(n: Int) = Num(n)
 implicit def sym2exp(x: String) = Id(x)
 
- val test = Add(Mul("x",2),Add("y","y"))
+val test = Add(Mul("x",2),Add("y","y"))
 
 type Env = Map[String,Int]
 
@@ -67,12 +67,7 @@ def foldExp[T](v: Visitor[T], e: Exp) : T = {
     case Id(x) => v.id(x)
   }
 }
-
-def countNums(e: Exp) = foldExp(countVisitor, e)
-
-val exaCount = countNums(test)
-assert(exaCount == 1)
-
+```scala mdoc
 val evalVisitor = Visitor[Env=>Int](
    env => _ ,
    (a, b) => env =>
