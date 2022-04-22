@@ -14,7 +14,7 @@ jobs:
         fetch-depth: 0
 
     - name: Download Latest Version Questionnaire Module
-      run: curl -ssL -O https://github.com/se-tuebingen/interactive-textbooks/releases/latest/download/questionnaire.js
+      run: sh download_questionnaire_module.sh
 
     - name: Install mdbook
       run: |
