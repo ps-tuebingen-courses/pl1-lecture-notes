@@ -145,7 +145,7 @@
                         <h1 id="desugaring"><a class="header" href="#desugaring">Desugaring</a></h1>
 <p>The content of this chapter is available as a scala file <a href="./desugaring.scala">here.</a></p>
 <h2 id="desugaring-1"><a class="header" href="#desugaring-1">Desugaring</a></h2>
-<p>You have already seen the basic structure of an interpreter by means of an interpreter for a language of arithmetic Exps:</p>
+<p>You have already seen the basic structure of an interpreter by means of an interpreter for a language of arithmetic <code>Exp</code>s:</p>
 <pre><code class="language-scala">object AE {
   // Abstract Syntax Tree
   sealed trait Exp // we use &quot;sealed&quot; to get completeness checks for pattern matching
@@ -168,12 +168,12 @@
 a core language and syntactic sugar.</p>
 <p>For illustration, consider the following proposed extensions to the language:</p>
 <ol>
-<li>Mult</li>
-<li>Sub</li>
-<li>Unary Negation 
-Extension number 1 is a good example for a core language extension. We have no way of expressing mult in terms of the existing constructs
-(if we had some looping construct we could express mult as repeated Add but we do not have loops).</li>
+<li><code>Mult</code></li>
+<li><code>Sub</code></li>
+<li>Unary Negation </li>
 </ol>
+<p>Extension number 1 is a good example for a core language extension. We have no way of expressing <code>Mult</code> in terms of the existing constructs
+(if we had some looping construct we could express <code>Mult</code> as repeated <code>Add</code> but we do not have loops).</p>
 <p>Hence we add this language construct to the (core) language:</p>
 <pre><code class="language-scala">object MAE {
   // Abstract Syntax Tree
@@ -193,7 +193,7 @@ Extension number 1 is a good example for a core language extension. We have no w
     }
 }
 </code></pre>
-<p>Let us now consider extension #2, sub. One way to support sub is to add it to the core language, just like mult: </p>
+<p>Let us now consider extension #2, <code>Sub</code>. One way to support sub is to add it to the core language, just like <code>Mult</code>:</p>
 <pre><code class="language-scala">object SMAE {
   // Abstract Syntax Tree
   sealed trait Exp

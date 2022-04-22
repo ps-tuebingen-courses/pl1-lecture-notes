@@ -78,7 +78,12 @@ def foldExp[T](v: Visitor[T], e: Exp) : T = {
     case Id(x) => v.id(x)
   }
 }
-```scala mdoc
+
+def countNums(e: Exp) = foldExp(countVisitor, e)
+
+val exaCount = countNums(test)
+assert(exaCount == 1)
+
 val evalVisitor = Visitor[Env=>Int](
    env => _ ,
    (a, b) => env =>
