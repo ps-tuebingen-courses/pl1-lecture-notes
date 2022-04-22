@@ -192,6 +192,7 @@ def foldExp[T](v: Visitor[T], e: Exp) : T = {
   }
 }
 ```
+
 ```scala mdoc
 def countNums(e: Exp) = foldExp(countVisitor, e)
 

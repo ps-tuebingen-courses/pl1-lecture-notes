@@ -4,8 +4,7 @@ The content of this chapter is available as a scala file [here.](./desugaring.sc
 
 ## Desugaring
 
-You have already seen the basic structure of an interpreter by means of an interpreter for a language of arithmetic Exps:
-
+You have already seen the basic structure of an interpreter by means of an interpreter for a language of arithmetic `Exp`s:
 
 ```scala mdoc
 object AE {
@@ -31,11 +30,12 @@ In this lecture we want to study the technique of desugaring as a means to struc
 a core language and syntactic sugar.
  
 For illustration, consider the following proposed extensions to the language:
-  1. Mult
-  2. Sub
+  1. `Mult`
+  2. `Sub`
   3. Unary Negation 
-Extension number 1 is a good example for a core language extension. We have no way of expressing mult in terms of the existing constructs
-(if we had some looping construct we could express mult as repeated Add but we do not have loops).
+
+Extension number 1 is a good example for a core language extension. We have no way of expressing `Mult` in terms of the existing constructs
+(if we had some looping construct we could express `Mult` as repeated `Add` but we do not have loops).
  
 Hence we add this language construct to the (core) language:
 
@@ -59,7 +59,7 @@ object MAE {
 }
 ```
 
-Let us now consider extension #2, sub. One way to support sub is to add it to the core language, just like mult: 
+Let us now consider extension #2, `Sub`. One way to support sub is to add it to the core language, just like `Mult`:
 
 ```scala mdoc
 object SMAE {
