@@ -803,12 +803,10 @@ assert(eval5(test5) == 5) // Success!
 </ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="first-order-functions"><a class="header" href="#first-order-functions">First order functions</a></h1>
 <p>The content of this chapter is available as a scala file <a href="06-first-order-functions/./first-order-functions.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-</code></pre>
 <h2 id="first-order-functions-1"><a class="header" href="#first-order-functions-1">First-Order Functions</a></h2>
-<p>In the last lecture we have seen how we can give commonly occuring (sub)expressions a name via the &quot;with&quot; construct. Often, however,
+<p>In the last lecture we have seen how we can give commonly occuring (sub)expressions a name via the <code>With</code> construct. Often, however,
 we can identify <em>patterns</em> of expressions that occur in many places, such as <code>5*5/2</code>, <code>7*7/2</code> and <code>3*3/2</code>, the common pattern
-being <code>x*x/2</code>. In this case, the abstraction capabilities of <code>with</code> are not sufficient.
+being <code>x*x/2</code>. In this case, the abstraction capabilities of <code>With</code> are not sufficient.
 One way to enable more powerful abstractions are <em>functions</em>. Depending on the context of use and the interaction with other language
 features (such as imperative features or objects), functions are also sometimes called <em>procedures</em> or <em>methods</em>.
 Here we consider so-called first-order functions, that - unlike higher-order functions - are not expressions and can hence not be passed
@@ -828,22 +826,18 @@ The following definitions are the language we have analyzed so far</p>
   implicit def string2exp(x: String) = Id(x)
 
 
-/**
-The new language constructs for first-order functions:
-*/
+  /** The new language constructs for first-order functions: */
   case class Call(f: String, args: List[Exp]) extends Exp // functions are called by name
-
-/**
-A function has a number of formal args and a body. A first-order function also
-has a name. To make the invariant that there can only be one function for each
-name explicit, we store functions in the form of a map from function names to FunDefs:
-*/
 
   case class FunDef(args: List[String], body: Exp)
   type Funs = Map[String,FunDef]
 }
 import Syntax._
 </code></pre>
+<p>A function has a number of formal args and a body. Note that a first-order function also
+has a name. To make the invariant that there can only be one function for each
+name explicit, we have stored functions in the form of a map from function names to
+<code>FunDefs</code> above.</p>
 <p>The substitution for the new language is a straightforward extension of the former one.</p>
 <pre><code class="language-scala">def subst(e: Exp,i: String,v: Num) : Exp =  e match {
     case Num(n) =&gt; e
@@ -873,56 +867,35 @@ We pass the map of functions as an additional parameter.</p>
      // If we have only a single argument &quot;fd.arg&quot; and a single argument value &quot;varg&quot;,
      // the next line of code is equivalent to:
      // val substbody = subst(fd.body, fd.arg, Num(varg))
-     val substbody = fd.args.zip(vargs).foldLeft(fd.body)( (b,av) =&gt; subst(b,av._1,Num(av._2)))
+     val substbody = fd.args.zip(vargs).foldLeft(fd.body)( (b,av) =&gt; subst(b,av._1,Num(av._2)) )
      eval(funs,substbody)
   }
 }
 </code></pre>
-<p>Is the extension really so straightforward?  It can be seen in the last line of our definition for <code>subst</code> that variable substitution
-deliberately ignores the function name <code>f</code>.  The substitution for <code>f</code> instead is handled separately inside <code>eval</code>.  We say in this
-case that function names and variable names live in different &quot;name spaces&quot;.  An alternative would be to have them share one namespace.
-As an exercise, think about how to support a common namespace for function names and variable names.</p>
+<p>Is the extension really so straightforward?  It can be seen in the last line of our
+definition for <code>subst</code> that variable substitution deliberately ignores the function
+name <code>f</code>. The substitution for <code>f</code> instead is handled separately inside <code>eval</code>.
+We say in this case that function names and variable names live in different &quot;name spaces&quot;.
+An alternative would be to have them share one namespace. As an exercise, think about how
+to support a common namespace for function names and variable names.</p>
 <p>A test case:</p>
 <pre><code class="language-scala">val someFuns = Map( &quot;adder&quot; -&gt; FunDef(List(&quot;a&quot;,&quot;b&quot;), Add(&quot;a&quot;,&quot;b&quot;)),
                  &quot;doubleadder&quot; -&gt; FunDef(List(&quot;a&quot;,&quot;x&quot;), Add(Call(&quot;adder&quot;, List(&quot;a&quot;,5)),Call(&quot;adder&quot;, List(&quot;x&quot;,7)))))
-// someFuns: Map[String, FunDef] = Map(
-//   &quot;adder&quot; -&gt; FunDef(List(&quot;a&quot;, &quot;b&quot;), Add(Id(&quot;a&quot;), Id(&quot;b&quot;))),
-//   &quot;doubleadder&quot; -&gt; FunDef(
-//     List(&quot;a&quot;, &quot;x&quot;),
-//     Add(
-//       Call(&quot;adder&quot;, List(Id(&quot;a&quot;), Num(5))),
-//       Call(&quot;adder&quot;, List(Id(&quot;x&quot;), Num(7)))
-//     )
-//   )
-// )
-assert( eval(someFuns,Call(&quot;doubleadder&quot;,List(2,3))) == 17)
+</code></pre>
+<pre><code class="language-scala">val callSomeFuns = eval(someFuns,Call(&quot;doubleadder&quot;,List(2,3)))
+// callSomeFuns: Int = 17
+assert( callSomeFuns == 17)
 </code></pre>
 <h3 id="the-scope-of-function-definitions"><a class="header" href="#the-scope-of-function-definitions">The scope of function definitions:</a></h3>
 <p>As can be seen in the example above, each function can &quot;see&quot; the other functions. We say that in this language functions have a <em>global scope</em>.
 Exercise: Can a function also invoke itself? Is this useful?
 We will now study an environment-based version of the interpreter. To motivate environments, consider the following sample program:</p>
 <pre><code class="language-scala">val testProg = With(&quot;x&quot;, 1, With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(&quot;x&quot;,Add(&quot;y&quot;,&quot;z&quot;)))))
-// testProg: With = With(
-//   &quot;x&quot;,
-//   Num(1),
-//   With(&quot;y&quot;, Num(2), With(&quot;z&quot;, Num(3), Add(Id(&quot;x&quot;), Add(Id(&quot;y&quot;), Id(&quot;z&quot;)))))
-// )
 </code></pre>
 <p>When considering the <code>With</code> case of the interpreter, the interpreter will subsequently produce and evaluate the following intermediate expressions:</p>
 <pre><code class="language-scala">val testProgAfterOneStep     = With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(1,Add(&quot;y&quot;,&quot;z&quot;))))
-// testProgAfterOneStep: With = With(
-//   &quot;y&quot;,
-//   Num(2),
-//   With(&quot;z&quot;, Num(3), Add(Num(1), Add(Id(&quot;y&quot;), Id(&quot;z&quot;))))
-// )
 val testProgAfterTwoSteps    = With(&quot;z&quot;, 3, Add(1,Add(2,&quot;z&quot;)))
-// testProgAfterTwoSteps: With = With(
-//   &quot;z&quot;,
-//   Num(3),
-//   Add(Num(1), Add(Num(2), Id(&quot;z&quot;)))
-// )
 val testProgAfterThreeSteps  = Add(1,Add(2,3))
-// testProgAfterThreeSteps: Add = Add(Num(1), Add(Num(2), Num(3)))
 </code></pre>
 <p>At this point only pure arithmetic is left. But we see that the interpreter had to apply subsitution three times. In general, if the
 program size is n, then the interpreter may perform up to O(n) substitutions, each of which takes O(n) time. This quadratic complexity
@@ -954,7 +927,9 @@ encounter bound identiﬁers during interpretation.  How do we handle them?  We 
   }
 }
 
-assert( evalWithEnv(someFuns,Map.empty, Call(&quot;doubleadder&quot;,List(2,3))) == 17)
+val evalEnvSomeFuns = evalWithEnv(someFuns,Map.empty, Call(&quot;doubleadder&quot;,List(2,3)))
+// evalEnvSomeFuns: Int = 17
+assert( evalEnvSomeFuns == 17)
 </code></pre>
 <p>In the interpreter above, we have extended the empty environment when constructing <code>newenv</code>. A conceivable alternative is to
 extend <code>env</code> instead, like so:</p>
@@ -973,14 +948,16 @@ extend <code>env</code> instead, like so:</p>
   }
 }
 
-assert( evalDynScope(someFuns,Map.empty, Call(&quot;doubleadder&quot;,List(2,3))) == 17)
+val evalDynSomeFuns = evalDynScope(someFuns,Map.empty, Call(&quot;doubleadder&quot;,List(2,3)))
+// evalDynSomeFuns: Int = 17
+assert( evalDynSomeFuns == 17)
 </code></pre>
 <p>Does this make a difference? Yes, it does. Here is an example:</p>
 <pre><code class="language-scala">val funnyFun = Map( &quot;funny&quot; -&gt; FunDef(List(&quot;a&quot;), Add(&quot;a&quot;,&quot;b&quot;)))
-// funnyFun: Map[String, FunDef] = Map(
-//   &quot;funny&quot; -&gt; FunDef(List(&quot;a&quot;), Add(Id(&quot;a&quot;), Id(&quot;b&quot;)))
-// )
-assert(evalDynScope(funnyFun, Map.empty, With(&quot;b&quot;, 3, Call(&quot;funny&quot;,List(4)))) == 7)
+</code></pre>
+<pre><code class="language-scala">val evalDynFunnyFun = evalDynScope(funnyFun, Map.empty, With(&quot;b&quot;, 3, Call(&quot;funny&quot;,List(4))))
+// evalDynFunnyFun: Int = 7
+assert(evalDynFunnyFun == 7)
 </code></pre>
 <p>Obviously this interpreter is &quot;buggy&quot; in the sense that it does not agree with the substitution-based interpreter. But is this semantics reasonable?
 Let's introduce some terminology to make the discussion simpler:</p>

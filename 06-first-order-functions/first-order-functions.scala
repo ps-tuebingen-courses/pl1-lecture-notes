@@ -12,16 +12,8 @@ object Syntax {
   implicit def string2exp(x: String) = Id(x)
 
 
-/**
-The new language constructs for first-order functions:
-*/
+  /** The new language constructs for first-order functions: */
   case class Call(f: String, args: List[Exp]) extends Exp // functions are called by name
-
-/**
-A function has a number of formal args and a body. A first-order function also
-has a name. To make the invariant that there can only be one function for each
-name explicit, we store functions in the form of a map from function names to FunDefs:
-*/
 
   case class FunDef(args: List[String], body: Exp)
   type Funs = Map[String,FunDef]
@@ -54,14 +46,16 @@ def eval(funs: Funs, e: Exp) : Int = e match {
      // If we have only a single argument "fd.arg" and a single argument value "varg",
      // the next line of code is equivalent to:
      // val substbody = subst(fd.body, fd.arg, Num(varg))
-     val substbody = fd.args.zip(vargs).foldLeft(fd.body)( (b,av) => subst(b,av._1,Num(av._2)))
+     val substbody = fd.args.zip(vargs).foldLeft(fd.body)( (b,av) => subst(b,av._1,Num(av._2)) )
      eval(funs,substbody)
   }
 }
 
 val someFuns = Map( "adder" -> FunDef(List("a","b"), Add("a","b")),
                  "doubleadder" -> FunDef(List("a","x"), Add(Call("adder", List("a",5)),Call("adder", List("x",7)))))
-assert( eval(someFuns,Call("doubleadder",List(2,3))) == 17)
+
+val callSomeFuns = eval(someFuns,Call("doubleadder",List(2,3)))
+assert( callSomeFuns == 17)
 
 val testProg = With("x", 1, With("y", 2, With("z", 3, Add("x",Add("y","z")))))
 
@@ -87,7 +81,8 @@ def evalWithEnv(funs: Funs, env: Env, e: Exp) : Int = e match {
   }
 }
 
-assert( evalWithEnv(someFuns,Map.empty, Call("doubleadder",List(2,3))) == 17)
+val evalEnvSomeFuns = evalWithEnv(someFuns,Map.empty, Call("doubleadder",List(2,3)))
+assert( evalEnvSomeFuns == 17)
 
 def evalDynScope(funs: Funs, env: Env, e: Exp) : Int = e match {
   case Num(n) => n
@@ -104,8 +99,11 @@ def evalDynScope(funs: Funs, env: Env, e: Exp) : Int = e match {
   }
 }
 
-assert( evalDynScope(someFuns,Map.empty, Call("doubleadder",List(2,3))) == 17)
+val evalDynSomeFuns = evalDynScope(someFuns,Map.empty, Call("doubleadder",List(2,3)))
+assert( evalDynSomeFuns == 17)
 
 val funnyFun = Map( "funny" -> FunDef(List("a"), Add("a","b")))
-assert(evalDynScope(funnyFun, Map.empty, With("b", 3, Call("funny",List(4)))) == 7)
+
+val evalDynFunnyFun = evalDynScope(funnyFun, Map.empty, With("b", 3, Call("funny",List(4))))
+assert(evalDynFunnyFun == 7)
 
