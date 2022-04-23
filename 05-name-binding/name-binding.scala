@@ -15,10 +15,6 @@ implicit def string2exp(x: String) = Id(x)
 
 val test = With("x", 5, Add("x","x"))
 
-case With(x, xdef, body) => eval(subst(body,x,Num(eval(xdef))))
-for a function `subst` with signature
-subst: (Exp,String,Num) => Exp
-The type of the third parameter is `Num` instead of `Exp` because it is more difficult to get substitution correct when arbitrary
 def makeEval(subst: (Exp,String,Num)=>Exp) : Exp=>Int = {
   def eval(e: Exp) : Int = e match {
     case Num(n) => n

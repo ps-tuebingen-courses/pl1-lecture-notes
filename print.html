@@ -616,10 +616,10 @@ they are <em>equivalent</em> in the sense that when evaluated, they will produce
 somehow equivalent programs are an important tool for the study of programs, and of programming languages. Often, if we know which
 programs behave identically, we understand better how programs behave in general. We will see more examples of this in this lecture.
 Hence, the implementation of the <code>With</code> case of our interpreter should be something like:</p>
-<pre><code class="language-scala">case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef))))
+<pre><code>case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef))))
 </code></pre>
 <p>for a function <code>subst</code> with signature</p>
-<pre><code class="language-scala">subst: (Exp,String,Num) =&gt; Exp
+<pre><code>subst: (Exp,String,Num) =&gt; Exp
 </code></pre>
 <p>The type of the third parameter is <code>Num</code> instead of <code>Exp</code> because it is more difficult to get substitution correct when arbitrary
 expressions can be inserted (accidential name capture problem, more about that later).
@@ -1199,7 +1199,7 @@ assert(evalTest2 == Num(8))
 The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.</p>
 <p>What can we do to fix this problem?
 We could try to replace the second line in the &quot;App&quot; case by</p>
-<pre><code class="language-scala">case Fun(x,body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a,env)))
+<pre><code>case Fun(x,body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a,env)))
 </code></pre>
 <p>but this would again introduce dynamic scoping.</p>
 <p>Hence, when we evaluate a function, we do not only have to store the function, but also the environment active when the function was

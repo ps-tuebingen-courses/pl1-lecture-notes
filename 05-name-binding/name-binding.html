@@ -196,10 +196,10 @@ they are <em>equivalent</em> in the sense that when evaluated, they will produce
 somehow equivalent programs are an important tool for the study of programs, and of programming languages. Often, if we know which
 programs behave identically, we understand better how programs behave in general. We will see more examples of this in this lecture.
 Hence, the implementation of the <code>With</code> case of our interpreter should be something like:</p>
-<pre><code class="language-scala">case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef))))
+<pre><code>case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef))))
 </code></pre>
 <p>for a function <code>subst</code> with signature</p>
-<pre><code class="language-scala">subst: (Exp,String,Num) =&gt; Exp
+<pre><code>subst: (Exp,String,Num) =&gt; Exp
 </code></pre>
 <p>The type of the third parameter is <code>Num</code> instead of <code>Exp</code> because it is more difficult to get substitution correct when arbitrary
 expressions can be inserted (accidential name capture problem, more about that later).

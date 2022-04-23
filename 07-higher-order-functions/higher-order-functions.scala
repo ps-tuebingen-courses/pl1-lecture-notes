@@ -134,8 +134,6 @@ assert(evalTest2 == Num(8))
 
 val evalEnv0Test2 = evalWithEnv0(test2,Map.empty)
 
-case Fun(x,body) => evalWithEnv0(body, env + (x -> evalWithEnv0(a,env)))
-
 sealed abstract class Value
 type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
