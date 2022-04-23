@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./recursive-functions.scala)
 
-```scala
+```scala mdoc
 import scala.language.implicitConversions
 
 /**
@@ -20,10 +20,10 @@ object Syntax {
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
   case class Fun(param: String, body: Exp) extends Exp
-  case class App (funExpr: Exp, argExpr: Exp) extends Exp
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
-  val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", App("sum", Add("n",-1))))), App("sum", 10))
+  val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
 
   /**
   However, sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
@@ -40,7 +40,7 @@ import Syntax._
 Using letrec, our example can be expressed as follows.
 */
 
-val sum = Letrec("sum", Fun("n", If0("n", 0, Add("n", App("sum", Add("n",-1))))), App("sum", 10))
+val sum = Letrec("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
 
 /**
 Let's now consider the semantics of letrec. Consider the evaluation of ``Letrec(x,e,body)`` in an environment ``env``.
@@ -92,7 +92,7 @@ def eval(e: Exp, env: Env) : Value = e match {
     }
   }
   case f@Fun(param,body) => ClosureV(f, env)
-  case App(f,a) => eval(f,env) match {
+  case Ap(f,a) => eval(f,env) match {
     case ClosureV(f,closureEnv) => eval(f.body, closureEnv + (f.param -> eval(a,env)))
     case _ => sys.error("can only apply functions")
   }
@@ -110,9 +110,9 @@ The sum of numbers from 1 to 10 should be 55.
 assert(eval(sum, Map.empty) == NumV(55))
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
-var func = Fun("n", If0("n", 0, App("func", Add("n", -1))))
-var test1 = Letrec("func", func, App("func", 1))
-var test2 = Letrec("func", App(Fun("notUsed", func), 0), App("func", 1))
+var func = Fun("n", If0("n", 0, Ap("func", Add("n", -1))))
+var test1 = Letrec("func", func, Ap("func", 1))
+var test2 = Letrec("func", Ap(Fun("notUsed", func), 0), Ap("func", 1))
 assert(eval(test1, Map()) == NumV(0))
 assert(eval(test2, Map()) == NumV(0))
 ```

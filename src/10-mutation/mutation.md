@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./mutation.scala)
 
-```scala
+```scala mdoc
 import scala.language.implicitConversions
 
 /**
@@ -27,8 +27,8 @@ object Syntax {
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
   case class Fun(param: String, body: Exp) extends Exp
-  case class App (funExpr: Exp, argExpr: Exp) extends Exp
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
   /**
   To add mutation to FAE, we add four language constructs:
@@ -69,7 +69,7 @@ example:
 val test2 = wth("a", NewBox(1),
               wth("f", Fun("x", Add("x", OpenBox("a"))),
                 Seq(SetBox("a",2),
-                  App("f", 5))))
+                  Ap("f", 5))))
 
 /**
 The mutation should affect the box stored in the closure bound to ``f``.  But with the implementation strategy described above it would not.
@@ -123,7 +123,7 @@ val test3 = wth("switch", NewBox(0),
              wth("toggle", Fun("dummy", If0(OpenBox("switch"),
                                           Seq(SetBox("switch", 1), 1),
                                           Seq(SetBox("switch", 0), 0))),
-                 Add(App("toggle",42), App("toggle",42))))
+                 Add(Ap("toggle",42), Ap("toggle",42))))
 
 /**
 This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
@@ -132,8 +132,8 @@ ID      Exp                     Value   Env             Store
 A       wth(..                          "switch" -> ..   1 -> NumV(0)
 B        wth(..                         "toggle" -> ..
 C         Add(..
-D          App("toggle")         1                       1 -> NumV(1)
-E          App("toggle")         0                       1 -> NumV(0)
+D          Ap("toggle")         1                       1 -> NumV(1)
+E          Ap("toggle")         0                       1 -> NumV(0)
 F         Add(0,1)              1
 Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
@@ -180,7 +180,7 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
          case _ => sys.error("can only multiply numbers")
        }
 
-  case App(f, a)
+  case Ap(f, a)
     => eval(f, env, s) match {
          case (ClosureV(f, closureEnv), s1)
            => eval(a, env, s1) match {

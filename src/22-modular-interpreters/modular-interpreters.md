@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./modular-interpreters.scala)
 
-```scala mdoc
+```scala
 import scala.language.higherKinds
 import scala.language.implicitConversions
 import scala.language.reflectiveCalls
