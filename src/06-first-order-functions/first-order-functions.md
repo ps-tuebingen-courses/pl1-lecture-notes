@@ -2,15 +2,15 @@
 
 The content of this chapter is available as a scala file [here.](./first-order-functions.scala)
 
-```scala mdoc
+```scala mdoc:invisible
 import scala.language.implicitConversions
 ```
 
 ## First-Order Functions
 
-In the last lecture we have seen how we can give commonly occuring (sub)expressions a name via the "with" construct. Often, however,
+In the last lecture we have seen how we can give commonly occuring (sub)expressions a name via the `With` construct. Often, however,
 we can identify _patterns_ of expressions that occur in many places, such as ``5*5/2``, ``7*7/2`` and ``3*3/2``, the common pattern
-being ``x*x/2``. In this case, the abstraction capabilities of ``with`` are not sufficient.
+being ``x*x/2``. In this case, the abstraction capabilities of `With` are not sufficient.
 One way to enable more powerful abstractions are _functions_. Depending on the context of use and the interaction with other language
 features (such as imperative features or objects), functions are also sometimes called _procedures_ or _methods_.
 Here we consider so-called first-order functions, that - unlike higher-order functions - are not expressions and can hence not be passed
@@ -32,22 +32,19 @@ object Syntax {
   implicit def string2exp(x: String) = Id(x)
 
 
-/**
-The new language constructs for first-order functions:
-*/
+  /** The new language constructs for first-order functions: */
   case class Call(f: String, args: List[Exp]) extends Exp // functions are called by name
-
-/**
-A function has a number of formal args and a body. A first-order function also
-has a name. To make the invariant that there can only be one function for each
-name explicit, we store functions in the form of a map from function names to FunDefs:
-*/
 
   case class FunDef(args: List[String], body: Exp)
   type Funs = Map[String,FunDef]
 }
 import Syntax._
 ```
+
+A function has a number of formal args and a body. Note that a first-order function also
+has a name. To make the invariant that there can only be one function for each
+name explicit, we have stored functions in the form of a map from function names to
+`FunDefs` above.
 
 The substitution for the new language is a straightforward extension of the former one.
 
@@ -83,24 +80,29 @@ def eval(funs: Funs, e: Exp) : Int = e match {
      // If we have only a single argument "fd.arg" and a single argument value "varg",
      // the next line of code is equivalent to:
      // val substbody = subst(fd.body, fd.arg, Num(varg))
-     val substbody = fd.args.zip(vargs).foldLeft(fd.body)( (b,av) => subst(b,av._1,Num(av._2)))
+     val substbody = fd.args.zip(vargs).foldLeft(fd.body)( (b,av) => subst(b,av._1,Num(av._2)) )
      eval(funs,substbody)
   }
 }
 ```
 
-Is the extension really so straightforward?  It can be seen in the last line of our definition for ``subst`` that variable substitution
-deliberately ignores the function name ``f``.  The substitution for ``f`` instead is handled separately inside ``eval``.  We say in this
-case that function names and variable names live in different "name spaces".  An alternative would be to have them share one namespace.
-As an exercise, think about how to support a common namespace for function names and variable names.
-
+Is the extension really so straightforward?  It can be seen in the last line of our
+definition for ``subst`` that variable substitution deliberately ignores the function
+name ``f``. The substitution for ``f`` instead is handled separately inside ``eval``.
+We say in this case that function names and variable names live in different "name spaces".
+An alternative would be to have them share one namespace. As an exercise, think about how
+to support a common namespace for function names and variable names.
 
 A test case:
 
-```scala mdoc
+```scala mdoc:silent
 val someFuns = Map( "adder" -> FunDef(List("a","b"), Add("a","b")),
                  "doubleadder" -> FunDef(List("a","x"), Add(Call("adder", List("a",5)),Call("adder", List("x",7)))))
-assert( eval(someFuns,Call("doubleadder",List(2,3))) == 17)
+```
+
+```scala mdoc
+val callSomeFuns = eval(someFuns,Call("doubleadder",List(2,3)))
+assert( callSomeFuns == 17)
 ```
 
 
@@ -110,13 +112,13 @@ As can be seen in the example above, each function can "see" the other functions
 Exercise: Can a function also invoke itself? Is this useful?
 We will now study an environment-based version of the interpreter. To motivate environments, consider the following sample program:
 
-```scala mdoc
+```scala mdoc:silent
 val testProg = With("x", 1, With("y", 2, With("z", 3, Add("x",Add("y","z")))))
 ```
 
 When considering the ``With`` case of the interpreter, the interpreter will subsequently produce and evaluate the following intermediate expressions:
 
-```scala mdoc
+```scala mdoc:silent
 val testProgAfterOneStep     = With("y", 2, With("z", 3, Add(1,Add("y","z"))))
 val testProgAfterTwoSteps    = With("z", 3, Add(1,Add(2,"z")))
 val testProgAfterThreeSteps  = Add(1,Add(2,3))
@@ -157,7 +159,8 @@ def evalWithEnv(funs: Funs, env: Env, e: Exp) : Int = e match {
   }
 }
 
-assert( evalWithEnv(someFuns,Map.empty, Call("doubleadder",List(2,3))) == 17)
+val evalEnvSomeFuns = evalWithEnv(someFuns,Map.empty, Call("doubleadder",List(2,3)))
+assert( evalEnvSomeFuns == 17)
 ```
 
 In the interpreter above, we have extended the empty environment when constructing ``newenv``. A conceivable alternative is to
@@ -179,14 +182,19 @@ def evalDynScope(funs: Funs, env: Env, e: Exp) : Int = e match {
   }
 }
 
-assert( evalDynScope(someFuns,Map.empty, Call("doubleadder",List(2,3))) == 17)
+val evalDynSomeFuns = evalDynScope(someFuns,Map.empty, Call("doubleadder",List(2,3)))
+assert( evalDynSomeFuns == 17)
 ```
 
 Does this make a difference? Yes, it does. Here is an example:
 
-```scala mdoc
+```scala mdoc:silent
 val funnyFun = Map( "funny" -> FunDef(List("a"), Add("a","b")))
-assert(evalDynScope(funnyFun, Map.empty, With("b", 3, Call("funny",List(4)))) == 7)
+```
+
+```scala mdoc
+val evalDynFunnyFun = evalDynScope(funnyFun, Map.empty, With("b", 3, Call("funny",List(4))))
+assert(evalDynFunnyFun == 7)
 ```
 
 Obviously this interpreter is "buggy" in the sense that it does not agree with the substitution-based interpreter. But is this semantics reasonable?
