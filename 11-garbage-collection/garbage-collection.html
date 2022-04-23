@@ -410,23 +410,32 @@ val test4 = wth(&quot;makedata&quot;, Fun(&quot;x&quot;, NewBox(NewBox(NewBox(&q
                             App(&quot;makedata&quot;, &quot;s&quot;)),
                     App(&quot;makedata&quot;, 4)))))
 // test4: Exp = App(
-//   Fun(
-//     &quot;makedata&quot;,
-//     Seq(
-//       App(Id(&quot;makedata&quot;), Num(1)),
-//       Seq(
-//         App(Id(&quot;makedata&quot;), Num(2)),
-//         Seq(
-//           App(
-//             Fun(&quot;s&quot;, App(Id(&quot;makedata&quot;), Id(&quot;s&quot;))),
-//             App(Id(&quot;makedata&quot;), Num(3))
+//   funExpr = Fun(
+//     param = &quot;makedata&quot;,
+//     body = Seq(
+//       e1 = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 1)),
+//       e2 = Seq(
+//         e1 = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 2)),
+//         e2 = Seq(
+//           e1 = App(
+//             funExpr = Fun(
+//               param = &quot;s&quot;,
+//               body = App(
+//                 funExpr = Id(name = &quot;makedata&quot;),
+//                 argExpr = Id(name = &quot;s&quot;)
+//               )
+//             ),
+//             argExpr = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 3))
 //           ),
-//           App(Id(&quot;makedata&quot;), Num(4))
+//           e2 = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 4))
 //         )
 //       )
 //     )
 //   ),
-//   Fun(&quot;x&quot;, NewBox(NewBox(NewBox(Id(&quot;x&quot;)))))
+//   argExpr = Fun(
+//     param = &quot;x&quot;,
+//     body = NewBox(e = NewBox(e = NewBox(e = Id(name = &quot;x&quot;))))
+//   )
 // )
 
 def runTest4 = eval(

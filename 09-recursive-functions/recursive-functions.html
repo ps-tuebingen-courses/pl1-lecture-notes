@@ -161,10 +161,10 @@ object Syntax {
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
   case class Fun(param: String, body: Exp) extends Exp
-  case class App (funExpr: Exp, argExpr: Exp) extends Exp
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
-  val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, App(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), App(&quot;sum&quot;, 10))
+  val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
 
   /**
   However, sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
@@ -181,7 +181,25 @@ import Syntax._
 Using letrec, our example can be expressed as follows.
 */
 
-val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, App(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), App(&quot;sum&quot;, 10))
+val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
+// sum: Letrec = Letrec(
+//   x = &quot;sum&quot;,
+//   e = Fun(
+//     param = &quot;n&quot;,
+//     body = If0(
+//       cond = Id(name = &quot;n&quot;),
+//       thenExp = Num(n = 0),
+//       elseExp = Add(
+//         lhs = Id(name = &quot;n&quot;),
+//         rhs = Ap(
+//           funExpr = Id(name = &quot;sum&quot;),
+//           argExpr = Add(lhs = Id(name = &quot;n&quot;), rhs = Num(n = -1))
+//         )
+//       )
+//     )
+//   ),
+//   body = Ap(funExpr = Id(name = &quot;sum&quot;), argExpr = Num(n = 10))
+// )
 
 /**
 Let's now consider the semantics of letrec. Consider the evaluation of ``Letrec(x,e,body)`` in an environment ``env``.
@@ -213,7 +231,7 @@ object Values {
   type Env = Map[String, ValueHolder]
 }
 
-import Values._  // such that we do not have to write Values.ValueHolder etc.
+import Values._  // such that we do not have to write Values.ValueHolder etc.  // such that we do not have to write Values.ValueHolder etc.
 
 
 /**
@@ -233,7 +251,7 @@ def eval(e: Exp, env: Env) : Value = e match {
     }
   }
   case f@Fun(param,body) =&gt; ClosureV(f, env)
-  case App(f,a) =&gt; eval(f,env) match {
+  case Ap(f,a) =&gt; eval(f,env) match {
     case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
@@ -251,9 +269,56 @@ The sum of numbers from 1 to 10 should be 55.
 assert(eval(sum, Map.empty) == NumV(55))
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
-var func = Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, App(&quot;func&quot;, Add(&quot;n&quot;, -1))))
-var test1 = Letrec(&quot;func&quot;, func, App(&quot;func&quot;, 1))
-var test2 = Letrec(&quot;func&quot;, App(Fun(&quot;notUsed&quot;, func), 0), App(&quot;func&quot;, 1))
+var func = Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Ap(&quot;func&quot;, Add(&quot;n&quot;, -1))))
+// func: Fun = Fun(
+//   param = &quot;n&quot;,
+//   body = If0(
+//     cond = Id(name = &quot;n&quot;),
+//     thenExp = Num(n = 0),
+//     elseExp = Ap(
+//       funExpr = Id(name = &quot;func&quot;),
+//       argExpr = Add(lhs = Id(name = &quot;n&quot;), rhs = Num(n = -1))
+//     )
+//   )
+// )
+var test1 = Letrec(&quot;func&quot;, func, Ap(&quot;func&quot;, 1))
+// test1: Letrec = Letrec(
+//   x = &quot;func&quot;,
+//   e = Fun(
+//     param = &quot;n&quot;,
+//     body = If0(
+//       cond = Id(name = &quot;n&quot;),
+//       thenExp = Num(n = 0),
+//       elseExp = Ap(
+//         funExpr = Id(name = &quot;func&quot;),
+//         argExpr = Add(lhs = Id(name = &quot;n&quot;), rhs = Num(n = -1))
+//       )
+//     )
+//   ),
+//   body = Ap(funExpr = Id(name = &quot;func&quot;), argExpr = Num(n = 1))
+// )
+var test2 = Letrec(&quot;func&quot;, Ap(Fun(&quot;notUsed&quot;, func), 0), Ap(&quot;func&quot;, 1))
+// test2: Letrec = Letrec(
+//   x = &quot;func&quot;,
+//   e = Ap(
+//     funExpr = Fun(
+//       param = &quot;notUsed&quot;,
+//       body = Fun(
+//         param = &quot;n&quot;,
+//         body = If0(
+//           cond = Id(name = &quot;n&quot;),
+//           thenExp = Num(n = 0),
+//           elseExp = Ap(
+//             funExpr = Id(name = &quot;func&quot;),
+//             argExpr = Add(lhs = Id(name = &quot;n&quot;), rhs = Num(n = -1))
+//           )
+//         )
+//       )
+//     ),
+//     argExpr = Num(n = 0)
+//   ),
+//   body = Ap(funExpr = Id(name = &quot;func&quot;), argExpr = Num(n = 1))
+// )
 assert(eval(test1, Map()) == NumV(0))
 assert(eval(test2, Map()) == NumV(0))
 </code></pre>

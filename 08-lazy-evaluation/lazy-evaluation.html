@@ -144,6 +144,7 @@
                     <main>
                         <h1 id="lazy-evaluation"><a class="header" href="#lazy-evaluation">Lazy Evaluation</a></h1>
 <p>The content of this chapter is available as a scala file <a href="./lazy-evaluation.scala">here.</a></p>
+<p>// load 07-fae.scala before loading this file or copy&amp;paste it here </p>
 <pre><code class="language-scala">/**
 Lazy Evaluation
 ===============
@@ -156,7 +157,7 @@ The choice of evaluation strategy is a purely semantic change that requires no c
 For this reason we reuse the syntactic definitions of FAE, hence ``:load 07-fae.scala`` before executing this script.
 Before we discuss lazy evaluation, we will first discuss a related evaluation strategy, call-by-name.
 Call-by-name can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument &quot;a&quot; in the
-&quot;App&quot; case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.
+&quot;Ap&quot; case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.
 */
 
 def evalcbn(e: Exp) : Exp = e match {
@@ -165,7 +166,7 @@ def evalcbn(e: Exp) : Exp = e match {
                      case (Num(x),Num(y)) =&gt; Num(x+y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case App(f,a) =&gt; evalcbn(f) match {
+  case Ap(f,a) =&gt; evalcbn(f) match {
      case Fun(x,body) =&gt; evalcbn( subst(body,x, a)) // no evaluation of a!
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
@@ -186,14 +187,20 @@ a function?
 Not necessarily. Consider:
 */
 
-val test3 = App(Fun(&quot;f&quot;,Fun(&quot;x&quot;,App(&quot;f&quot;,&quot;x&quot;))),Add(1,2))
-// test3: Syntax.App = App(
-//   Fun(&quot;f&quot;, Fun(&quot;x&quot;, App(Id(&quot;f&quot;), Id(&quot;x&quot;)))),
-//   Add(Num(1), Num(2))
+val test3 = Ap(Fun(&quot;f&quot;,Fun(&quot;x&quot;,Ap(&quot;f&quot;,&quot;x&quot;))),Add(1,2))
+// test3: Ap = Ap(
+//   funExpr = Fun(
+//     param = &quot;f&quot;,
+//     body = Fun(
+//       param = &quot;x&quot;,
+//       body = Ap(funExpr = Id(name = &quot;f&quot;), argExpr = Id(name = &quot;x&quot;))
+//     )
+//   ),
+//   argExpr = Add(lhs = Num(n = 1), rhs = Num(n = 2))
 // )
 
-assert(eval(test3) == Fun(&quot;x&quot;,App(Num(3),Id(&quot;x&quot;))))
-assert(evalcbn(test3) == Fun(&quot;x&quot;,App(Add(Num(1),Num(2)),Id(&quot;x&quot;))))
+assert(eval(test3) == Fun(&quot;x&quot;,Ap(Num(3),Id(&quot;x&quot;))))
+assert(evalcbn(test3) == Fun(&quot;x&quot;,Ap(Add(Num(1),Num(2)),Id(&quot;x&quot;))))
 
 /**
 However, if both produce a function, then the functions &quot;behave&quot; the same. More specifically, the function bodies produced by evalcbn
@@ -203,10 +210,19 @@ This kind of equivalence is also called &quot;beta-equivalence&quot;.
 Most importantly, however, eval and evalcbn differ with regard to their termination behavior. We have seen that omega is a diverging
 expression. In eval, the term
 */
- val test4 = App(Fun(&quot;x&quot;,5),omega)
-// test4: Syntax.App = App(
-//   Fun(&quot;x&quot;, Num(5)),
-//   App(Fun(&quot;x&quot;, App(Id(&quot;x&quot;), Id(&quot;x&quot;))), Fun(&quot;x&quot;, App(Id(&quot;x&quot;), Id(&quot;x&quot;))))
+ val test4 = Ap(Fun(&quot;x&quot;,5),omega)
+// test4: Ap = Ap(
+//   funExpr = Fun(param = &quot;x&quot;, body = Num(n = 5)),
+//   argExpr = Ap(
+//     funExpr = Fun(
+//       param = &quot;x&quot;,
+//       body = Ap(funExpr = Id(name = &quot;x&quot;), argExpr = Id(name = &quot;x&quot;))
+//     ),
+//     argExpr = Fun(
+//       param = &quot;x&quot;,
+//       body = Ap(funExpr = Id(name = &quot;x&quot;), argExpr = Id(name = &quot;x&quot;))
+//     )
+//   )
 // )
 
 /**
@@ -224,39 +240,63 @@ We do not have direct support for lists, but we can encode lists. This kind of e
 */
 
 val nil = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-// nil: Fun = Fun(&quot;c&quot;, Fun(&quot;e&quot;, Id(&quot;e&quot;)))
-val cons  = Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, App(App(&quot;c&quot;, &quot;x&quot;), App(App(&quot;xs&quot;, &quot;c&quot;),&quot;e&quot;))))))
+// nil: Fun = Fun(param = &quot;c&quot;, body = Fun(param = &quot;e&quot;, body = Id(name = &quot;e&quot;)))
+val cons  = Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;x&quot;), Ap(Ap(&quot;xs&quot;, &quot;c&quot;),&quot;e&quot;))))))
 // cons: Fun = Fun(
-//   &quot;x&quot;,
-//   Fun(
-//     &quot;xs&quot;,
-//     Fun(
-//       &quot;c&quot;,
-//       Fun(&quot;e&quot;, App(App(Id(&quot;c&quot;), Id(&quot;x&quot;)), App(App(Id(&quot;xs&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;))))
+//   param = &quot;x&quot;,
+//   body = Fun(
+//     param = &quot;xs&quot;,
+//     body = Fun(
+//       param = &quot;c&quot;,
+//       body = Fun(
+//         param = &quot;e&quot;,
+//         body = Ap(
+//           funExpr = Ap(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;x&quot;)),
+//           argExpr = Ap(
+//             funExpr = Ap(funExpr = Id(name = &quot;xs&quot;), argExpr = Id(name = &quot;c&quot;)),
+//             argExpr = Id(name = &quot;e&quot;)
+//           )
+//         )
+//       )
 //     )
 //   )
 // )
 /* For instance, the list 1,2,3 is encoded as: */
-val list123 = App(App(&quot;cons&quot;,1),App(App(&quot;cons&quot;,2),App(App(&quot;cons&quot;,3), &quot;nil&quot;)))
-// list123: Syntax.App = App(
-//   App(Id(&quot;cons&quot;), Num(1)),
-//   App(App(Id(&quot;cons&quot;), Num(2)), App(App(Id(&quot;cons&quot;), Num(3)), Id(&quot;nil&quot;)))
+val list123 = Ap(Ap(&quot;cons&quot;,1),Ap(Ap(&quot;cons&quot;,2),Ap(Ap(&quot;cons&quot;,3), &quot;nil&quot;)))
+// list123: Ap = Ap(
+//   funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 1)),
+//   argExpr = Ap(
+//     funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 2)),
+//     argExpr = Ap(
+//       funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 3)),
+//       argExpr = Id(name = &quot;nil&quot;)
+//     )
+//   )
 // )
 /* The map function on lists becomes :*/
-val maplist = Fun(&quot;f&quot;, Fun(&quot;l&quot;, App(App(&quot;l&quot;, Fun(&quot;x&quot;, Fun(&quot;xs&quot;, App(App(&quot;cons&quot;, App(&quot;f&quot;,&quot;x&quot;)),&quot;xs&quot;)))), &quot;nil&quot;)))
+val maplist = Fun(&quot;f&quot;, Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Ap(Ap(&quot;cons&quot;, Ap(&quot;f&quot;,&quot;x&quot;)),&quot;xs&quot;)))), &quot;nil&quot;)))
 // maplist: Fun = Fun(
-//   &quot;f&quot;,
-//   Fun(
-//     &quot;l&quot;,
-//     App(
-//       App(
-//         Id(&quot;l&quot;),
-//         Fun(
-//           &quot;x&quot;,
-//           Fun(&quot;xs&quot;, App(App(Id(&quot;cons&quot;), App(Id(&quot;f&quot;), Id(&quot;x&quot;))), Id(&quot;xs&quot;)))
+//   param = &quot;f&quot;,
+//   body = Fun(
+//     param = &quot;l&quot;,
+//     body = Ap(
+//       funExpr = Ap(
+//         funExpr = Id(name = &quot;l&quot;),
+//         argExpr = Fun(
+//           param = &quot;x&quot;,
+//           body = Fun(
+//             param = &quot;xs&quot;,
+//             body = Ap(
+//               funExpr = Ap(
+//                 funExpr = Id(name = &quot;cons&quot;),
+//                 argExpr = Ap(funExpr = Id(name = &quot;f&quot;), argExpr = Id(name = &quot;x&quot;))
+//               ),
+//               argExpr = Id(name = &quot;xs&quot;)
+//             )
+//           )
 //         )
 //       ),
-//       Id(&quot;nil&quot;)
+//       argExpr = Id(name = &quot;nil&quot;)
 //     )
 //   )
 // )
@@ -266,86 +306,98 @@ For instance, we can map the successor function over the 1,2,3 list.
 val test5 = wth(&quot;cons&quot;,cons,
             wth(&quot;nil&quot;, nil,
             wth(&quot;maplist&quot;, maplist,
-            App(App(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,1))), list123))))
-// test5: Exp = App(
-//   Fun(
-//     &quot;cons&quot;,
-//     App(
-//       Fun(
-//         &quot;nil&quot;,
-//         App(
-//           Fun(
-//             &quot;maplist&quot;,
-//             App(
-//               App(Id(&quot;maplist&quot;), Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Num(1)))),
-//               App(
-//                 App(Id(&quot;cons&quot;), Num(1)),
-//                 App(
-//                   App(Id(&quot;cons&quot;), Num(2)),
-//                   App(App(Id(&quot;cons&quot;), Num(3)), Id(&quot;nil&quot;))
+            Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,1))), list123))))
+// test5: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;cons&quot;,
+//     body = Ap(
+//       funExpr = Fun(
+//         param = &quot;nil&quot;,
+//         body = Ap(
+//           funExpr = Fun(
+//             param = &quot;maplist&quot;,
+//             body = Ap(
+//               funExpr = Ap(
+//                 funExpr = Id(name = &quot;maplist&quot;),
+//                 argExpr = Fun(
+//                   param = &quot;x&quot;,
+//                   body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))
+//                 )
+//               ),
+//               argExpr = Ap(
+//                 funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 1)),
+//                 argExpr = Ap(
+//                   funExpr = Ap(
+//                     funExpr = Id(name = &quot;cons&quot;),
+//                     argExpr = Num(n = 2)
+//                   ),
+//                   argExpr = Ap(
+//                     funExpr = Ap(
+//                       funExpr = Id(name = &quot;cons&quot;),
+//                       argExpr = Num(n = 3)
+//                     ),
+//                     argExpr = Id(name = &quot;nil&quot;)
+//                   )
 //                 )
 //               )
 //             )
 //           ),
-//           Fun(
-//             &quot;f&quot;,
-//             Fun(
-//               &quot;l&quot;,
-//               App(
-//                 App(
-//                   Id(&quot;l&quot;),
-//                   Fun(
-//                     &quot;x&quot;,
-//                     Fun(
-//                       &quot;xs&quot;,
-//                       App(App(Id(&quot;cons&quot;), App(Id(&quot;f&quot;), Id(&quot;x&quot;))), Id(&quot;xs&quot;))
-//                     )
-//                   )
-//                 ),
-//                 Id(&quot;nil&quot;)
-//               )
-//             )
-//           )
-//         )
-//       ),
-//       Fun(&quot;c&quot;, Fun(&quot;e&quot;, Id(&quot;e&quot;)))
-//     )
-//   ),
-//   Fun(
-//     &quot;x&quot;,
-//     Fun(
-//       &quot;xs&quot;,
-//       Fun(
+//           argExpr = Fun(
+//             param = &quot;f&quot;,
+//             body = Fun(
+//               param = &quot;l&quot;,
+//               body = Ap(
+//                 funExpr = Ap(
+//                   funExpr = Id(name = &quot;l&quot;),
+//                   argExpr = Fun(
+//                     param = &quot;x&quot;,
+//                     body = Fun(
+//                       param = &quot;xs&quot;,
+//                       body = Ap(
+//                         funExpr = Ap(
+//                           funExpr = Id(name = &quot;cons&quot;),
 // ...
 /**
 Since it is somewhat difficult to print out the resulting list in our primitive language we construct the result we expect explicitly.
 */
 val test5res = wth(&quot;cons&quot;,cons,
                wth(&quot;nil&quot;, nil,
-                 App(App(&quot;cons&quot;,2),App(App(&quot;cons&quot;,3),App(App(&quot;cons&quot;,4), &quot;nil&quot;)))))
-// test5res: Exp = App(
-//   Fun(
-//     &quot;cons&quot;,
-//     App(
-//       Fun(
-//         &quot;nil&quot;,
-//         App(
-//           App(Id(&quot;cons&quot;), Num(2)),
-//           App(App(Id(&quot;cons&quot;), Num(3)), App(App(Id(&quot;cons&quot;), Num(4)), Id(&quot;nil&quot;)))
+                 Ap(Ap(&quot;cons&quot;,2),Ap(Ap(&quot;cons&quot;,3),Ap(Ap(&quot;cons&quot;,4), &quot;nil&quot;)))))
+// test5res: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;cons&quot;,
+//     body = Ap(
+//       funExpr = Fun(
+//         param = &quot;nil&quot;,
+//         body = Ap(
+//           funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 2)),
+//           argExpr = Ap(
+//             funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 3)),
+//             argExpr = Ap(
+//               funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 4)),
+//               argExpr = Id(name = &quot;nil&quot;)
+//             )
+//           )
 //         )
 //       ),
-//       Fun(&quot;c&quot;, Fun(&quot;e&quot;, Id(&quot;e&quot;)))
+//       argExpr = Fun(param = &quot;c&quot;, body = Fun(param = &quot;e&quot;, body = Id(name = &quot;e&quot;)))
 //     )
 //   ),
-//   Fun(
-//     &quot;x&quot;,
-//     Fun(
-//       &quot;xs&quot;,
-//       Fun(
-//         &quot;c&quot;,
-//         Fun(
-//           &quot;e&quot;,
-//           App(App(Id(&quot;c&quot;), Id(&quot;x&quot;)), App(App(Id(&quot;xs&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;)))
+//   argExpr = Fun(
+//     param = &quot;x&quot;,
+//     body = Fun(
+//       param = &quot;xs&quot;,
+//       body = Fun(
+//         param = &quot;c&quot;,
+//         body = Fun(
+//           param = &quot;e&quot;,
+//           body = Ap(
+//             funExpr = Ap(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;x&quot;)),
+//             argExpr = Ap(
+//               funExpr = Ap(funExpr = Id(name = &quot;xs&quot;), argExpr = Id(name = &quot;c&quot;)),
+//               argExpr = Id(name = &quot;e&quot;)
+//             )
+//           )
 //         )
 //       )
 //     )
@@ -358,31 +410,49 @@ We can also construct infinite lists. To this end, we need some form of recursio
 This operator only works under call-by-name or other so-called &quot;non-strict&quot; evaluation strategies.
 */
 
-val y = Fun(&quot;f&quot;, App(Fun(&quot;x&quot;,App(&quot;f&quot;, App(&quot;x&quot;,&quot;x&quot;))), Fun(&quot;x&quot;,App(&quot;f&quot;,App(&quot;x&quot;,&quot;x&quot;)))))
+val y = Fun(&quot;f&quot;, Ap(Fun(&quot;x&quot;,Ap(&quot;f&quot;, Ap(&quot;x&quot;,&quot;x&quot;))), Fun(&quot;x&quot;,Ap(&quot;f&quot;,Ap(&quot;x&quot;,&quot;x&quot;)))))
 // y: Fun = Fun(
-//   &quot;f&quot;,
-//   App(
-//     Fun(&quot;x&quot;, App(Id(&quot;f&quot;), App(Id(&quot;x&quot;), Id(&quot;x&quot;)))),
-//     Fun(&quot;x&quot;, App(Id(&quot;f&quot;), App(Id(&quot;x&quot;), Id(&quot;x&quot;))))
+//   param = &quot;f&quot;,
+//   body = Ap(
+//     funExpr = Fun(
+//       param = &quot;x&quot;,
+//       body = Ap(
+//         funExpr = Id(name = &quot;f&quot;),
+//         argExpr = Ap(funExpr = Id(name = &quot;x&quot;), argExpr = Id(name = &quot;x&quot;))
+//       )
+//     ),
+//     argExpr = Fun(
+//       param = &quot;x&quot;,
+//       body = Ap(
+//         funExpr = Id(name = &quot;f&quot;),
+//         argExpr = Ap(funExpr = Id(name = &quot;x&quot;), argExpr = Id(name = &quot;x&quot;))
+//       )
+//     )
 //   )
 // )
 
 /**
 Using Y, we can construct infinite lists, such as the list of all natural numbers.
 */
-val allnats = App(App(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, App(App(&quot;cons&quot;,&quot;n&quot;), App(&quot;nats&quot;, Add(&quot;n&quot;,1)))))),1)
-// allnats: Syntax.App = App(
-//   App(
-//     Id(&quot;y&quot;),
-//     Fun(
-//       &quot;nats&quot;,
-//       Fun(
-//         &quot;n&quot;,
-//         App(App(Id(&quot;cons&quot;), Id(&quot;n&quot;)), App(Id(&quot;nats&quot;), Add(Id(&quot;n&quot;), Num(1))))
+val allnats = Ap(Ap(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, Ap(Ap(&quot;cons&quot;,&quot;n&quot;), Ap(&quot;nats&quot;, Add(&quot;n&quot;,1)))))),1)
+// allnats: Ap = Ap(
+//   funExpr = Ap(
+//     funExpr = Id(name = &quot;y&quot;),
+//     argExpr = Fun(
+//       param = &quot;nats&quot;,
+//       body = Fun(
+//         param = &quot;n&quot;,
+//         body = Ap(
+//           funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Id(name = &quot;n&quot;)),
+//           argExpr = Ap(
+//             funExpr = Id(name = &quot;nats&quot;),
+//             argExpr = Add(lhs = Id(name = &quot;n&quot;), rhs = Num(n = 1))
+//           )
+//         )
 //       )
 //     )
 //   ),
-//   Num(1)
+//   argExpr = Num(n = 1)
 // )
 
 /**
@@ -393,56 +463,56 @@ val list2toinfty = wth(&quot;cons&quot;,cons,
                    wth(&quot;nil&quot;, nil,
                    wth(&quot;y&quot;, y,
                    wth(&quot;maplist&quot;, maplist,
-                      App(App(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,1))), allnats)))))
-// list2toinfty: Exp = App(
-//   Fun(
-//     &quot;cons&quot;,
-//     App(
-//       Fun(
-//         &quot;nil&quot;,
-//         App(
-//           Fun(
-//             &quot;y&quot;,
-//             App(
-//               Fun(
-//                 &quot;maplist&quot;,
-//                 App(
-//                   App(Id(&quot;maplist&quot;), Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Num(1)))),
-//                   App(
-//                     App(
-//                       Id(&quot;y&quot;),
-//                       Fun(
-//                         &quot;nats&quot;,
-//                         Fun(
-//                           &quot;n&quot;,
-//                           App(
-//                             App(Id(&quot;cons&quot;), Id(&quot;n&quot;)),
-//                             App(Id(&quot;nats&quot;), Add(Id(&quot;n&quot;), Num(1)))
+                      Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,1))), allnats)))))
+// list2toinfty: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;cons&quot;,
+//     body = Ap(
+//       funExpr = Fun(
+//         param = &quot;nil&quot;,
+//         body = Ap(
+//           funExpr = Fun(
+//             param = &quot;y&quot;,
+//             body = Ap(
+//               funExpr = Fun(
+//                 param = &quot;maplist&quot;,
+//                 body = Ap(
+//                   funExpr = Ap(
+//                     funExpr = Id(name = &quot;maplist&quot;),
+//                     argExpr = Fun(
+//                       param = &quot;x&quot;,
+//                       body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))
+//                     )
+//                   ),
+//                   argExpr = Ap(
+//                     funExpr = Ap(
+//                       funExpr = Id(name = &quot;y&quot;),
+//                       argExpr = Fun(
+//                         param = &quot;nats&quot;,
+//                         body = Fun(
+//                           param = &quot;n&quot;,
+//                           body = Ap(
+//                             funExpr = Ap(
+//                               funExpr = Id(name = &quot;cons&quot;),
+//                               argExpr = Id(name = &quot;n&quot;)
+//                             ),
+//                             argExpr = Ap(
+//                               funExpr = Id(name = &quot;nats&quot;),
+//                               argExpr = Add(
+//                                 lhs = Id(name = &quot;n&quot;),
+//                                 rhs = Num(n = 1)
+//                               )
+//                             )
 //                           )
 //                         )
 //                       )
 //                     ),
-//                     Num(1)
+//                     argExpr = Num(n = 1)
 //                   )
 //                 )
 //               ),
-//               Fun(
-//                 &quot;f&quot;,
-//                 Fun(
-//                   &quot;l&quot;,
-//                   App(
-//                     App(
-//                       Id(&quot;l&quot;),
-//                       Fun(
-//                         &quot;x&quot;,
-//                         Fun(
-//                           &quot;xs&quot;,
-//                           App(App(Id(&quot;cons&quot;), App(Id(&quot;f&quot;), Id(&quot;x&quot;))), Id(&quot;xs&quot;))
-//                         )
-//                       )
-//                     ),
-//                     Id(&quot;nil&quot;)
-//                   )
+//               argExpr = Fun(
+//                 param = &quot;f&quot;,
 // ...
 /**
 Of course, ``list2toinfty`` diverges when we use ``eval``, but it works fine with ``evalcbn``. It is hard to verify the result due to
@@ -478,30 +548,30 @@ Hint: Research on the internet what abstract type members in Scala are.  For ins
 trait CBN {
     type Thunk
 
-    case class Env(map: Map[String, Thunk]) {
+    case class EnvThunk(map: Map[String, Thunk]) {
       def apply(key: String) = map.apply(key)
-      def +(other: (String, Thunk)) : Env = Env(map+other)
+      def +(other: (String, Thunk)) : EnvThunk = EnvThunk(map+other)
     }
 
-    def delay(e: Exp, env: Env) : Thunk
-    def force(t: Thunk) : Value
+    def delay(e: Exp, env: EnvThunk) : Thunk
+    def force(t: Thunk) : ValueCBN
 
-    // since values also depend on Env and hence on Thunk they need to
+    // since values also depend on EnvThunk and hence on Thunk they need to
     // be defined within this trait
-    sealed abstract class Value
-    case class NumV(n: Int) extends Value
-    case class ClosureV(f: Fun, env: Env) extends Value
-    def eval(e: Exp, env: Env) : Value = e match {
+    sealed abstract class ValueCBN
+    case class NumV(n: Int) extends ValueCBN
+    case class ClosureV(f: Fun, env: EnvThunk) extends ValueCBN
+    def evalCBN(e: Exp, env: EnvThunk) : ValueCBN = e match {
       case Id(x) =&gt; force(env(x)) // force evaluation of thunk if identifier is evaluated
       case Add(l,r) =&gt; {
-        (eval(l,env), eval(r,env)) match {
+        (evalCBN(l,env), evalCBN(r,env)) match {
           case (NumV(v1),NumV(v2)) =&gt; NumV(v1+v2)
           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
         }
       }
-      case App(f,a) =&gt; eval(f,env) match {
+      case Ap(f,a) =&gt; evalCBN(f,env) match {
         // delay argument expression and add it to environment of the closure
-        case ClosureV(f,cenv) =&gt; eval(f.body, cenv + (f.param -&gt; delay(a,env)))
+        case ClosureV(f,cenv) =&gt; evalCBN(f.body, cenv + (f.param -&gt; delay(a,env)))
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
       }
       case Num(n) =&gt; NumV(n)
@@ -515,15 +585,15 @@ To understand what is going on during evaluation of tests we trace argument eval
 */
 
 object CallByName extends CBN {
-  type Thunk = (Exp,Env)
-  def delay(e: Exp, env: Env) = (e,env)
+  type Thunk = (Exp,EnvThunk)
+  def delay(e: Exp, env: EnvThunk) = (e,env)
   def force(t: Thunk) = {
     println(&quot;Forcing evaluation of expression: &quot;+t._1)
-    eval(t._1,t._2)
+    evalCBN(t._1,t._2)
   }
 }
 
-assert(CallByName.eval(test, CallByName.Env(Map.empty)) == CallByName.NumV(12))
+assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.NumV(12))
 // Forcing evaluation of expression: Num(7)
 /**
 Call-by-need
@@ -532,10 +602,19 @@ Call-by-name is rather wasteful: If an argument is used n times in the body, the
 For instance, in
 */
 val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&quot;)),
-               App(&quot;double&quot;, Add(2,3)))
-// cbntest: Exp = App(
-//   Fun(&quot;double&quot;, App(Id(&quot;double&quot;), Add(Num(2), Num(3)))),
-//   Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Id(&quot;x&quot;)))
+               Ap(&quot;double&quot;, Add(2,3)))
+// cbntest: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;double&quot;,
+//     body = Ap(
+//       funExpr = Id(name = &quot;double&quot;),
+//       argExpr = Add(lhs = Num(n = 2), rhs = Num(n = 3))
+//     )
+//   ),
+//   argExpr = Fun(
+//     param = &quot;x&quot;,
+//     body = Add(lhs = Id(name = &quot;x&quot;), rhs = Id(name = &quot;x&quot;))
+//   )
 // )
 /**
 the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blow-up.
@@ -543,49 +622,62 @@ Example:
 */
 
 val blowup  = wth(&quot;a&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&quot;)),
-              wth(&quot;b&quot;, Fun(&quot;x&quot;, Add(App(&quot;a&quot;,&quot;x&quot;), App(&quot;a&quot;,&quot;x&quot;))),
-              wth(&quot;c&quot;, Fun(&quot;x&quot;, Add(App(&quot;b&quot;,&quot;x&quot;), App(&quot;b&quot;,&quot;x&quot;))),
-              wth(&quot;d&quot;, Fun(&quot;x&quot;, Add(App(&quot;c&quot;,&quot;x&quot;), App(&quot;c&quot;,&quot;x&quot;))),
-              wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(App(&quot;d&quot;,&quot;x&quot;), App(&quot;d&quot;,&quot;x&quot;))),
-              wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(App(&quot;e&quot;,&quot;x&quot;), App(&quot;e&quot;,&quot;x&quot;))),
-              App(&quot;f&quot;, Add(2,3))))))))
-// blowup: Exp = App(
-//   Fun(
-//     &quot;a&quot;,
-//     App(
-//       Fun(
-//         &quot;b&quot;,
-//         App(
-//           Fun(
-//             &quot;c&quot;,
-//             App(
-//               Fun(
-//                 &quot;d&quot;,
-//                 App(
-//                   Fun(
-//                     &quot;e&quot;,
-//                     App(
-//                       Fun(&quot;f&quot;, App(Id(&quot;f&quot;), Add(Num(2), Num(3)))),
-//                       Fun(
-//                         &quot;x&quot;,
-//                         Add(App(Id(&quot;e&quot;), Id(&quot;x&quot;)), App(Id(&quot;e&quot;), Id(&quot;x&quot;)))
+              wth(&quot;b&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;a&quot;,&quot;x&quot;), Ap(&quot;a&quot;,&quot;x&quot;))),
+              wth(&quot;c&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;b&quot;,&quot;x&quot;), Ap(&quot;b&quot;,&quot;x&quot;))),
+              wth(&quot;d&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;c&quot;,&quot;x&quot;), Ap(&quot;c&quot;,&quot;x&quot;))),
+              wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;d&quot;,&quot;x&quot;), Ap(&quot;d&quot;,&quot;x&quot;))),
+              wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;e&quot;,&quot;x&quot;), Ap(&quot;e&quot;,&quot;x&quot;))),
+              Ap(&quot;f&quot;, Add(2,3))))))))
+// blowup: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;a&quot;,
+//     body = Ap(
+//       funExpr = Fun(
+//         param = &quot;b&quot;,
+//         body = Ap(
+//           funExpr = Fun(
+//             param = &quot;c&quot;,
+//             body = Ap(
+//               funExpr = Fun(
+//                 param = &quot;d&quot;,
+//                 body = Ap(
+//                   funExpr = Fun(
+//                     param = &quot;e&quot;,
+//                     body = Ap(
+//                       funExpr = Fun(
+//                         param = &quot;f&quot;,
+//                         body = Ap(
+//                           funExpr = Id(name = &quot;f&quot;),
+//                           argExpr = Add(lhs = Num(n = 2), rhs = Num(n = 3))
+//                         )
+//                       ),
+//                       argExpr = Fun(
+//                         param = &quot;x&quot;,
+//                         body = Add(
+//                           lhs = Ap(
+//                             funExpr = Id(name = &quot;e&quot;),
+//                             argExpr = Id(name = &quot;x&quot;)
+//                           ),
+//                           rhs = Ap(
+//                             funExpr = Id(name = &quot;e&quot;),
+//                             argExpr = Id(name = &quot;x&quot;)
+//                           )
+//                         )
 //                       )
 //                     )
 //                   ),
-//                   Fun(&quot;x&quot;, Add(App(Id(&quot;d&quot;), Id(&quot;x&quot;)), App(Id(&quot;d&quot;), Id(&quot;x&quot;))))
-//                 )
-//               ),
-//               Fun(&quot;x&quot;, Add(App(Id(&quot;c&quot;), Id(&quot;x&quot;)), App(Id(&quot;c&quot;), Id(&quot;x&quot;))))
-//             )
-//           ),
-//           Fun(&quot;x&quot;, Add(App(Id(&quot;b&quot;), Id(&quot;x&quot;)), App(Id(&quot;b&quot;), Id(&quot;x&quot;))))
-//         )
-//       ),
-//       Fun(&quot;x&quot;, Add(App(Id(&quot;a&quot;), Id(&quot;x&quot;)), App(Id(&quot;a&quot;), Id(&quot;x&quot;))))
-//     )
-//   ),
-//   Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Id(&quot;x&quot;)))
-// )
+//                   argExpr = Fun(
+//                     param = &quot;x&quot;,
+//                     body = Add(
+//                       lhs = Ap(
+//                         funExpr = Id(name = &quot;d&quot;),
+//                         argExpr = Id(name = &quot;x&quot;)
+//                       ),
+//                       rhs = Ap(
+//                         funExpr = Id(name = &quot;d&quot;),
+//                         argExpr = Id(name = &quot;x&quot;)
+//                       )
+// ...
 /**
 Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is
 called _call-by-need_.
@@ -593,15 +685,15 @@ Caching is easy to implement in Scala:
 */
 
 object CallByNeed extends CBN {
-  case class MemoThunk(e: Exp, env: Env) {
-    var cache: Value = null
+  case class MemoThunk(e: Exp, env: EnvThunk) {
+    var cache: ValueCBN = null
   }
   type Thunk = MemoThunk
-  def delay(e: Exp, env: Env) = MemoThunk(e,env)
+  def delay(e: Exp, env: EnvThunk) = MemoThunk(e,env)
   def force(t: Thunk) = {
     if (t.cache == null) {
       println(&quot;Forcing evaluation of expression: &quot;+t.e)
-      t.cache = eval(t.e, t.env)
+      t.cache = evalCBN(t.e, t.env)
       t.cache
     } else println (&quot;Reusing cached value &quot;+t.cache+&quot; for expression &quot;+t.e)
     t.cache

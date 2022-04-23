@@ -172,10 +172,10 @@ been highly influential in the design and theory of programming languages.</p>
 
   // Both function definitions and applications are expressions.
   case class Fun(param: String, body: Exp) extends Exp
-  case class App (funExpr: Exp, argExpr: Exp) extends Exp
+  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 
   // &quot;with&quot; would be a better name for this function, but it is reserved in Scala
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 }
 
 import Syntax._
@@ -186,7 +186,7 @@ syntax for lambda terms is <code>(x) =&gt; x+3</code>, the Haskell syntax is <co
 <p>The concrete syntax for function application is often either juxtaposition <code>f a</code> or
 using brackets <code>f(a)</code>. Haskell and the lambda calculus use the former, Scala uses the
 latter.</p>
-<p>The <code>with</code> construct is not needed anymore since it can be encoded using <code>App</code> and
+<p>The <code>with</code> construct is not needed anymore since it can be encoded using <code>Ap</code> and
 <code>Fun</code>. For instance, <code>with x = 7 in x+3</code> can be encoded (using Scala syntax) as
 <code>((x) =&gt; x+3)(7)</code>. We have made this idea explicit above by giving a constructive
 translation. Such translations are also often called &quot;desugaring&quot;.</p>
@@ -195,7 +195,7 @@ translation. Such translations are also often called &quot;desugaring&quot;.</p>
   case Num(n) =&gt; e1
   case Add(l,r) =&gt; Add(subst0(l,x,e2), subst0(r,x,e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case App(f,a) =&gt; App(subst0(f,x,e2), subst0(a,x,e2))
+  case Ap(f,a) =&gt; Ap(subst0(f,x,e2), subst0(a,x,e2))
   case Fun(param,body) =&gt;
     if (param == x) e1  else Fun(param, subst0(body, x, e2))
 }
@@ -208,7 +208,13 @@ assert( subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quo
 <p>However, what happens if <code>e2</code> contains free variables? The danger here is that they may be accidentially &quot;captured&quot; by the substitution.
 For instance, consider</p>
 <pre><code class="language-scala">val subst0Test = subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))
-// subst0Test: Exp = Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Add(Id(&quot;x&quot;), Num(5))))
+// subst0Test: Exp = Fun(
+//   param = &quot;x&quot;,
+//   body = Add(
+//     lhs = Id(name = &quot;x&quot;),
+//     rhs = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 5))
+//   )
+// )
 </code></pre>
 <p>The result is <code>Fun(&quot;x&quot;,Add(&quot;x&quot;,Add(&quot;x&quot;,5)))</code>
 This is not desirable, since it violates again static scoping.</p>
@@ -238,7 +244,7 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) =&gt; Set(x)
    case Add(l,r) =&gt; freeVars(l) ++ freeVars(r)
    case Fun(x,body) =&gt; freeVars(body) - x
-   case App(f,a) =&gt; freeVars(f) ++ freeVars(a)
+   case Ap(f,a) =&gt; freeVars(f) ++ freeVars(a)
    case Num(n) =&gt; Set.empty
 }
 
@@ -250,7 +256,7 @@ def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) =&gt; e1
   case Add(l,r) =&gt; Add(subst(l,x,e2), subst(r,x,e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case App(f,a) =&gt; App(subst(f,x,e2),subst(a,x,e2))
+  case Ap(f,a) =&gt; Ap(subst(f,x,e2),subst(a,x,e2))
   case Fun(param,body) =&gt;
     if (param == x) e1 else {
       val fvs = freeVars(Fun(param,body)) ++ freeVars(e2) + x
@@ -281,7 +287,7 @@ Such errors are called <em>type errors</em>, and we will talk about them in much
                      case (Num(x),Num(y)) =&gt; Num(x+y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case App(f,a) =&gt; eval(f) match {
+  case Ap(f,a) =&gt; eval(f) match {
      case Fun(x,body) =&gt; eval( subst(body,x, eval(a)))  // call-by-value
      // case Fun(x,body) =&gt; eval( subst(body,x, a))        // call-by-name
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
@@ -296,7 +302,7 @@ Such errors are called <em>type errors</em>, and we will talk about them in much
                      case (Left(Num(x)),Left(Num(y))) =&gt; Left(Num(x+y))
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case App(f,a) =&gt; eval2(f) match {
+  case Ap(f,a) =&gt; eval2(f) match {
      case Right(Fun(x,body)) =&gt; eval2( subst(body,x, eval(a)))
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
@@ -305,12 +311,12 @@ Such errors are called <em>type errors</em>, and we will talk about them in much
 }
 </code></pre>
 <p>Let's test:</p>
-<pre><code class="language-scala">val test = App( Fun(&quot;x&quot;,Add(&quot;x&quot;,5)), 7)
+<pre><code class="language-scala">val test = Ap( Fun(&quot;x&quot;,Add(&quot;x&quot;,5)), 7)
 assert( eval(test) == Num(12))
 </code></pre>
 <p>FAE is a computationally (Turing)-complete language. For instance, we can define  a non-terminating program. This program is commonly
 called Omega:</p>
-<pre><code class="language-scala">val omega = App(Fun(&quot;x&quot;,App(&quot;x&quot;,&quot;x&quot;)), Fun(&quot;x&quot;,App(&quot;x&quot;,&quot;x&quot;)))
+<pre><code class="language-scala">val omega = Ap(Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)), Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)))
 // try eval(omega) to crash the interpreter ;-)
 </code></pre>
 <p>Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We come back to
@@ -327,7 +333,7 @@ def evalWithEnv0(e: Exp, env: Env0) : Exp = e match {
       case _ =&gt; sys.error(&quot;can only add numbers&quot;)
     }
   }
-  case App(f,a) =&gt; evalWithEnv0(f,env) match {
+  case Ap(f,a) =&gt; evalWithEnv0(f,env) match {
     case Fun(x,body) =&gt; evalWithEnv0(body, Map(x -&gt; evalWithEnv0(a,env)))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
@@ -337,30 +343,29 @@ def evalWithEnv0(e: Exp, env: Env0) : Exp = e match {
 assert( evalWithEnv0(test, Map.empty) == Num(12))
 </code></pre>
 <p>However, consider the following example:</p>
-<pre><code class="language-scala">val test2 = wth(&quot;x&quot;, 5, App(Fun(&quot;f&quot;, App(&quot;f&quot;,3)), Fun(&quot;y&quot;,Add(&quot;x&quot;,&quot;y&quot;))))
+<pre><code class="language-scala">val test2 = wth(&quot;x&quot;, 5, Ap(Fun(&quot;f&quot;, Ap(&quot;f&quot;,3)), Fun(&quot;y&quot;,Add(&quot;x&quot;,&quot;y&quot;))))
 </code></pre>
 <p>It works fine in the substitution-based interpreter,</p>
 <pre><code class="language-scala">val evalTest2 = eval(test2)
-// evalTest2: Exp = Num(8)
+// evalTest2: Exp = Num(n = 8)
 assert(evalTest2 == Num(8))
 </code></pre>
 <p>but</p>
 <pre><code class="language-scala">val evalEnv0Test2 = evalWithEnv0(test2,Map.empty)
 // java.util.NoSuchElementException: key not found: x
-// 	at scala.collection.immutable.Map$Map1.apply(Map.scala:163)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:184)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:186)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:192)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:192)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:192)
-// 	at repl.MdocSession$App$$anonfun$23.apply$mcV$sp(higher-order-functions.md:221)
-// 	at repl.MdocSession$App$$anonfun$23.apply(higher-order-functions.md:220)
-// 	at repl.MdocSession$App$$anonfun$23.apply(higher-order-functions.md:220)
+// 	at scala.collection.immutable.Map$Map1.apply(Map.scala:245)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:204)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:206)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:212)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:212)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:212)
+// 	at repl.MdocSession$App.$init$$$anonfun$1(higher-order-functions.md:244)
+// 	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.scala:18)
 </code></pre>
 <p>yields a <code>key not found: x</code> error.
 The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.</p>
 <p>What can we do to fix this problem?
-We could try to replace the second line in the &quot;App&quot; case by</p>
+We could try to replace the second line in the &quot;Ap&quot; case by</p>
 <pre><code>case Fun(x,body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a,env)))
 </code></pre>
 <p>but this would again introduce dynamic scoping.</p>
@@ -386,7 +391,7 @@ case class ClosureV(f: Fun, env: Env) extends Value
     }
   }
   case f@Fun(param,body) =&gt; ClosureV(f, env)
-  case App(f,a) =&gt; evalWithEnv(f,env) match {
+  case Ap(f,a) =&gt; evalWithEnv(f,env) match {
     // Use environment stored in closure to realize proper lexical scoping!
     case ClosureV(f,closureEnv) =&gt; evalWithEnv(f.body, closureEnv + (f.param -&gt; evalWithEnv(a,env)))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)

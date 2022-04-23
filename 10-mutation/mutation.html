@@ -168,8 +168,8 @@ object Syntax {
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
   case class Fun(param: String, body: Exp) extends Exp
-  case class App (funExpr: Exp, argExpr: Exp) extends Exp
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
   /**
   To add mutation to FAE, we add four language constructs:
@@ -189,6 +189,19 @@ val test1 = wth(&quot;b&quot;, NewBox(0),
               Seq(
                 SetBox(&quot;b&quot;, Add(1, OpenBox(&quot;b&quot;))),
                 OpenBox(&quot;b&quot;)))
+// test1: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;b&quot;,
+//     body = Seq(
+//       e1 = SetBox(
+//         b = Id(name = &quot;b&quot;),
+//         e = Add(lhs = Num(n = 1), rhs = OpenBox(b = Id(name = &quot;b&quot;)))
+//       ),
+//       e2 = OpenBox(b = Id(name = &quot;b&quot;))
+//     )
+//   ),
+//   argExpr = NewBox(e = Num(n = 0))
+// )
 
 /**
 should give as result ``1`` in a proper implementation.
@@ -210,7 +223,26 @@ example:
 val test2 = wth(&quot;a&quot;, NewBox(1),
               wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, OpenBox(&quot;a&quot;))),
                 Seq(SetBox(&quot;a&quot;,2),
-                  App(&quot;f&quot;, 5))))
+                  Ap(&quot;f&quot;, 5))))
+// test2: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;a&quot;,
+//     body = Ap(
+//       funExpr = Fun(
+//         param = &quot;f&quot;,
+//         body = Seq(
+//           e1 = SetBox(b = Id(name = &quot;a&quot;), e = Num(n = 2)),
+//           e2 = Ap(funExpr = Id(name = &quot;f&quot;), argExpr = Num(n = 5))
+//         )
+//       ),
+//       argExpr = Fun(
+//         param = &quot;x&quot;,
+//         body = Add(lhs = Id(name = &quot;x&quot;), rhs = OpenBox(b = Id(name = &quot;a&quot;)))
+//       )
+//     )
+//   ),
+//   argExpr = NewBox(e = Num(n = 1))
+// )
 
 /**
 The mutation should affect the box stored in the closure bound to ``f``.  But with the implementation strategy described above it would not.
@@ -248,6 +280,7 @@ We will often need a fresh address in the store. We do so using a counter variab
 */
 
 var _nextAddress = 0
+// _nextAddress: Int = 0
 
 def nextAddress : Address = {
   _nextAddress += 1
@@ -264,7 +297,36 @@ val test3 = wth(&quot;switch&quot;, NewBox(0),
              wth(&quot;toggle&quot;, Fun(&quot;dummy&quot;, If0(OpenBox(&quot;switch&quot;),
                                           Seq(SetBox(&quot;switch&quot;, 1), 1),
                                           Seq(SetBox(&quot;switch&quot;, 0), 0))),
-                 Add(App(&quot;toggle&quot;,42), App(&quot;toggle&quot;,42))))
+                 Add(Ap(&quot;toggle&quot;,42), Ap(&quot;toggle&quot;,42))))
+// test3: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;switch&quot;,
+//     body = Ap(
+//       funExpr = Fun(
+//         param = &quot;toggle&quot;,
+//         body = Add(
+//           lhs = Ap(funExpr = Id(name = &quot;toggle&quot;), argExpr = Num(n = 42)),
+//           rhs = Ap(funExpr = Id(name = &quot;toggle&quot;), argExpr = Num(n = 42))
+//         )
+//       ),
+//       argExpr = Fun(
+//         param = &quot;dummy&quot;,
+//         body = If0(
+//           cond = OpenBox(b = Id(name = &quot;switch&quot;)),
+//           thenExp = Seq(
+//             e1 = SetBox(b = Id(name = &quot;switch&quot;), e = Num(n = 1)),
+//             e2 = Num(n = 1)
+//           ),
+//           elseExp = Seq(
+//             e1 = SetBox(b = Id(name = &quot;switch&quot;), e = Num(n = 0)),
+//             e2 = Num(n = 0)
+//           )
+//         )
+//       )
+//     )
+//   ),
+//   argExpr = NewBox(e = Num(n = 0))
+// )
 
 /**
 This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
@@ -273,8 +335,8 @@ ID      Exp                     Value   Env             Store
 A       wth(..                          &quot;switch&quot; -&gt; ..   1 -&gt; NumV(0)
 B        wth(..                         &quot;toggle&quot; -&gt; ..
 C         Add(..
-D          App(&quot;toggle&quot;)         1                       1 -&gt; NumV(1)
-E          App(&quot;toggle&quot;)         0                       1 -&gt; NumV(0)
+D          Ap(&quot;toggle&quot;)         1                       1 -&gt; NumV(1)
+E          Ap(&quot;toggle&quot;)         0                       1 -&gt; NumV(0)
 F         Add(0,1)              1
 Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
@@ -321,7 +383,7 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
          case _ =&gt; sys.error(&quot;can only multiply numbers&quot;)
        }
 
-  case App(f, a)
+  case Ap(f, a)
     =&gt; eval(f, env, s) match {
          case (ClosureV(f, closureEnv), s1)
            =&gt; eval(a, env, s1) match {
@@ -403,21 +465,22 @@ val teststore = Map(
   9  -&gt; AddressV(7),
   10 -&gt; ClosureV(Fun(&quot;x&quot;, &quot;y&quot;), Map(&quot;y&quot; -&gt; AddressV(8)))
 )
+// teststore: Map[Int, Value] = HashMap(
+//   10 -&gt; ClosureV(
+//     f = Fun(param = &quot;x&quot;, body = Id(name = &quot;y&quot;)),
+//     env = Map(&quot;y&quot; -&gt; AddressV(a = 8))
+//   ),
+//   6 -&gt; NumV(n = 42),
+//   9 -&gt; AddressV(a = 7),
+//   7 -&gt; NumV(n = 6),
+//   8 -&gt; AddressV(a = 6)
+// )
 
 /*
 10 -&gt; 8 -&gt; 6
       9 -&gt; 7        */
 
 assert(gc(Map(&quot;a&quot; -&gt; AddressV(10)), teststore) == teststore - 7 - 9)
-
-/**
-Note that garbage collectors only _approximate_ the set of semantically disposable store entities. Even with garbage collectors,
-applications may very well suffer from memory leaks. The approximation should be _safe_, in the sense that a datum is never reclaimed
-when it is used by subsequent computations. Furthermore, it must reclaim enough garbage to be actually useful. Reachability has turned
-out to be a rather useful (and sound) approximation of semantic disposability. Garbage collectors must also be efficient.
-Efficiency of GC is a huge research topic that we are not going to discuss. One efficiency problem with garbage collectors based on
-reachability that we want to mention is the &quot;stop-the-world&quot; phenomenon.
- */
 </code></pre>
 
                     </main>

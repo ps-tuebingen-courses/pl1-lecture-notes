@@ -8,7 +8,7 @@ abstract class Person(val name: String) {
   // String name
   // val name: String
 
-  def sayHello() = {
+  def sayHello = {
     print("hello, " + name)
   }
 }

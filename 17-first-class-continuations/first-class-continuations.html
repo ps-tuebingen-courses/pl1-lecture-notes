@@ -251,7 +251,16 @@ def starteval(e: Exp) : Value = {
 Finally a small test of Letcc. 
 */
 val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, App(&quot;k&quot;, 3))))
-// testprog: Add = Add(Num(1), Letcc(&quot;k&quot;, Add(Num(2), App(Id(&quot;k&quot;), Num(3)))))
+// testprog: Add = Add(
+//   lhs = Num(n = 1),
+//   rhs = Letcc(
+//     param = &quot;k&quot;,
+//     body = Add(
+//       lhs = Num(n = 2),
+//       rhs = App(funExpr = Id(name = &quot;k&quot;), argExpr = Num(n = 3))
+//     )
+//   )
+// )
 
 assert(starteval(testprog) == NumV(4))
 </code></pre>

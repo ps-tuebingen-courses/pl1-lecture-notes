@@ -190,11 +190,11 @@ def plus(a: NumC, b: NumC) = {
 }
 
 val oneC = Succ(Zero)
-// oneC: Succ = Succ(Zero)
+// oneC: Succ = Succ(n = Zero)
 val twoC = Succ(oneC)
-// twoC: Succ = Succ(Succ(Zero))
+// twoC: Succ = Succ(n = Succ(n = Zero))
 val threeC = Succ(twoC)
-// threeC: Succ = Succ(Succ(Succ(Zero)))
+// threeC: Succ = Succ(n = Succ(n = Succ(n = Zero)))
 
 def testplusC = plus(twoC,threeC).fold[Unit]( (), _ =&gt; print(&quot;.&quot;))
 
@@ -233,13 +233,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$App$$anon$4@267e71ee
+// zero: Num = repl.MdocSession$$anon$4@8ad08cc
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$App$$anon$5@295630e3
+// one: Num = repl.MdocSession$$anon$6@751ea36c
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$App$$anon$6@66409c1c
+// two: Num = repl.MdocSession$$anon$8@29778ddc
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$App$$anon$7@d08b73b
+// three: Num = repl.MdocSession$$anon$10@429abf79
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {
@@ -298,7 +298,7 @@ def test[T](semantics : Exp[T]) = {
 
 /* We evaluate the program by folding the eval visitor over it. */
 val testres = test(eval)(Map.empty)
-// testres: Value = NumV(8)
+// testres: Value = NumV(n = 8)
 
 /* The object algebra encoding of expressions is quite extensible. For instance, we can
 add another case to the expression datatype by extending the interface. */
@@ -322,7 +322,7 @@ def testMult[T](semantics : ExpWithMult[T]) = {
 }
 
 val testresMult = testMult(evalWithMult)(Map.empty)
-// testresMult: Value = NumV(15)
+// testresMult: Value = NumV(n = 15)
 
 /* Note that there is no danger of confusing the language variants. For instance,
 an attempt to pass testMult to eval will be a static type error. */
@@ -369,9 +369,9 @@ def test2(semantics: ExpT) = {
 }
 
 val testres2 = test2(evalT)
-// testres2: evalT.Rep[Int] = 8
+// testres2: Int = 8
 val testres3 = test2(prettyprintT)
-// testres3: prettyprintT.Rep[Int] = &quot;(x0 =&gt; (x1 =&gt; (x1+x2)))(5)(3)&quot;
+// testres3: String = &quot;(x0 =&gt; (x1 =&gt; (x1+x2)))(5)(3)&quot;
 </code></pre>
 
                     </main>

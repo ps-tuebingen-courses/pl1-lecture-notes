@@ -185,23 +185,62 @@ Church Encoding of Booleans
 Let&quot;s&quot; start with booleans and boolean arithmetic. 
 */
 val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
-// f: Fun = Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;)))  // false
+// f: Fun = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))  // false
 val t = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;t&quot;))  // true
-// t: Fun = Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;t&quot;)))  // true
+// t: Fun = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;t&quot;)))  // true
 val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
-// and: Fun = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(Id(&quot;a&quot;), Id(&quot;b&quot;)), Id(&quot;a&quot;))))
+// and: Fun = Fun(
+//   param = &quot;a&quot;,
+//   body = Fun(
+//     param = &quot;b&quot;,
+//     body = App(
+//       funExpr = App(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;b&quot;)),
+//       argExpr = Id(name = &quot;a&quot;)
+//     )
+//   )
+// )
 val or = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;a&quot;, &quot;a&quot;), &quot;b&quot;)))
-// or: Fun = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(Id(&quot;a&quot;), Id(&quot;a&quot;)), Id(&quot;b&quot;))))
+// or: Fun = Fun(
+//   param = &quot;a&quot;,
+//   body = Fun(
+//     param = &quot;b&quot;,
+//     body = App(
+//       funExpr = App(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;a&quot;)),
+//       argExpr = Id(name = &quot;b&quot;)
+//     )
+//   )
+// )
 val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(&quot;a&quot;,&quot;f&quot;),&quot;t&quot;))))
-// not: Fun = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(Id(&quot;a&quot;), Id(&quot;f&quot;)), Id(&quot;t&quot;)))))
+// not: Fun = Fun(
+//   param = &quot;a&quot;,
+//   body = Fun(
+//     param = &quot;t&quot;,
+//     body = Fun(
+//       param = &quot;f&quot;,
+//       body = App(
+//         funExpr = App(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;f&quot;)),
+//         argExpr = Id(name = &quot;t&quot;)
+//       )
+//     )
+//   )
+// )
 
 /** 
 We can now write our own control structures, such as if/then/else 
 */
 val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
 // ifthenelse: Fun = Fun(
-//   &quot;cond&quot;,
-//   Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(Id(&quot;cond&quot;), Id(&quot;t&quot;)), Id(&quot;f&quot;))))
+//   param = &quot;cond&quot;,
+//   body = Fun(
+//     param = &quot;t&quot;,
+//     body = Fun(
+//       param = &quot;f&quot;,
+//       body = App(
+//         funExpr = App(funExpr = Id(name = &quot;cond&quot;), argExpr = Id(name = &quot;t&quot;)),
+//         argExpr = Id(name = &quot;f&quot;)
+//       )
+//     )
+//   )
 // )
 
 /**
@@ -211,111 +250,236 @@ Church Encoding of Numbers
 Let&quot;s&quot; now consider Numbers. We encode them as Peano numbers.  These encodings of numbers are often called _Church numbers_. 
 */
 val zero = Fun(&quot;s&quot;, Fun(&quot;z&quot;, &quot;z&quot;))
-// zero: Fun = Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+// zero: Fun = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
 val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(&quot;s&quot;, App(App(&quot;n&quot;, &quot;s&quot;),&quot;z&quot;)))))
 // succ: Fun = Fun(
-//   &quot;n&quot;,
-//   Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//   param = &quot;n&quot;,
+//   body = Fun(
+//     param = &quot;s&quot;,
+//     body = Fun(
+//       param = &quot;z&quot;,
+//       body = App(
+//         funExpr = Id(name = &quot;s&quot;),
+//         argExpr = App(
+//           funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//           argExpr = Id(name = &quot;z&quot;)
+//         )
+//       )
+//     )
+//   )
 // )
 val one = App(succ, zero)
 // one: App = App(
-//   Fun(
-//     &quot;n&quot;,
-//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//   funExpr = Fun(
+//     param = &quot;n&quot;,
+//     body = Fun(
+//       param = &quot;s&quot;,
+//       body = Fun(
+//         param = &quot;z&quot;,
+//         body = App(
+//           funExpr = Id(name = &quot;s&quot;),
+//           argExpr = App(
+//             funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//             argExpr = Id(name = &quot;z&quot;)
+//           )
+//         )
+//       )
+//     )
 //   ),
-//   Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//   argExpr = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
 // )
 val two = App(succ, one)
 // two: App = App(
-//   Fun(
-//     &quot;n&quot;,
-//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//   funExpr = Fun(
+//     param = &quot;n&quot;,
+//     body = Fun(
+//       param = &quot;s&quot;,
+//       body = Fun(
+//         param = &quot;z&quot;,
+//         body = App(
+//           funExpr = Id(name = &quot;s&quot;),
+//           argExpr = App(
+//             funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//             argExpr = Id(name = &quot;z&quot;)
+//           )
+//         )
+//       )
+//     )
 //   ),
-//   App(
-//     Fun(
-//       &quot;n&quot;,
-//       Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//   argExpr = App(
+//     funExpr = Fun(
+//       param = &quot;n&quot;,
+//       body = Fun(
+//         param = &quot;s&quot;,
+//         body = Fun(
+//           param = &quot;z&quot;,
+//           body = App(
+//             funExpr = Id(name = &quot;s&quot;),
+//             argExpr = App(
+//               funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//               argExpr = Id(name = &quot;z&quot;)
+//             )
+//           )
+//         )
+//       )
 //     ),
-//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//     argExpr = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
 //   )
 // )
 val three = App(succ, two)
 // three: App = App(
-//   Fun(
-//     &quot;n&quot;,
-//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
-//   ),
-//   App(
-//     Fun(
-//       &quot;n&quot;,
-//       Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
-//     ),
-//     App(
-//       Fun(
-//         &quot;n&quot;,
-//         Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
-//       ),
-//       Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//   funExpr = Fun(
+//     param = &quot;n&quot;,
+//     body = Fun(
+//       param = &quot;s&quot;,
+//       body = Fun(
+//         param = &quot;z&quot;,
+//         body = App(
+//           funExpr = Id(name = &quot;s&quot;),
+//           argExpr = App(
+//             funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//             argExpr = Id(name = &quot;z&quot;)
+//           )
+//         )
+//       )
 //     )
-//   )
-// )
+//   ),
+//   argExpr = App(
+//     funExpr = Fun(
+//       param = &quot;n&quot;,
+//       body = Fun(
+//         param = &quot;s&quot;,
+//         body = Fun(
+//           param = &quot;z&quot;,
+//           body = App(
+//             funExpr = Id(name = &quot;s&quot;),
+//             argExpr = App(
+//               funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//               argExpr = Id(name = &quot;z&quot;)
+//             )
+//           )
+//         )
+//       )
+//     ),
+//     argExpr = App(
+//       funExpr = Fun(
+//         param = &quot;n&quot;,
+//         body = Fun(
+//           param = &quot;s&quot;,
+//           body = Fun(
+//             param = &quot;z&quot;,
+//             body = App(
+//               funExpr = Id(name = &quot;s&quot;),
+//               argExpr = App(
+//                 funExpr = App(
+//                   funExpr = Id(name = &quot;n&quot;),
+//                   argExpr = Id(name = &quot;s&quot;)
+//                 ),
+//                 argExpr = Id(name = &quot;z&quot;)
+// ...
 val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(&quot;a&quot;,&quot;s&quot;), App(App(&quot;b&quot;, &quot;s&quot;),&quot;z&quot;))))))
 // add: Fun = Fun(
-//   &quot;a&quot;,
-//   Fun(
-//     &quot;b&quot;,
-//     Fun(
-//       &quot;s&quot;,
-//       Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), Id(&quot;s&quot;)), App(App(Id(&quot;b&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;))))
+//   param = &quot;a&quot;,
+//   body = Fun(
+//     param = &quot;b&quot;,
+//     body = Fun(
+//       param = &quot;s&quot;,
+//       body = Fun(
+//         param = &quot;z&quot;,
+//         body = App(
+//           funExpr = App(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;s&quot;)),
+//           argExpr = App(
+//             funExpr = App(funExpr = Id(name = &quot;b&quot;), argExpr = Id(name = &quot;s&quot;)),
+//             argExpr = Id(name = &quot;z&quot;)
+//           )
+//         )
+//       )
 //     )
 //   )
 // )
 val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(&quot;a&quot;, App(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
 // mult: Fun = Fun(
-//   &quot;a&quot;,
-//   Fun(
-//     &quot;b&quot;,
-//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), App(Id(&quot;b&quot;), Id(&quot;s&quot;))), Id(&quot;z&quot;))))
-//   )
-// )
-val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;b&quot;, App(mult, &quot;a&quot;)), one)))
-// exp: Fun = Fun(
-//   &quot;a&quot;,
-//   Fun(
-//     &quot;b&quot;,
-//     App(
-//       App(
-//         Id(&quot;b&quot;),
-//         App(
-//           Fun(
-//             &quot;a&quot;,
-//             Fun(
-//               &quot;b&quot;,
-//               Fun(
-//                 &quot;s&quot;,
-//                 Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), App(Id(&quot;b&quot;), Id(&quot;s&quot;))), Id(&quot;z&quot;)))
-//               )
-//             )
+//   param = &quot;a&quot;,
+//   body = Fun(
+//     param = &quot;b&quot;,
+//     body = Fun(
+//       param = &quot;s&quot;,
+//       body = Fun(
+//         param = &quot;z&quot;,
+//         body = App(
+//           funExpr = App(
+//             funExpr = Id(name = &quot;a&quot;),
+//             argExpr = App(funExpr = Id(name = &quot;b&quot;), argExpr = Id(name = &quot;s&quot;))
 //           ),
-//           Id(&quot;a&quot;)
+//           argExpr = Id(name = &quot;z&quot;)
 //         )
-//       ),
-//       App(
-//         Fun(
-//           &quot;n&quot;,
-//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
-//         ),
-//         Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
 //       )
 //     )
 //   )
 // )
+val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;b&quot;, App(mult, &quot;a&quot;)), one)))
+// exp: Fun = Fun(
+//   param = &quot;a&quot;,
+//   body = Fun(
+//     param = &quot;b&quot;,
+//     body = App(
+//       funExpr = App(
+//         funExpr = Id(name = &quot;b&quot;),
+//         argExpr = App(
+//           funExpr = Fun(
+//             param = &quot;a&quot;,
+//             body = Fun(
+//               param = &quot;b&quot;,
+//               body = Fun(
+//                 param = &quot;s&quot;,
+//                 body = Fun(
+//                   param = &quot;z&quot;,
+//                   body = App(
+//                     funExpr = App(
+//                       funExpr = Id(name = &quot;a&quot;),
+//                       argExpr = App(
+//                         funExpr = Id(name = &quot;b&quot;),
+//                         argExpr = Id(name = &quot;s&quot;)
+//                       )
+//                     ),
+//                     argExpr = Id(name = &quot;z&quot;)
+//                   )
+//                 )
+//               )
+//             )
+//           ),
+//           argExpr = Id(name = &quot;a&quot;)
+//         )
+//       ),
+//       argExpr = App(
+//         funExpr = Fun(
+//           param = &quot;n&quot;,
+//           body = Fun(
+//             param = &quot;s&quot;,
+//             body = Fun(
+//               param = &quot;z&quot;,
+//               body = App(
+//                 funExpr = Id(name = &quot;s&quot;),
+//                 argExpr = App(
+//                   funExpr = App(
+//                     funExpr = Id(name = &quot;n&quot;),
+//                     argExpr = Id(name = &quot;s&quot;)
+//                   ),
+//                   argExpr = Id(name = &quot;z&quot;)
+//                 )
+// ...
 val iszero = Fun(&quot;a&quot;, App(App(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
 // iszero: Fun = Fun(
-//   &quot;a&quot;,
-//   App(
-//     App(Id(&quot;a&quot;), Fun(&quot;x&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;))))),
-//     Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;t&quot;)))
+//   param = &quot;a&quot;,
+//   body = App(
+//     funExpr = App(
+//       funExpr = Id(name = &quot;a&quot;),
+//       argExpr = Fun(
+//         param = &quot;x&quot;,
+//         body = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))
+//       )
+//     ),
+//     argExpr = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;t&quot;)))
 //   )
 // )
 /** 
@@ -323,8 +487,14 @@ The predecessor function is more complicated (why?). We do not show it here.
 For testing, here is a function that prints a unary representation of a number. */
 val printnum = Fun(&quot;a&quot;, App(App(&quot;a&quot;, Fun(&quot;x&quot;, PrintDot())), f))
 // printnum: Fun = Fun(
-//   &quot;a&quot;,
-//   App(App(Id(&quot;a&quot;), Fun(&quot;x&quot;, PrintDot())), Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;))))
+//   param = &quot;a&quot;,
+//   body = App(
+//     funExpr = App(
+//       funExpr = Id(name = &quot;a&quot;),
+//       argExpr = Fun(param = &quot;x&quot;, body = PrintDot())
+//     ),
+//     argExpr = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))
+//   )
 // )
 
 /** 
@@ -334,22 +504,40 @@ Again straightforward, except &quot;tail&quot;, which we do not show here. It ne
 as the predecessor function. 
 */
 val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-// emptylist: Fun = Fun(&quot;c&quot;, Fun(&quot;e&quot;, Id(&quot;e&quot;)))
+// emptylist: Fun = Fun(
+//   param = &quot;c&quot;,
+//   body = Fun(param = &quot;e&quot;, body = Id(name = &quot;e&quot;))
+// )
 val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, App(App(&quot;c&quot;, &quot;h&quot;), App(App(&quot;r&quot;,&quot;c&quot;),&quot;e&quot;))))))
 // cons: Fun = Fun(
-//   &quot;h&quot;,
-//   Fun(
-//     &quot;r&quot;,
-//     Fun(
-//       &quot;c&quot;,
-//       Fun(&quot;e&quot;, App(App(Id(&quot;c&quot;), Id(&quot;h&quot;)), App(App(Id(&quot;r&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;))))
+//   param = &quot;h&quot;,
+//   body = Fun(
+//     param = &quot;r&quot;,
+//     body = Fun(
+//       param = &quot;c&quot;,
+//       body = Fun(
+//         param = &quot;e&quot;,
+//         body = App(
+//           funExpr = App(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;h&quot;)),
+//           argExpr = App(
+//             funExpr = App(funExpr = Id(name = &quot;r&quot;), argExpr = Id(name = &quot;c&quot;)),
+//             argExpr = Id(name = &quot;e&quot;)
+//           )
+//         )
+//       )
 //     )
 //   )
 // )
 val head = Fun(&quot;l&quot;, App(App(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
 // head: Fun = Fun(
-//   &quot;l&quot;,
-//   App(App(Id(&quot;l&quot;), Fun(&quot;h&quot;, Fun(&quot;t&quot;, Id(&quot;h&quot;)))), Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;))))
+//   param = &quot;l&quot;,
+//   body = App(
+//     funExpr = App(
+//       funExpr = Id(name = &quot;l&quot;),
+//       argExpr = Fun(param = &quot;h&quot;, body = Fun(param = &quot;t&quot;, body = Id(name = &quot;h&quot;)))
+//     ),
+//     argExpr = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))
+//   )
 // )
 
 /** 
@@ -357,129 +545,158 @@ For instance, we can multiply all numbers in a list
 */
 val multlist = Fun(&quot;l&quot;, App(App(&quot;l&quot;, mult), one))
 // multlist: Fun = Fun(
-//   &quot;l&quot;,
-//   App(
-//     App(
-//       Id(&quot;l&quot;),
-//       Fun(
-//         &quot;a&quot;,
-//         Fun(
-//           &quot;b&quot;,
-//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), App(Id(&quot;b&quot;), Id(&quot;s&quot;))), Id(&quot;z&quot;))))
-//         )
-//       )
-//     ),
-//     App(
-//       Fun(
-//         &quot;n&quot;,
-//         Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
-//       ),
-//       Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
-//     )
-//   )
-// )
-/* Here is the list 3,2,3 */
-val list323 = App(App(cons, three), App(App(cons, two), App(App(cons,three),emptylist)))
-// list323: App = App(
-//   App(
-//     Fun(
-//       &quot;h&quot;,
-//       Fun(
-//         &quot;r&quot;,
-//         Fun(
-//           &quot;c&quot;,
-//           Fun(
-//             &quot;e&quot;,
-//             App(App(Id(&quot;c&quot;), Id(&quot;h&quot;)), App(App(Id(&quot;r&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;)))
+//   param = &quot;l&quot;,
+//   body = App(
+//     funExpr = App(
+//       funExpr = Id(name = &quot;l&quot;),
+//       argExpr = Fun(
+//         param = &quot;a&quot;,
+//         body = Fun(
+//           param = &quot;b&quot;,
+//           body = Fun(
+//             param = &quot;s&quot;,
+//             body = Fun(
+//               param = &quot;z&quot;,
+//               body = App(
+//                 funExpr = App(
+//                   funExpr = Id(name = &quot;a&quot;),
+//                   argExpr = App(
+//                     funExpr = Id(name = &quot;b&quot;),
+//                     argExpr = Id(name = &quot;s&quot;)
+//                   )
+//                 ),
+//                 argExpr = Id(name = &quot;z&quot;)
+//               )
+//             )
 //           )
 //         )
 //       )
 //     ),
-//     App(
-//       Fun(
-//         &quot;n&quot;,
-//         Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
-//       ),
-//       App(
-//         Fun(
-//           &quot;n&quot;,
-//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
-//         ),
-//         App(
-//           Fun(
-//             &quot;n&quot;,
-//             Fun(
-//               &quot;s&quot;,
-//               Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;))))
+//     argExpr = App(
+//       funExpr = Fun(
+//         param = &quot;n&quot;,
+//         body = Fun(
+//           param = &quot;s&quot;,
+//           body = Fun(
+//             param = &quot;z&quot;,
+//             body = App(
+//               funExpr = Id(name = &quot;s&quot;),
+//               argExpr = App(
+//                 funExpr = App(
+//                   funExpr = Id(name = &quot;n&quot;),
+//                   argExpr = Id(name = &quot;s&quot;)
+//                 ),
+//                 argExpr = Id(name = &quot;z&quot;)
+//               )
 //             )
-//           ),
-//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//           )
+//         )
+//       ),
+//       argExpr = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
+// ...
+/* Here is the list 3,2,3 */
+val list323 = App(App(cons, three), App(App(cons, two), App(App(cons,three),emptylist)))
+// list323: App = App(
+//   funExpr = App(
+//     funExpr = Fun(
+//       param = &quot;h&quot;,
+//       body = Fun(
+//         param = &quot;r&quot;,
+//         body = Fun(
+//           param = &quot;c&quot;,
+//           body = Fun(
+//             param = &quot;e&quot;,
+//             body = App(
+//               funExpr = App(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;h&quot;)),
+//               argExpr = App(
+//                 funExpr = App(
+//                   funExpr = Id(name = &quot;r&quot;),
+//                   argExpr = Id(name = &quot;c&quot;)
+//                 ),
+//                 argExpr = Id(name = &quot;e&quot;)
+//               )
+//             )
+//           )
 //         )
 //       )
-//     )
-//   ),
-//   App(
-//     App(
-//       Fun(
-//         &quot;h&quot;,
-//         Fun(
-//           &quot;r&quot;,
-//           Fun(
-//             &quot;c&quot;,
-//             Fun(
-//               &quot;e&quot;,
-//               App(App(Id(&quot;c&quot;), Id(&quot;h&quot;)), App(App(Id(&quot;r&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;)))
+//     ),
+//     argExpr = App(
+//       funExpr = Fun(
+//         param = &quot;n&quot;,
+//         body = Fun(
+//           param = &quot;s&quot;,
+//           body = Fun(
+//             param = &quot;z&quot;,
+//             body = App(
+//               funExpr = Id(name = &quot;s&quot;),
+//               argExpr = App(
+//                 funExpr = App(
+//                   funExpr = Id(name = &quot;n&quot;),
+//                   argExpr = Id(name = &quot;s&quot;)
+//                 ),
+//                 argExpr = Id(name = &quot;z&quot;)
+//               )
+//             )
+//           )
+//         )
+//       ),
+//       argExpr = App(
+//         funExpr = Fun(
+//           param = &quot;n&quot;,
+//           body = Fun(
+//             param = &quot;s&quot;,
 // ...
 
 val test = App(printnum, App(multlist, list323))
 // test: App = App(
-//   Fun(&quot;a&quot;, App(App(Id(&quot;a&quot;), Fun(&quot;x&quot;, PrintDot())), Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;))))),
-//   App(
-//     Fun(
-//       &quot;l&quot;,
-//       App(
-//         App(
-//           Id(&quot;l&quot;),
-//           Fun(
-//             &quot;a&quot;,
-//             Fun(
-//               &quot;b&quot;,
-//               Fun(
-//                 &quot;s&quot;,
-//                 Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), App(Id(&quot;b&quot;), Id(&quot;s&quot;))), Id(&quot;z&quot;)))
+//   funExpr = Fun(
+//     param = &quot;a&quot;,
+//     body = App(
+//       funExpr = App(
+//         funExpr = Id(name = &quot;a&quot;),
+//         argExpr = Fun(param = &quot;x&quot;, body = PrintDot())
+//       ),
+//       argExpr = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))
+//     )
+//   ),
+//   argExpr = App(
+//     funExpr = Fun(
+//       param = &quot;l&quot;,
+//       body = App(
+//         funExpr = App(
+//           funExpr = Id(name = &quot;l&quot;),
+//           argExpr = Fun(
+//             param = &quot;a&quot;,
+//             body = Fun(
+//               param = &quot;b&quot;,
+//               body = Fun(
+//                 param = &quot;s&quot;,
+//                 body = Fun(
+//                   param = &quot;z&quot;,
+//                   body = App(
+//                     funExpr = App(
+//                       funExpr = Id(name = &quot;a&quot;),
+//                       argExpr = App(
+//                         funExpr = Id(name = &quot;b&quot;),
+//                         argExpr = Id(name = &quot;s&quot;)
+//                       )
+//                     ),
+//                     argExpr = Id(name = &quot;z&quot;)
+//                   )
+//                 )
 //               )
 //             )
 //           )
 //         ),
-//         App(
-//           Fun(
-//             &quot;n&quot;,
-//             Fun(
-//               &quot;s&quot;,
-//               Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;))))
-//             )
-//           ),
-//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
-//         )
-//       )
-//     ),
-//     App(
-//       App(
-//         Fun(
-//           &quot;h&quot;,
-//           Fun(
-//             &quot;r&quot;,
-//             Fun(
-//               &quot;c&quot;,
-//               Fun(
-//                 &quot;e&quot;,
-//                 App(App(Id(&quot;c&quot;), Id(&quot;h&quot;)), App(App(Id(&quot;r&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;)))
-//               )
-//             )
-//           )
-//         ),
-//         App(
-//           Fun(
+//         argExpr = App(
+//           funExpr = Fun(
+//             param = &quot;n&quot;,
+//             body = Fun(
+//               param = &quot;s&quot;,
+//               body = Fun(
+//                 param = &quot;z&quot;,
+//                 body = App(
+//                   funExpr = Id(name = &quot;s&quot;),
 // ...
 /* Calling exec should yield 18 dots before the dummy result */
 def exec = eval(test, Map.empty)

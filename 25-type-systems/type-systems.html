@@ -196,15 +196,23 @@ other ones yield runtime errors.
 */
 
 val ex1 = Add(3,5)
-// ex1: Add = Add(Num(3), Num(5))
+// ex1: Add = Add(lhs = Num(n = 3), rhs = Num(n = 5))
 val ex2 = If(true, 7, 5)
-// ex2: If = If(Bool(true), Num(7), Num(5))
+// ex2: If = If(cond = Bool(x = true), thenExp = Num(n = 7), els = Num(n = 5))
 val ex2b = If(true, 7, true)
-// ex2b: If = If(Bool(true), Num(7), Bool(true))
+// ex2b: If = If(
+//   cond = Bool(x = true),
+//   thenExp = Num(n = 7),
+//   els = Bool(x = true)
+// )
 val ex3 = If(Add(3,4), 7, true)
-// ex3: If = If(Add(Num(3), Num(4)), Num(7), Bool(true))
+// ex3: If = If(
+//   cond = Add(lhs = Num(n = 3), rhs = Num(n = 4)),
+//   thenExp = Num(n = 7),
+//   els = Bool(x = true)
+// )
 val ex4 = Add(true,3)
-// ex4: Add = Add(Bool(true), Num(3))
+// ex4: Add = Add(lhs = Bool(x = true), rhs = Num(n = 3))
 
 /**
 Let's now design a type system for this language. Most type systems entail a classification of the values into different types.

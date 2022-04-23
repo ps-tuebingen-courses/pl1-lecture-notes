@@ -284,7 +284,7 @@ object IdentityMonad extends IdentityMonad
 
 trait MonadTransformer extends Monad {
   protected val m : Monad
-}    
+}  
 
 // The Reader monad transformer. We provide some convenient
 // functions lift, lift2 etc. to lift functions from the inner monad.
@@ -337,7 +337,7 @@ trait StateT extends MonadTransformer with StateMonad {
 
 trait StateMonadImpl extends StateT {
   val m = IdentityMonad
-}    
+}  
 
 /* We do not need this because we have just synthesized it.
 trait StateMonadImpl extends StateMonad {
@@ -375,7 +375,7 @@ trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
 trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
   type T
   val m = new ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
-}    
+}  
 
 // Composition of reader monad with some state monad.
 trait ReaderStateMonadForwarder extends ReaderT with StateMonad {
@@ -454,7 +454,7 @@ trait Functions extends Expressions with ReaderMonad {
   }
   implicit def id2exp(x: String) = Id(x)
   def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
-}    
+}  
 
 
 trait Boxes extends Expressions with StateMonad  {
@@ -528,7 +528,7 @@ trait Letcc extends Expressions with ContinuationMonad with ReaderMonad{
 object AE extends Arithmetic with IdentityMonad {
   val aetest = Add(1,Add(2,3))
 }
-assert(AE.aetest.eval == AE.NumV(6))  
+assert(AE.aetest.eval == AE.NumV(6)) 
 
 object FAELang extends Functions with Arithmetic with ReaderMonadImpl {
   val faetest = App(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Add(2,3))
@@ -540,14 +540,14 @@ object BCFAE extends Boxes with Arithmetic with Functions with If0 with ReaderSt
                                           Seq(SetBox(&quot;switch&quot;, 1), 1),
                                           Seq(SetBox(&quot;switch&quot;, 0), 0))),
                              Add(App(&quot;toggle&quot;,42), App(&quot;toggle&quot;,42))))  
-}    
+}  
 
 assert(BCFAE.test.eval(Map.empty)(Map.empty)._1 == BCFAE.NumV(1))
 
 object FAEwLetcc extends Arithmetic with Functions with If0 with Letcc with ReaderContinuationMonadImpl {
   override type T = Value
   val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, CApp(&quot;k&quot;, 3))))  
-}    
+}  
 
 assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
 </code></pre>
