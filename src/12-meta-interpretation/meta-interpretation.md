@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./meta-interpretation.scala)
 
-```scala
+```scala mdoc
 /**
 Syntactic interpretation vs meta intepretation
 ==============================================

@@ -2,8 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./type-inference.scala)
 
-```scala
-
+```scala mdoc
 import scala.language.implicitConversions
 
 // Hindley-Milner type inference with let-polymorphism

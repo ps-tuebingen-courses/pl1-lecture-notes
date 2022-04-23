@@ -1,7 +1,7 @@
 # Object Algebras
 The content of this chapter is available as a scala file [here.](./object-algebras.scala)
 
-```scala
+```scala mdoc
 import scala.language.implicitConversions
 
 /* Object algebras: A practical way of using Church Encodings */
@@ -109,10 +109,10 @@ expression trees as object algebras.
 trait Exp[T] {
   implicit def id(name: String) : T
   def fun(param: String, body: T): T
-  def app(funExpr: T, argExpr: T) :T
+  def ap(funExpr: T, argExpr: T) :T
   implicit def num(n: Int) : T
   def add(e1: T, e2: T) : T
-  def wth(x: String, xdef: T, body: T) : T = app(fun(x,body),xdef)
+  def wth(x: String, xdef: T, body: T) : T = ap(fun(x,body),xdef)
 }
 
 /* The structure of expression forces compositional interpretations. Hence
@@ -127,7 +127,7 @@ case class NumV(n: Int) extends Value
 trait eval extends Exp[Env => Value] {
   def id(name: String) = env => env(name)
   def fun(param: String, body: Env => Value) = env => ClosureV(v => body(env + (param -> v)))
-  def app(funExpr: Env => Value, argExpr: Env => Value) = env => funExpr(env) match {
+  def ap(funExpr: Env => Value, argExpr: Env => Value) = env => funExpr(env) match {
     case ClosureV(f) => f(argExpr(env))
     case _ => sys.error("can only apply functions")
   }
@@ -143,7 +143,7 @@ object eval extends eval
 def test[T](semantics : Exp[T]) = {
   import semantics._
   
-  app(app(fun("x",fun("y",add("x","y"))),5),3)
+  ap(ap(fun("x",fun("y",add("x","y"))),5),3)
 }
 
 /* We evaluate the program by folding the eval visitor over it. */
@@ -167,7 +167,7 @@ object evalWithMult extends evalWithMult
 def testMult[T](semantics : ExpWithMult[T]) = {
   import semantics._
   
-  app(app(fun("x",fun("y",mult("x","y"))),5),3)
+  ap(ap(fun("x",fun("y",mult("x","y"))),5),3)
 }
 
 val testresMult = testMult(evalWithMult)(Map.empty)
@@ -182,7 +182,7 @@ Don't panic if you don't understand what is going on here.
 trait ExpT {
   type Rep[_]
   def fun[S,T](f : Rep[S] => Rep[T]): Rep[S=>T]
-  def app[S,T](funExpr: Rep[S=>T], argExpr: Rep[S]) :Rep[T]
+  def ap[S,T](funExpr: Rep[S=>T], argExpr: Rep[S]) :Rep[T]
   implicit def num(n: Int) : Rep[Int]
   def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
 }
@@ -193,7 +193,7 @@ of expressions. */
 object evalT extends ExpT {
   type Rep[X] = X
   def fun[S,T](f: S=>T) =f
-  def app[S,T](f: S=>T, a: S) = f(a)
+  def ap[S,T](f: S=>T, a: S) = f(a)
   def num(n: Int) = n
   def add(e1: Int, e2: Int) = e1+e2
 }
@@ -206,14 +206,14 @@ object prettyprintT extends ExpT {
     counter += 1
     "(" + varname + " => " +  f("x"+counter.toString) + ")"
   }
-  def app[S,T](f: String, a: String) = f + "(" + a + ")"
+  def ap[S,T](f: String, a: String) = f + "(" + a + ")"
   def num(n: Int) = n.toString
   def add(e1: String, e2: String) = "("+e1+"+"+e2+")"
 
 }
 def test2(semantics: ExpT) = {
   import semantics._
-  app(app(fun((x:Rep[Int])=>fun((y:Rep[Int])=>add(x,y))),5),3)
+  ap(ap(fun((x:Rep[Int])=>fun((y:Rep[Int])=>add(x,y))),5),3)
 }
 
 val testres2 = test2(evalT)

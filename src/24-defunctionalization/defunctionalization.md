@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./defunctionalization.scala)
 
-```scala
+```scala mdoc
 /**
 Defunctionalization
 ===================
@@ -82,8 +82,8 @@ We create two new top-level functions. Let's call them ``f`` and ``g`` Their bod
 We add a parameter for each free variable. In the example, the free variable is ``n`` in both cases:
 */
 
-def f(n : Int) = (y : Int) => y + n
-def g(n : Int) = (y : Int) => y * n
+def fLam(n : Int) = (y : Int) => y + n
+def gLam(n : Int) = (y : Int) => y * n
 
 /** 
 or shorter: 
@@ -96,7 +96,7 @@ def g(n : Int)(y : Int) = y * n
 The local function can now be replaced by a call to the new global function.
 */
 
-def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n), map(f(n), xs)) 
+def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_), xs)) 
 
 /**
 Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:

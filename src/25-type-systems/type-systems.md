@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./type-systems.scala)
 
-```scala
+```scala mdoc
 import scala.language.implicitConversions
 /**
 Type Systems

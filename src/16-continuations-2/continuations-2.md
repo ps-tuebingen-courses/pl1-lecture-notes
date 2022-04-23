@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./continuations-2.scala)
 
-```scala
+```scala mdoc
 import scala.language.implicitConversions
 
 /* Today's goal is to make the "web" (or rather, CPS) transformation which we applied informally

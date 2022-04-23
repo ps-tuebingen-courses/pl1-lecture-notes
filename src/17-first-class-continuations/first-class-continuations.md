@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./first-class-continuations.scala)
 
-```scala
+```scala mdoc
 import scala.language.implicitConversions
 
 /** 

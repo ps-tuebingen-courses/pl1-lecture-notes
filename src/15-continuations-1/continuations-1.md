@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./continuations-1.scala)
 
-```scala
+```scala mdoc
 import scala.io.StdIn.readLine
 /*
 Continuations

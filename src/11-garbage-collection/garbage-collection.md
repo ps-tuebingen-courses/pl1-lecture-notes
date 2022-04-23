@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./garbage-collection.scala)
 
-```scala
+```scala mdoc
 import scala.language.implicitConversions
 /**
 Garbage Collection

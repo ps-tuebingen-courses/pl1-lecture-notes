@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./church-encoding.scala)
 
-```scala
+```scala mdoc
 /**
 Church Encoding
 ===============

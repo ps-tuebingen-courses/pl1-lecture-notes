@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./io-monad.scala)
 
-```scala
+```scala mdoc
 trait IOMonad {
   type IO[_]
   def unit[A](a: A): IO[A]
