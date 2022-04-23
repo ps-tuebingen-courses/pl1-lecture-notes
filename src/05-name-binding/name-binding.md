@@ -31,8 +31,8 @@ import Syntax._
 We use implicits again to make example programs less verbose.
 
 ```scala mdoc
-implicit def num2exp(n: Int) = Num(n)
-implicit def string2exp(x: String) = Id(x)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def string2exp(x: String): Exp = Id(x)
 ```
 
 A first example program in WAE.

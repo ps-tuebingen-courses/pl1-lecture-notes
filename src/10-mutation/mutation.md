@@ -24,8 +24,8 @@ object Syntax {
   case class Add(lhs: Exp, rhs: Exp) extends Exp
   case class Mul(lhs: Exp, rhs: Exp) extends Exp
   case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp
-  implicit def num2exp(n: Int) = Num(n)
-  implicit def id2exp(s: String) = Id(s)
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
   case class Fun(param: String, body: Exp) extends Exp
   case class App (funExpr: Exp, argExpr: Exp) extends Exp
   def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)

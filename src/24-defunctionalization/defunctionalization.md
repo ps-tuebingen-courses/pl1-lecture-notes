@@ -96,7 +96,7 @@ def g(n : Int)(y : Int) = y * n
 The local function can now be replaced by a call to the new global function.
 */
 
-def addAndMultNToList(n : Int, xs : List[Int]) = map(g(n), map(f(n), xs)) 
+def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n), map(f(n), xs)) 
 
 /**
 Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:
@@ -162,7 +162,7 @@ def map(f : FunctionValue, xs : List[Int]) : List[Int] = xs match {
   case (x :: xs) => apply(f, x) :: map(f, xs)
 }
 
-def addAndMultNToList(n : Int, xs : List[Int]) = map(G(n), map(F(n), xs))
+def addAndMultNToListDefun(n : Int, xs : List[Int]) = map(G(n), map(F(n), xs))
  
 /** 
 Let's now apply defunctionalization to our CPS-transformed interpreter: 

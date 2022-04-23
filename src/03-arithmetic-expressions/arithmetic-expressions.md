@@ -43,8 +43,8 @@ That said, to make writing examples less verbose, Scala's implicits come to the 
 Calls to implicit functions are inserted automatically by the compiler if they help to restore well-typedness. For instance, we can define
 
 ```scala mdoc
-implicit def num2exp(n: Int) = Num(n)
-implicit def sym2exp(x: String) = Id(x)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def sym2exp(x: String): Exp = Id(x)
 ```
 
 to lift integers and Strings to expressions. Using these implicits, the example can be written as:
@@ -181,7 +181,7 @@ import AEId._
 case class Visitor[T](num: Int => T, add: (T, T) => T, mul: (T, T) => T, id: String => T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
 val countVisitor = Visitor[Int](_=>1, _ + _, _ + _, _ => 0)
-val printVisitor = Visitor[String](_.toString, "(" + _ + "+" + _ + ")", _ + "*" + _, _.x)
+val printVisitor = Visitor[String](_.toString, "(" + _ + "+" + _ + ")", _ + "*" + _, identity)
 
 def foldExp[T](v: Visitor[T], e: Exp) : T = {
   e match {

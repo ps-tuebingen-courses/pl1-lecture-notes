@@ -12,7 +12,7 @@ we introduce a new expression ``PrintDot`` whose semantics is to print a dot on 
 */
 sealed abstract class Exp
 case class Id(name: String) extends Exp
-implicit def id2exp(s: String) = Id(s)
+implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
 case class PrintDot() extends Exp

@@ -28,8 +28,8 @@ case class Num(n: Int) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Bool(x: Boolean) extends Exp
 case class If(cond: Exp, thenExp: Exp, els: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def bool2exp(x: Boolean) = Bool(x)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def bool2exp(x: Boolean): Exp = Bool(x)
 
 
 def eval(e: Exp) : Exp = e match {

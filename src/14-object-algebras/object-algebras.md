@@ -28,30 +28,30 @@ like that (at least conceptually).
 In the same way, we can encode Church numerals.
 */
 
-trait Num {
+trait NumC {
   def fold[T](z : T, s: T => T) : T
 }
-case object Zero extends Num {
+case object Zero extends NumC {
   def fold[T](z: T, s: T => T) = z
 }
 
-case class Succ(n: Num) extends Num {
+case class Succ(n: NumC) extends NumC {
   def fold[T](z: T, s: T => T) = s(n.fold(z,s))
 }
 
-def plus(a: Num, b: Num) = {
-  new Num {
+def plus(a: NumC, b: NumC) = {
+  new NumC {
     def fold[T](z : T, s : T => T) : T = {
       a.fold(b.fold(z,s), s)
     }
   }
 }
 
-val one = Succ(Zero)
-val two = Succ(one)
-val three = Succ(two)
+val oneC = Succ(Zero)
+val twoC = Succ(oneC)
+val threeC = Succ(twoC)
 
-def testplus = plus(two,three).fold[Unit]( (), _ => print("."))
+def testplusC = plus(twoC,threeC).fold[Unit]( (), _ => print("."))
 
 /*
 Object algebras are a different way to do Church encodings

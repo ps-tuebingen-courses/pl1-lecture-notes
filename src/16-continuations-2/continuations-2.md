@@ -74,8 +74,8 @@ case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: String, body: Exp) extends Exp
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def id2exp(s: String) = Id(s)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def id2exp(s: String): Exp = Id(s)
 
 /* For CPS transformed terms, we define two different syntactic categories: Values (CPSVal) and Expressions (CPSExp).
    By "values", we mean terms that "return", that is, terms that are different from applications of functions
@@ -92,7 +92,7 @@ case class CPSNum(n: Int) extends CPSVal
 case class CPSCont(v: String, body: CPSExp) extends CPSVal
 case class CPSFun(x: String, k: String, body: CPSExp) extends CPSVal
 case class CPSVar(x: String) extends CPSVal { override def toString = x.toString }
-implicit def id2cpsexp(x: String) = CPSVar(x)
+implicit def id2cpsexp(x: String): CPSVar = CPSVar(x)
 
 case class CPSContApp(k: CPSVal, a: CPSVal) extends CPSExp
 case class CPSFunApp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp // the arguments are even CPSVar and not only CPSVal!

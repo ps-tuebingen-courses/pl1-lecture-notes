@@ -34,8 +34,8 @@ object Syntax {
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
   case class Add(lhs: Exp, rhs: Exp) extends Exp
-  implicit def num2exp(n: Int) = Num(n)
-  implicit def id2exp(s: String) = Id(s)
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
 
   // Both function definitions and applications are expressions.
   case class Fun(param: String, body: Exp) extends Exp
@@ -65,29 +65,29 @@ translation. Such translations are also often called "desugaring".
 Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.
 
 ```scala mdoc
-def subst1(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+def subst0(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) => e1
-  case Add(l,r) => Add(subst1(l,x,e2), subst1(r,x,e2))
+  case Add(l,r) => Add(subst0(l,x,e2), subst0(r,x,e2))
   case Id(y) => if (x == y) e2 else Id(y)
-  case App(f,a) => App(subst1(f,x,e2), subst1(a,x,e2))
+  case App(f,a) => App(subst0(f,x,e2), subst0(a,x,e2))
   case Fun(param,body) =>
-    if (param == x) e1  else Fun(param, subst1(body, x, e2))
+    if (param == x) e1  else Fun(param, subst0(body, x, e2))
 }
 ```
 
-Let's try whether subst produces reasonable results.
+Let's try whether `subst0` produces reasonable results.
 
 ```scala mdoc
-assert( subst1(Add(5,"x"), "x", 7) == Add(5, 7))
-assert( subst1(Add(5,"x"), "y", 7) == Add(5,"x"))
-assert( subst1(Fun("x", Add("x","y")), "x", 7) == Fun("x", Add("x","y")))
+assert( subst0(Add(5,"x"), "x", 7) == Add(5, 7))
+assert( subst0(Add(5,"x"), "y", 7) == Add(5,"x"))
+assert( subst0(Fun("x", Add("x","y")), "x", 7) == Fun("x", Add("x","y")))
 ```
 
 However, what happens if ``e2`` contains free variables? The danger here is that they may be accidentially "captured" by the substitution.
 For instance, consider
 
 ```scala mdoc
-subst1(Fun("x", Add("x","y")), "y", Add("x",5))
+val subst0Test = subst0(Fun("x", Add("x","y")), "y", Add("x",5))
 ```
 
 The result is ``Fun("x",Add("x",Add("x",5)))``
@@ -167,7 +167,7 @@ The remainder of the interpreter is unsurprising:
 
 ```scala mdoc
 def eval(e: Exp) : Exp = e match {
-  case Id(v) => sys.error("unbound identifier: " + v.name)
+  case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l,r) => (eval(l), eval(r)) match {
                      case (Num(x),Num(y)) => Num(x+y)
                      case _ => sys.error("can only add numbers")
@@ -186,7 +186,7 @@ We can also make the return type more precise to verify the invariant  that numb
 
 ```scala mdoc
 def eval2(e: Exp) : Either[Num,Fun] = e match {
-  case Id(v) => sys.error("unbound identifier: " + v.name)
+  case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l,r) => (eval2(l), eval2(r)) match {
                      case (Left(Num(x)),Left(Num(y))) => Left(Num(x+y))
                      case _ => sys.error("can only add numbers")
