@@ -50,7 +50,7 @@ case class Add(lhs: Exp, rhs: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp // No type annotation!
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 case class Let(x: String, xdef: Exp, body: Exp) extends Exp
 
 def freshName(names: Set[String], default: String) : String = {
@@ -64,7 +64,7 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) => Set(x)
    case Add(l,r) => freeVars(l) ++ freeVars(r)
    case Fun(x,body) => freeVars(body) - x
-   case App(f,a) => freeVars(f) ++ freeVars(a)
+   case Ap(f,a) => freeVars(f) ++ freeVars(a)
    case Num(n) => Set.empty
    case Let(x,xdef,body) => freeVars(xdef) ++ (freeVars(body) - x)
 }
@@ -73,7 +73,7 @@ def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) => e1
   case Add(l,r) => Add(subst(l,x,e2), subst(r,x,e2))
   case Id(y) => if (x == y) e2 else Id(y)
-  case App(f,a) => App(subst(f,x,e2),subst(a,x,e2))
+  case Ap(f,a) => Ap(subst(f,x,e2),subst(a,x,e2))
   case Fun(param,body) =>
     if (param == x) e1 else {
       val fvs = freeVars(body) ++ freeVars(e2)
@@ -108,7 +108,7 @@ def typeCheck(e: Exp, gamma: Map[String,Type]) : (List[(Type,Type)],Type) = e ma
     val resbody = typeCheck(body, gamma + (x -> xtype))
     (resbody._1,FunType(xtype,resbody._2))
   }
-  case App(f,a) => {
+  case Ap(f,a) => {
     val toType = freshTypeVar
     (typeCheck(f,gamma),typeCheck(a,gamma)) match {
       case ((eqs1,ft),(eqs2,at)) => ((ft,FunType(at,toType)) :: (eqs1++eqs2),toType)
@@ -133,7 +133,7 @@ def eval(e: Exp) : Exp = e match {
                      case (Num(x),Num(y)) => Num(x+y)
                      case _ => sys.error("can only add numbers")
                     }
-  case App(f,a) => eval(f) match {
+  case Ap(f,a) => eval(f) match {
      case Fun(x,body) => eval( subst(body,x, eval(a)))  // call-by-value
      case _ => sys.error("can only apply functions")
   }
@@ -146,10 +146,10 @@ assert(doTypeCheck(42,Map.empty) == NumType())
 assert(doTypeCheck(Fun("x",Add("x",1)),Map.empty) == FunType(NumType(),NumType()))
 
 // test let-polymorphism: The identity function is once applied to a function and once to a number
-assert(doTypeCheck(Let("id", Fun("x","x"), App(App("id",Fun("x",Add("x",1))),App("id",42))),Map.empty) == NumType())
+assert(doTypeCheck(Let("id", Fun("x","x"), Ap(Ap("id",Fun("x",Add("x",1))),Ap("id",42))),Map.empty) == NumType())
 
 // this should trigger an occurs check error:
-// doTypeCheck(Fun("x",App("x","x")),Map.empty)
+// doTypeCheck(Fun("x",Ap("x","x")),Map.empty)
 // Hence omega cannot be type-checked in STLC
 
 // Completeness of type inference:

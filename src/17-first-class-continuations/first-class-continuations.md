@@ -20,7 +20,7 @@ case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: String, body: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 
 /** 
 The abstract syntax of Letcc is as follows: 
@@ -80,7 +80,7 @@ def eval(e: Exp, env: Env, k: Value => Nothing) : Nothing = e match {
    * is a closure or a continuation. If it is a continuation, we ignore the
    * current continuation k and "jump" to the stored continuation by applying the
    * evaluated continuation argument to it. */
-  case App(f,a) => eval(f,env, cl => cl match {
+  case Ap(f,a) => eval(f,env, cl => cl match {
             case ClosureV(f,closureEnv) => eval(a,env, av => eval(f.body, closureEnv + (f.param -> av),k))
             case ContV(f) => eval(a,env, av => f(av))
             case _ => sys.error("can only apply functions")
@@ -109,7 +109,7 @@ def starteval(e: Exp) : Value = {
 /** 
 Finally a small test of Letcc. 
 */
-val testprog = Add(1, Letcc("k", Add(2, App("k", 3))))
+val testprog = Add(1, Letcc("k", Add(2, Ap("k", 3))))
 
 assert(starteval(testprog) == NumV(4))
 ```

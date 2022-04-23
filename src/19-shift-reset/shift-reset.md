@@ -31,7 +31,7 @@ case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: Symbol, body: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: Symbol): Exp = Id(s)
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 case class Shift(param: Symbol, body: Exp) extends Exp
 case class Reset(body: Exp) extends Exp
 
@@ -54,7 +54,7 @@ def eval(e: Exp, env: Env, k: Value => Value) : Value = e match {
   }
   case f@Fun(param,body) => k(ClosureV(f, env))
   
-  case App(f,a) => eval(f,env, cl => cl match {
+  case Ap(f,a) => eval(f,env, cl => cl match {
             case ClosureV(f,closureEnv) => eval(a,env, av => eval(f.body, closureEnv + (f.param -> av),k))
             case ContV(k2) => eval(a,env, av => k(k2(av))) // compose continuations k2 and k
             case _ => sys.error("can only apply functions")

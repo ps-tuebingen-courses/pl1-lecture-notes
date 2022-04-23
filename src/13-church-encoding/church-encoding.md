@@ -14,7 +14,7 @@ sealed abstract class Exp
 case class Id(name: String) extends Exp
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 case class PrintDot() extends Exp
 
 abstract class Value // the only values are closures
@@ -31,7 +31,7 @@ def eval(e: Exp, env: Env) : Value = e match {
   case PrintDot() => print("."); ClosureV(Fun("x","x"), Map.empty) 
   case Id(x) => env(x)
   case f@Fun(param,body) => ClosureV(f, env)
-  case App(f,a) => eval(f,env) match {
+  case Ap(f,a) => eval(f,env) match {
     case ClosureV(f,closureEnv) => eval(f.body, closureEnv + (f.param -> eval(a,env)))
   }
 }
@@ -45,14 +45,14 @@ Let"s" start with booleans and boolean arithmetic.
 */
 val f = Fun("t", Fun("f", "f"))  // false
 val t = Fun("t", Fun("f", "t"))  // true
-val and = Fun("a", Fun("b", App(App("a", "b"),"a")))
-val or = Fun("a", Fun("b", App(App("a", "a"), "b")))
-val not = Fun("a", Fun("t", Fun("f", App(App("a","f"),"t"))))
+val and = Fun("a", Fun("b", Ap(Ap("a", "b"),"a")))
+val or = Fun("a", Fun("b", Ap(Ap("a", "a"), "b")))
+val not = Fun("a", Fun("t", Fun("f", Ap(Ap("a","f"),"t"))))
 
 /** 
 We can now write our own control structures, such as if/then/else 
 */
-val ifthenelse = Fun("cond", Fun("t", Fun("f", App(App("cond", "t"), "f"))))
+val ifthenelse = Fun("cond", Fun("t", Fun("f", Ap(Ap("cond", "t"), "f"))))
 
 /**
 Church Encoding of Numbers
@@ -61,18 +61,18 @@ Church Encoding of Numbers
 Let"s" now consider Numbers. We encode them as Peano numbers.  These encodings of numbers are often called _Church numbers_. 
 */
 val zero = Fun("s", Fun("z", "z"))
-val succ = Fun("n", Fun("s", Fun("z", App("s", App(App("n", "s"),"z")))))
-val one = App(succ, zero)
-val two = App(succ, one)
-val three = App(succ, two)
-val add  = Fun("a", Fun("b", Fun("s", Fun("z", App(App("a","s"), App(App("b", "s"),"z"))))))
-val mult = Fun("a", Fun("b", Fun("s", Fun("z", App(App("a", App("b","s")), "z")))))
-val exp  = Fun("a", Fun("b", App(App("b", App(mult, "a")), one)))
-val iszero = Fun("a", App(App("a", Fun("x", f)), t))
+val succ = Fun("n", Fun("s", Fun("z", Ap("s", Ap(Ap("n", "s"),"z")))))
+val one = Ap(succ, zero)
+val two = Ap(succ, one)
+val three = Ap(succ, two)
+val add  = Fun("a", Fun("b", Fun("s", Fun("z", Ap(Ap("a","s"), Ap(Ap("b", "s"),"z"))))))
+val mult = Fun("a", Fun("b", Fun("s", Fun("z", Ap(Ap("a", Ap("b","s")), "z")))))
+val exp  = Fun("a", Fun("b", Ap(Ap("b", Ap(mult, "a")), one)))
+val iszero = Fun("a", Ap(Ap("a", Fun("x", f)), t))
 /** 
 The predecessor function is more complicated (why?). We do not show it here. 
 For testing, here is a function that prints a unary representation of a number. */
-val printnum = Fun("a", App(App("a", Fun("x", PrintDot())), f))
+val printnum = Fun("a", Ap(Ap("a", Fun("x", PrintDot())), f))
 
 /** 
 Church encoding of lists
@@ -81,17 +81,17 @@ Again straightforward, except "tail", which we do not show here. It needs the sa
 as the predecessor function. 
 */
 val emptylist = Fun("c", Fun("e", "e"))
-val cons = Fun("h", Fun("r", Fun("c", Fun("e", App(App("c", "h"), App(App("r","c"),"e"))))))
-val head = Fun("l", App(App("l", Fun("h", Fun("t", "h"))), f))
+val cons = Fun("h", Fun("r", Fun("c", Fun("e", Ap(Ap("c", "h"), Ap(Ap("r","c"),"e"))))))
+val head = Fun("l", Ap(Ap("l", Fun("h", Fun("t", "h"))), f))
 
 /** 
 For instance, we can multiply all numbers in a list 
 */
-val multlist = Fun("l", App(App("l", mult), one))
+val multlist = Fun("l", Ap(Ap("l", mult), one))
 /* Here is the list 3,2,3 */
-val list323 = App(App(cons, three), App(App(cons, two), App(App(cons,three),emptylist)))
+val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three),emptylist)))
 
-val test = App(printnum, App(multlist, list323))
+val test = Ap(printnum, Ap(multlist, list323))
 /* Calling exec should yield 18 dots before the dummy result */
 def exec = eval(test, Map.empty) 
 
