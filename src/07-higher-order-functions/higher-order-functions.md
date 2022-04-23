@@ -265,7 +265,7 @@ The problem is that we have forgotten the deferred substitutions to be performed
 What can we do to fix this problem?
 We could try to replace the second line in the "App" case by
 
-```scala
+```
 case Fun(x,body) => evalWithEnv0(body, env + (x -> evalWithEnv0(a,env)))
 ```
 

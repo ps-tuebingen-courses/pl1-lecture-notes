@@ -70,13 +70,17 @@ they are *equivalent* in the sense that when evaluated, they will produce the sa
 somehow equivalent programs are an important tool for the study of programs, and of programming languages. Often, if we know which
 programs behave identically, we understand better how programs behave in general. We will see more examples of this in this lecture.
 Hence, the implementation of the `With` case of our interpreter should be something like:
-```scala
+
+```
 case With(x, xdef, body) => eval(subst(body,x,Num(eval(xdef))))
 ```
+
 for a function `subst` with signature
-```scala
+
+```
 subst: (Exp,String,Num) => Exp
 ```
+
 The type of the third parameter is `Num` instead of `Exp` because it is more difficult to get substitution correct when arbitrary
 expressions can be inserted (accidential name capture problem, more about that later).
 Since we want to experiment with different versions of substitution, we write the interpreter in such a way that we can parameterize
