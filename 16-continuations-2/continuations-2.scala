@@ -68,7 +68,7 @@ case class Num(n: Int) extends Exp
 case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: String, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
 
@@ -89,8 +89,8 @@ case class CPSFun(x: String, k: String, body: CPSExp) extends CPSVal
 case class CPSVar(x: String) extends CPSVal { override def toString = x.toString }
 implicit def id2cpsexp(x: String): CPSVar = CPSVar(x)
 
-case class CPSContApp(k: CPSVal, a: CPSVal) extends CPSExp
-case class CPSFunApp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp // the arguments are even CPSVar and not only CPSVal!
+case class CPSContAp(k: CPSVal, a: CPSVal) extends CPSExp
+case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp // the arguments are even CPSVar and not only CPSVal!
 case class CPSAdd(l: CPSVar, r: CPSVar) extends CPSVal
 
 /* With these definitions, we are now ready to formalize the transformation described above.
@@ -102,7 +102,7 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) => Set(x)
    case Add(l,r) => freeVars(l) ++ freeVars(r)
    case Fun(x,body) => freeVars(body) - x
-   case App(f,a) => freeVars(f) ++ freeVars(a)
+   case Ap(f,a) => freeVars(f) ++ freeVars(a)
    case Num(n) => Set.empty
 }
 def freshName(names: Set[String], default: String) : String = {
@@ -116,25 +116,25 @@ def cps(e: Exp) : CPSCont = e match {
    case Add(e1,e2) => {
      val k = freshName(freeVars(e), "k")
      val lv = freshName(freeVars(e2), "lv")
-     CPSCont(k, CPSContApp(cps(e1),CPSCont(lv, CPSContApp(cps(e2), CPSCont("rv", CPSContApp(k,CPSAdd("rv", lv)))))))
+     CPSCont(k, CPSContAp(cps(e1),CPSCont(lv, CPSContAp(cps(e2), CPSCont("rv", CPSContAp(k,CPSAdd("rv", lv)))))))
    }
    case Fun(a, body) => {
      val k = freshName(freeVars(e), "k")
      val dynk = freshName(freeVars(e), "dynk")
-     CPSCont(k, CPSContApp(k, CPSFun(a, dynk, CPSContApp(cps(body), dynk))))
+     CPSCont(k, CPSContAp(k, CPSFun(a, dynk, CPSContAp(cps(body), dynk))))
    }
-   case App(f,a) => {
+   case Ap(f,a) => {
      val k = freshName(freeVars(e), "k")
      val fval = freshName(freeVars(a), "fval")
-     CPSCont(k, CPSContApp(cps(f), CPSCont(fval, CPSContApp(cps(a), CPSCont("aval", CPSFunApp(fval, "aval", k))))))
+     CPSCont(k, CPSContAp(cps(f), CPSCont(fval, CPSContAp(cps(a), CPSCont("aval", CPSFunAp(fval, "aval", k))))))
    }
    case Id(x) => {
      val k = freshName(freeVars(e), "k")
-     CPSCont(k, CPSContApp(k, CPSVar(x)))
+     CPSCont(k, CPSContAp(k, CPSVar(x)))
    }
    case Num(n) => {
      val k = freshName(freeVars(e), "k")
-     CPSCont(k, CPSContApp("k",CPSNum(n)))
+     CPSCont(k, CPSContAp("k",CPSNum(n)))
    }
 }
 
@@ -146,16 +146,16 @@ def cps(e: Exp) : CPSCont = e match {
    the function which is called is known.
    For instance, cps(Add(2,3)) yields
    CPSCont("k",
-           CPSContApp(
+           CPSContAp(
              CPSCont("k",
-                     CPSContApp("k",2)),
+                     CPSContAp("k",2)),
              CPSCont("lv",
-                     CPSContApp(
+                     CPSContAp(
                        CPSCont("k",
-                               CPSContApp("k",3)),
+                               CPSContAp("k",3)),
                        CPSCont("rv",
                                CPSAdd("rv","lv"))))))
     instead of
-    CPSCont("k", CPSContApp("k", CPSAdd(2,3)))
+    CPSCont("k", CPSContAp("k", CPSAdd(2,3)))
     Many more advanced CPS transformation algorithms try to avoid as many administrative redexes as possible.
 */

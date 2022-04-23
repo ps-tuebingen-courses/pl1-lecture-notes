@@ -167,8 +167,8 @@ case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
-def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
 case class NewBox(e: Exp) extends Exp
 case class SetBox(b: Exp, e: Exp) extends Exp
@@ -250,7 +250,7 @@ def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
    * binding occurs. Where exactly in BCFAE do bindings happen?
    */
 
-  case App(f, a)
+  case Ap(f, a)
     =&gt; eval(f, stack, store) match {
          case ClosureV(f, cEnv)
            =&gt; eval(
@@ -404,30 +404,30 @@ class MarkAndSweepStore(size: Int) extends Store {
 }
 
 val test4 = wth(&quot;makedata&quot;, Fun(&quot;x&quot;, NewBox(NewBox(NewBox(&quot;x&quot;)))),
-                Seq(App(&quot;makedata&quot;, 1),
-                Seq(App(&quot;makedata&quot;, 2),
-                Seq(wth(&quot;s&quot;, App(&quot;makedata&quot;, 3),
-                            App(&quot;makedata&quot;, &quot;s&quot;)),
-                    App(&quot;makedata&quot;, 4)))))
-// test4: Exp = App(
+                Seq(Ap(&quot;makedata&quot;, 1),
+                Seq(Ap(&quot;makedata&quot;, 2),
+                Seq(wth(&quot;s&quot;, Ap(&quot;makedata&quot;, 3),
+                            Ap(&quot;makedata&quot;, &quot;s&quot;)),
+                    Ap(&quot;makedata&quot;, 4)))))
+// test4: Exp = Ap(
 //   funExpr = Fun(
 //     param = &quot;makedata&quot;,
 //     body = Seq(
-//       e1 = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 1)),
+//       e1 = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 1)),
 //       e2 = Seq(
-//         e1 = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 2)),
+//         e1 = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 2)),
 //         e2 = Seq(
-//           e1 = App(
+//           e1 = Ap(
 //             funExpr = Fun(
 //               param = &quot;s&quot;,
-//               body = App(
+//               body = Ap(
 //                 funExpr = Id(name = &quot;makedata&quot;),
 //                 argExpr = Id(name = &quot;s&quot;)
 //               )
 //             ),
-//             argExpr = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 3))
+//             argExpr = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 3))
 //           ),
-//           e2 = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 4))
+//           e2 = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 4))
 //         )
 //       )
 //     )

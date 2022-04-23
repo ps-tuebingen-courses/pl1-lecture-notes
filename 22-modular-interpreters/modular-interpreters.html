@@ -439,7 +439,7 @@ trait Functions extends Expressions with ReaderMonad {
   case class Fun(param: String, body: Exp) extends Exp {
     def eval = for { env &lt;- ask } yield ClosureV(this, env)
   }	
-  case class App(f: Exp, a: Exp) extends Exp {
+  case class Ap(f: Exp, a: Exp) extends Exp {
     def eval = for {
 	            fv &lt;- f.eval
 				av &lt;- a.eval
@@ -453,7 +453,7 @@ trait Functions extends Expressions with ReaderMonad {
 			   } yield env(x)
   }
   implicit def id2exp(x: String) = Id(x)
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 }  
 
 
@@ -507,8 +507,8 @@ trait Boxes extends Expressions with StateMonad  {
 trait Letcc extends Expressions with ContinuationMonad with ReaderMonad{
   override type R = Map[String,Value]
   
-  // We introduce a new application form CApp instead of using App because we cannot extend App
-  case class CApp(f: Exp, a: Exp) extends Exp {
+  // We introduce a new application form CAp instead of using Ap because we cannot extend Ap
+  case class CAp(f: Exp, a: Exp) extends Exp {
     override def eval : M[Value] = 
         for {
            fv &lt;- f.eval
@@ -531,7 +531,7 @@ object AE extends Arithmetic with IdentityMonad {
 assert(AE.aetest.eval == AE.NumV(6)) 
 
 object FAELang extends Functions with Arithmetic with ReaderMonadImpl {
-  val faetest = App(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Add(2,3))
+  val faetest = Ap(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Add(2,3))
   assert(faetest.eval(Map.empty) == NumV(6))
 }
 object BCFAE extends Boxes with Arithmetic with Functions with If0 with ReaderStateMonadImpl {
@@ -539,14 +539,14 @@ object BCFAE extends Boxes with Arithmetic with Functions with If0 with ReaderSt
                 wth(&quot;toggle&quot;, Fun(&quot;dummy&quot;, If0(OpenBox(&quot;switch&quot;),
                                           Seq(SetBox(&quot;switch&quot;, 1), 1),
                                           Seq(SetBox(&quot;switch&quot;, 0), 0))),
-                             Add(App(&quot;toggle&quot;,42), App(&quot;toggle&quot;,42))))  
+                             Add(Ap(&quot;toggle&quot;,42), Ap(&quot;toggle&quot;,42))))  
 }  
 
 assert(BCFAE.test.eval(Map.empty)(Map.empty)._1 == BCFAE.NumV(1))
 
 object FAEwLetcc extends Arithmetic with Functions with If0 with Letcc with ReaderContinuationMonadImpl {
   override type T = Value
-  val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, CApp(&quot;k&quot;, 3))))  
+  val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, CAp(&quot;k&quot;, 3))))  
 }  
 
 assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))

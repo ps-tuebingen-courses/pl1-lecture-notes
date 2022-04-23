@@ -16,7 +16,7 @@ case class Num(n : Int) extends Exp
 case class Id(name : Symbol) extends Exp
 case class Add(lhs : Exp, rhs : Exp) extends Exp
 case class Fun(param : Symbol, body : Exp) extends Exp
-case class App (funExpr : Exp, argExpr : Exp) extends Exp
+case class Ap (funExpr : Exp, argExpr : Exp) extends Exp
 
 sealed abstract class Value
 type Env = Map[Symbol, Value]
@@ -35,7 +35,7 @@ object CPSTransformed {
                           case _ => sys.error("can only add numbers")
                         } ) )
     case f@Fun(param, body) => k(ClosureV(f, env))
-    case App(f, a) =>
+    case Ap(f, a) =>
       eval( f, env
           , cl => cl match {
               case ClosureV(f, closureEnv) =>
@@ -95,7 +95,7 @@ def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_),
 
 /**
 Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:
-two in the ``Add`` branch and two in the ``App`` branch. We call the corresponding top-level functions, from left to right,
+two in the ``Add`` branch and two in the ``Ap`` branch. We call the corresponding top-level functions, from left to right,
 ``addc1``, ``addc2``, ``appc1`` and ``appc2``.
 An interesting novelty in the interpreter is that some local functions (corresponding to ``addc1`` and ``appc1``) create local
 functions themselves. This means that ``addc1`` must call ``addc2`` and ``appc1`` must call ``appc2``. The rest of the transformation
@@ -122,7 +122,7 @@ object LambdaLifted {
     case Id(x) => k(env(x))
     case Add(l, r) => eval(l, env, addc1(r, env, k))
     case f@Fun(param, body) => k(ClosureV(f, env))
-    case App(f, a) => eval(f, env, appc1(a, env, k))
+    case Ap(f, a) => eval(f, env, appc1(a, env, k))
   }
 }
 
@@ -168,8 +168,8 @@ object Defunctionalized {
   sealed abstract class FunctionValue[T]
   case class AddC1[T](r : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
   case class AddC2[T](lv : Value, k : FunctionValue[T]) extends FunctionValue[T]
-  case class AppC1[T](a : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
-  case class AppC2[T](f : Fun, closureEnv : Env, k : FunctionValue[T]) extends FunctionValue[T]
+  case class ApC1[T](a : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
+  case class ApC2[T](f : Fun, closureEnv : Env, k : FunctionValue[T]) extends FunctionValue[T]
 
   def apply[T](fv : FunctionValue[T], v : Value) : T  = fv match {
     case AddC1(r, env, k) => eval(r, env, AddC2(v, k))
@@ -177,11 +177,11 @@ object Defunctionalized {
       case (NumV(v1), NumV(v2)) => apply(k, NumV(v1 + v2))
       case _ => sys.error("can only add numbers") 
     }
-    case AppC1(a, env, k) => v match {
-      case ClosureV(f, closureEnv) => eval(a, env, AppC2(f, closureEnv, k))
+    case ApC1(a, env, k) => v match {
+      case ClosureV(f, closureEnv) => eval(a, env, ApC2(f, closureEnv, k))
       case _ => sys.error("can only apply functions")
     }
-    case AppC2(f, closureEnv, k) => eval(f.body, closureEnv + (f.param -> v), k)
+    case ApC2(f, closureEnv, k) => eval(f.body, closureEnv + (f.param -> v), k)
   }
 
   def eval[T](e : Exp, env : Env, k : FunctionValue[T]) : T = e match {
@@ -189,7 +189,7 @@ object Defunctionalized {
     case Id(x) => apply(k, env(x))
     case Add(l, r) => eval(l, env, AddC1(r, env, k))
     case f@Fun(param, body) => apply(k, ClosureV(f, env))
-    case App(f, a) => eval(f, env, AppC1(a, env, k))
+    case Ap(f, a) => eval(f, env, ApC1(a, env, k))
   }
 }
 

@@ -27,7 +27,7 @@ case class Add(lhs: Exp, rhs: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, t: Type, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 case class Junit() extends Exp
 case class Let(x: String, xdef: Exp, body: Exp) extends Exp
 case class TypeAscription(e: Exp, t: Type) extends Exp
@@ -52,7 +52,7 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) => Set(x)
    case Add(l,r) => freeVars(l) ++ freeVars(r)
    case Fun(x,_,body) => freeVars(body) - x
-   case App(f,a) => freeVars(f) ++ freeVars(a)
+   case Ap(f,a) => freeVars(f) ++ freeVars(a)
    case Num(n) => Set.empty
    case Junit() => Set.empty
    case TypeAscription(e,t) => freeVars(e)
@@ -70,7 +70,7 @@ def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Junit() => e1
   case Add(l,r) => Add(subst(l,x,e2), subst(r,x,e2))
   case Id(y) => if (x == y) e2 else Id(y)
-  case App(f,a) => App(subst(f,x,e2),subst(a,x,e2))
+  case Ap(f,a) => Ap(subst(f,x,e2),subst(a,x,e2))
   case TypeAscription(e,t) => TypeAscription(subst(e,x,e2),t)
   case Fun(param,t,body) =>
     if (param == x) e1 else {
@@ -98,7 +98,7 @@ def eval(e: Exp) : Exp = e match {
                      case (Num(x),Num(y)) => Num(x+y)
                      case _ => sys.error("can only add numbers")
                     }
-  case App(f,a) => eval(f) match {
+  case Ap(f,a) => eval(f) match {
      case Fun(x,_,body) => eval( subst(body,x, eval(a)))  // call-by-value
      case _ => sys.error("can only apply functions")
   }
@@ -116,8 +116,8 @@ def eval(e: Exp) : Exp = e match {
   case SumLeft(e,t) => SumLeft(eval(e),t)
   case SumRight(t,e) => SumRight(t,eval(e))
   case EliminateSum(e,fl,fr) => eval(e) match {
-    case SumLeft(e2,_) => eval(App(fl,e2))
-    case SumRight(_,e2) => eval(App(fr,e2))
+    case SumLeft(e2,_) => eval(Ap(fl,e2))
+    case SumRight(_,e2) => eval(Ap(fr,e2))
     case _ => sys.error("can only eliminate sums")
   }
   case _ => e // numbers and functions evaluate to themselves
@@ -155,7 +155,7 @@ def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
     case _ => sys.error("Type error in Add")
   }
   case Fun(x,t,body) => FunType(t, typeCheck(body, gamma + (x -> t)))
-  case App(f,a) => {
+  case Ap(f,a) => {
     typeCheck(f,gamma) match {
       case FunType(from,to) => if (from == typeCheck(a,gamma)) to else sys.error("type error: arg does not match expected type")
       case _ => sys.error("first operand of app must be a function")

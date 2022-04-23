@@ -685,7 +685,7 @@ Here is the formalization of this definition.</p>
                                     subst2(xdef,i,v),
                                     subst2(body,i,v))
 }
-// subst2: Function3[Exp, String, Num, Exp] = repl.MdocSession$App$$Lambda$2503/0x0000000100bd0c40@68e36b84
+// subst2: Function3[Exp, String, Num, Exp] = repl.MdocSession$App$$Lambda$2503/0x0000000100bd2c40@3b1c0bd2
 </code></pre>
 <p>Let's create an interpreter that uses this substitution function.</p>
 <pre><code class="language-scala">def eval2 = makeEval(subst2)
@@ -2341,8 +2341,8 @@ case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
-def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
 case class NewBox(e: Exp) extends Exp
 case class SetBox(b: Exp, e: Exp) extends Exp
@@ -2424,7 +2424,7 @@ def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
    * binding occurs. Where exactly in BCFAE do bindings happen?
    */
 
-  case App(f, a)
+  case Ap(f, a)
     =&gt; eval(f, stack, store) match {
          case ClosureV(f, cEnv)
            =&gt; eval(
@@ -2578,30 +2578,30 @@ class MarkAndSweepStore(size: Int) extends Store {
 }
 
 val test4 = wth(&quot;makedata&quot;, Fun(&quot;x&quot;, NewBox(NewBox(NewBox(&quot;x&quot;)))),
-                Seq(App(&quot;makedata&quot;, 1),
-                Seq(App(&quot;makedata&quot;, 2),
-                Seq(wth(&quot;s&quot;, App(&quot;makedata&quot;, 3),
-                            App(&quot;makedata&quot;, &quot;s&quot;)),
-                    App(&quot;makedata&quot;, 4)))))
-// test4: Exp = App(
+                Seq(Ap(&quot;makedata&quot;, 1),
+                Seq(Ap(&quot;makedata&quot;, 2),
+                Seq(wth(&quot;s&quot;, Ap(&quot;makedata&quot;, 3),
+                            Ap(&quot;makedata&quot;, &quot;s&quot;)),
+                    Ap(&quot;makedata&quot;, 4)))))
+// test4: Exp = Ap(
 //   funExpr = Fun(
 //     param = &quot;makedata&quot;,
 //     body = Seq(
-//       e1 = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 1)),
+//       e1 = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 1)),
 //       e2 = Seq(
-//         e1 = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 2)),
+//         e1 = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 2)),
 //         e2 = Seq(
-//           e1 = App(
+//           e1 = Ap(
 //             funExpr = Fun(
 //               param = &quot;s&quot;,
-//               body = App(
+//               body = Ap(
 //                 funExpr = Id(name = &quot;makedata&quot;),
 //                 argExpr = Id(name = &quot;s&quot;)
 //               )
 //             ),
-//             argExpr = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 3))
+//             argExpr = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 3))
 //           ),
-//           e2 = App(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 4))
+//           e2 = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 4))
 //         )
 //       )
 //     )
@@ -2651,14 +2651,14 @@ object HOAS {
     case class Id(name: String) extends Exp
     case class Add(lhs: Exp, rhs: Exp) extends Exp
     case class Fun(f: Exp =&gt; Exp) extends Exp
-    case class App (funExpr: Exp, argExpr: Exp) extends Exp
+    case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
     def eval(e: Exp) : Exp = e match {
       case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot;+v)
       case Add(l,r) =&gt; (eval(l), eval(r)) match {
                          case (Num(x),Num(y)) =&gt; Num(x+y)
                          case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                         }
-      case App(f,a) =&gt; eval(f) match {
+      case Ap(f,a) =&gt; eval(f) match {
          case Fun(f) =&gt; eval( f(eval(a)))
          case _ =&gt; sys.error(&quot;can only apply functions&quot;)
       }
@@ -2685,7 +2685,7 @@ case class Num(n: Int) extends Exp
 case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: String, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 
 object Compositional { 
     sealed abstract class Value
@@ -2703,7 +2703,7 @@ object Compositional {
         }
       }
       case Fun(param,body) =&gt; (env) =&gt; FunV( (v) =&gt; eval(body)(env + (param -&gt; v)))
-      case App(f,a) =&gt; (env) =&gt; (eval(f)(env), eval(a)(env)) match {
+      case Ap(f,a) =&gt; (env) =&gt; (eval(f)(env), eval(a)(env)) match {
         // Use environment stored in closure to realize proper lexical scoping!
         case (FunV(g),arg) =&gt; g(arg)
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
@@ -2731,7 +2731,7 @@ object FAE {
         }
       }
       case f@Fun(param,body) =&gt; ClosureV(f, env)
-      case App(f,a) =&gt; eval(f,env) match {
+      case Ap(f,a) =&gt; eval(f,env) match {
         // Use environment stored in closure to realize proper lexical scoping!
         case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
@@ -2752,7 +2752,7 @@ sealed abstract class Exp
 case class Id(name: String) extends Exp
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 case class PrintDot() extends Exp
 
 abstract class Value // the only values are closures // the only values are closures
@@ -2769,7 +2769,7 @@ def eval(e: Exp, env: Env) : Value = e match {
   case PrintDot() =&gt; print(&quot;.&quot;); ClosureV(Fun(&quot;x&quot;,&quot;x&quot;), Map.empty) 
   case Id(x) =&gt; env(x)
   case f@Fun(param,body) =&gt; ClosureV(f, env)
-  case App(f,a) =&gt; eval(f,env) match {
+  case Ap(f,a) =&gt; eval(f,env) match {
     case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
   }
 }
@@ -2785,37 +2785,37 @@ val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
 // f: Fun = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))  // false
 val t = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;t&quot;))  // true
 // t: Fun = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;t&quot;)))  // true
-val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
+val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
 // and: Fun = Fun(
 //   param = &quot;a&quot;,
 //   body = Fun(
 //     param = &quot;b&quot;,
-//     body = App(
-//       funExpr = App(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;b&quot;)),
+//     body = Ap(
+//       funExpr = Ap(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;b&quot;)),
 //       argExpr = Id(name = &quot;a&quot;)
 //     )
 //   )
 // )
-val or = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;a&quot;, &quot;a&quot;), &quot;b&quot;)))
+val or = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;a&quot;), &quot;b&quot;)))
 // or: Fun = Fun(
 //   param = &quot;a&quot;,
 //   body = Fun(
 //     param = &quot;b&quot;,
-//     body = App(
-//       funExpr = App(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;a&quot;)),
+//     body = Ap(
+//       funExpr = Ap(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;a&quot;)),
 //       argExpr = Id(name = &quot;b&quot;)
 //     )
 //   )
 // )
-val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(&quot;a&quot;,&quot;f&quot;),&quot;t&quot;))))
+val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;a&quot;,&quot;f&quot;),&quot;t&quot;))))
 // not: Fun = Fun(
 //   param = &quot;a&quot;,
 //   body = Fun(
 //     param = &quot;t&quot;,
 //     body = Fun(
 //       param = &quot;f&quot;,
-//       body = App(
-//         funExpr = App(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;f&quot;)),
+//       body = Ap(
+//         funExpr = Ap(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;f&quot;)),
 //         argExpr = Id(name = &quot;t&quot;)
 //       )
 //     )
@@ -2825,15 +2825,15 @@ val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(&quot
 /** 
 We can now write our own control structures, such as if/then/else 
 */
-val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
+val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
 // ifthenelse: Fun = Fun(
 //   param = &quot;cond&quot;,
 //   body = Fun(
 //     param = &quot;t&quot;,
 //     body = Fun(
 //       param = &quot;f&quot;,
-//       body = App(
-//         funExpr = App(funExpr = Id(name = &quot;cond&quot;), argExpr = Id(name = &quot;t&quot;)),
+//       body = Ap(
+//         funExpr = Ap(funExpr = Id(name = &quot;cond&quot;), argExpr = Id(name = &quot;t&quot;)),
 //         argExpr = Id(name = &quot;f&quot;)
 //       )
 //     )
@@ -2848,35 +2848,35 @@ Let&quot;s&quot; now consider Numbers. We encode them as Peano numbers.  These e
 */
 val zero = Fun(&quot;s&quot;, Fun(&quot;z&quot;, &quot;z&quot;))
 // zero: Fun = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
-val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(&quot;s&quot;, App(App(&quot;n&quot;, &quot;s&quot;),&quot;z&quot;)))))
+val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(&quot;s&quot;, Ap(Ap(&quot;n&quot;, &quot;s&quot;),&quot;z&quot;)))))
 // succ: Fun = Fun(
 //   param = &quot;n&quot;,
 //   body = Fun(
 //     param = &quot;s&quot;,
 //     body = Fun(
 //       param = &quot;z&quot;,
-//       body = App(
+//       body = Ap(
 //         funExpr = Id(name = &quot;s&quot;),
-//         argExpr = App(
-//           funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//         argExpr = Ap(
+//           funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
 //           argExpr = Id(name = &quot;z&quot;)
 //         )
 //       )
 //     )
 //   )
 // )
-val one = App(succ, zero)
-// one: App = App(
+val one = Ap(succ, zero)
+// one: Ap = Ap(
 //   funExpr = Fun(
 //     param = &quot;n&quot;,
 //     body = Fun(
 //       param = &quot;s&quot;,
 //       body = Fun(
 //         param = &quot;z&quot;,
-//         body = App(
+//         body = Ap(
 //           funExpr = Id(name = &quot;s&quot;),
-//           argExpr = App(
-//             funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//           argExpr = Ap(
+//             funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
 //             argExpr = Id(name = &quot;z&quot;)
 //           )
 //         )
@@ -2885,35 +2885,35 @@ val one = App(succ, zero)
 //   ),
 //   argExpr = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
 // )
-val two = App(succ, one)
-// two: App = App(
+val two = Ap(succ, one)
+// two: Ap = Ap(
 //   funExpr = Fun(
 //     param = &quot;n&quot;,
 //     body = Fun(
 //       param = &quot;s&quot;,
 //       body = Fun(
 //         param = &quot;z&quot;,
-//         body = App(
+//         body = Ap(
 //           funExpr = Id(name = &quot;s&quot;),
-//           argExpr = App(
-//             funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//           argExpr = Ap(
+//             funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
 //             argExpr = Id(name = &quot;z&quot;)
 //           )
 //         )
 //       )
 //     )
 //   ),
-//   argExpr = App(
+//   argExpr = Ap(
 //     funExpr = Fun(
 //       param = &quot;n&quot;,
 //       body = Fun(
 //         param = &quot;s&quot;,
 //         body = Fun(
 //           param = &quot;z&quot;,
-//           body = App(
+//           body = Ap(
 //             funExpr = Id(name = &quot;s&quot;),
-//             argExpr = App(
-//               funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//             argExpr = Ap(
+//               funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
 //               argExpr = Id(name = &quot;z&quot;)
 //             )
 //           )
@@ -2923,58 +2923,57 @@ val two = App(succ, one)
 //     argExpr = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
 //   )
 // )
-val three = App(succ, two)
-// three: App = App(
+val three = Ap(succ, two)
+// three: Ap = Ap(
 //   funExpr = Fun(
 //     param = &quot;n&quot;,
 //     body = Fun(
 //       param = &quot;s&quot;,
 //       body = Fun(
 //         param = &quot;z&quot;,
-//         body = App(
+//         body = Ap(
 //           funExpr = Id(name = &quot;s&quot;),
-//           argExpr = App(
-//             funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//           argExpr = Ap(
+//             funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
 //             argExpr = Id(name = &quot;z&quot;)
 //           )
 //         )
 //       )
 //     )
 //   ),
-//   argExpr = App(
+//   argExpr = Ap(
 //     funExpr = Fun(
 //       param = &quot;n&quot;,
 //       body = Fun(
 //         param = &quot;s&quot;,
 //         body = Fun(
 //           param = &quot;z&quot;,
-//           body = App(
+//           body = Ap(
 //             funExpr = Id(name = &quot;s&quot;),
-//             argExpr = App(
-//               funExpr = App(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
+//             argExpr = Ap(
+//               funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
 //               argExpr = Id(name = &quot;z&quot;)
 //             )
 //           )
 //         )
 //       )
 //     ),
-//     argExpr = App(
+//     argExpr = Ap(
 //       funExpr = Fun(
 //         param = &quot;n&quot;,
 //         body = Fun(
 //           param = &quot;s&quot;,
 //           body = Fun(
 //             param = &quot;z&quot;,
-//             body = App(
+//             body = Ap(
 //               funExpr = Id(name = &quot;s&quot;),
-//               argExpr = App(
-//                 funExpr = App(
-//                   funExpr = Id(name = &quot;n&quot;),
-//                   argExpr = Id(name = &quot;s&quot;)
-//                 ),
+//               argExpr = Ap(
+//                 funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
 //                 argExpr = Id(name = &quot;z&quot;)
+//               )
+//             )
 // ...
-val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(&quot;a&quot;,&quot;s&quot;), App(App(&quot;b&quot;, &quot;s&quot;),&quot;z&quot;))))))
+val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;,&quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;),&quot;z&quot;))))))
 // add: Fun = Fun(
 //   param = &quot;a&quot;,
 //   body = Fun(
@@ -2983,10 +2982,10 @@ val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&
 //       param = &quot;s&quot;,
 //       body = Fun(
 //         param = &quot;z&quot;,
-//         body = App(
-//           funExpr = App(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;s&quot;)),
-//           argExpr = App(
-//             funExpr = App(funExpr = Id(name = &quot;b&quot;), argExpr = Id(name = &quot;s&quot;)),
+//         body = Ap(
+//           funExpr = Ap(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;s&quot;)),
+//           argExpr = Ap(
+//             funExpr = Ap(funExpr = Id(name = &quot;b&quot;), argExpr = Id(name = &quot;s&quot;)),
 //             argExpr = Id(name = &quot;z&quot;)
 //           )
 //         )
@@ -2994,7 +2993,7 @@ val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&
 //     )
 //   )
 // )
-val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(&quot;a&quot;, App(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
+val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, Ap(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
 // mult: Fun = Fun(
 //   param = &quot;a&quot;,
 //   body = Fun(
@@ -3003,10 +3002,10 @@ val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&
 //       param = &quot;s&quot;,
 //       body = Fun(
 //         param = &quot;z&quot;,
-//         body = App(
-//           funExpr = App(
+//         body = Ap(
+//           funExpr = Ap(
 //             funExpr = Id(name = &quot;a&quot;),
-//             argExpr = App(funExpr = Id(name = &quot;b&quot;), argExpr = Id(name = &quot;s&quot;))
+//             argExpr = Ap(funExpr = Id(name = &quot;b&quot;), argExpr = Id(name = &quot;s&quot;))
 //           ),
 //           argExpr = Id(name = &quot;z&quot;)
 //         )
@@ -3014,15 +3013,15 @@ val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&
 //     )
 //   )
 // )
-val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;b&quot;, App(mult, &quot;a&quot;)), one)))
+val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;b&quot;, Ap(mult, &quot;a&quot;)), one)))
 // exp: Fun = Fun(
 //   param = &quot;a&quot;,
 //   body = Fun(
 //     param = &quot;b&quot;,
-//     body = App(
-//       funExpr = App(
+//     body = Ap(
+//       funExpr = Ap(
 //         funExpr = Id(name = &quot;b&quot;),
-//         argExpr = App(
+//         argExpr = Ap(
 //           funExpr = Fun(
 //             param = &quot;a&quot;,
 //             body = Fun(
@@ -3031,10 +3030,10 @@ val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;b&quot;, App(mult
 //                 param = &quot;s&quot;,
 //                 body = Fun(
 //                   param = &quot;z&quot;,
-//                   body = App(
-//                     funExpr = App(
+//                   body = Ap(
+//                     funExpr = Ap(
 //                       funExpr = Id(name = &quot;a&quot;),
-//                       argExpr = App(
+//                       argExpr = Ap(
 //                         funExpr = Id(name = &quot;b&quot;),
 //                         argExpr = Id(name = &quot;s&quot;)
 //                       )
@@ -3048,28 +3047,28 @@ val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;b&quot;, App(mult
 //           argExpr = Id(name = &quot;a&quot;)
 //         )
 //       ),
-//       argExpr = App(
+//       argExpr = Ap(
 //         funExpr = Fun(
 //           param = &quot;n&quot;,
 //           body = Fun(
 //             param = &quot;s&quot;,
 //             body = Fun(
 //               param = &quot;z&quot;,
-//               body = App(
+//               body = Ap(
 //                 funExpr = Id(name = &quot;s&quot;),
-//                 argExpr = App(
-//                   funExpr = App(
+//                 argExpr = Ap(
+//                   funExpr = Ap(
 //                     funExpr = Id(name = &quot;n&quot;),
 //                     argExpr = Id(name = &quot;s&quot;)
 //                   ),
 //                   argExpr = Id(name = &quot;z&quot;)
 //                 )
 // ...
-val iszero = Fun(&quot;a&quot;, App(App(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
+val iszero = Fun(&quot;a&quot;, Ap(Ap(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
 // iszero: Fun = Fun(
 //   param = &quot;a&quot;,
-//   body = App(
-//     funExpr = App(
+//   body = Ap(
+//     funExpr = Ap(
 //       funExpr = Id(name = &quot;a&quot;),
 //       argExpr = Fun(
 //         param = &quot;x&quot;,
@@ -3082,11 +3081,11 @@ val iszero = Fun(&quot;a&quot;, App(App(&quot;a&quot;, Fun(&quot;x&quot;, f)), t
 /** 
 The predecessor function is more complicated (why?). We do not show it here. 
 For testing, here is a function that prints a unary representation of a number. */
-val printnum = Fun(&quot;a&quot;, App(App(&quot;a&quot;, Fun(&quot;x&quot;, PrintDot())), f))
+val printnum = Fun(&quot;a&quot;, Ap(Ap(&quot;a&quot;, Fun(&quot;x&quot;, PrintDot())), f))
 // printnum: Fun = Fun(
 //   param = &quot;a&quot;,
-//   body = App(
-//     funExpr = App(
+//   body = Ap(
+//     funExpr = Ap(
 //       funExpr = Id(name = &quot;a&quot;),
 //       argExpr = Fun(param = &quot;x&quot;, body = PrintDot())
 //     ),
@@ -3105,7 +3104,7 @@ val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
 //   param = &quot;c&quot;,
 //   body = Fun(param = &quot;e&quot;, body = Id(name = &quot;e&quot;))
 // )
-val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, App(App(&quot;c&quot;, &quot;h&quot;), App(App(&quot;r&quot;,&quot;c&quot;),&quot;e&quot;))))))
+val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;,&quot;c&quot;),&quot;e&quot;))))))
 // cons: Fun = Fun(
 //   param = &quot;h&quot;,
 //   body = Fun(
@@ -3114,10 +3113,10 @@ val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&
 //       param = &quot;c&quot;,
 //       body = Fun(
 //         param = &quot;e&quot;,
-//         body = App(
-//           funExpr = App(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;h&quot;)),
-//           argExpr = App(
-//             funExpr = App(funExpr = Id(name = &quot;r&quot;), argExpr = Id(name = &quot;c&quot;)),
+//         body = Ap(
+//           funExpr = Ap(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;h&quot;)),
+//           argExpr = Ap(
+//             funExpr = Ap(funExpr = Id(name = &quot;r&quot;), argExpr = Id(name = &quot;c&quot;)),
 //             argExpr = Id(name = &quot;e&quot;)
 //           )
 //         )
@@ -3125,11 +3124,11 @@ val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&
 //     )
 //   )
 // )
-val head = Fun(&quot;l&quot;, App(App(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
+val head = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
 // head: Fun = Fun(
 //   param = &quot;l&quot;,
-//   body = App(
-//     funExpr = App(
+//   body = Ap(
+//     funExpr = Ap(
 //       funExpr = Id(name = &quot;l&quot;),
 //       argExpr = Fun(param = &quot;h&quot;, body = Fun(param = &quot;t&quot;, body = Id(name = &quot;h&quot;)))
 //     ),
@@ -3140,11 +3139,11 @@ val head = Fun(&quot;l&quot;, App(App(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quo
 /** 
 For instance, we can multiply all numbers in a list 
 */
-val multlist = Fun(&quot;l&quot;, App(App(&quot;l&quot;, mult), one))
+val multlist = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, mult), one))
 // multlist: Fun = Fun(
 //   param = &quot;l&quot;,
-//   body = App(
-//     funExpr = App(
+//   body = Ap(
+//     funExpr = Ap(
 //       funExpr = Id(name = &quot;l&quot;),
 //       argExpr = Fun(
 //         param = &quot;a&quot;,
@@ -3154,10 +3153,10 @@ val multlist = Fun(&quot;l&quot;, App(App(&quot;l&quot;, mult), one))
 //             param = &quot;s&quot;,
 //             body = Fun(
 //               param = &quot;z&quot;,
-//               body = App(
-//                 funExpr = App(
+//               body = Ap(
+//                 funExpr = Ap(
 //                   funExpr = Id(name = &quot;a&quot;),
-//                   argExpr = App(
+//                   argExpr = Ap(
 //                     funExpr = Id(name = &quot;b&quot;),
 //                     argExpr = Id(name = &quot;s&quot;)
 //                   )
@@ -3169,20 +3168,17 @@ val multlist = Fun(&quot;l&quot;, App(App(&quot;l&quot;, mult), one))
 //         )
 //       )
 //     ),
-//     argExpr = App(
+//     argExpr = Ap(
 //       funExpr = Fun(
 //         param = &quot;n&quot;,
 //         body = Fun(
 //           param = &quot;s&quot;,
 //           body = Fun(
 //             param = &quot;z&quot;,
-//             body = App(
+//             body = Ap(
 //               funExpr = Id(name = &quot;s&quot;),
-//               argExpr = App(
-//                 funExpr = App(
-//                   funExpr = Id(name = &quot;n&quot;),
-//                   argExpr = Id(name = &quot;s&quot;)
-//                 ),
+//               argExpr = Ap(
+//                 funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
 //                 argExpr = Id(name = &quot;z&quot;)
 //               )
 //             )
@@ -3190,11 +3186,13 @@ val multlist = Fun(&quot;l&quot;, App(App(&quot;l&quot;, mult), one))
 //         )
 //       ),
 //       argExpr = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
-// ...
+//     )
+//   )
+// )
 /* Here is the list 3,2,3 */
-val list323 = App(App(cons, three), App(App(cons, two), App(App(cons,three),emptylist)))
-// list323: App = App(
-//   funExpr = App(
+val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three),emptylist)))
+// list323: Ap = Ap(
+//   funExpr = Ap(
 //     funExpr = Fun(
 //       param = &quot;h&quot;,
 //       body = Fun(
@@ -3203,13 +3201,10 @@ val list323 = App(App(cons, three), App(App(cons, two), App(App(cons,three),empt
 //           param = &quot;c&quot;,
 //           body = Fun(
 //             param = &quot;e&quot;,
-//             body = App(
-//               funExpr = App(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;h&quot;)),
-//               argExpr = App(
-//                 funExpr = App(
-//                   funExpr = Id(name = &quot;r&quot;),
-//                   argExpr = Id(name = &quot;c&quot;)
-//                 ),
+//             body = Ap(
+//               funExpr = Ap(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;h&quot;)),
+//               argExpr = Ap(
+//                 funExpr = Ap(funExpr = Id(name = &quot;r&quot;), argExpr = Id(name = &quot;c&quot;)),
 //                 argExpr = Id(name = &quot;e&quot;)
 //               )
 //             )
@@ -3217,50 +3212,51 @@ val list323 = App(App(cons, three), App(App(cons, two), App(App(cons,three),empt
 //         )
 //       )
 //     ),
-//     argExpr = App(
+//     argExpr = Ap(
 //       funExpr = Fun(
 //         param = &quot;n&quot;,
 //         body = Fun(
 //           param = &quot;s&quot;,
 //           body = Fun(
 //             param = &quot;z&quot;,
-//             body = App(
+//             body = Ap(
 //               funExpr = Id(name = &quot;s&quot;),
-//               argExpr = App(
-//                 funExpr = App(
-//                   funExpr = Id(name = &quot;n&quot;),
-//                   argExpr = Id(name = &quot;s&quot;)
-//                 ),
+//               argExpr = Ap(
+//                 funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
 //                 argExpr = Id(name = &quot;z&quot;)
 //               )
 //             )
 //           )
 //         )
 //       ),
-//       argExpr = App(
+//       argExpr = Ap(
 //         funExpr = Fun(
 //           param = &quot;n&quot;,
 //           body = Fun(
 //             param = &quot;s&quot;,
+//             body = Fun(
+//               param = &quot;z&quot;,
+//               body = Ap(
+//                 funExpr = Id(name = &quot;s&quot;),
 // ...
 
-val test = App(printnum, App(multlist, list323))
-// test: App = App(
+val test = Ap(printnum, Ap(multlist, list323))
+// test: Ap = Ap(
 //   funExpr = Fun(
 //     param = &quot;a&quot;,
-//     body = App(
-//       funExpr = App(
+//     body = Ap(
+//       funExpr = Ap(
 //         funExpr = Id(name = &quot;a&quot;),
 //         argExpr = Fun(param = &quot;x&quot;, body = PrintDot())
 //       ),
 //       argExpr = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))
 //     )
 //   ),
-//   argExpr = App(
+//   argExpr = Ap(
 //     funExpr = Fun(
 //       param = &quot;l&quot;,
-//       body = App(
-//         funExpr = App(
+//       body = Ap(
+//         funExpr = Ap(
 //           funExpr = Id(name = &quot;l&quot;),
 //           argExpr = Fun(
 //             param = &quot;a&quot;,
@@ -3270,10 +3266,10 @@ val test = App(printnum, App(multlist, list323))
 //                 param = &quot;s&quot;,
 //                 body = Fun(
 //                   param = &quot;z&quot;,
-//                   body = App(
-//                     funExpr = App(
+//                   body = Ap(
+//                     funExpr = Ap(
 //                       funExpr = Id(name = &quot;a&quot;),
-//                       argExpr = App(
+//                       argExpr = Ap(
 //                         funExpr = Id(name = &quot;b&quot;),
 //                         argExpr = Id(name = &quot;s&quot;)
 //                       )
@@ -3285,14 +3281,14 @@ val test = App(printnum, App(multlist, list323))
 //             )
 //           )
 //         ),
-//         argExpr = App(
+//         argExpr = Ap(
 //           funExpr = Fun(
 //             param = &quot;n&quot;,
 //             body = Fun(
 //               param = &quot;s&quot;,
 //               body = Fun(
 //                 param = &quot;z&quot;,
-//                 body = App(
+//                 body = Ap(
 //                   funExpr = Id(name = &quot;s&quot;),
 // ...
 /* Calling exec should yield 18 dots before the dummy result */
@@ -3389,13 +3385,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$$anon$4@8ad08cc
+// zero: Num = repl.MdocSession$$anon$4@6dbd954a
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$$anon$6@751ea36c
+// one: Num = repl.MdocSession$$anon$6@a164106
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$$anon$8@29778ddc
+// two: Num = repl.MdocSession$$anon$8@3e287cc1
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$$anon$10@429abf79
+// three: Num = repl.MdocSession$$anon$10@319db516
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {
@@ -3602,7 +3598,7 @@ def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot;+ n1 + &quot;
  * We can express the continuation as a function: */
 
 val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
-// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2838/0x0000000100cd4840@448a93dc
+// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2839/0x0000000100cc1040@57a0b924
 
 /* Similarly, the continuation at the second point of interaction is:
  * val cont2 = (m: Int) =&gt; println(n+m)
@@ -3825,7 +3821,7 @@ case class Num(n: Int) extends Exp
 case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: String, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
 
@@ -3846,8 +3842,8 @@ case class CPSFun(x: String, k: String, body: CPSExp) extends CPSVal
 case class CPSVar(x: String) extends CPSVal { override def toString = x.toString }
 implicit def id2cpsexp(x: String): CPSVar = CPSVar(x)
 
-case class CPSContApp(k: CPSVal, a: CPSVal) extends CPSExp
-case class CPSFunApp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp // the arguments are even CPSVar and not only CPSVal! // the arguments are even CPSVar and not only CPSVal!
+case class CPSContAp(k: CPSVal, a: CPSVal) extends CPSExp
+case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp // the arguments are even CPSVar and not only CPSVal! // the arguments are even CPSVar and not only CPSVal!
 case class CPSAdd(l: CPSVar, r: CPSVar) extends CPSVal
 
 /* With these definitions, we are now ready to formalize the transformation described above.
@@ -3859,7 +3855,7 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) =&gt; Set(x)
    case Add(l,r) =&gt; freeVars(l) ++ freeVars(r)
    case Fun(x,body) =&gt; freeVars(body) - x
-   case App(f,a) =&gt; freeVars(f) ++ freeVars(a)
+   case Ap(f,a) =&gt; freeVars(f) ++ freeVars(a)
    case Num(n) =&gt; Set.empty
 }
 def freshName(names: Set[String], default: String) : String = {
@@ -3873,25 +3869,25 @@ def cps(e: Exp) : CPSCont = e match {
    case Add(e1,e2) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
      val lv = freshName(freeVars(e2), &quot;lv&quot;)
-     CPSCont(k, CPSContApp(cps(e1),CPSCont(lv, CPSContApp(cps(e2), CPSCont(&quot;rv&quot;, CPSContApp(k,CPSAdd(&quot;rv&quot;, lv)))))))
+     CPSCont(k, CPSContAp(cps(e1),CPSCont(lv, CPSContAp(cps(e2), CPSCont(&quot;rv&quot;, CPSContAp(k,CPSAdd(&quot;rv&quot;, lv)))))))
    }
    case Fun(a, body) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
      val dynk = freshName(freeVars(e), &quot;dynk&quot;)
-     CPSCont(k, CPSContApp(k, CPSFun(a, dynk, CPSContApp(cps(body), dynk))))
+     CPSCont(k, CPSContAp(k, CPSFun(a, dynk, CPSContAp(cps(body), dynk))))
    }
-   case App(f,a) =&gt; {
+   case Ap(f,a) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
      val fval = freshName(freeVars(a), &quot;fval&quot;)
-     CPSCont(k, CPSContApp(cps(f), CPSCont(fval, CPSContApp(cps(a), CPSCont(&quot;aval&quot;, CPSFunApp(fval, &quot;aval&quot;, k))))))
+     CPSCont(k, CPSContAp(cps(f), CPSCont(fval, CPSContAp(cps(a), CPSCont(&quot;aval&quot;, CPSFunAp(fval, &quot;aval&quot;, k))))))
    }
    case Id(x) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
-     CPSCont(k, CPSContApp(k, CPSVar(x)))
+     CPSCont(k, CPSContAp(k, CPSVar(x)))
    }
    case Num(n) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
-     CPSCont(k, CPSContApp(&quot;k&quot;,CPSNum(n)))
+     CPSCont(k, CPSContAp(&quot;k&quot;,CPSNum(n)))
    }
 }
 </code></pre>
@@ -3914,7 +3910,7 @@ case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: String, body: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 
 /** 
 The abstract syntax of Letcc is as follows: 
@@ -3974,7 +3970,7 @@ def eval(e: Exp, env: Env, k: Value =&gt; Nothing) : Nothing = e match {
    * is a closure or a continuation. If it is a continuation, we ignore the
    * current continuation k and &quot;jump&quot; to the stored continuation by applying the
    * evaluated continuation argument to it. */
-  case App(f,a) =&gt; eval(f,env, cl =&gt; cl match {
+  case Ap(f,a) =&gt; eval(f,env, cl =&gt; cl match {
             case ClosureV(f,closureEnv) =&gt; eval(a,env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av),k))
             case ContV(f) =&gt; eval(a,env, av =&gt; f(av))
             case _ =&gt; sys.error(&quot;can only apply functions&quot;)
@@ -4003,14 +3999,14 @@ def starteval(e: Exp) : Value = {
 /** 
 Finally a small test of Letcc. 
 */
-val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, App(&quot;k&quot;, 3))))
+val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, Ap(&quot;k&quot;, 3))))
 // testprog: Add = Add(
 //   lhs = Num(n = 1),
 //   rhs = Letcc(
 //     param = &quot;k&quot;,
 //     body = Add(
 //       lhs = Num(n = 2),
-//       rhs = App(funExpr = Id(name = &quot;k&quot;), argExpr = Num(n = 3))
+//       rhs = Ap(funExpr = Id(name = &quot;k&quot;), argExpr = Num(n = 3))
 //     )
 //   )
 // )
@@ -4196,7 +4192,7 @@ case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: Symbol, body: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: Symbol): Exp = Id(s)
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 case class Shift(param: Symbol, body: Exp) extends Exp
 case class Reset(body: Exp) extends Exp
 
@@ -4219,7 +4215,7 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value) : Value = e match {
   }
   case f@Fun(param,body) =&gt; k(ClosureV(f, env))
   
-  case App(f,a) =&gt; eval(f,env, cl =&gt; cl match {
+  case Ap(f,a) =&gt; eval(f,env, cl =&gt; cl match {
             case ClosureV(f,closureEnv) =&gt; eval(a,env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av),k))
             case ContV(k2) =&gt; eval(a,env, av =&gt; k(k2(av))) // compose continuations k2 and k
             case _ =&gt; sys.error(&quot;can only apply functions&quot;)
@@ -4781,7 +4777,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }  
-// iomonad: IOMonad = repl.MdocSession$$anon$1@2900815c  
+// iomonad: IOMonad = repl.MdocSession$$anon$1@e76e23d  
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] = 
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;
@@ -5089,7 +5085,7 @@ trait Functions extends Expressions with ReaderMonad {
   case class Fun(param: String, body: Exp) extends Exp {
     def eval = for { env &lt;- ask } yield ClosureV(this, env)
   }	
-  case class App(f: Exp, a: Exp) extends Exp {
+  case class Ap(f: Exp, a: Exp) extends Exp {
     def eval = for {
 	            fv &lt;- f.eval
 				av &lt;- a.eval
@@ -5103,7 +5099,7 @@ trait Functions extends Expressions with ReaderMonad {
 			   } yield env(x)
   }
   implicit def id2exp(x: String) = Id(x)
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 }  
 
 
@@ -5157,8 +5153,8 @@ trait Boxes extends Expressions with StateMonad  {
 trait Letcc extends Expressions with ContinuationMonad with ReaderMonad{
   override type R = Map[String,Value]
   
-  // We introduce a new application form CApp instead of using App because we cannot extend App
-  case class CApp(f: Exp, a: Exp) extends Exp {
+  // We introduce a new application form CAp instead of using Ap because we cannot extend Ap
+  case class CAp(f: Exp, a: Exp) extends Exp {
     override def eval : M[Value] = 
         for {
            fv &lt;- f.eval
@@ -5181,7 +5177,7 @@ object AE extends Arithmetic with IdentityMonad {
 assert(AE.aetest.eval == AE.NumV(6)) 
 
 object FAELang extends Functions with Arithmetic with ReaderMonadImpl {
-  val faetest = App(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Add(2,3))
+  val faetest = Ap(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Add(2,3))
   assert(faetest.eval(Map.empty) == NumV(6))
 }
 object BCFAE extends Boxes with Arithmetic with Functions with If0 with ReaderStateMonadImpl {
@@ -5189,14 +5185,14 @@ object BCFAE extends Boxes with Arithmetic with Functions with If0 with ReaderSt
                 wth(&quot;toggle&quot;, Fun(&quot;dummy&quot;, If0(OpenBox(&quot;switch&quot;),
                                           Seq(SetBox(&quot;switch&quot;, 1), 1),
                                           Seq(SetBox(&quot;switch&quot;, 0), 0))),
-                             Add(App(&quot;toggle&quot;,42), App(&quot;toggle&quot;,42))))  
+                             Add(Ap(&quot;toggle&quot;,42), Ap(&quot;toggle&quot;,42))))  
 }  
 
 assert(BCFAE.test.eval(Map.empty)(Map.empty)._1 == BCFAE.NumV(1))
 
 object FAEwLetcc extends Arithmetic with Functions with If0 with Letcc with ReaderContinuationMonadImpl {
   override type T = Value
-  val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, CApp(&quot;k&quot;, 3))))  
+  val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, CAp(&quot;k&quot;, 3))))  
 }  
 
 assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
@@ -5294,7 +5290,7 @@ case class Num(n : Int) extends Exp
 case class Id(name : Symbol) extends Exp
 case class Add(lhs : Exp, rhs : Exp) extends Exp
 case class Fun(param : Symbol, body : Exp) extends Exp
-case class App (funExpr : Exp, argExpr : Exp) extends Exp
+case class Ap (funExpr : Exp, argExpr : Exp) extends Exp
 
 sealed abstract class Value
 type Env = Map[Symbol, Value]
@@ -5313,7 +5309,7 @@ object CPSTransformed {
                           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                         } ) )
     case f@Fun(param, body) =&gt; k(ClosureV(f, env))
-    case App(f, a) =&gt;
+    case Ap(f, a) =&gt;
       eval( f, env
           , cl =&gt; cl match {
               case ClosureV(f, closureEnv) =&gt;
@@ -5373,7 +5369,7 @@ def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_),
 
 /**
 Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:
-two in the ``Add`` branch and two in the ``App`` branch. We call the corresponding top-level functions, from left to right,
+two in the ``Add`` branch and two in the ``Ap`` branch. We call the corresponding top-level functions, from left to right,
 ``addc1``, ``addc2``, ``appc1`` and ``appc2``.
 An interesting novelty in the interpreter is that some local functions (corresponding to ``addc1`` and ``appc1``) create local
 functions themselves. This means that ``addc1`` must call ``addc2`` and ``appc1`` must call ``appc2``. The rest of the transformation
@@ -5400,7 +5396,7 @@ object LambdaLifted {
     case Id(x) =&gt; k(env(x))
     case Add(l, r) =&gt; eval(l, env, addc1(r, env, k))
     case f@Fun(param, body) =&gt; k(ClosureV(f, env))
-    case App(f, a) =&gt; eval(f, env, appc1(a, env, k))
+    case Ap(f, a) =&gt; eval(f, env, appc1(a, env, k))
   }
 }
 
@@ -5446,8 +5442,8 @@ object Defunctionalized {
   sealed abstract class FunctionValue[T]
   case class AddC1[T](r : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
   case class AddC2[T](lv : Value, k : FunctionValue[T]) extends FunctionValue[T]
-  case class AppC1[T](a : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
-  case class AppC2[T](f : Fun, closureEnv : Env, k : FunctionValue[T]) extends FunctionValue[T]
+  case class ApC1[T](a : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
+  case class ApC2[T](f : Fun, closureEnv : Env, k : FunctionValue[T]) extends FunctionValue[T]
 
   def apply[T](fv : FunctionValue[T], v : Value) : T  = fv match {
     case AddC1(r, env, k) =&gt; eval(r, env, AddC2(v, k))
@@ -5455,11 +5451,11 @@ object Defunctionalized {
       case (NumV(v1), NumV(v2)) =&gt; apply(k, NumV(v1 + v2))
       case _ =&gt; sys.error(&quot;can only add numbers&quot;) 
     }
-    case AppC1(a, env, k) =&gt; v match {
-      case ClosureV(f, closureEnv) =&gt; eval(a, env, AppC2(f, closureEnv, k))
+    case ApC1(a, env, k) =&gt; v match {
+      case ClosureV(f, closureEnv) =&gt; eval(a, env, ApC2(f, closureEnv, k))
       case _ =&gt; sys.error(&quot;can only apply functions&quot;)
     }
-    case AppC2(f, closureEnv, k) =&gt; eval(f.body, closureEnv + (f.param -&gt; v), k)
+    case ApC2(f, closureEnv, k) =&gt; eval(f.body, closureEnv + (f.param -&gt; v), k)
   }
 
   def eval[T](e : Exp, env : Env, k : FunctionValue[T]) : T = e match {
@@ -5467,7 +5463,7 @@ object Defunctionalized {
     case Id(x) =&gt; apply(k, env(x))
     case Add(l, r) =&gt; eval(l, env, AddC1(r, env, k))
     case f@Fun(param, body) =&gt; apply(k, ClosureV(f, env))
-    case App(f, a) =&gt; eval(f, env, AppC1(a, env, k))
+    case Ap(f, a) =&gt; eval(f, env, ApC1(a, env, k))
   }
 }
 </code></pre>
@@ -5603,7 +5599,7 @@ case class Add(lhs: Exp, rhs: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, t: Type, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 case class Junit() extends Exp
 case class Let(x: String, xdef: Exp, body: Exp) extends Exp
 case class TypeAscription(e: Exp, t: Type) extends Exp
@@ -5628,7 +5624,7 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) =&gt; Set(x)
    case Add(l,r) =&gt; freeVars(l) ++ freeVars(r)
    case Fun(x,_,body) =&gt; freeVars(body) - x
-   case App(f,a) =&gt; freeVars(f) ++ freeVars(a)
+   case Ap(f,a) =&gt; freeVars(f) ++ freeVars(a)
    case Num(n) =&gt; Set.empty
    case Junit() =&gt; Set.empty
    case TypeAscription(e,t) =&gt; freeVars(e)
@@ -5646,7 +5642,7 @@ def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Junit() =&gt; e1
   case Add(l,r) =&gt; Add(subst(l,x,e2), subst(r,x,e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case App(f,a) =&gt; App(subst(f,x,e2),subst(a,x,e2))
+  case Ap(f,a) =&gt; Ap(subst(f,x,e2),subst(a,x,e2))
   case TypeAscription(e,t) =&gt; TypeAscription(subst(e,x,e2),t)
   case Fun(param,t,body) =&gt;
     if (param == x) e1 else {
@@ -5674,7 +5670,7 @@ def eval(e: Exp) : Exp = e match {
                      case (Num(x),Num(y)) =&gt; Num(x+y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case App(f,a) =&gt; eval(f) match {
+  case Ap(f,a) =&gt; eval(f) match {
      case Fun(x,_,body) =&gt; eval( subst(body,x, eval(a)))  // call-by-value
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
@@ -5692,8 +5688,8 @@ def eval(e: Exp) : Exp = e match {
   case SumLeft(e,t) =&gt; SumLeft(eval(e),t)
   case SumRight(t,e) =&gt; SumRight(t,eval(e))
   case EliminateSum(e,fl,fr) =&gt; eval(e) match {
-    case SumLeft(e2,_) =&gt; eval(App(fl,e2))
-    case SumRight(_,e2) =&gt; eval(App(fr,e2))
+    case SumLeft(e2,_) =&gt; eval(Ap(fl,e2))
+    case SumRight(_,e2) =&gt; eval(Ap(fr,e2))
     case _ =&gt; sys.error(&quot;can only eliminate sums&quot;)
   }
   case _ =&gt; e // numbers and functions evaluate to themselves
@@ -5731,7 +5727,7 @@ def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
     case _ =&gt; sys.error(&quot;Type error in Add&quot;)
   }
   case Fun(x,t,body) =&gt; FunType(t, typeCheck(body, gamma + (x -&gt; t)))
-  case App(f,a) =&gt; {
+  case Ap(f,a) =&gt; {
     typeCheck(f,gamma) match {
       case FunType(from,to) =&gt; if (from == typeCheck(a,gamma)) to else sys.error(&quot;type error: arg does not match expected type&quot;)
       case _ =&gt; sys.error(&quot;first operand of app must be a function&quot;)
@@ -5810,7 +5806,7 @@ case class Add(lhs: Exp, rhs: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp // No type annotation! // No type annotation!
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 case class Let(x: String, xdef: Exp, body: Exp) extends Exp
 
 def freshName(names: Set[String], default: String) : String = {
@@ -5824,7 +5820,7 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) =&gt; Set(x)
    case Add(l,r) =&gt; freeVars(l) ++ freeVars(r)
    case Fun(x,body) =&gt; freeVars(body) - x
-   case App(f,a) =&gt; freeVars(f) ++ freeVars(a)
+   case Ap(f,a) =&gt; freeVars(f) ++ freeVars(a)
    case Num(n) =&gt; Set.empty
    case Let(x,xdef,body) =&gt; freeVars(xdef) ++ (freeVars(body) - x)
 }
@@ -5833,7 +5829,7 @@ def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) =&gt; e1
   case Add(l,r) =&gt; Add(subst(l,x,e2), subst(r,x,e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case App(f,a) =&gt; App(subst(f,x,e2),subst(a,x,e2))
+  case Ap(f,a) =&gt; Ap(subst(f,x,e2),subst(a,x,e2))
   case Fun(param,body) =&gt;
     if (param == x) e1 else {
       val fvs = freeVars(body) ++ freeVars(e2)
@@ -5869,7 +5865,7 @@ def typeCheck(e: Exp, gamma: Map[String,Type]) : (List[(Type,Type)],Type) = e ma
     val resbody = typeCheck(body, gamma + (x -&gt; xtype))
     (resbody._1,FunType(xtype,resbody._2))
   }
-  case App(f,a) =&gt; {
+  case Ap(f,a) =&gt; {
     val toType = freshTypeVar
     (typeCheck(f,gamma),typeCheck(a,gamma)) match {
       case ((eqs1,ft),(eqs2,at)) =&gt; ((ft,FunType(at,toType)) :: (eqs1++eqs2),toType)
@@ -5894,7 +5890,7 @@ def eval(e: Exp) : Exp = e match {
                      case (Num(x),Num(y)) =&gt; Num(x+y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case App(f,a) =&gt; eval(f) match {
+  case Ap(f,a) =&gt; eval(f) match {
      case Fun(x,body) =&gt; eval( subst(body,x, eval(a)))  // call-by-value
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
@@ -5907,7 +5903,7 @@ assert(doTypeCheck(42,Map.empty) == NumType())
 assert(doTypeCheck(Fun(&quot;x&quot;,Add(&quot;x&quot;,1)),Map.empty) == FunType(NumType(),NumType()))
 
 // test let-polymorphism: The identity function is once applied to a function and once to a number
-assert(doTypeCheck(Let(&quot;id&quot;, Fun(&quot;x&quot;,&quot;x&quot;), App(App(&quot;id&quot;,Fun(&quot;x&quot;,Add(&quot;x&quot;,1))),App(&quot;id&quot;,42))),Map.empty) == NumType())
+assert(doTypeCheck(Let(&quot;id&quot;, Fun(&quot;x&quot;,&quot;x&quot;), Ap(Ap(&quot;id&quot;,Fun(&quot;x&quot;,Add(&quot;x&quot;,1))),Ap(&quot;id&quot;,42))),Map.empty) == NumType())
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="further-reading"><a class="header" href="#further-reading">Further Reading</a></h1>
 

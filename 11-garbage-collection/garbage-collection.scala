@@ -21,8 +21,8 @@ case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp
 implicit def num2exp(n: Int): Exp = Num(n)
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp
-case class App (funExpr: Exp, argExpr: Exp) extends Exp
-def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
 case class NewBox(e: Exp) extends Exp
 case class SetBox(b: Exp, e: Exp) extends Exp
@@ -104,7 +104,7 @@ def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
    * binding occurs. Where exactly in BCFAE do bindings happen?
    */
 
-  case App(f, a)
+  case Ap(f, a)
     => eval(f, stack, store) match {
          case ClosureV(f, cEnv)
            => eval(
@@ -258,11 +258,11 @@ class MarkAndSweepStore(size: Int) extends Store {
 }
 
 val test4 = wth("makedata", Fun("x", NewBox(NewBox(NewBox("x")))),
-                Seq(App("makedata", 1),
-                Seq(App("makedata", 2),
-                Seq(wth("s", App("makedata", 3),
-                            App("makedata", "s")),
-                    App("makedata", 4)))))
+                Seq(Ap("makedata", 1),
+                Seq(Ap("makedata", 2),
+                Seq(wth("s", Ap("makedata", 3),
+                            Ap("makedata", "s")),
+                    Ap("makedata", 4)))))
 
 def runTest4 = eval(
                  test4,
