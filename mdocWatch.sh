@@ -7,4 +7,4 @@ then
   chmod +x cs
 fi
 
-./cs launch org.scalameta:mdoc_3.1:2.3.2 -- --watch --in src/ --out out/
+./cs launch org.scalameta:mdoc_3:2.3.2 -- --watch --in src/ --out out/
