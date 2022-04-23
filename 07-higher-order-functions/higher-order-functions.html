@@ -161,8 +161,7 @@ make additional features appear necessary.&quot;</p>
 not need to be added to the language but can be expressed with the existing features.</p>
 <p>This language, which we call &quot;FAE&quot;, is basically the so-called &quot;lambda calculus&quot;, a minimal but powerful programming language that has
 been highly influential in the design and theory of programming languages.</p>
-<p>FAE is the language of arithmetic expressions, AE, plus only two additional language constructs: Function abstraction and function
-application.</p>
+<p>FAE is the language of arithmetic expressions, AE, plus only two additional language constructs: Function abstraction and function application.</p>
 <pre><code class="language-scala">object Syntax {
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
@@ -170,42 +169,46 @@ application.</p>
   case class Add(lhs: Exp, rhs: Exp) extends Exp
   implicit def num2exp(n: Int) = Num(n)
   implicit def id2exp(s: String) = Id(s)
-</code></pre>
-<p>Both function definitions and applications are expressions.</p>
-<pre><code class="language-scala">  case class Fun(param: String, body: Exp) extends Exp
+
+  // Both function definitions and applications are expressions.
+  case class Fun(param: String, body: Exp) extends Exp
   case class App (funExpr: Exp, argExpr: Exp) extends Exp
-</code></pre>
-<p>Due to the lambda calculus, the concrete syntax for function abstraction is often written with a lambda, such as <code>lambda x. x+3</code>,
-thus also called lambda abstraction. The Scala syntax for lambda terms is <code>(x) =&gt; x+3</code>, the Haskell syntax is <code>\x -&gt; x+3</code>.</p>
-<p>The concrete syntax for function application is often either  juxtaposition <code>f a</code> or using brackets <code>f(a)</code>. Haskell and the
-lambda calculus use the former, Scala uses the latter.</p>
-<p>The <code>with</code> construct is not needed anymore since it can be encoded using <code>App</code> and <code>Fun</code>. For instance, <code>with x = 7 in x+3</code>
-can be encoded (using Scala syntax) as <code>((x) =&gt; x+3)(7)</code>
-We make this idea explicit by giving a constructive translation. Such translations are also often called &quot;desugaring&quot;.</p>
-<pre><code class="language-scala">   // &quot;with&quot; would be a better name for this function, but it is reserved in Scala
+
+  // &quot;with&quot; would be a better name for this function, but it is reserved in Scala
   def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
 }
+
+import Syntax._
 </code></pre>
-<pre><code class="language-scala">import Syntax._
-</code></pre>
+<p>Due to the lambda calculus, the concrete syntax for function abstraction is often written
+with a lambda, such as <code>lambda x. x+3</code>, thus also called lambda abstraction. The Scala
+syntax for lambda terms is <code>(x) =&gt; x+3</code>, the Haskell syntax is <code>\x -&gt; x+3</code>.</p>
+<p>The concrete syntax for function application is often either juxtaposition <code>f a</code> or
+using brackets <code>f(a)</code>. Haskell and the lambda calculus use the former, Scala uses the
+latter.</p>
+<p>The <code>with</code> construct is not needed anymore since it can be encoded using <code>App</code> and
+<code>Fun</code>. For instance, <code>with x = 7 in x+3</code> can be encoded (using Scala syntax) as
+<code>((x) =&gt; x+3)(7)</code>. We have made this idea explicit above by giving a constructive
+translation. Such translations are also often called &quot;desugaring&quot;.</p>
 <p>Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
-<pre><code class="language-scala">def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+<pre><code class="language-scala">def subst1(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) =&gt; e1
-  case Add(l,r) =&gt; Add(subst(l,x,e2), subst(r,x,e2))
+  case Add(l,r) =&gt; Add(subst1(l,x,e2), subst1(r,x,e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case App(f,a) =&gt; App(subst(f,x,e2),subst(a,x,e2))
+  case App(f,a) =&gt; App(subst1(f,x,e2), subst1(a,x,e2))
   case Fun(param,body) =&gt;
-    if (param == x) e1  else Fun(param, subst(body, x, e2))
+    if (param == x) e1  else Fun(param, subst1(body, x, e2))
 }
 </code></pre>
 <p>Let's try whether subst produces reasonable results.</p>
-<pre><code class="language-scala">assert( subst(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
-assert( subst(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
-assert( subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
+<pre><code class="language-scala">assert( subst1(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
+assert( subst1(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
+assert( subst1(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
 </code></pre>
 <p>However, what happens if <code>e2</code> contains free variables? The danger here is that they may be accidentially &quot;captured&quot; by the substitution.
 For instance, consider</p>
-<pre><code>``subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))``
+<pre><code class="language-scala">subst1(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))
+// res3: Exp = Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Add(Id(&quot;x&quot;), Num(5))))
 </code></pre>
 <p>The result is <code>Fun(&quot;x&quot;,Add(&quot;x&quot;,Add(&quot;x&quot;,5)))</code>
 This is not desirable, since it violates again static scoping.</p>
@@ -214,8 +217,8 @@ expressions that may contain free variables: The type of <code>e2</code> was <co
 <p>Hence we are still not done with defining substitution. But what is the desired result of the substitution above?
 The answer is that we must avoid the name clash by renaming the variable bound by the &quot;lambda&quot; if the variable name occurs free in <code>e2</code>.
 This new variable name should be &quot;fresh&quot;, i.e., not occur free in <code>e2</code>.</p>
-<p>For instance, in the example above, we could first rename <code>&quot;x&quot;</code> to the fresh name <code>&quot;x&quot;0</code> and only then substitute, i.e.</p>
-<p><code>subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x&quot;0,Add(Id(&quot;x&quot;0),Add(Id(&quot;x&quot;),Num(5))))</code></p>
+<p>For instance, in the example above, we could first rename <code>&quot;x&quot;</code> to the fresh name <code>&quot;x0&quot;</code> and only then substitute, i.e.</p>
+<p><code>subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x0&quot;,Add(Id(&quot;x0&quot;),Add(Id(&quot;x&quot;),Num(5))))</code></p>
 <p>Let's do this step by step.</p>
 <pre><code class="language-scala">def freshName(names: Set[String], default: String) : String = {
   var last : Int = 0
@@ -224,9 +227,12 @@ This new variable name should be &quot;fresh&quot;, i.e., not occur free in <cod
   freshName
 }
 
-
-assert( freshName(Set(&quot;y&quot;,&quot;z&quot;),&quot;x&quot;) == &quot;x&quot;)
-assert( freshName(Set(&quot;x2&quot;,&quot;x0&quot;,&quot;x4&quot;,&quot;x&quot;,&quot;x1&quot;),&quot;x&quot;) == &quot;x3&quot;)
+val freshNameExa1 = freshName(Set(&quot;y&quot;,&quot;z&quot;),&quot;x&quot;)
+// freshNameExa1: String = &quot;x&quot;
+val freshNameExa2 = freshName(Set(&quot;x2&quot;,&quot;x0&quot;,&quot;x4&quot;,&quot;x&quot;,&quot;x1&quot;),&quot;x&quot;)
+// freshNameExa2: String = &quot;x3&quot;
+assert( freshNameExa1 == &quot;x&quot;)
+assert( freshNameExa2 == &quot;x3&quot;)
 
 def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) =&gt; Set(x)
@@ -235,7 +241,10 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case App(f,a) =&gt; freeVars(f) ++ freeVars(a)
    case Num(n) =&gt; Set.empty
 }
-assert(freeVars(Fun(&quot;x&quot;,Add(&quot;x&quot;,&quot;y&quot;))) == Set(&quot;y&quot;))
+
+val freeVarsExa = freeVars(Fun(&quot;x&quot;,Add(&quot;x&quot;,&quot;y&quot;)))
+// freeVarsExa: Set[String] = Set(&quot;y&quot;)
+assert(freeVarsExa == Set(&quot;y&quot;))
 
 def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) =&gt; e1
@@ -260,7 +269,7 @@ assert( subst(Fun(&quot;x&quot;, Add(Id(&quot;x0&quot;), Id(&quot;y&quot;))), &q
 <p>OK, equipped with this new version of substitution we can now define the interpreter for this language.
 But how do we evaluate a function abstraction? Obviously we cannot return a number.</p>
 <p>We realize that functions are also values! Hence we have to broaden the return type of our evaluator to also allow functions as values.
-For simplicity, we use &quot;Exp&quot; as our return type since it allows us to return both numbers and functions. Later we will become more
+For simplicity, we use <code>Exp</code> as our return type since it allows us to return both numbers and functions. Later we will become more
 sophisticated.</p>
 <p>This means that a new class of errors can occur: A subexpression evaluates to a number where a function is expected, or vice versa.
 Such errors are called <em>type errors</em>, and we will talk about them in much more detail later.</p>
@@ -331,13 +340,28 @@ assert( evalWithEnv0(test, Map.empty) == Num(12))
 <pre><code class="language-scala">val test2 = wth(&quot;x&quot;, 5, App(Fun(&quot;f&quot;, App(&quot;f&quot;,3)), Fun(&quot;y&quot;,Add(&quot;x&quot;,&quot;y&quot;))))
 </code></pre>
 <p>It works fine in the substitution-based interpreter,</p>
-<pre><code class="language-scala">assert(eval(test2) == Num(8))
+<pre><code class="language-scala">val evalTest2 = eval(test2)
+// evalTest2: Exp = Num(8)
+assert(evalTest2 == Num(8))
 </code></pre>
-<p>but <code>evalWithEnv0(test2,Map.empty)</code> yields an <code>&quot;identifier not found: &quot;x&quot;&quot; error</code>.
+<p>but</p>
+<pre><code class="language-scala">val evalEnv0Test2 = evalWithEnv0(test2,Map.empty)
+// java.util.NoSuchElementException: key not found: x
+// 	at scala.collection.immutable.Map$Map1.apply(Map.scala:163)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:184)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:186)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:192)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:192)
+// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:192)
+// 	at repl.MdocSession$App$$anonfun$23.apply$mcV$sp(higher-order-functions.md:221)
+// 	at repl.MdocSession$App$$anonfun$23.apply(higher-order-functions.md:220)
+// 	at repl.MdocSession$App$$anonfun$23.apply(higher-order-functions.md:220)
+</code></pre>
+<p>yields a <code>key not found: x</code> error.
 The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.</p>
 <p>What can we do to fix this problem?
 We could try to replace the second line in the &quot;App&quot; case by</p>
-<pre><code> ``case Fun(x,body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a,env)))``
+<pre><code class="language-scala">case Fun(x,body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a,env)))
 </code></pre>
 <p>but this would again introduce dynamic scoping.</p>
 <p>Hence, when we evaluate a function, we do not only have to store the function, but also the environment active when the function was

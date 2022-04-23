@@ -6,27 +6,30 @@ object Syntax {
   implicit def num2exp(n: Int) = Num(n)
   implicit def id2exp(s: String) = Id(s)
 
+  // Both function definitions and applications are expressions.
   case class Fun(param: String, body: Exp) extends Exp
   case class App (funExpr: Exp, argExpr: Exp) extends Exp
 
-   // "with" would be a better name for this function, but it is reserved in Scala
+  // "with" would be a better name for this function, but it is reserved in Scala
   def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
 }
 
 import Syntax._
 
-def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+def subst1(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) => e1
-  case Add(l,r) => Add(subst(l,x,e2), subst(r,x,e2))
+  case Add(l,r) => Add(subst1(l,x,e2), subst1(r,x,e2))
   case Id(y) => if (x == y) e2 else Id(y)
-  case App(f,a) => App(subst(f,x,e2),subst(a,x,e2))
+  case App(f,a) => App(subst1(f,x,e2), subst1(a,x,e2))
   case Fun(param,body) =>
-    if (param == x) e1  else Fun(param, subst(body, x, e2))
+    if (param == x) e1  else Fun(param, subst1(body, x, e2))
 }
 
-assert( subst(Add(5,"x"), "x", 7) == Add(5, 7))
-assert( subst(Add(5,"x"), "y", 7) == Add(5,"x"))
-assert( subst(Fun("x", Add("x","y")), "x", 7) == Fun("x", Add("x","y")))
+assert( subst1(Add(5,"x"), "x", 7) == Add(5, 7))
+assert( subst1(Add(5,"x"), "y", 7) == Add(5,"x"))
+assert( subst1(Fun("x", Add("x","y")), "x", 7) == Fun("x", Add("x","y")))
+
+subst1(Fun("x", Add("x","y")), "y", Add("x",5))
 
 def freshName(names: Set[String], default: String) : String = {
   var last : Int = 0
@@ -35,9 +38,10 @@ def freshName(names: Set[String], default: String) : String = {
   freshName
 }
 
-
-assert( freshName(Set("y","z"),"x") == "x")
-assert( freshName(Set("x2","x0","x4","x","x1"),"x") == "x3")
+val freshNameExa1 = freshName(Set("y","z"),"x")
+val freshNameExa2 = freshName(Set("x2","x0","x4","x","x1"),"x")
+assert( freshNameExa1 == "x")
+assert( freshNameExa2 == "x3")
 
 def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) => Set(x)
@@ -46,7 +50,9 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case App(f,a) => freeVars(f) ++ freeVars(a)
    case Num(n) => Set.empty
 }
-assert(freeVars(Fun("x",Add("x","y"))) == Set("y"))
+
+val freeVarsExa = freeVars(Fun("x",Add("x","y")))
+assert(freeVarsExa == Set("y"))
 
 def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) => e1
@@ -123,7 +129,12 @@ assert( evalWithEnv0(test, Map.empty) == Num(12))
 
 val test2 = wth("x", 5, App(Fun("f", App("f",3)), Fun("y",Add("x","y"))))
 
-assert(eval(test2) == Num(8))
+val evalTest2 = eval(test2)
+assert(evalTest2 == Num(8))
+
+val evalEnv0Test2 = evalWithEnv0(test2,Map.empty)
+
+case Fun(x,body) => evalWithEnv0(body, env + (x -> evalWithEnv0(a,env)))
 
 sealed abstract class Value
 type Env = Map[String, Value]
