@@ -10,8 +10,8 @@ object Syntax {
 }
 import Syntax._
 
-implicit def num2exp(n: Int) = Num(n)
-implicit def string2exp(x: String) = Id(x)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def string2exp(x: String): Exp = Id(x)
 
 val test = With("x", 5, Add("x","x"))
 

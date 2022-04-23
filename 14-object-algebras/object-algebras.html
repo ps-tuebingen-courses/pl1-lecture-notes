@@ -170,30 +170,33 @@ like that (at least conceptually).
 In the same way, we can encode Church numerals.
 */
 
-trait Num {
+trait NumC {
   def fold[T](z : T, s: T =&gt; T) : T
 }
-case object Zero extends Num {
+case object Zero extends NumC {
   def fold[T](z: T, s: T =&gt; T) = z
 }
 
-case class Succ(n: Num) extends Num {
+case class Succ(n: NumC) extends NumC {
   def fold[T](z: T, s: T =&gt; T) = s(n.fold(z,s))
 }
 
-def plus(a: Num, b: Num) = {
-  new Num {
+def plus(a: NumC, b: NumC) = {
+  new NumC {
     def fold[T](z : T, s : T =&gt; T) : T = {
       a.fold(b.fold(z,s), s)
     }
   }
 }
 
-val one = Succ(Zero)
-val two = Succ(one)
-val three = Succ(two)
+val oneC = Succ(Zero)
+// oneC: Succ = Succ(Zero)
+val twoC = Succ(oneC)
+// twoC: Succ = Succ(Succ(Zero))
+val threeC = Succ(twoC)
+// threeC: Succ = Succ(Succ(Succ(Zero)))
 
-def testplus = plus(two,three).fold[Unit]( (), _ =&gt; print(&quot;.&quot;))
+def testplusC = plus(twoC,threeC).fold[Unit]( (), _ =&gt; print(&quot;.&quot;))
 
 /*
 Object algebras are a different way to do Church encodings
@@ -230,9 +233,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
+// zero: Num = repl.MdocSession$App$$anon$4@267e71ee
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
+// one: Num = repl.MdocSession$App$$anon$5@295630e3
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
+// two: Num = repl.MdocSession$App$$anon$6@66409c1c
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
+// three: Num = repl.MdocSession$App$$anon$7@d08b73b
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {
@@ -241,6 +248,7 @@ object NumAlg extends NumSig[Int] {
 }
 
 val testplus = plus(two, three)(NumAlg) // yields 5
+// testplus: Int = 5 // yields 5
 
 /*
 Let's look at a more useful application of object algebras. We encode
@@ -251,10 +259,10 @@ expression trees as object algebras.
 trait Exp[T] {
   implicit def id(name: String) : T
   def fun(param: String, body: T): T
-  def app(funExpr: T, argExpr: T) :T
+  def ap(funExpr: T, argExpr: T) :T
   implicit def num(n: Int) : T
   def add(e1: T, e2: T) : T
-  def wth(x: String, xdef: T, body: T) : T = app(fun(x,body),xdef)
+  def wth(x: String, xdef: T, body: T) : T = ap(fun(x,body),xdef)
 }
 
 /* The structure of expression forces compositional interpretations. Hence
@@ -269,7 +277,7 @@ case class NumV(n: Int) extends Value
 trait eval extends Exp[Env =&gt; Value] {
   def id(name: String) = env =&gt; env(name)
   def fun(param: String, body: Env =&gt; Value) = env =&gt; ClosureV(v =&gt; body(env + (param -&gt; v)))
-  def app(funExpr: Env =&gt; Value, argExpr: Env =&gt; Value) = env =&gt; funExpr(env) match {
+  def ap(funExpr: Env =&gt; Value, argExpr: Env =&gt; Value) = env =&gt; funExpr(env) match {
     case ClosureV(f) =&gt; f(argExpr(env))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
@@ -285,11 +293,12 @@ object eval extends eval
 def test[T](semantics : Exp[T]) = {
   import semantics._
   
-  app(app(fun(&quot;x&quot;,fun(&quot;y&quot;,add(&quot;x&quot;,&quot;y&quot;))),5),3)
+  ap(ap(fun(&quot;x&quot;,fun(&quot;y&quot;,add(&quot;x&quot;,&quot;y&quot;))),5),3)
 }
 
 /* We evaluate the program by folding the eval visitor over it. */
 val testres = test(eval)(Map.empty)
+// testres: Value = NumV(8)
 
 /* The object algebra encoding of expressions is quite extensible. For instance, we can
 add another case to the expression datatype by extending the interface. */
@@ -309,10 +318,11 @@ object evalWithMult extends evalWithMult
 def testMult[T](semantics : ExpWithMult[T]) = {
   import semantics._
   
-  app(app(fun(&quot;x&quot;,fun(&quot;y&quot;,mult(&quot;x&quot;,&quot;y&quot;))),5),3)
+  ap(ap(fun(&quot;x&quot;,fun(&quot;y&quot;,mult(&quot;x&quot;,&quot;y&quot;))),5),3)
 }
 
 val testresMult = testMult(evalWithMult)(Map.empty)
+// testresMult: Value = NumV(15)
 
 /* Note that there is no danger of confusing the language variants. For instance,
 an attempt to pass testMult to eval will be a static type error. */
@@ -324,7 +334,7 @@ Don't panic if you don't understand what is going on here.
 trait ExpT {
   type Rep[_]
   def fun[S,T](f : Rep[S] =&gt; Rep[T]): Rep[S=&gt;T]
-  def app[S,T](funExpr: Rep[S=&gt;T], argExpr: Rep[S]) :Rep[T]
+  def ap[S,T](funExpr: Rep[S=&gt;T], argExpr: Rep[S]) :Rep[T]
   implicit def num(n: Int) : Rep[Int]
   def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
 }
@@ -335,7 +345,7 @@ of expressions. */
 object evalT extends ExpT {
   type Rep[X] = X
   def fun[S,T](f: S=&gt;T) =f
-  def app[S,T](f: S=&gt;T, a: S) = f(a)
+  def ap[S,T](f: S=&gt;T, a: S) = f(a)
   def num(n: Int) = n
   def add(e1: Int, e2: Int) = e1+e2
 }
@@ -348,29 +358,20 @@ object prettyprintT extends ExpT {
     counter += 1
     &quot;(&quot; + varname + &quot; =&gt; &quot; +  f(&quot;x&quot;+counter.toString) + &quot;)&quot;
   }
-  def app[S,T](f: String, a: String) = f + &quot;(&quot; + a + &quot;)&quot;
+  def ap[S,T](f: String, a: String) = f + &quot;(&quot; + a + &quot;)&quot;
   def num(n: Int) = n.toString
   def add(e1: String, e2: String) = &quot;(&quot;+e1+&quot;+&quot;+e2+&quot;)&quot;
 
 }
 def test2(semantics: ExpT) = {
   import semantics._
-  app(app(fun((x:Rep[Int])=&gt;fun((y:Rep[Int])=&gt;add(x,y))),5),3)
+  ap(ap(fun((x:Rep[Int])=&gt;fun((y:Rep[Int])=&gt;add(x,y))),5),3)
 }
 
 val testres2 = test2(evalT)
+// testres2: evalT.Rep[Int] = 8
 val testres3 = test2(prettyprintT)
-
-/* An attempt to construct an ill-formed object program will be detected by
-the Scala type checker. For instance, the following program which adds 
-a number and a function is rejected by the Scala type checker: 
-def testilltyped(semantics: ExpT) = {
-  import semantics._
-  add(5,fun((x: Rep[Int]) =&gt; x))
-}
-References:
-B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with Object Algebras. Proc. ECOOP 2012.
-*/
+// testres3: prettyprintT.Rep[Int] = &quot;(x0 =&gt; (x1 =&gt; (x1+x2)))(5)(3)&quot;
 </code></pre>
 
                     </main>

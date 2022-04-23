@@ -233,7 +233,10 @@ val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
 
 
 val continuations = new scala.collection.mutable.HashMap[Symbol, Int=&gt;Nothing]()
+// continuations: collection.mutable.HashMap[Symbol, Function1[Int, Nothing]] = Map(
+// )
 var nextIndex : Int = 0
+// nextIndex: Int = 0
 def getNextID = {
   nextIndex += 1
   Symbol(&quot;c&quot; + nextIndex.toString)
@@ -286,6 +289,7 @@ def allCosts(itemList: List[String]) : Int = itemList match {
    case x :: rest =&gt; inputNumber(&quot;Cost of item &quot;+x+ &quot;:&quot;) + allCosts(rest)
 }
 val testData : List[String] = List(&quot;banana&quot;, &quot;apple&quot;, &quot;orange&quot;)
+// testData: List[String] = List(&quot;banana&quot;, &quot;apple&quot;, &quot;orange&quot;)
 
 def test = println(&quot;Total sum: &quot;+allCosts(testData))
 
@@ -361,30 +365,6 @@ def map_k[S,T](c: List[S], f: (S,T=&gt;Nothing) =&gt; Nothing, k: List[T] =&gt; 
 
 def allCosts2_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing =
    map_k(itemList, (x:String,k2:Int=&gt;Nothing) =&gt; webread_k(&quot;Cost of item &quot;+x+ &quot;:&quot;, k2),(l:List[Int]) =&gt; k(l.sum))
-
-/* Implications of the &quot;web transformation&quot;:
- *
- * 1. We have had to make decisions about the order of evaluation. That is, we had to choose whether
- * to evaluate the left or the right argument of addition first. This was an issue we had specified only
- * implicitly earlier; if our evaluator had chosen to evaluate arguments right-to-left, the Web program at
- * the beginning of this document would have asked for the second argument before the first! We have
- * made this left-to-right order of evaluation explicit in our transformation.
- *
- * 2. The transformation we use is global, namely it (potentially) affects all the procedures in the program
- * by forcing them all to consume an extra continuation as an argument. We usually don't have a choice as
- * to whether or not to transform a procedure. Suppose f invokes g and g invokes h, and we transform
- * f to f_k but don't transform g or h. Now when f_k invokes g and g invokes h, suppose h consumes
- * input from the Web. At this point the program terminates, but the last continuation procedure (necessary
- * to resume the computation when the user supplies an input) is the one given to f_k, with all record of
- * g and h lost.
- *
- * 3. This transformation sequentializes the program. Given a nested expression, it forces the programmer
- * to choose which sub-expression to evaluate first (a consequence of the first point above); further, every
- * subsequent operation lies in the continuation, which in turn picks the first expression to evaluate, pushing
- * all other operations into its continuation; and so forth. The net result is a program that looks an awful lot
- * like a traditional procedural program. This suggests that this series of transformations can be used to
- * compile a program in a language like Scheme into one in a language like C!
- */
 </code></pre>
 
                     </main>

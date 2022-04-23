@@ -153,12 +153,12 @@ we introduce a new expression ``PrintDot`` whose semantics is to print a dot on 
 */
 sealed abstract class Exp
 case class Id(name: String) extends Exp
-implicit def id2exp(s: String) = Id(s)
+implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
 case class PrintDot() extends Exp
 
-abstract class Value // the only values are closures
+abstract class Value // the only values are closures // the only values are closures
 type Env = Map[String, Value]
 case class ClosureV(f:Fun, env:Env) extends Value
 
@@ -185,15 +185,24 @@ Church Encoding of Booleans
 Let&quot;s&quot; start with booleans and boolean arithmetic. 
 */
 val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
+// f: Fun = Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;)))  // false
 val t = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;t&quot;))  // true
+// t: Fun = Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;t&quot;)))  // true
 val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
+// and: Fun = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(Id(&quot;a&quot;), Id(&quot;b&quot;)), Id(&quot;a&quot;))))
 val or = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;a&quot;, &quot;a&quot;), &quot;b&quot;)))
+// or: Fun = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(Id(&quot;a&quot;), Id(&quot;a&quot;)), Id(&quot;b&quot;))))
 val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(&quot;a&quot;,&quot;f&quot;),&quot;t&quot;))))
+// not: Fun = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(Id(&quot;a&quot;), Id(&quot;f&quot;)), Id(&quot;t&quot;)))))
 
 /** 
 We can now write our own control structures, such as if/then/else 
 */
 val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
+// ifthenelse: Fun = Fun(
+//   &quot;cond&quot;,
+//   Fun(&quot;t&quot;, Fun(&quot;f&quot;, App(App(Id(&quot;cond&quot;), Id(&quot;t&quot;)), Id(&quot;f&quot;))))
+// )
 
 /**
 Church Encoding of Numbers
@@ -202,18 +211,121 @@ Church Encoding of Numbers
 Let&quot;s&quot; now consider Numbers. We encode them as Peano numbers.  These encodings of numbers are often called _Church numbers_. 
 */
 val zero = Fun(&quot;s&quot;, Fun(&quot;z&quot;, &quot;z&quot;))
+// zero: Fun = Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
 val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(&quot;s&quot;, App(App(&quot;n&quot;, &quot;s&quot;),&quot;z&quot;)))))
+// succ: Fun = Fun(
+//   &quot;n&quot;,
+//   Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+// )
 val one = App(succ, zero)
+// one: App = App(
+//   Fun(
+//     &quot;n&quot;,
+//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//   ),
+//   Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+// )
 val two = App(succ, one)
+// two: App = App(
+//   Fun(
+//     &quot;n&quot;,
+//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//   ),
+//   App(
+//     Fun(
+//       &quot;n&quot;,
+//       Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//     ),
+//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//   )
+// )
 val three = App(succ, two)
+// three: App = App(
+//   Fun(
+//     &quot;n&quot;,
+//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//   ),
+//   App(
+//     Fun(
+//       &quot;n&quot;,
+//       Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//     ),
+//     App(
+//       Fun(
+//         &quot;n&quot;,
+//         Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//       ),
+//       Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//     )
+//   )
+// )
 val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(&quot;a&quot;,&quot;s&quot;), App(App(&quot;b&quot;, &quot;s&quot;),&quot;z&quot;))))))
+// add: Fun = Fun(
+//   &quot;a&quot;,
+//   Fun(
+//     &quot;b&quot;,
+//     Fun(
+//       &quot;s&quot;,
+//       Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), Id(&quot;s&quot;)), App(App(Id(&quot;b&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;))))
+//     )
+//   )
+// )
 val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(&quot;a&quot;, App(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
+// mult: Fun = Fun(
+//   &quot;a&quot;,
+//   Fun(
+//     &quot;b&quot;,
+//     Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), App(Id(&quot;b&quot;), Id(&quot;s&quot;))), Id(&quot;z&quot;))))
+//   )
+// )
 val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, App(App(&quot;b&quot;, App(mult, &quot;a&quot;)), one)))
+// exp: Fun = Fun(
+//   &quot;a&quot;,
+//   Fun(
+//     &quot;b&quot;,
+//     App(
+//       App(
+//         Id(&quot;b&quot;),
+//         App(
+//           Fun(
+//             &quot;a&quot;,
+//             Fun(
+//               &quot;b&quot;,
+//               Fun(
+//                 &quot;s&quot;,
+//                 Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), App(Id(&quot;b&quot;), Id(&quot;s&quot;))), Id(&quot;z&quot;)))
+//               )
+//             )
+//           ),
+//           Id(&quot;a&quot;)
+//         )
+//       ),
+//       App(
+//         Fun(
+//           &quot;n&quot;,
+//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//         ),
+//         Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//       )
+//     )
+//   )
+// )
 val iszero = Fun(&quot;a&quot;, App(App(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
+// iszero: Fun = Fun(
+//   &quot;a&quot;,
+//   App(
+//     App(Id(&quot;a&quot;), Fun(&quot;x&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;))))),
+//     Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;t&quot;)))
+//   )
+// )
 /** 
 The predecessor function is more complicated (why?). We do not show it here. 
 For testing, here is a function that prints a unary representation of a number. */
 val printnum = Fun(&quot;a&quot;, App(App(&quot;a&quot;, Fun(&quot;x&quot;, PrintDot())), f))
+// printnum: Fun = Fun(
+//   &quot;a&quot;,
+//   App(App(Id(&quot;a&quot;), Fun(&quot;x&quot;, PrintDot())), Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;))))
+// )
 
 /** 
 Church encoding of lists
@@ -222,23 +334,155 @@ Again straightforward, except &quot;tail&quot;, which we do not show here. It ne
 as the predecessor function. 
 */
 val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
+// emptylist: Fun = Fun(&quot;c&quot;, Fun(&quot;e&quot;, Id(&quot;e&quot;)))
 val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, App(App(&quot;c&quot;, &quot;h&quot;), App(App(&quot;r&quot;,&quot;c&quot;),&quot;e&quot;))))))
+// cons: Fun = Fun(
+//   &quot;h&quot;,
+//   Fun(
+//     &quot;r&quot;,
+//     Fun(
+//       &quot;c&quot;,
+//       Fun(&quot;e&quot;, App(App(Id(&quot;c&quot;), Id(&quot;h&quot;)), App(App(Id(&quot;r&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;))))
+//     )
+//   )
+// )
 val head = Fun(&quot;l&quot;, App(App(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
+// head: Fun = Fun(
+//   &quot;l&quot;,
+//   App(App(Id(&quot;l&quot;), Fun(&quot;h&quot;, Fun(&quot;t&quot;, Id(&quot;h&quot;)))), Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;))))
+// )
 
 /** 
 For instance, we can multiply all numbers in a list 
 */
 val multlist = Fun(&quot;l&quot;, App(App(&quot;l&quot;, mult), one))
+// multlist: Fun = Fun(
+//   &quot;l&quot;,
+//   App(
+//     App(
+//       Id(&quot;l&quot;),
+//       Fun(
+//         &quot;a&quot;,
+//         Fun(
+//           &quot;b&quot;,
+//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), App(Id(&quot;b&quot;), Id(&quot;s&quot;))), Id(&quot;z&quot;))))
+//         )
+//       )
+//     ),
+//     App(
+//       Fun(
+//         &quot;n&quot;,
+//         Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//       ),
+//       Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//     )
+//   )
+// )
 /* Here is the list 3,2,3 */
 val list323 = App(App(cons, three), App(App(cons, two), App(App(cons,three),emptylist)))
+// list323: App = App(
+//   App(
+//     Fun(
+//       &quot;h&quot;,
+//       Fun(
+//         &quot;r&quot;,
+//         Fun(
+//           &quot;c&quot;,
+//           Fun(
+//             &quot;e&quot;,
+//             App(App(Id(&quot;c&quot;), Id(&quot;h&quot;)), App(App(Id(&quot;r&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;)))
+//           )
+//         )
+//       )
+//     ),
+//     App(
+//       Fun(
+//         &quot;n&quot;,
+//         Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//       ),
+//       App(
+//         Fun(
+//           &quot;n&quot;,
+//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;)))))
+//         ),
+//         App(
+//           Fun(
+//             &quot;n&quot;,
+//             Fun(
+//               &quot;s&quot;,
+//               Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;))))
+//             )
+//           ),
+//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//         )
+//       )
+//     )
+//   ),
+//   App(
+//     App(
+//       Fun(
+//         &quot;h&quot;,
+//         Fun(
+//           &quot;r&quot;,
+//           Fun(
+//             &quot;c&quot;,
+//             Fun(
+//               &quot;e&quot;,
+//               App(App(Id(&quot;c&quot;), Id(&quot;h&quot;)), App(App(Id(&quot;r&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;)))
+// ...
 
 val test = App(printnum, App(multlist, list323))
+// test: App = App(
+//   Fun(&quot;a&quot;, App(App(Id(&quot;a&quot;), Fun(&quot;x&quot;, PrintDot())), Fun(&quot;t&quot;, Fun(&quot;f&quot;, Id(&quot;f&quot;))))),
+//   App(
+//     Fun(
+//       &quot;l&quot;,
+//       App(
+//         App(
+//           Id(&quot;l&quot;),
+//           Fun(
+//             &quot;a&quot;,
+//             Fun(
+//               &quot;b&quot;,
+//               Fun(
+//                 &quot;s&quot;,
+//                 Fun(&quot;z&quot;, App(App(Id(&quot;a&quot;), App(Id(&quot;b&quot;), Id(&quot;s&quot;))), Id(&quot;z&quot;)))
+//               )
+//             )
+//           )
+//         ),
+//         App(
+//           Fun(
+//             &quot;n&quot;,
+//             Fun(
+//               &quot;s&quot;,
+//               Fun(&quot;z&quot;, App(Id(&quot;s&quot;), App(App(Id(&quot;n&quot;), Id(&quot;s&quot;)), Id(&quot;z&quot;))))
+//             )
+//           ),
+//           Fun(&quot;s&quot;, Fun(&quot;z&quot;, Id(&quot;z&quot;)))
+//         )
+//       )
+//     ),
+//     App(
+//       App(
+//         Fun(
+//           &quot;h&quot;,
+//           Fun(
+//             &quot;r&quot;,
+//             Fun(
+//               &quot;c&quot;,
+//               Fun(
+//                 &quot;e&quot;,
+//                 App(App(Id(&quot;c&quot;), Id(&quot;h&quot;)), App(App(Id(&quot;r&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;)))
+//               )
+//             )
+//           )
+//         ),
+//         App(
+//           Fun(
+// ...
 /* Calling exec should yield 18 dots before the dummy result */
-def exec = eval(test, Map.empty) 
-
-/** 
-Topic for class discussion: Can we do these encodings directly in Scala or Haskell? 
-*/
+def exec = eval(test, Map.empty)
 </code></pre>
 
                     </main>

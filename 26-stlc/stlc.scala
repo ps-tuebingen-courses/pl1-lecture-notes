@@ -24,8 +24,8 @@ sealed abstract class Exp
 case class Num(n: Int) extends Exp
 case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def id2exp(s: String) = Id(s)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, t: Type, body: Exp) extends Exp
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
 case class Junit() extends Exp
@@ -93,7 +93,7 @@ def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
 }
 
 def eval(e: Exp) : Exp = e match {
-  case Id(v) => sys.error("unbound identifier: " + v.name)
+  case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l,r) => (eval(l), eval(r)) match {
                      case (Num(x),Num(y)) => Num(x+y)
                      case _ => sys.error("can only add numbers")

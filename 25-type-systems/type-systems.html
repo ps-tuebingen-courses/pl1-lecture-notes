@@ -169,8 +169,8 @@ case class Num(n: Int) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Bool(x: Boolean) extends Exp
 case class If(cond: Exp, thenExp: Exp, els: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def bool2exp(x: Boolean) = Bool(x)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def bool2exp(x: Boolean): Exp = Bool(x)
 
 
 def eval(e: Exp) : Exp = e match {
@@ -185,7 +185,7 @@ def eval(e: Exp) : Exp = e match {
       case _ =&gt; sys.error(&quot;Condition must be boolean&quot;)
     }                    
   case _ =&gt; e  
-}                
+}                                
 
 /** 
 In this language, we can see that two different types of runtime errors can occur:
@@ -196,10 +196,15 @@ other ones yield runtime errors.
 */
 
 val ex1 = Add(3,5)
+// ex1: Add = Add(Num(3), Num(5))
 val ex2 = If(true, 7, 5)
+// ex2: If = If(Bool(true), Num(7), Num(5))
 val ex2b = If(true, 7, true)
+// ex2b: If = If(Bool(true), Num(7), Bool(true))
 val ex3 = If(Add(3,4), 7, true)
+// ex3: If = If(Add(Num(3), Num(4)), Num(7), Bool(true))
 val ex4 = Add(true,3)
+// ex4: Add = Add(Bool(true), Num(3))
 
 /**
 Let's now design a type system for this language. Most type systems entail a classification of the values into different types.
@@ -229,22 +234,6 @@ def typeCheck(e: Exp) : Type = e match {
     case _ =&gt; sys.error(&quot;Type error in If&quot;)
   }
 }
-
-/**
-Type Soundness
---------------
-If we typecheck the examples from above with the algorithm, we can see that it rejects all programs that lead to runtime errors,
-and it also (unfairly) rejects one program that can be executed without error. Hence the type system is conservative, as expected.
-We can now say more precisely what we mean by soundness of the type checker, namely that it correctly predicts the kind of value that
-the interpreter will produce:
-If ``e`` is an expression and ``typeCheck(e)`` yields a type ``t``, thenExp ``eval(e)`` yields a value ``v`` such that ``typeCheck(v) == t``.
-This statement of type soundness has to be changed a bit when we have a programming language with non-terminating programs.
-Then it will have the following form:
-If ``e`` is an expression and ``typeCheck(e)`` yields a type ``t``, thenExp ``eval(e)`` either diverges, or it yields a value ``v``
-such that ``typeCheck(v) == t``, but it does not terminate with a runtime error.
-In the most general case, we also have runtime errors that are not captured by the type system. In this case we have to restrict
-the last part of the sentence to those runtime errors that are captured by the type system.
-*/
 </code></pre>
 
                     </main>

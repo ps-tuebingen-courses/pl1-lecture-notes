@@ -144,9 +144,7 @@
                     <main>
                         <h1 id="lazy-evaluation"><a class="header" href="#lazy-evaluation">Lazy Evaluation</a></h1>
 <p>The content of this chapter is available as a scala file <a href="./lazy-evaluation.scala">here.</a></p>
-<pre><code class="language-scala">// load 07-fae.scala before loading this file or copy&amp;paste it here 
-
-/**
+<pre><code class="language-scala">/**
 Lazy Evaluation
 ===============
 Motivation for Lazy Evaluation
@@ -179,7 +177,7 @@ Does this change the semantics, or is it just an implementation detail? In other
 Let's try two former test cases.
 */
 
-assert( evalcbn(test) == eval(test))
+assert(evalcbn(test) == eval(test))
 assert(evalcbn(test2) == eval(test2))
 
 /**
@@ -189,6 +187,10 @@ Not necessarily. Consider:
 */
 
 val test3 = App(Fun(&quot;f&quot;,Fun(&quot;x&quot;,App(&quot;f&quot;,&quot;x&quot;))),Add(1,2))
+// test3: Syntax.App = App(
+//   Fun(&quot;f&quot;, Fun(&quot;x&quot;, App(Id(&quot;f&quot;), Id(&quot;x&quot;)))),
+//   Add(Num(1), Num(2))
+// )
 
 assert(eval(test3) == Fun(&quot;x&quot;,App(Num(3),Id(&quot;x&quot;))))
 assert(evalcbn(test3) == Fun(&quot;x&quot;,App(Add(Num(1),Num(2)),Id(&quot;x&quot;))))
@@ -202,6 +204,10 @@ Most importantly, however, eval and evalcbn differ with regard to their terminat
 expression. In eval, the term
 */
  val test4 = App(Fun(&quot;x&quot;,5),omega)
+// test4: Syntax.App = App(
+//   Fun(&quot;x&quot;, Num(5)),
+//   App(Fun(&quot;x&quot;, App(Id(&quot;x&quot;), Id(&quot;x&quot;))), Fun(&quot;x&quot;, App(Id(&quot;x&quot;), Id(&quot;x&quot;))))
+// )
 
 /**
  is hence also diverging. In contrast:
@@ -218,11 +224,42 @@ We do not have direct support for lists, but we can encode lists. This kind of e
 */
 
 val nil = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
+// nil: Fun = Fun(&quot;c&quot;, Fun(&quot;e&quot;, Id(&quot;e&quot;)))
 val cons  = Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, App(App(&quot;c&quot;, &quot;x&quot;), App(App(&quot;xs&quot;, &quot;c&quot;),&quot;e&quot;))))))
+// cons: Fun = Fun(
+//   &quot;x&quot;,
+//   Fun(
+//     &quot;xs&quot;,
+//     Fun(
+//       &quot;c&quot;,
+//       Fun(&quot;e&quot;, App(App(Id(&quot;c&quot;), Id(&quot;x&quot;)), App(App(Id(&quot;xs&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;))))
+//     )
+//   )
+// )
 /* For instance, the list 1,2,3 is encoded as: */
 val list123 = App(App(&quot;cons&quot;,1),App(App(&quot;cons&quot;,2),App(App(&quot;cons&quot;,3), &quot;nil&quot;)))
+// list123: Syntax.App = App(
+//   App(Id(&quot;cons&quot;), Num(1)),
+//   App(App(Id(&quot;cons&quot;), Num(2)), App(App(Id(&quot;cons&quot;), Num(3)), Id(&quot;nil&quot;)))
+// )
 /* The map function on lists becomes :*/
 val maplist = Fun(&quot;f&quot;, Fun(&quot;l&quot;, App(App(&quot;l&quot;, Fun(&quot;x&quot;, Fun(&quot;xs&quot;, App(App(&quot;cons&quot;, App(&quot;f&quot;,&quot;x&quot;)),&quot;xs&quot;)))), &quot;nil&quot;)))
+// maplist: Fun = Fun(
+//   &quot;f&quot;,
+//   Fun(
+//     &quot;l&quot;,
+//     App(
+//       App(
+//         Id(&quot;l&quot;),
+//         Fun(
+//           &quot;x&quot;,
+//           Fun(&quot;xs&quot;, App(App(Id(&quot;cons&quot;), App(Id(&quot;f&quot;), Id(&quot;x&quot;))), Id(&quot;xs&quot;)))
+//         )
+//       ),
+//       Id(&quot;nil&quot;)
+//     )
+//   )
+// )
 /**
 For instance, we can map the successor function over the 1,2,3 list.
 */
@@ -230,12 +267,90 @@ val test5 = wth(&quot;cons&quot;,cons,
             wth(&quot;nil&quot;, nil,
             wth(&quot;maplist&quot;, maplist,
             App(App(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,1))), list123))))
+// test5: Exp = App(
+//   Fun(
+//     &quot;cons&quot;,
+//     App(
+//       Fun(
+//         &quot;nil&quot;,
+//         App(
+//           Fun(
+//             &quot;maplist&quot;,
+//             App(
+//               App(Id(&quot;maplist&quot;), Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Num(1)))),
+//               App(
+//                 App(Id(&quot;cons&quot;), Num(1)),
+//                 App(
+//                   App(Id(&quot;cons&quot;), Num(2)),
+//                   App(App(Id(&quot;cons&quot;), Num(3)), Id(&quot;nil&quot;))
+//                 )
+//               )
+//             )
+//           ),
+//           Fun(
+//             &quot;f&quot;,
+//             Fun(
+//               &quot;l&quot;,
+//               App(
+//                 App(
+//                   Id(&quot;l&quot;),
+//                   Fun(
+//                     &quot;x&quot;,
+//                     Fun(
+//                       &quot;xs&quot;,
+//                       App(App(Id(&quot;cons&quot;), App(Id(&quot;f&quot;), Id(&quot;x&quot;))), Id(&quot;xs&quot;))
+//                     )
+//                   )
+//                 ),
+//                 Id(&quot;nil&quot;)
+//               )
+//             )
+//           )
+//         )
+//       ),
+//       Fun(&quot;c&quot;, Fun(&quot;e&quot;, Id(&quot;e&quot;)))
+//     )
+//   ),
+//   Fun(
+//     &quot;x&quot;,
+//     Fun(
+//       &quot;xs&quot;,
+//       Fun(
+// ...
 /**
 Since it is somewhat difficult to print out the resulting list in our primitive language we construct the result we expect explicitly.
 */
 val test5res = wth(&quot;cons&quot;,cons,
                wth(&quot;nil&quot;, nil,
                  App(App(&quot;cons&quot;,2),App(App(&quot;cons&quot;,3),App(App(&quot;cons&quot;,4), &quot;nil&quot;)))))
+// test5res: Exp = App(
+//   Fun(
+//     &quot;cons&quot;,
+//     App(
+//       Fun(
+//         &quot;nil&quot;,
+//         App(
+//           App(Id(&quot;cons&quot;), Num(2)),
+//           App(App(Id(&quot;cons&quot;), Num(3)), App(App(Id(&quot;cons&quot;), Num(4)), Id(&quot;nil&quot;)))
+//         )
+//       ),
+//       Fun(&quot;c&quot;, Fun(&quot;e&quot;, Id(&quot;e&quot;)))
+//     )
+//   ),
+//   Fun(
+//     &quot;x&quot;,
+//     Fun(
+//       &quot;xs&quot;,
+//       Fun(
+//         &quot;c&quot;,
+//         Fun(
+//           &quot;e&quot;,
+//           App(App(Id(&quot;c&quot;), Id(&quot;x&quot;)), App(App(Id(&quot;xs&quot;), Id(&quot;c&quot;)), Id(&quot;e&quot;)))
+//         )
+//       )
+//     )
+//   )
+// )
 assert(eval(test5) == eval(test5res))
 /**
 Using evalcbn instead of eval the assertion does not hold (why?), but the results are beta-equivalent.
@@ -244,11 +359,31 @@ This operator only works under call-by-name or other so-called &quot;non-strict&
 */
 
 val y = Fun(&quot;f&quot;, App(Fun(&quot;x&quot;,App(&quot;f&quot;, App(&quot;x&quot;,&quot;x&quot;))), Fun(&quot;x&quot;,App(&quot;f&quot;,App(&quot;x&quot;,&quot;x&quot;)))))
+// y: Fun = Fun(
+//   &quot;f&quot;,
+//   App(
+//     Fun(&quot;x&quot;, App(Id(&quot;f&quot;), App(Id(&quot;x&quot;), Id(&quot;x&quot;)))),
+//     Fun(&quot;x&quot;, App(Id(&quot;f&quot;), App(Id(&quot;x&quot;), Id(&quot;x&quot;))))
+//   )
+// )
 
 /**
 Using Y, we can construct infinite lists, such as the list of all natural numbers.
 */
 val allnats = App(App(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, App(App(&quot;cons&quot;,&quot;n&quot;), App(&quot;nats&quot;, Add(&quot;n&quot;,1)))))),1)
+// allnats: Syntax.App = App(
+//   App(
+//     Id(&quot;y&quot;),
+//     Fun(
+//       &quot;nats&quot;,
+//       Fun(
+//         &quot;n&quot;,
+//         App(App(Id(&quot;cons&quot;), Id(&quot;n&quot;)), App(Id(&quot;nats&quot;), Add(Id(&quot;n&quot;), Num(1))))
+//       )
+//     )
+//   ),
+//   Num(1)
+// )
 
 /**
 We can also perform standard computations on infinite lists, such as mapping the successor function over it.
@@ -259,6 +394,56 @@ val list2toinfty = wth(&quot;cons&quot;,cons,
                    wth(&quot;y&quot;, y,
                    wth(&quot;maplist&quot;, maplist,
                       App(App(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,1))), allnats)))))
+// list2toinfty: Exp = App(
+//   Fun(
+//     &quot;cons&quot;,
+//     App(
+//       Fun(
+//         &quot;nil&quot;,
+//         App(
+//           Fun(
+//             &quot;y&quot;,
+//             App(
+//               Fun(
+//                 &quot;maplist&quot;,
+//                 App(
+//                   App(Id(&quot;maplist&quot;), Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Num(1)))),
+//                   App(
+//                     App(
+//                       Id(&quot;y&quot;),
+//                       Fun(
+//                         &quot;nats&quot;,
+//                         Fun(
+//                           &quot;n&quot;,
+//                           App(
+//                             App(Id(&quot;cons&quot;), Id(&quot;n&quot;)),
+//                             App(Id(&quot;nats&quot;), Add(Id(&quot;n&quot;), Num(1)))
+//                           )
+//                         )
+//                       )
+//                     ),
+//                     Num(1)
+//                   )
+//                 )
+//               ),
+//               Fun(
+//                 &quot;f&quot;,
+//                 Fun(
+//                   &quot;l&quot;,
+//                   App(
+//                     App(
+//                       Id(&quot;l&quot;),
+//                       Fun(
+//                         &quot;x&quot;,
+//                         Fun(
+//                           &quot;xs&quot;,
+//                           App(App(Id(&quot;cons&quot;), App(Id(&quot;f&quot;), Id(&quot;x&quot;))), Id(&quot;xs&quot;))
+//                         )
+//                       )
+//                     ),
+//                     Id(&quot;nil&quot;)
+//                   )
+// ...
 /**
 Of course, ``list2toinfty`` diverges when we use ``eval``, but it works fine with ``evalcbn``. It is hard to verify the result due to
 an almost unreadable output. Hence we propose the following
@@ -339,6 +524,7 @@ object CallByName extends CBN {
 }
 
 assert(CallByName.eval(test, CallByName.Env(Map.empty)) == CallByName.NumV(12))
+// Forcing evaluation of expression: Num(7)
 /**
 Call-by-need
 ------------
@@ -347,6 +533,10 @@ For instance, in
 */
 val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&quot;)),
                App(&quot;double&quot;, Add(2,3)))
+// cbntest: Exp = App(
+//   Fun(&quot;double&quot;, App(Id(&quot;double&quot;), Add(Num(2), Num(3)))),
+//   Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Id(&quot;x&quot;)))
+// )
 /**
 the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blow-up.
 Example:
@@ -359,6 +549,43 @@ val blowup  = wth(&quot;a&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&qu
               wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(App(&quot;d&quot;,&quot;x&quot;), App(&quot;d&quot;,&quot;x&quot;))),
               wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(App(&quot;e&quot;,&quot;x&quot;), App(&quot;e&quot;,&quot;x&quot;))),
               App(&quot;f&quot;, Add(2,3))))))))
+// blowup: Exp = App(
+//   Fun(
+//     &quot;a&quot;,
+//     App(
+//       Fun(
+//         &quot;b&quot;,
+//         App(
+//           Fun(
+//             &quot;c&quot;,
+//             App(
+//               Fun(
+//                 &quot;d&quot;,
+//                 App(
+//                   Fun(
+//                     &quot;e&quot;,
+//                     App(
+//                       Fun(&quot;f&quot;, App(Id(&quot;f&quot;), Add(Num(2), Num(3)))),
+//                       Fun(
+//                         &quot;x&quot;,
+//                         Add(App(Id(&quot;e&quot;), Id(&quot;x&quot;)), App(Id(&quot;e&quot;), Id(&quot;x&quot;)))
+//                       )
+//                     )
+//                   ),
+//                   Fun(&quot;x&quot;, Add(App(Id(&quot;d&quot;), Id(&quot;x&quot;)), App(Id(&quot;d&quot;), Id(&quot;x&quot;))))
+//                 )
+//               ),
+//               Fun(&quot;x&quot;, Add(App(Id(&quot;c&quot;), Id(&quot;x&quot;)), App(Id(&quot;c&quot;), Id(&quot;x&quot;))))
+//             )
+//           ),
+//           Fun(&quot;x&quot;, Add(App(Id(&quot;b&quot;), Id(&quot;x&quot;)), App(Id(&quot;b&quot;), Id(&quot;x&quot;))))
+//         )
+//       ),
+//       Fun(&quot;x&quot;, Add(App(Id(&quot;a&quot;), Id(&quot;x&quot;)), App(Id(&quot;a&quot;), Id(&quot;x&quot;))))
+//     )
+//   ),
+//   Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Id(&quot;x&quot;)))
+// )
 /**
 Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is
 called _call-by-need_.
@@ -380,20 +607,6 @@ object CallByNeed extends CBN {
     t.cache
   }
 }
-
-/**
-For instance, compare call-by-need and call-by-name in cbntest or blowup.
-However, the meta-language (i.e., the subset of Scala features) used in the interpreter has become more complicated:
-Since we are using mutation, the order of evaluation and aliasing of object references becomes important.
-Luckily,  call-by-need agrees with call-by-name with regard to produced values and termination behavior, hence it is usually not
-necessary to reason about programs with the call-by-need semantics. If, however, one wants to reason about the performance of a
-program in a call-by-need setting, one has to take these additional complications into account. In practice, it is even worse,
-since languages like Haskell perform additional optimizations that, for instance, switch to call-by-value if an analysis can
-determine that an argument will definitely be used (lookup &quot;strictness analysis&quot;).
-Topics for class discussion:
- - Is it a good idea to mix a language with implicit mutation (such as Java, Scala, C++, Python, ...) with lazy evaluation?
- - How can one simulate lazy evaluation in an eager language? Basic idea: 'Lambda' as evaluation firewall.
-*/
 </code></pre>
 
                     </main>

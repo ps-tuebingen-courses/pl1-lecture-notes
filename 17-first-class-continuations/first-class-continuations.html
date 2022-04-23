@@ -159,8 +159,8 @@ case class Num(n: Int) extends Exp
 case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: String, body: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def id2exp(s: String) = Id(s)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def id2exp(s: String): Exp = Id(s)
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
 
 /** 
@@ -251,6 +251,7 @@ def starteval(e: Exp) : Value = {
 Finally a small test of Letcc. 
 */
 val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, App(&quot;k&quot;, 3))))
+// testprog: Add = Add(Num(1), Letcc(&quot;k&quot;, Add(Num(2), App(Id(&quot;k&quot;), Num(3)))))
 
 assert(starteval(testprog) == NumV(4))
 </code></pre>

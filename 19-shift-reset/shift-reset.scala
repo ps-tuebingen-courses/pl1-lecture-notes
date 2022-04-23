@@ -23,8 +23,8 @@ case class Num(n: Int) extends Exp
 case class Id(name: Symbol) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: Symbol, body: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def id2exp(s: Symbol) = Id(s)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def id2exp(s: Symbol): Exp = Id(s)
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
 case class Shift(param: Symbol, body: Exp) extends Exp
 case class Reset(body: Exp) extends Exp

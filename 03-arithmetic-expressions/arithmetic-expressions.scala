@@ -11,8 +11,8 @@ case class Id(x: String) extends Exp
 
 val test0 = Add(Mul(Id("x"),Num(2)),Add(Id("y"),Id("y")))
 
-implicit def num2exp(n: Int) = Num(n)
-implicit def sym2exp(x: String) = Id(x)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def sym2exp(x: String): Exp = Id(x)
 
 val test = Add(Mul("x",2),Add("y","y"))
 
@@ -68,7 +68,7 @@ import AEId._
 case class Visitor[T](num: Int => T, add: (T, T) => T, mul: (T, T) => T, id: String => T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
 val countVisitor = Visitor[Int](_=>1, _ + _, _ + _, _ => 0)
-val printVisitor = Visitor[String](_.toString, "(" + _ + "+" + _ + ")", _ + "*" + _, _.x)
+val printVisitor = Visitor[String](_.toString, "(" + _ + "+" + _ + ")", _ + "*" + _, identity)
 
 def foldExp[T](v: Visitor[T], e: Exp) : T = {
   e match {

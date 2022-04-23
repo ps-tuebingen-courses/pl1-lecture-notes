@@ -3,8 +3,8 @@ object Syntax {
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
   case class Add(lhs: Exp, rhs: Exp) extends Exp
-  implicit def num2exp(n: Int) = Num(n)
-  implicit def id2exp(s: String) = Id(s)
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
 
   // Both function definitions and applications are expressions.
   case class Fun(param: String, body: Exp) extends Exp
@@ -16,20 +16,20 @@ object Syntax {
 
 import Syntax._
 
-def subst1(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+def subst0(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) => e1
-  case Add(l,r) => Add(subst1(l,x,e2), subst1(r,x,e2))
+  case Add(l,r) => Add(subst0(l,x,e2), subst0(r,x,e2))
   case Id(y) => if (x == y) e2 else Id(y)
-  case App(f,a) => App(subst1(f,x,e2), subst1(a,x,e2))
+  case App(f,a) => App(subst0(f,x,e2), subst0(a,x,e2))
   case Fun(param,body) =>
-    if (param == x) e1  else Fun(param, subst1(body, x, e2))
+    if (param == x) e1  else Fun(param, subst0(body, x, e2))
 }
 
-assert( subst1(Add(5,"x"), "x", 7) == Add(5, 7))
-assert( subst1(Add(5,"x"), "y", 7) == Add(5,"x"))
-assert( subst1(Fun("x", Add("x","y")), "x", 7) == Fun("x", Add("x","y")))
+assert( subst0(Add(5,"x"), "x", 7) == Add(5, 7))
+assert( subst0(Add(5,"x"), "y", 7) == Add(5,"x"))
+assert( subst0(Fun("x", Add("x","y")), "x", 7) == Fun("x", Add("x","y")))
 
-subst1(Fun("x", Add("x","y")), "y", Add("x",5))
+val subst0Test = subst0(Fun("x", Add("x","y")), "y", Add("x",5))
 
 def freshName(names: Set[String], default: String) : String = {
   var last : Int = 0
@@ -75,7 +75,7 @@ assert( subst(Fun("x", Add("x","y")), "y", Add("x",5)) == Fun("x0",Add(Id("x0"),
 assert( subst(Fun("x", Add(Id("x0"), Id("y"))), "y", Add(Id("x"), 5)) == Fun("x1", Add(Id("x0"), Add(Id("x"), Num(5)))) )
 
 def eval(e: Exp) : Exp = e match {
-  case Id(v) => sys.error("unbound identifier: " + v.name)
+  case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l,r) => (eval(l), eval(r)) match {
                      case (Num(x),Num(y)) => Num(x+y)
                      case _ => sys.error("can only add numbers")
@@ -89,7 +89,7 @@ def eval(e: Exp) : Exp = e match {
 }
 
 def eval2(e: Exp) : Either[Num,Fun] = e match {
-  case Id(v) => sys.error("unbound identifier: " + v.name)
+  case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l,r) => (eval2(l), eval2(r)) match {
                      case (Left(Num(x)),Left(Num(y))) => Left(Num(x+y))
                      case _ => sys.error("can only add numbers")

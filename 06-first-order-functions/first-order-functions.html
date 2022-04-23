@@ -163,8 +163,8 @@ The following definitions are the language we have analyzed so far</p>
   case class Id(x: String) extends Exp
   case class With(x: String, xdef: Exp, body: Exp) extends Exp
   /** We use implicits again to make example programs less verbose. */
-  implicit def num2exp(n: Int) = Num(n)
-  implicit def string2exp(x: String) = Id(x)
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def string2exp(x: String): Exp = Id(x)
 
 
   /** The new language constructs for first-order functions: */

@@ -1,4 +1,105 @@
-// load 07-fae.scala before loading this file or copy&paste it here 
+object Syntax {
+  sealed abstract class Exp
+  case class Num(n: Int) extends Exp
+  case class Id(name: String) extends Exp
+  case class Add(lhs: Exp, rhs: Exp) extends Exp
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
+
+  // Both function definitions and applications are expressions.
+  case class Fun(param: String, body: Exp) extends Exp
+  case class App (funExpr: Exp, argExpr: Exp) extends Exp
+
+  // "with" would be a better name for this function, but it is reserved in Scala
+  def wth(x: String, xdef: Exp, body: Exp) : Exp = App(Fun(x,body),xdef)
+}
+
+import Syntax._
+
+def freshName(names: Set[String], default: String) : String = {
+  var last : Int = 0
+  var freshName = default
+  while (names contains freshName) { freshName = default+last; last += 1; }
+  freshName
+}
+
+def freeVars(e: Exp) : Set[String] =  e match {
+   case Id(x) => Set(x)
+   case Add(l,r) => freeVars(l) ++ freeVars(r)
+   case Fun(x,body) => freeVars(body) - x
+   case App(f,a) => freeVars(f) ++ freeVars(a)
+   case Num(n) => Set.empty
+}
+
+def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+  case Num(n) => e1
+  case Add(l,r) => Add(subst(l,x,e2), subst(r,x,e2))
+  case Id(y) => if (x == y) e2 else Id(y)
+  case App(f,a) => App(subst(f,x,e2),subst(a,x,e2))
+  case Fun(param,body) =>
+    if (param == x) e1 else {
+      val fvs = freeVars(Fun(param,body)) ++ freeVars(e2) + x
+      val newvar = freshName(fvs, param)
+      Fun(newvar, subst(subst(body, param, Id(newvar)), x, e2))
+    }
+}
+
+def eval(e: Exp) : Exp = e match {
+  case Id(v) => sys.error("unbound identifier: " + v)
+  case Add(l,r) => (eval(l), eval(r)) match {
+                     case (Num(x),Num(y)) => Num(x+y)
+                     case _ => sys.error("can only add numbers")
+                    }
+  case App(f,a) => eval(f) match {
+     case Fun(x,body) => eval( subst(body,x, eval(a)))  // call-by-value
+     // case Fun(x,body) => eval( subst(body,x, a))        // call-by-name
+     case _ => sys.error("can only apply functions")
+  }
+  case _ => e // numbers and functions evaluate to themselves
+}
+
+def eval2(e: Exp) : Either[Num,Fun] = e match {
+  case Id(v) => sys.error("unbound identifier: " + v)
+  case Add(l,r) => (eval2(l), eval2(r)) match {
+                     case (Left(Num(x)),Left(Num(y))) => Left(Num(x+y))
+                     case _ => sys.error("can only add numbers")
+                    }
+  case App(f,a) => eval2(f) match {
+     case Right(Fun(x,body)) => eval2( subst(body,x, eval(a)))
+     case _ => sys.error("can only apply functions")
+  }
+  case f@Fun(_,_) => Right(f)
+  case n@Num(_) => Left(n)
+}
+
+val test = App( Fun("x",Add("x",5)), 7)
+
+val omega = App(Fun("x",App("x","x")), Fun("x",App("x","x")))
+// try eval(omega) to crash the interpreter ;-)
+
+val test2 = wth("x", 5, App(Fun("f", App("f",3)), Fun("y",Add("x","y"))))
+
+sealed abstract class Value
+type Env = Map[String, Value]
+case class NumV(n: Int) extends Value
+case class ClosureV(f: Fun, env: Env) extends Value
+
+def evalWithEnv(e: Exp, env: Env) : Value = e match {
+  case Num(n: Int) => NumV(n)
+  case Id(x) => env(x)
+  case Add(l,r) => {
+    (evalWithEnv(l,env), evalWithEnv(r,env)) match {
+      case (NumV(v1),NumV(v2)) => NumV(v1+v2)
+      case _ => sys.error("can only add numbers")
+    }
+  }
+  case f@Fun(param,body) => ClosureV(f, env)
+  case App(f,a) => evalWithEnv(f,env) match {
+    // Use environment stored in closure to realize proper lexical scoping!
+    case ClosureV(f,closureEnv) => evalWithEnv(f.body, closureEnv + (f.param -> evalWithEnv(a,env)))
+    case _ => sys.error("can only apply functions")
+  }
+}
 
 /**
 Lazy Evaluation
@@ -33,7 +134,7 @@ Does this change the semantics, or is it just an implementation detail? In other
 Let's try two former test cases.
 */
 
-assert( evalcbn(test) == eval(test))
+assert(evalcbn(test) == eval(test))
 assert(evalcbn(test2) == eval(test2))
 
 /**

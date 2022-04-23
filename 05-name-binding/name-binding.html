@@ -165,8 +165,8 @@ We study this WAE language to better understand what names mean in  programming 
 import Syntax._
 </code></pre>
 <p>We use implicits again to make example programs less verbose.</p>
-<pre><code class="language-scala">implicit def num2exp(n: Int) = Num(n)
-implicit def string2exp(x: String) = Id(x)
+<pre><code class="language-scala">implicit def num2exp(n: Int): Exp = Num(n)
+implicit def string2exp(x: String): Exp = Id(x)
 </code></pre>
 <p>A first example program in WAE.</p>
 <pre><code class="language-scala">val test = With(&quot;x&quot;, 5, Add(&quot;x&quot;,&quot;x&quot;))

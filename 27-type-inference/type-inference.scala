@@ -1,4 +1,3 @@
-
 import scala.language.implicitConversions
 
 // Hindley-Milner type inference with let-polymorphism
@@ -43,8 +42,8 @@ sealed abstract class Exp
 case class Num(n: Int) extends Exp
 case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def id2exp(s: String) = Id(s)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp // No type annotation!
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
 case class Let(x: String, xdef: Exp, body: Exp) extends Exp
@@ -52,7 +51,7 @@ case class Let(x: String, xdef: Exp, body: Exp) extends Exp
 def freshName(names: Set[String], default: String) : String = {
   var last : Int = 0
   var freshName = default
-  while (names contains freshName) { freshName = default.name+last.toString; last += 1; }
+  while (names contains freshName) { freshName = default+last.toString; last += 1; }
   freshName
 }
 
@@ -85,7 +84,7 @@ def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
 }
 
 var tyvCount : Int = 0
-def freshTypeVar(): TypeVar = {
+def freshTypeVar: TypeVar = {
   tyvCount += 1
   TypeVar("X"+tyvCount.toString)
 }
@@ -124,7 +123,7 @@ def doTypeCheck(e: Exp, gamma: Map[String,Type]) = {
 }
 
 def eval(e: Exp) : Exp = e match {
-  case Id(v) => sys.error("unbound identifier: " + v.name)
+  case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l,r) => (eval(l), eval(r)) match {
                      case (Num(x),Num(y)) => Num(x+y)
                      case _ => sys.error("can only add numbers")

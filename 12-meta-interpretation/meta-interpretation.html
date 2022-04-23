@@ -262,17 +262,6 @@ object FAE {
       }
     }
 }
-
-/** 
-We will soon learn about ways to make FAE more syntactic in various ways. For instance, we will no longer rely on call-stack management
-of the meta-language, or the existence of higher-order functions.
-One dimension in which the interpreter could easily be made more syntactic is the treatment of numbers and arithmetic.
-For instance, we could represent numbers as sequences of digits instead of Scala numbers. 
-Another aspect in which our FAE interpreter relies on the host language is memory management.
-This is particularly relevant for environments stored inside closures. These environments cannot be organized on the call stack
-and hence need memory management. Since we are using Scala references to refer to environments, environments that are no longer
-needed are collected by the Scala (or rather, Java) virtual machine.
-*/
 </code></pre>
 
                     </main>

@@ -169,8 +169,8 @@ case class Num(n: Int) extends Exp
 case class Id(name: Symbol) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: Symbol, body: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def id2exp(s: Symbol) = Id(s)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def id2exp(s: Symbol): Exp = Id(s)
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
 case class Shift(param: Symbol, body: Exp) extends Exp
 case class Reset(body: Exp) extends Exp
@@ -202,15 +202,6 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value) : Value = e match {
   case Reset(e) =&gt; k(eval(e,env,x=&gt;x)) // reset the continuation to the identity function
   case Shift(param,body) =&gt; eval(body, env+(param -&gt; ContV(k)), x=&gt;x)  // wrap current continuation and reset continuation
 }
-
-
-/** 
-References:
-Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.
-O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html
-O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial
-*/
-
 </code></pre>
 
                     </main>

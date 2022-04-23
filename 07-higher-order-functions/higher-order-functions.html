@@ -167,8 +167,8 @@ been highly influential in the design and theory of programming languages.</p>
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
   case class Add(lhs: Exp, rhs: Exp) extends Exp
-  implicit def num2exp(n: Int) = Num(n)
-  implicit def id2exp(s: String) = Id(s)
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
 
   // Both function definitions and applications are expressions.
   case class Fun(param: String, body: Exp) extends Exp
@@ -191,24 +191,24 @@ latter.</p>
 <code>((x) =&gt; x+3)(7)</code>. We have made this idea explicit above by giving a constructive
 translation. Such translations are also often called &quot;desugaring&quot;.</p>
 <p>Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
-<pre><code class="language-scala">def subst1(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+<pre><code class="language-scala">def subst0(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) =&gt; e1
-  case Add(l,r) =&gt; Add(subst1(l,x,e2), subst1(r,x,e2))
+  case Add(l,r) =&gt; Add(subst0(l,x,e2), subst0(r,x,e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case App(f,a) =&gt; App(subst1(f,x,e2), subst1(a,x,e2))
+  case App(f,a) =&gt; App(subst0(f,x,e2), subst0(a,x,e2))
   case Fun(param,body) =&gt;
-    if (param == x) e1  else Fun(param, subst1(body, x, e2))
+    if (param == x) e1  else Fun(param, subst0(body, x, e2))
 }
 </code></pre>
-<p>Let's try whether subst produces reasonable results.</p>
-<pre><code class="language-scala">assert( subst1(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
-assert( subst1(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
-assert( subst1(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
+<p>Let's try whether <code>subst0</code> produces reasonable results.</p>
+<pre><code class="language-scala">assert( subst0(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
+assert( subst0(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
+assert( subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
 </code></pre>
 <p>However, what happens if <code>e2</code> contains free variables? The danger here is that they may be accidentially &quot;captured&quot; by the substitution.
 For instance, consider</p>
-<pre><code class="language-scala">subst1(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))
-// res3: Exp = Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Add(Id(&quot;x&quot;), Num(5))))
+<pre><code class="language-scala">val subst0Test = subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))
+// subst0Test: Exp = Fun(&quot;x&quot;, Add(Id(&quot;x&quot;), Add(Id(&quot;x&quot;), Num(5))))
 </code></pre>
 <p>The result is <code>Fun(&quot;x&quot;,Add(&quot;x&quot;,Add(&quot;x&quot;,5)))</code>
 This is not desirable, since it violates again static scoping.</p>
@@ -276,7 +276,7 @@ Such errors are called <em>type errors</em>, and we will talk about them in much
 <p>For now, it means that we need to analyze (typically by pattern matching) the result of recursive invocations of eval to check whether the result has the right type.</p>
 <p>The remainder of the interpreter is unsurprising:</p>
 <pre><code class="language-scala">def eval(e: Exp) : Exp = e match {
-  case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v.name)
+  case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
   case Add(l,r) =&gt; (eval(l), eval(r)) match {
                      case (Num(x),Num(y)) =&gt; Num(x+y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
@@ -291,7 +291,7 @@ Such errors are called <em>type errors</em>, and we will talk about them in much
 </code></pre>
 <p>We can also make the return type more precise to verify the invariant  that numbers and functions are the only values.</p>
 <pre><code class="language-scala">def eval2(e: Exp) : Either[Num,Fun] = e match {
-  case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v.name)
+  case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
   case Add(l,r) =&gt; (eval2(l), eval2(r)) match {
                      case (Left(Num(x)),Left(Num(y))) =&gt; Left(Num(x+y))
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)

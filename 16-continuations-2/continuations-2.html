@@ -215,8 +215,8 @@ case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: String, body: Exp) extends Exp
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def id2exp(s: String) = Id(s)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def id2exp(s: String): Exp = Id(s)
 
 /* For CPS transformed terms, we define two different syntactic categories: Values (CPSVal) and Expressions (CPSExp).
    By &quot;values&quot;, we mean terms that &quot;return&quot;, that is, terms that are different from applications of functions
@@ -233,10 +233,10 @@ case class CPSNum(n: Int) extends CPSVal
 case class CPSCont(v: String, body: CPSExp) extends CPSVal
 case class CPSFun(x: String, k: String, body: CPSExp) extends CPSVal
 case class CPSVar(x: String) extends CPSVal { override def toString = x.toString }
-implicit def id2cpsexp(x: String) = CPSVar(x)
+implicit def id2cpsexp(x: String): CPSVar = CPSVar(x)
 
 case class CPSContApp(k: CPSVal, a: CPSVal) extends CPSExp
-case class CPSFunApp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp // the arguments are even CPSVar and not only CPSVal!
+case class CPSFunApp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp // the arguments are even CPSVar and not only CPSVal! // the arguments are even CPSVar and not only CPSVal!
 case class CPSAdd(l: CPSVar, r: CPSVar) extends CPSVal
 
 /* With these definitions, we are now ready to formalize the transformation described above.
@@ -283,28 +283,6 @@ def cps(e: Exp) : CPSCont = e match {
      CPSCont(k, CPSContApp(&quot;k&quot;,CPSNum(n)))
    }
 }
-
-/* This transformation is the so-called Fischer CPS transformation. There are many other CPS transformation algorithms.
-   The Fischer CPS transformation is nice because it is so simple and because it is defined as one simple structural
-   recursion over the AST. Its main disadvantage is the existence of so-called &quot;administrative redexes&quot;.
-   An administrative redex is a function application whose operator is a &quot;continuation lambda&quot; - a lambda produced during
-   CPS transformation that was not in the original program. Such function applications can be computed immediately because
-   the function which is called is known.
-   For instance, cps(Add(2,3)) yields
-   CPSCont(&quot;k&quot;,
-           CPSContApp(
-             CPSCont(&quot;k&quot;,
-                     CPSContApp(&quot;k&quot;,2)),
-             CPSCont(&quot;lv&quot;,
-                     CPSContApp(
-                       CPSCont(&quot;k&quot;,
-                               CPSContApp(&quot;k&quot;,3)),
-                       CPSCont(&quot;rv&quot;,
-                               CPSAdd(&quot;rv&quot;,&quot;lv&quot;))))))
-    instead of
-    CPSCont(&quot;k&quot;, CPSContApp(&quot;k&quot;, CPSAdd(2,3)))
-    Many more advanced CPS transformation algorithms try to avoid as many administrative redexes as possible.
-*/
 </code></pre>
 
                     </main>

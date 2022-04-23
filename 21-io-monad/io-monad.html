@@ -152,7 +152,7 @@
   def inputString : IO[String]
   
   def performIO[A](action: IO[A]) : A
-}  
+}    
 
 val iomonad : IOMonad = new IOMonad {
   type World = String
@@ -165,6 +165,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }  
+// iomonad: IOMonad = repl.MdocSession$App$$anon$1@14fd46ed  
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] = 
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;
@@ -173,7 +174,7 @@ def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
   m.bind(m.inputString, (lastName: String) =&gt; 
   m.printString(&quot;Hello, &quot;+firstName + &quot; &quot; + lastName + &quot;!&quot;)))))
   
-def test = iomonad.performIO(someIOActions(iomonad))  
+def test = iomonad.performIO(someIOActions(iomonad))
 </code></pre>
 
                     </main>

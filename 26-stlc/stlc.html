@@ -170,8 +170,8 @@ sealed abstract class Exp
 case class Num(n: Int) extends Exp
 case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
-implicit def num2exp(n: Int) = Num(n)
-implicit def id2exp(s: String) = Id(s)
+implicit def num2exp(n: Int): Exp = Num(n)
+implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, t: Type, body: Exp) extends Exp
 case class App (funExpr: Exp, argExpr: Exp) extends Exp
 case class Junit() extends Exp
@@ -239,7 +239,7 @@ def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
 }
 
 def eval(e: Exp) : Exp = e match {
-  case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v.name)
+  case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
   case Add(l,r) =&gt; (eval(l), eval(r)) match {
                      case (Num(x),Num(y)) =&gt; Num(x+y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
@@ -330,10 +330,6 @@ def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
   }
 
 }
-
-/* Soundness of Simply-Typed Lambda Calculus (STLC) :
-If e : Exp und typeCheck(e,Map.empty) == t, then typeCheck(eval(e),Map.empty) == t
-*/
 </code></pre>
 
                     </main>
