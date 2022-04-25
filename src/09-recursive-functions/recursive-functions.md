@@ -35,7 +35,7 @@ object Syntax {
   we want a language construct "letrec" that is similar to "with",  except that the bound String can be used in the expression
   the String is bound to:
 
-```scala:silent
+```scala mdoc:silent
   case class Letrec(x: String, e: Exp, body: Exp) extends Exp
 ```
 
@@ -49,7 +49,7 @@ import Syntax._
 
 Using letrec, our example can be expressed as follows.
 
-```scala mdoc:silent
+```scala mdoc
 val sum = Letrec("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
 ```
 
