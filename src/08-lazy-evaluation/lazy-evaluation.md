@@ -88,13 +88,8 @@ val omega = Ap(Fun("x",Ap("x","x")), Fun("x",Ap("x","x")))
 val test2 = wth("x", 5, Ap(Fun("f", Ap("f",3)), Fun("y",Add("x","y"))))
 
 sealed abstract class Value
-```
-
-```scala
 type Env = Map[String, Value]
-```
 
-```scala mdoc:silent
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 
@@ -266,7 +261,7 @@ Hence, like for closures, we need to store the environment together with the exp
 hence becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
 not use type definitions of the form
 
-```scala mdoc:silent
+```scala
    type Thunk = (Exp, Env)
    type Env = Map[String, Thunk]
 ```
