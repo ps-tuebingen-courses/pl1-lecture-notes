@@ -11,11 +11,11 @@ import scala.language.implicitConversions
 Let's try to write a function that computes the sum of the first n integers. Let's pretend we do not know that the sum of the
 first n integers is $n*(n+1)/2$ and instead compute the sum in a loop. Let's try to do this in FAE (with if0):
 
-```scala mdoc:invisible
+```scala
 object Syntax {
 ```
 
-```scala mdoc:silent
+```scala mdoc
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
@@ -39,11 +39,11 @@ object Syntax {
   case class Letrec(x: String, e: Exp, body: Exp) extends Exp
 ```
 
-```scala mdoc:invisible
+```scala
 }
 ```
 
-```scala mdoc
+```scala
 import Syntax._
 ```
 
