@@ -88,7 +88,13 @@ val omega = Ap(Fun("x",Ap("x","x")), Fun("x",Ap("x","x")))
 val test2 = wth("x", 5, Ap(Fun("f", Ap("f",3)), Fun("y",Add("x","y"))))
 
 sealed abstract class Value
+```
+
+```scala
 type Env = Map[String, Value]
+```
+
+```scala mdoc:silent
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 
