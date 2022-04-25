@@ -685,7 +685,7 @@ Here is the formalization of this definition.</p>
                                     subst2(xdef,i,v),
                                     subst2(body,i,v))
 }
-// subst2: Function3[Exp, String, Num, Exp] = repl.MdocSession$App$$Lambda$2503/0x0000000100bd2c40@3b1c0bd2
+// subst2: Function3[Exp, String, Num, Exp] = repl.MdocSession$App$$Lambda$2503/0x0000000100bd0c40@337ab4a2
 </code></pre>
 <p>Let's create an interpreter that uses this substitution function.</p>
 <pre><code class="language-scala">def eval2 = makeEval(subst2)
@@ -970,13 +970,13 @@ A typical region would be the body of a function or other binding construct.</p>
 <p><strong>Deﬁnition (Dynamic Scope)</strong>: In a language with dynamic scope, the scope of an identiﬁer’s binding is the entire remainder of the
 execution during which that binding is in effect.</p>
 </blockquote>
-<p>We see that <code>eval</code> and <code>evalWithEnv</code> give our language static scoping, whereas evalDynScope gives our language dynamic scoping.
+<p>We see that <code>eval</code> and <code>evalWithEnv</code> give our language static scoping, whereas <code>evalDynScope</code> gives our language dynamic scoping.
 Armed with this terminology, we claim that dynamic scope is entirely unreasonable. The problem is that we simply cannot determine what
-the value of a program will be without knowing everything about its execution history. If the function f were invoked by some other
-sequence of functions that did not bind a value for n, then that particular application of f would result in an error, even though a
-previous application of f in the very same program’s execution completed successfully! In other words, simply by looking at the
-source text of f, it would be impossible to determine one of the most rudimentary properties of a program: whether or not a given
-identiﬁer was bound. You can only imagine the mayhem this would cause in a large software system, especially with multiple developers
+the value of a program will be without knowing everything about its execution history. If the function <code>f</code> were invoked by some other
+sequence of functions that did not bind a value for <code>n</code>, then that particular application of <code>f</code> would result in an error, even though a
+previous application of <code>f</code> in the very same program’s execution completed successfully! In other words, simply by looking at the
+source text of <code>f</code>, it would be impossible to determine one of the most rudimentary properties of a program: whether or not a given
+identifier was bound. You can only imagine the mayhem this would cause in a large software system, especially with multiple developers
 and complex ﬂows of control. We will therefore regard dynamic scope as an error. That said, there are facets of dynamic binding
 that are quite useful. For instance, exception handlers are typically dynamically scoped: A thrown exception is dispatched to the
 most recently encountered active exception handler for that exception type. </p>
@@ -3385,13 +3385,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$$anon$4@6dbd954a
+// zero: Num = repl.MdocSession$$anon$4@8ad08cc
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$$anon$6@a164106
+// one: Num = repl.MdocSession$$anon$6@751ea36c
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$$anon$8@3e287cc1
+// two: Num = repl.MdocSession$$anon$8@29778ddc
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$$anon$10@319db516
+// three: Num = repl.MdocSession$$anon$10@429abf79
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {
@@ -3598,7 +3598,7 @@ def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot;+ n1 + &quot;
  * We can express the continuation as a function: */
 
 val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
-// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2839/0x0000000100cc1040@57a0b924
+// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2839/0x0000000100cef040@448a93dc
 
 /* Similarly, the continuation at the second point of interaction is:
  * val cont2 = (m: Int) =&gt; println(n+m)
@@ -4777,7 +4777,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }  
-// iomonad: IOMonad = repl.MdocSession$$anon$1@e76e23d  
+// iomonad: IOMonad = repl.MdocSession$$anon$1@727ea936  
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] = 
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;

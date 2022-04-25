@@ -6,14 +6,16 @@
 // ########### PARSE METHODS
 function parseQuestionnaire(questionnaire) {
     const questions = Array.from(questionnaire.children);
+    const lang = questionnaire.getAttribute('language');
     return {
         rootElement: questionnaire,
-        questions: questions.map(x => parseQuestion(x))
+        questions: questions.map(x => parseQuestion(x)),
+        language: lang == 'de' || lang == 'en' ? lang : 'en'
     };
 }
 function parseQuestion(question) {
     const type = question.getAttribute('type');
-    const solution_number = question.getElementsByTagName("solution").length;
+    const solution_count = question.getElementsByTagName("solution").length;
     const text = Array.from(question.childNodes)
         .filter(x => x.tagName != 'DISTRACTOR'
         && x.tagName != 'SOLUTION');
@@ -21,10 +23,10 @@ function parseQuestion(question) {
         .filter(x => x.tagName == 'DISTRACTOR'
         || x.tagName == 'SOLUTION');
     return {
-        type: getQuestionType(type, solution_number, question),
+        type: getQuestionType(type, solution_count),
         text: text,
         answers: answers.map(x => parseAnswer(x)),
-        solutionNumber: solution_number,
+        solutionCount: solution_count,
         rootElement: question
     };
 }
@@ -32,19 +34,14 @@ function parseQuestion(question) {
 // optional singlechoice / multiplechoice attribute
 // automatically assigns the correct type, if not given single- or multiplechoice
 // if optional attribute is assigned throw an error for invalid arguments
-function getQuestionType(type, solution_number, question) {
-    if (type == "singlechoice" || type == "multiplechoice") {
-        return type;
+function getQuestionType(type, solution_count) {
+    if (solution_count == 1) {
+        console.log("inferred type: singlechoice");
+        return "singlechoice";
     }
-    else {
-        if (solution_number == 1) {
-            console.log("type: singlechoice");
-            return "singlechoice";
-        }
-        else if (solution_number > 1) {
-            console.log("type: multiplechoice");
-            return "multiplechoice";
-        }
+    else if (solution_count > 1) {
+        console.log("inferred type: multiplechoice");
+        return "multiplechoice";
     }
 }
 function parseAnswer(answer) {
@@ -77,6 +74,13 @@ function setup() {
                 // Possible ValidationPoint (Attributes)
                 renderQuestionnaire(r);
             }
+            else {
+                console.log('invalid questionnaire attributes');
+            }
+        }
+        else {
+            console.log('invalid questionnaire structure');
+            console.log(validateQuestionnaireStructure(questionnaire));
         }
     }
 }
@@ -92,15 +96,47 @@ window.onload = setup;
 //   on those attributes
 // store initial State after rendering for re-access
 const renderedQuestionnaires = [];
+const i18n = {
+    'en': {
+        goto: 'Go to question',
+        select: 'Select answer',
+        toggle: 'Show/hide explanation',
+        wrong: 'Wrong!',
+        correct: 'Correct!',
+        next: 'Next',
+        submit: 'Submit',
+        reset: 'Reset',
+        feedbacks: ['Keep trying!', 'Okay', 'Better Luck next time!',
+            'Not bad!', 'Great!', 'Perfect!']
+    },
+    'de': {
+        goto: 'Gehe zu Frage',
+        select: 'Wähle die Antwort aus',
+        toggle: 'Verstecke/Zeige Erklärung',
+        wrong: 'Falsch!',
+        correct: 'Richtig!',
+        next: 'Weiter',
+        submit: 'Antwort prüfen',
+        reset: 'Zurücksetzen',
+        feedbacks: ['Nicht aufgeben!', 'Okay', 'Mehr Glück beim nächsten Mal!',
+            'Nicht schlecht!', 'Super!', 'Perfekt!']
+    }
+};
+let lang = 'en';
 // ### Questionnaire
 // <questionnaire>
 //  - total_questions
 //  - current_question
 //  - render_id
 function renderQuestionnaire(questionnaire) {
+    // setup internationalization
+    lang = questionnaire.language;
+    // setup questionnaire properties
     const root = questionnaire.rootElement;
     root.setAttribute("total_questions", "" + questionnaire.questions.length);
     root.setAttribute("current_question", "1");
+    root.setAttribute("language", lang);
+    // render HTML
     root.innerHTML = `
     <div class="content-wrapper">
       <div class="question-overview">
@@ -108,7 +144,7 @@ function renderQuestionnaire(questionnaire) {
         <p   class="bubble bubble-pending ${i == 0 ? 'bubble-current' : ''}"
              question="${i + 1}"
              onclick="gotoQuestion(event)"
-             title="Go to Question ${i + 1}"></p>`).join('')}
+             title="${i18n[lang].goto} ${i + 1}"></p>`).join('')}
       </div>
       ${questionnaire.questions.map(renderQuestion).join('')}
       ${questionnaire.questions.length <= 1 ? '' : `
@@ -118,12 +154,14 @@ function renderQuestionnaire(questionnaire) {
         </div>
         <p class="summary-text"></p>
         <button onclick="resetQuestionnaire(event)"
-                class="reset-button"
-                title="delete answers and start fresh">Reset</button>
+                class="reset-button">
+          ${i18n[lang].reset}
+        </button>
       </div>
       `}
     </div>
   `;
+    // store rendered innerHTML for resets
     root.setAttribute('render_id', (renderedQuestionnaires.push(root.innerHTML) - 1).toString());
 }
 function gotoQuestion(e) {
@@ -174,23 +212,21 @@ function renderQuestion(question, index) {
               number="${index + 1}"
               answer="pending">
       <div class="correct-text">
-        <p>Correct!</p>
+        <p>${i18n[lang].correct}</p>
       </div>
       <div class="wrong-text">
-        <p>Wrong!</p>
+        <p>${i18n[lang].wrong}</p>
       </div>
       <div class="question-header">
         <div>${question.text.map(nodeOuterHTML).join('')}</div>
       </div>
       ${question.answers.map((x) => renderAnswer(question.type, x)).join('')}
       <div class="question-footer">
-        <div class="next-button" onClick="showNextQuestion(event)"
-             title="show next question">
-          Next
+        <div class="next-button" onClick="showNextQuestion(event)">
+          ${i18n[lang].next}
         </div>
-        <div class="submit-button" onClick="submitAnswer(event)"
-             title="submit answers and check if they are correct">
-          Submit
+        <div class="submit-button" onClick="submitAnswer(event)">
+          ${i18n[lang].submit}
         </div>
       </div>
     </question>
@@ -226,8 +262,8 @@ function showNextQuestion(event) {
         window.setTimeout(() => {
             summaryBar.innerHTML = `${percentage}%`;
             // adjust text
-            const feedbacks = ['Keep trying!', 'Okay', 'Better Luck next time!',
-                'Not bad!', 'Great!', 'Perfect!'];
+            const lang = questionnaire.getAttribute('language');
+            const feedbacks = i18n[lang].feedbacks;
             const summaryText = questionnaire.getElementsByClassName('summary-text')[0];
             summaryText.innerHTML = feedbacks[Math.floor(ratio * 0.99 * feedbacks.length)];
         }, 1000);
@@ -287,17 +323,21 @@ function renderAnswer(type, answer) {
   <answer correct="${answer.correct ? 'true' : 'false'}"
           selected="false"
           expanded="false">
-    <div class="wrapper-answer" onclick="selectAnswer(event)">
+    <div class="wrapper-answer"
+         onclick="selectAnswer(event)"
+         title="${i18n[lang].select}">
       <img class="answer-mark" src="${type == 'singlechoice' ? Ressources.circle_regular : Ressources.square_regular}">
+      <img class="answer-mark answer-mark-selected"
+           src="${Ressources.xmark_solid}">
       <div class="answer-text-container">
         ${answer.text.map(nodeOuterHTML).join('')}
       </div>
       ${answer.explanation == undefined ? '' : `
         <img class="expander"
-             title="show explanation"
+             title="${i18n[lang].toggle}"
              src="${Ressources.angle_down_solid}">
         <img class="collapser"
-             title="hide explanation"
+             title="${i18n[lang].toggle}"
              src="${Ressources.angle_up_solid}">
       `}
     </div>
@@ -325,18 +365,14 @@ function selectAnswer(event) {
     const question = getTagRecursive(answer, 'question');
     if (question.getAttribute('answer') == 'pending') {
         // toggle answer selection
-        const answermark = answer.getElementsByClassName('answer-mark')[0];
         if (answer.getAttribute('selected') == 'false') {
             answer.setAttribute('selected', 'true');
-            answermark.setAttribute('src', Ressources.xmark_solid);
             if (question.getAttribute('type') == 'singlechoice') {
                 submitAnswer(event);
             }
         }
         else {
             answer.setAttribute('selected', 'false');
-            // we know it must be multiple choice - else we could not unselect stuff
-            answermark.setAttribute('src', Ressources.square_regular);
         }
     }
     else {
@@ -388,29 +424,9 @@ function validateQuestionnaireStructure(questionnaire) {
     let answers = questionnaire.getElementsByTagName("answer");
     let explanation = questionnaire.getElementsByTagName("explanation");
     // validate given html tag elements
-    if (validateHtmlTagElements(questions.length - 1, questions) == true
-        && validateHtmlTagElements(answers.length - 1, answers) == true
-        && validateHtmlTagElements(explanation.length - 1, explanation) == true) {
-        return true;
-    }
-    else {
-        return false;
-    }
-    function validateHtmlTagElements(i, col) {
-        if (i >= 0) {
-            let validated = validateStructure(col[i]);
-            if (validated == true) {
-                let bool = validateHtmlTagElements(i - 1, col);
-                return bool;
-            }
-            else {
-                return false;
-            }
-        }
-        else {
-            return true;
-        }
-    }
+    return Array.from(questions).every(q => validateStructure(q)) &&
+        Array.from(answers).every(a => validateStructure(a)) &&
+        Array.from(explanation).every(e => validateStructure(e));
 }
 // ValidateStructure
 // <questionnaire> -> <question> -> at least 2 <answer> -> <explanation>
@@ -418,28 +434,28 @@ function validateQuestionnaireStructure(questionnaire) {
 function validateStructure(el) {
     const html_tag = el.tagName;
     const parent = el.parentElement;
-    if (html_tag == "QUESTION") {
-        // parent has to be a QUESTIONNAIRE
-        return parentHasToBe(parent, "QUESTIONNAIRE");
-    }
-    else if (html_tag == "SOLUTION" || html_tag == "DISTRACTOR") {
-        // parent has to be a QUESTION
-        return parentHasToBe(parent, "QUESTION");
-    }
-    else if (html_tag == "EXPLANATION") {
-        // parent has to be an SOLUTION OR DISTRACTOR
-        return parentHasToBe(parent, "SOLUTION", "DISTRACTOR");
-    }
-    function parentHasToBe(parent, tag, tag_two) {
-        if ((parent === null || parent === void 0 ? void 0 : parent.tagName) == tag || (parent === null || parent === void 0 ? void 0 : parent.tagName) == tag_two) {
+    switch (html_tag) {
+        case 'QUESTION':
+            return parentHasToBe(el, parent, "QUESTIONNAIRE");
+        case 'SOLUTION':
+        case 'DISTRACTOR':
+            return parentHasToBe(el, parent, "QUESTION");
+        case 'EXPLANATION':
+            return parentHasToBe(el, parent, "SOLUTION", "DISTRACTOR");
+        default:
+            console.log('html_tag to check was no question, solution, distractor or explanation');
             return true;
-        }
-        else {
-            let err = `HTML structure is invalid: Please check your input at: `;
-            let msg = parent === null || parent === void 0 ? void 0 : parent.outerHTML;
-            renderError(el, err, msg);
-            return false;
-        }
+    }
+}
+function parentHasToBe(el, parent, tag, tag_two) {
+    if ((parent === null || parent === void 0 ? void 0 : parent.tagName) == tag || (parent === null || parent === void 0 ? void 0 : parent.tagName) == tag_two) {
+        return true;
+    }
+    else {
+        let err = `HTML structure is invalid: Please check your input at: `;
+        let msg = parent === null || parent === void 0 ? void 0 : parent.outerHTML;
+        renderError(el, err, msg);
+        return false;
     }
 }
 function validateQuesionnaireAttributes(questionnaire) {
@@ -454,7 +470,7 @@ function validateQuesionnaireAttributes(questionnaire) {
 function validateQuestionAttributes(question) {
     const type = question.type;
     const answers = question.answers.length;
-    const solutions = question.solutionNumber;
+    const solutions = question.solutionCount;
     // if only 1 or less answers exists
     if (answers < 2) {
         let err = `You need to provide at least two answers for one &lt;question&gt;:`;
@@ -465,20 +481,6 @@ function validateQuestionAttributes(question) {
     // if there is no solution
     else if (solutions == 0) {
         let err = `This question has no &lt;solution&gt;:`;
-        let msg = question.rootElement.outerHTML;
-        renderError(question.rootElement, err, msg);
-        return false;
-    }
-    // if type is multiplechoice but doesnt match with solutions
-    else if (type == "multiplechoice" && solutions < 2) {
-        let err = `Optional attribute &lt;question type='multiplechoice'&gt; doesnt match with number of solutions:`;
-        let msg = question.rootElement.outerHTML;
-        renderError(question.rootElement, err, msg);
-        return false;
-    }
-    // if type is singlechoice but doesnt match with solutions
-    else if (type == "singlechoice" && solutions > 1) {
-        let err = `Optional attribute &lt;question type='singlechoice'&gt; doesnt match with number of solutions:`;
         let msg = question.rootElement.outerHTML;
         renderError(question.rootElement, err, msg);
         return false;
@@ -780,8 +782,17 @@ questionnaire answer [visible=true] p {
 }
 
 questionnaire .answer-mark, questionnaire .expander, questionnaire .collapser {
-  height: 1em;
+  width: 1.5em;
   align-self: center;
+}
+
+questionnaire .answer-mark-selected {
+  display: none;
+}
+
+questionnaire answer[selected="true"] .answer-mark-selected {
+  display: inline-flex;
+  margin-left: -1.5em;
 }
 
 questionnaire p {
@@ -964,6 +975,8 @@ questionnaire .summary-bar-container {
   width: 100%;
   background-color: azure;
   margin: 1em;
+  margin-left: 0;
+  margin-right: 0;
 }
 questionnaire .summary-bar {
   background-color: lightgreen;
