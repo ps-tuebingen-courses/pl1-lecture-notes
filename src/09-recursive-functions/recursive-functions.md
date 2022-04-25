@@ -60,14 +60,14 @@ and hence the environment when evaluating body will be ``envbody = env + (x -> C
 This is bad, because the ``env`` in the closure does not contain a binding for ``"sum"`` and hence the recursive invocation will fail.
 The environment in the closure must contain a mapping for ``"sum"``. Hence envbody should look like
 
-```scala mdoc:invisible
+```scala
     envbody = env + (x -> ClosureV(Fun("n", ..."sum"...),
                                    env+("sum" -> ClosureV(Fun("n",..."sum"...),env)))
 ```
 This looks better, but now the second closure contains an environment with no binding of ``"sum"``. What we need is an environment
 that satisfies the equation:
 
-```scala mdoc:invisible
+```scala
     envbody == env + (x -> ClosureV(Fun("n", ..."sum"..), envbody))
 ```
 
