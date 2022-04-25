@@ -260,7 +260,7 @@ Hence, like for closures, we need to store the environment together with the exp
 hence becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
 not use type definitions of the form
 
-```scala mdoc
+```scala mdoc:silent
    type Thunk = (Exp, Env)
    type Env = Map[String, Thunk]
 ```
