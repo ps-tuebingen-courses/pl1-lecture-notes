@@ -208,13 +208,13 @@ Let's introduce some terminology to make the discussion simpler:
 > execution during which that binding is in effect.
 
 
-We see that ``eval`` and ``evalWithEnv`` give our language static scoping, whereas evalDynScope gives our language dynamic scoping.
+We see that ``eval`` and ``evalWithEnv`` give our language static scoping, whereas `evalDynScope` gives our language dynamic scoping.
 Armed with this terminology, we claim that dynamic scope is entirely unreasonable. The problem is that we simply cannot determine what
-the value of a program will be without knowing everything about its execution history. If the function f were invoked by some other
-sequence of functions that did not bind a value for n, then that particular application of f would result in an error, even though a
-previous application of f in the very same program’s execution completed successfully! In other words, simply by looking at the
-source text of f, it would be impossible to determine one of the most rudimentary properties of a program: whether or not a given
-identiﬁer was bound. You can only imagine the mayhem this would cause in a large software system, especially with multiple developers
+the value of a program will be without knowing everything about its execution history. If the function `f` were invoked by some other
+sequence of functions that did not bind a value for `n`, then that particular application of `f` would result in an error, even though a
+previous application of `f` in the very same program’s execution completed successfully! In other words, simply by looking at the
+source text of `f`, it would be impossible to determine one of the most rudimentary properties of a program: whether or not a given
+identifier was bound. You can only imagine the mayhem this would cause in a large software system, especially with multiple developers
 and complex ﬂows of control. We will therefore regard dynamic scope as an error. That said, there are facets of dynamic binding
 that are quite useful. For instance, exception handlers are typically dynamically scoped: A thrown exception is dispatched to the
 most recently encountered active exception handler for that exception type. 
