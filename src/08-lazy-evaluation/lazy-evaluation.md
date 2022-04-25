@@ -5,7 +5,7 @@ The content of this chapter is available as a scala file [here.](./lazy-evaluati
 
 
 // load 07-fae.scala before loading this file or copy&paste it here
-```scala mdoc:invisible
+```scala mdoc:silent
 object Syntax {
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
@@ -260,7 +260,7 @@ Hence, like for closures, we need to store the environment together with the exp
 hence becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
 not use type definitions of the form
 
-```scala mdoc:invisible
+```scala mdoc
    type Thunk = (Exp, Env)
    type Env = Map[String, Thunk]
 ```
