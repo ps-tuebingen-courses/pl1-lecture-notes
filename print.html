@@ -342,9 +342,9 @@ Internal visitors also correspond to a &quot;bottom-up&quot; traversal of the sy
 </code></pre>
 <pre><code class="language-scala">case class VisitorAE[T](num: Int =&gt; T, add: (T, T) =&gt; T)
 </code></pre>
-<p>The fold function itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
+<p>The fold function below itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
 are not recursive.</p>
-<p>Also note that this design enforces that all algorithms specified via this visitor interfaces are compositional by design. This means that
+<p>Also note that this design enforces that all algorithms specified via this visitor interface are compositional by design. This means that
 the recursion structure of the algorithm corresponds to the recursion structure of the expression. Put in another way, it means that the
 semantics (in terms of the meta-language) of a composite expression is determined by the semantics of the subexpressions; the syntax of
 the subexpressions is irrelevant.</p>
@@ -648,22 +648,27 @@ Let's try to formalize this definition:</p>
                                     subst1(xdef,i,v),
                                     subst1(body,i,v))
   }
+// error:
+// Found:    (v : repl.MdocSession.App.Syntax.Num)
+// Required: String
+//     case Id(x) =&gt; if (x == i) v else e
+//                               ^
 </code></pre>
 <p>Unfortunately this does not even type-check! And rightly so, because it might otherwise turn reasonable programs into programs that are
 not even syntactically legal anymore.
 Exercise for self-study: Find an expression that would be transformed into one that is not syntactically legal.
 To see the reason for this, we need to define some terminology (the word &quot;instance&quot; here means &quot;occurence&quot;):</p>
-<p><strong>Deﬁnition(Binding Instance)</strong>:
-A binding instance of an identiﬁer is the instance of the identiﬁer that gives it its value. In WAE, the <code>x</code> position of a <code>with</code> is the only binding instance.</p>
-<p><strong>Deﬁnition (Scope)</strong>:
-The scope of a binding instance is the region of program text in which instances of the identiﬁer refer to the value bound by the binding instance.</p>
-<p><strong>Deﬁnition (Bound Instance)</strong>:
-An identiﬁer is bound if it is contained within the scope of a binding instance of its name.</p>
-<p><strong>Deﬁnition (Free Instance)</strong>:
-An identiﬁer not contained in the scope of any binding instance of its name is said to be free.
+<p><strong>Definition (Binding Instance)</strong>:
+A binding instance of an identifier is the instance of the identifier that gives it its value. In WAE, the <code>x</code> position of a <code>With</code> is the only binding instance.</p>
+<p><strong>Definition (Scope)</strong>:
+The scope of a binding instance is the region of program text in which instances of the identifier refer to the value bound by the binding instance.</p>
+<p><strong>Definition (Bound Instance)</strong>:
+An identifier is bound if it is contained within the scope of a binding instance of its name.</p>
+<p><strong>Definition (Free Instance)</strong>:
+An identifier not contained in the scope of any binding instance of its name is said to be free.
 Examples: In WAE, the String in <code>Id(&quot;x&quot;)</code> is a bound or free instance, and the String in <code>With(&quot;x&quot;, ..., ...)</code> is a binding instance.
 The scope of this binding instance is the third sub-term of <code>With</code>.</p>
-<p>Now the reason can be revealed.  Our first attempt failed because we substitue the identifier occurs in the binding position in the
+<p>Now the reason can be revealed.  Our first attempt failed because we substituted the identifier occurring in the binding position in the
 with-expression.  This renders the expression illegal because after substitution the binding position where an identifier was expected
 is now occupied by a Num.
 To correct this mistake, we make another take at substitution:</p>
@@ -672,20 +677,19 @@ To correct this mistake, we make another take at substitution:</p>
 instances that have the name <code>i</code> with the expression <code>v</code>.
 Here is the formalization of this definition.</p>
 <pre><code class="language-scala">val subst2 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
-    case Num(n) =&gt; e
+  case Num(n) =&gt; e
 
-    // Bound or free instance =&gt; substitute if names match
-    case Id(x) =&gt; if (x == i) v else e
+  // Bound or free instance =&gt; substitute if names match
+  case Id(x) =&gt; if (x == i) v else e
 
-    case Add(l,r) =&gt; Add( subst2(l,i,v), subst2(r,i,v))
-    case Mul(l,r) =&gt; Mul( subst2(l,i,v), subst2(r,i,v))
+  case Add(l,r) =&gt; Add( subst2(l,i,v), subst2(r,i,v))
+  case Mul(l,r) =&gt; Mul( subst2(l,i,v), subst2(r,i,v))
 
-    // binding instance =&gt; do not substitute
-    case With(x,xdef,body) =&gt; With( x,
-                                    subst2(xdef,i,v),
-                                    subst2(body,i,v))
+  // binding instance =&gt; do not substitute
+  case With(x,xdef,body) =&gt; With( x,
+                                  subst2(xdef,i,v),
+                                  subst2(body,i,v))
 }
-// subst2: Function3[Exp, String, Num, Exp] = repl.MdocSession$App$$Lambda$2503/0x0000000100bd0c40@4c23d17f
 </code></pre>
 <p>Let's create an interpreter that uses this substitution function.</p>
 <pre><code class="language-scala">def eval2 = makeEval(subst2)
@@ -700,12 +704,12 @@ val test3 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;x&quot;, 3, &qu
 
 // assert(eval2(test3) == 8) // Bang! Result is 10 instead!
 </code></pre>
-<p>What went wrong here? Our substitution algorithm respected binding instances, but not their scope. In the sample expression, the with
+<p>What went wrong here? Our substitution algorithm respected binding instances, but not their scope. In the sample expression, the <code>With</code>
 introduces a new scope for the inner <code>x</code>. The scope of the outer <code>x</code> is shadowed or masked by the inner binding. Because substitution
 doesn’t recognize this possibility, it incorrectly substitutes the inner <code>x</code>.</p>
 <h3 id="substitution-take-3"><a class="header" href="#substitution-take-3">Substitution, take 3</a></h3>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all non-binding identifiers in <code>e</code> having
-the name <code>i</code> with the expression <code>v</code>, unless the identiﬁer is in a scope different from that introduced by <code>i</code>.</p>
+the name <code>i</code> with the expression <code>v</code>, unless the identifier is in a scope different from that introduced by <code>i</code>.</p>
 <pre><code class="language-scala">val subst3 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
@@ -731,15 +735,15 @@ val test4 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;y&quot;, 3,&quo
 </code></pre>
 <p>The inner expression should result in an error, because <code>x</code> has no value. Once again, substitution has changed a correct program into
 an incorrect one!
-Let’s understand what went wrong. Why didn’t we substitute the inner <code>x</code>? Substitution halts at the with because, by deﬁnition, every
-with introduces a new scope, which we said should delimit substitution. But this with contains an instance of <code>x</code>, which we very much
+Let’s understand what went wrong. Why didn’t we substitute the inner <code>x</code>? Substitution halts at the <code>With</code> because, by definition, every
+<code>With</code> introduces a new scope, which we said should delimit substitution. But this <code>With</code> contains an instance of <code>x</code>, which we very much
 want substituted! So which is it - substitute within nested scopes or not? Actually, the two examples above should reveal that our
-latest deﬁnition for substitution, which may have seemed sensible at first blush, is too draconian: it rules out substitution within
+latest definition for substitution, which may have seemed sensible at first blush, is too draconian: it rules out substitution within
 any nested scopes.</p>
 <h3 id="substitution-take-4"><a class="header" href="#substitution-take-4">Substitution, take 4</a></h3>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all non-binding identifiers in <code>e</code> having
 the name <code>i</code> with the expression <code>v</code>, except within nested scopes of <code>i</code>.
-Finally, we have a version of substitution that works. A different, more succinct way of phrasing this deﬁnition is:
+Finally, we have a version of substitution that works. A different, more succinct way of phrasing this definition is:
 &quot;To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all free instances of <code>i</code> in <code>e</code> with <code>v</code>.&quot;</p>
 <pre><code class="language-scala">val subst4 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
     case Num(n) =&gt; e
@@ -768,11 +772,11 @@ val test5 = With(&quot;x&quot;, 5, With(&quot;x&quot;, &quot;x&quot;, &quot;x&qu
 // assert(eval4(test5) == 5) // Bang! unbound variable &quot;x&quot;
 </code></pre>
 <p>This program should evaluate to <code>5</code>, but it too halts with an error. This is because we prematurely stopped substituting for <code>x</code> occuring in
-a bound position. We should substitute in the named expression of a with even if the with in question deﬁnes a new scope for the identiﬁer
-being substituted, because its named expression is still in the scope of the enclosing binding of the identiﬁer.</p>
+a bound position. We should substitute in the named expression of a <code>With</code> even if the with in question defines a new scope for the identifier
+being substituted, because its named expression is still in the scope of the enclosing binding of the identifier.</p>
 <h3 id="substitution-take-5"><a class="header" href="#substitution-take-5">Substitution, take 5</a></h3>
 <p>We finally get a valid
-programmatic deﬁnition of substitution (relative to the language we have so far):</p>
+programmatic definition of substitution (relative to the language we have so far):</p>
 <pre><code class="language-scala">val subst5 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
@@ -3118,13 +3122,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$$anon$4@5ada9396
+// zero: Num = repl.MdocSession$$anon$4@74abbce5
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$$anon$6@77aec1e2
+// one: Num = repl.MdocSession$$anon$6@3231898a
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$$anon$8@bf326e6
+// two: Num = repl.MdocSession$$anon$8@3516799e
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$$anon$10@6ee8bc8a
+// three: Num = repl.MdocSession$$anon$10@592772d5
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {
@@ -3331,7 +3335,7 @@ def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot;+ n1 + &quot;
  * We can express the continuation as a function: */
 
 val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
-// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2839/0x0000000100ccb040@7e8ac09f
+// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2897/0x0000000100cfe840@2a8ecf5b
 
 /* Similarly, the continuation at the second point of interaction is:
  * val cont2 = (m: Int) =&gt; println(n+m)
@@ -4510,7 +4514,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }  
-// iomonad: IOMonad = repl.MdocSession$$anon$1@5084813d  
+// iomonad: IOMonad = repl.MdocSession$$anon$1@57827ba9  
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] = 
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;

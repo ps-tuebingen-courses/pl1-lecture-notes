@@ -215,9 +215,9 @@ Internal visitors also correspond to a &quot;bottom-up&quot; traversal of the sy
 </code></pre>
 <pre><code class="language-scala">case class VisitorAE[T](num: Int =&gt; T, add: (T, T) =&gt; T)
 </code></pre>
-<p>The fold function itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
+<p>The fold function below itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
 are not recursive.</p>
-<p>Also note that this design enforces that all algorithms specified via this visitor interfaces are compositional by design. This means that
+<p>Also note that this design enforces that all algorithms specified via this visitor interface are compositional by design. This means that
 the recursion structure of the algorithm corresponds to the recursion structure of the expression. Put in another way, it means that the
 semantics (in terms of the meta-language) of a composite expression is determined by the semantics of the subexpressions; the syntax of
 the subexpressions is irrelevant.</p>

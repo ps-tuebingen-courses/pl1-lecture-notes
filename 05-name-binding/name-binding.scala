@@ -37,18 +37,18 @@ val subst1 : (Exp,String,Num) => Exp = (e,i,v) => e match {
   }
 
 val subst2 : (Exp,String,Num) => Exp = (e,i,v) => e match {
-    case Num(n) => e
+  case Num(n) => e
 
-    // Bound or free instance => substitute if names match
-    case Id(x) => if (x == i) v else e
+  // Bound or free instance => substitute if names match
+  case Id(x) => if (x == i) v else e
 
-    case Add(l,r) => Add( subst2(l,i,v), subst2(r,i,v))
-    case Mul(l,r) => Mul( subst2(l,i,v), subst2(r,i,v))
+  case Add(l,r) => Add( subst2(l,i,v), subst2(r,i,v))
+  case Mul(l,r) => Mul( subst2(l,i,v), subst2(r,i,v))
 
-    // binding instance => do not substitute
-    case With(x,xdef,body) => With( x,
-                                    subst2(xdef,i,v),
-                                    subst2(body,i,v))
+  // binding instance => do not substitute
+  case With(x,xdef,body) => With( x,
+                                  subst2(xdef,i,v),
+                                  subst2(body,i,v))
 }
 
 def eval2 = makeEval(subst2)
