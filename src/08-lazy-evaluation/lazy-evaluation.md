@@ -5,7 +5,7 @@ The content of this chapter is available as a scala file [here.](./lazy-evaluati
 
 
 // load 07-fae.scala before loading this file or copy&paste it here
-```scala mdoc:silent
+```scala mdoc:invisible
 object Syntax {
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
@@ -181,25 +181,25 @@ infinite lists.
 
 We do not have direct support for lists, but we can encode lists. This kind of encoding is called _Church encoding_.
 
-```scala mdoc
+```scala mdoc:silent
 val nil = Fun("c", Fun("e", "e"))
 val cons  = Fun("x", Fun("xs", Fun("c", Fun("e", Ap(Ap("c", "x"), Ap(Ap("xs", "c"),"e"))))))
 ```
 
 For instance, the list 1,2,3 is encoded as:
 
-```scala mdoc
+```scala mdoc:silent
 val list123 = Ap(Ap("cons",1),Ap(Ap("cons",2),Ap(Ap("cons",3), "nil")))
 ```
 
 The map function on lists becomes :
-```scala mdoc
+```scala mdoc:silent
 val maplist = Fun("f", Fun("l", Ap(Ap("l", Fun("x", Fun("xs", Ap(Ap("cons", Ap("f","x")),"xs")))), "nil")))
 ```
 
 For instance, we can map the successor function over the 1,2,3 list.
 
-```scala mdoc
+```scala mdoc:silent
 val test5 = wth("cons",cons,
             wth("nil", nil,
             wth("maplist", maplist,
@@ -208,7 +208,7 @@ val test5 = wth("cons",cons,
 
 Since it is somewhat difficult to print out the resulting list in our primitive language we construct the result we expect explicitly.
 
-```scala mdoc
+```scala mdoc:silent
 val test5res = wth("cons",cons,
                wth("nil", nil,
                  Ap(Ap("cons",2),Ap(Ap("cons",3),Ap(Ap("cons",4), "nil")))))
@@ -261,7 +261,7 @@ Hence, like for closures, we need to store the environment together with the exp
 hence becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
 not use type definitions of the form
 
-```scala
+```
    type Thunk = (Exp, Env)
    type Env = Map[String, Thunk]
 ```
