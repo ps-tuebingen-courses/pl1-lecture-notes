@@ -104,7 +104,7 @@ def makeEval(subst: (Exp,String,Num)=>Exp) : Exp=>Int = {
 To substitute identifier `i` in `e` with expression `v`, replace all identifiers in `e` that have the name `i` with the expression `v`.
 Let's try to formalize this definition:
 
-```scala
+```scala mdoc:silent
 val subst1 : (Exp,String,Num) => Exp = (e,i,v) => e match {
   case Num(n) => e
   case Id(x) => if (x == i) v else e
@@ -121,22 +121,22 @@ not even syntactically legal anymore.
 Exercise for self-study: Find an expression that would be transformed into one that is not syntactically legal.
 To see the reason for this, we need to define some terminology (the word "instance" here means "occurence"):
 
-**Deﬁnition(Binding Instance)**:
-A binding instance of an identiﬁer is the instance of the identiﬁer that gives it its value. In WAE, the ``x`` position of a ``with`` is the only binding instance.
+**Definition (Binding Instance)**:
+A binding instance of an identifier is the instance of the identifier that gives it its value. In WAE, the ``x`` position of a ``With`` is the only binding instance.
 
-**Deﬁnition (Scope)**:
-The scope of a binding instance is the region of program text in which instances of the identiﬁer refer to the value bound by the binding instance.
+**Definition (Scope)**:
+The scope of a binding instance is the region of program text in which instances of the identifier refer to the value bound by the binding instance.
 
-**Deﬁnition (Bound Instance)**:
-An identiﬁer is bound if it is contained within the scope of a binding instance of its name.
+**Definition (Bound Instance)**:
+An identifier is bound if it is contained within the scope of a binding instance of its name.
 
-**Deﬁnition (Free Instance)**:
-An identiﬁer not contained in the scope of any binding instance of its name is said to be free.
+**Definition (Free Instance)**:
+An identifier not contained in the scope of any binding instance of its name is said to be free.
 Examples: In WAE, the String in ``Id("x")`` is a bound or free instance, and the String in ``With("x", ..., ...)`` is a binding instance.
 The scope of this binding instance is the third sub-term of ``With``.
 
 
-Now the reason can be revealed.  Our first attempt failed because we substitue the identifier occurs in the binding position in the
+Now the reason can be revealed.  Our first attempt failed because we substituted the identifier occurring in the binding position in the
 with-expression.  This renders the expression illegal because after substitution the binding position where an identifier was expected
 is now occupied by a Num.
 To correct this mistake, we make another take at substitution:
@@ -146,20 +146,20 @@ To substitute identifier `i` in `e` with expression `v`, replace all identifiers
 instances that have the name `i` with the expression `v`.
 Here is the formalization of this definition.
 
-```scala mdoc
+```scala mdoc:silent
 val subst2 : (Exp,String,Num) => Exp = (e,i,v) => e match {
-    case Num(n) => e
+  case Num(n) => e
 
-    // Bound or free instance => substitute if names match
-    case Id(x) => if (x == i) v else e
+  // Bound or free instance => substitute if names match
+  case Id(x) => if (x == i) v else e
 
-    case Add(l,r) => Add( subst2(l,i,v), subst2(r,i,v))
-    case Mul(l,r) => Mul( subst2(l,i,v), subst2(r,i,v))
+  case Add(l,r) => Add( subst2(l,i,v), subst2(r,i,v))
+  case Mul(l,r) => Mul( subst2(l,i,v), subst2(r,i,v))
 
-    // binding instance => do not substitute
-    case With(x,xdef,body) => With( x,
-                                    subst2(xdef,i,v),
-                                    subst2(body,i,v))
+  // binding instance => do not substitute
+  case With(x,xdef,body) => With( x,
+                                  subst2(xdef,i,v),
+                                  subst2(body,i,v))
 }
 ```
 
@@ -179,14 +179,14 @@ val test3 = With("x", 5, Add("x", With("x", 3, "x"))) // another test
 // assert(eval2(test3) == 8) // Bang! Result is 10 instead!
 ```
 
-What went wrong here? Our substitution algorithm respected binding instances, but not their scope. In the sample expression, the with
+What went wrong here? Our substitution algorithm respected binding instances, but not their scope. In the sample expression, the `With`
 introduces a new scope for the inner `x`. The scope of the outer `x` is shadowed or masked by the inner binding. Because substitution
 doesn’t recognize this possibility, it incorrectly substitutes the inner `x`.
 
 ### Substitution, take 3
 
 To substitute identifier `i` in `e` with expression `v`, replace all non-binding identifiers in `e` having
-the name `i` with the expression `v`, unless the identiﬁer is in a scope different from that introduced by `i`.
+the name `i` with the expression `v`, unless the identifier is in a scope different from that introduced by `i`.
 
 ```scala mdoc:silent
 val subst3 : (Exp,String,Num) => Exp = (e,i,v) => e match {
@@ -214,17 +214,17 @@ val test4 = With("x", 5, Add("x", With("y", 3,"x")))
 ```
 The inner expression should result in an error, because `x` has no value. Once again, substitution has changed a correct program into
 an incorrect one!
-Let’s understand what went wrong. Why didn’t we substitute the inner `x`? Substitution halts at the with because, by deﬁnition, every
-with introduces a new scope, which we said should delimit substitution. But this with contains an instance of `x`, which we very much
+Let’s understand what went wrong. Why didn’t we substitute the inner `x`? Substitution halts at the `With` because, by definition, every
+`With` introduces a new scope, which we said should delimit substitution. But this `With` contains an instance of `x`, which we very much
 want substituted! So which is it - substitute within nested scopes or not? Actually, the two examples above should reveal that our
-latest deﬁnition for substitution, which may have seemed sensible at first blush, is too draconian: it rules out substitution within
+latest definition for substitution, which may have seemed sensible at first blush, is too draconian: it rules out substitution within
 any nested scopes.
 
 ### Substitution, take 4
 
 To substitute identifier `i` in `e` with expression `v`, replace all non-binding identifiers in `e` having
 the name `i` with the expression `v`, except within nested scopes of `i`.
-Finally, we have a version of substitution that works. A different, more succinct way of phrasing this deﬁnition is:
+Finally, we have a version of substitution that works. A different, more succinct way of phrasing this definition is:
 "To substitute identifier `i` in `e` with expression `v`, replace all free instances of `i` in `e` with `v`."
 
 
@@ -257,12 +257,12 @@ val test5 = With("x", 5, With("x", "x", "x"))
 ```
 
 This program should evaluate to `5`, but it too halts with an error. This is because we prematurely stopped substituting for `x` occuring in
-a bound position. We should substitute in the named expression of a with even if the with in question deﬁnes a new scope for the identiﬁer
-being substituted, because its named expression is still in the scope of the enclosing binding of the identiﬁer.
+a bound position. We should substitute in the named expression of a `With` even if the with in question defines a new scope for the identifier
+being substituted, because its named expression is still in the scope of the enclosing binding of the identifier.
 
 ### Substitution, take 5
 We finally get a valid
-programmatic deﬁnition of substitution (relative to the language we have so far):
+programmatic definition of substitution (relative to the language we have so far):
 
 ```scala mdoc:silent
 val subst5 : (Exp,String,Num) => Exp = (e,i,v) => e match {

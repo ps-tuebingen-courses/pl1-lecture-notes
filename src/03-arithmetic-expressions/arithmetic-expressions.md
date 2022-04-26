@@ -115,10 +115,10 @@ case class VisitorAE[T](num: Int => T, add: (T, T) => T)
 // and then create concrete visitors by subclassing or trait composition.
 ```
 
-The fold function itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
+The fold function below itself applies a visitor to an expression. Note that the recursion is performed in the fold function, hence all visitors
 are not recursive.
 
-Also note that this design enforces that all algorithms specified via this visitor interfaces are compositional by design. This means that
+Also note that this design enforces that all algorithms specified via this visitor interface are compositional by design. This means that
 the recursion structure of the algorithm corresponds to the recursion structure of the expression. Put in another way, it means that the
 semantics (in terms of the meta-language) of a composite expression is determined by the semantics of the subexpressions; the syntax of
 the subexpressions is irrelevant.
