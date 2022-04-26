@@ -685,7 +685,7 @@ Here is the formalization of this definition.</p>
                                     subst2(xdef,i,v),
                                     subst2(body,i,v))
 }
-// subst2: Function3[Exp, String, Num, Exp] = repl.MdocSession$App$$Lambda$2503/0x0000000100bd0c40@337ab4a2
+// subst2: Function3[Exp, String, Num, Exp] = repl.MdocSession$App$$Lambda$2503/0x0000000100bd0c40@4c23d17f
 </code></pre>
 <p>Let's create an interpreter that uses this substitution function.</p>
 <pre><code class="language-scala">def eval2 = makeEval(subst2)
@@ -1240,23 +1240,15 @@ assert( evalWithEnv(test2,Map.empty) == NumV(8))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="lazy-evaluation"><a class="header" href="#lazy-evaluation">Lazy Evaluation</a></h1>
 <p>The content of this chapter is available as a scala file <a href="08-lazy-evaluation/./lazy-evaluation.scala">here.</a></p>
-<p>// load 07-fae.scala before loading this file or copy&amp;paste it here </p>
-<pre><code class="language-scala">/**
-Lazy Evaluation
-===============
-Motivation for Lazy Evaluation
-------------------------------
-read &quot;Why Functional Programming Matters&quot; by John Hughes available at http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html
-What lazy evaluation means
---------------------------
-The choice of evaluation strategy is a purely semantic change that requires no change to the syntax.
-For this reason we reuse the syntactic definitions of FAE, hence ``:load 07-fae.scala`` before executing this script.
-Before we discuss lazy evaluation, we will first discuss a related evaluation strategy, call-by-name.
-Call-by-name can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument &quot;a&quot; in the
-&quot;Ap&quot; case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.
-*/
-
-def evalcbn(e: Exp) : Exp = e match {
+<h2 id="motivation-for-lazy-evaluation"><a class="header" href="#motivation-for-lazy-evaluation">Motivation for Lazy Evaluation</a></h2>
+<p>Read &quot;Why Functional Programming Matters&quot; by John Hughes available at http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html
+What lazy evaluation means:</p>
+<p>The choice of evaluation strategy is a purely semantic change that requires no change to the syntax.
+For this reason we reuse the syntactic definitions of FAE, hence <code>:load 07-fae.scala</code> before executing this script.
+Before we discuss lazy evaluation, we will first discuss a related evaluation strategy, <em>call-by-name</em>.</p>
+<p><em>Call-by-name</em> can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument &quot;a&quot; in the
+&quot;Ap&quot; case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.</p>
+<pre><code class="language-scala">def evalcbn(e: Exp) : Exp = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
   case Add(l,r) =&gt; (evalcbn(l), evalcbn(r)) match {
                      case (Num(x),Num(y)) =&gt; Num(x+y)
@@ -1268,245 +1260,62 @@ def evalcbn(e: Exp) : Exp = e match {
   }
   case _ =&gt; e
 }
-
-/**
-Does this change the semantics, or is it just an implementation detail? In other words, is ``eval(e) == evalcbn(e)`` for all ``e`` ?
-Let's try two former test cases.
-*/
-
-assert(evalcbn(test) == eval(test))
+</code></pre>
+<p>Does this change the semantics, or is it just an implementation detail? In other words, is <code>eval(e) == evalcbn(e)</code> for all <code>e</code> ?
+Let's try two former test cases.</p>
+<pre><code class="language-scala">assert(evalcbn(test) == eval(test))
 assert(evalcbn(test2) == eval(test2))
-
-/**
-One can formally prove that if eval and evalcbn both produce a number then the numbers are equal. Do they also agree if they produce
+</code></pre>
+<p>One can formally prove that if eval and evalcbn both produce a number then the numbers are equal. Do they also agree if they produce
 a function?
-Not necessarily. Consider:
-*/
-
-val test3 = Ap(Fun(&quot;f&quot;,Fun(&quot;x&quot;,Ap(&quot;f&quot;,&quot;x&quot;))),Add(1,2))
-// test3: Ap = Ap(
-//   funExpr = Fun(
-//     param = &quot;f&quot;,
-//     body = Fun(
-//       param = &quot;x&quot;,
-//       body = Ap(funExpr = Id(name = &quot;f&quot;), argExpr = Id(name = &quot;x&quot;))
-//     )
-//   ),
-//   argExpr = Add(lhs = Num(n = 1), rhs = Num(n = 2))
-// )
+Not necessarily. Consider:</p>
+<pre><code class="language-scala">val test3 = Ap(Fun(&quot;f&quot;,Fun(&quot;x&quot;,Ap(&quot;f&quot;,&quot;x&quot;))),Add(1,2))
 
 assert(eval(test3) == Fun(&quot;x&quot;,Ap(Num(3),Id(&quot;x&quot;))))
 assert(evalcbn(test3) == Fun(&quot;x&quot;,Ap(Add(Num(1),Num(2)),Id(&quot;x&quot;))))
-
-/**
-However, if both produce a function, then the functions &quot;behave&quot; the same. More specifically, the function bodies produced by evalcbn
-may be  &quot;more evaluated&quot; than those produced by eval. If we would evaluate within function bodies (also called evaluation &quot;under a lambda&quot;)
-- which our interpreters do not do - we could produce the expression returned from eval from the expression returned by evalcbn.
-This kind of equivalence is also called &quot;beta-equivalence&quot;.
-Most importantly, however, eval and evalcbn differ with regard to their termination behavior. We have seen that omega is a diverging
-expression. In eval, the term
-*/
- val test4 = Ap(Fun(&quot;x&quot;,5),omega)
-// test4: Ap = Ap(
-//   funExpr = Fun(param = &quot;x&quot;, body = Num(n = 5)),
-//   argExpr = Ap(
-//     funExpr = Fun(
-//       param = &quot;x&quot;,
-//       body = Ap(funExpr = Id(name = &quot;x&quot;), argExpr = Id(name = &quot;x&quot;))
-//     ),
-//     argExpr = Fun(
-//       param = &quot;x&quot;,
-//       body = Ap(funExpr = Id(name = &quot;x&quot;), argExpr = Id(name = &quot;x&quot;))
-//     )
-//   )
-// )
-
-/**
- is hence also diverging. In contrast:
-*/
-
-assert(evalcbn(test4) == Num(5))
-
-/**
-Extra material: Infinite lists in FAE (not relevant for exam)
--------------------------------------------------------------
-Using our call-by-name interpreter, we can express the same kinds of programming patterns that we have tried in Haskell, such as
-infinite lists.
-We do not have direct support for lists, but we can encode lists. This kind of encoding is called _Church encoding_.
-*/
-
-val nil = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-// nil: Fun = Fun(param = &quot;c&quot;, body = Fun(param = &quot;e&quot;, body = Id(name = &quot;e&quot;)))
+</code></pre>
+<p>However, if both produce a function, then the functions &quot;behave&quot; the same. More specifically, the function bodies produced by evalcbn
+may be  &quot;more evaluated&quot; than those produced by eval. If we would evaluate within function bodies (also called evaluation &quot;under a lambda&quot;)</p>
+<ul>
+<li>which our interpreters do not do - we could produce the expression returned from eval from the expression returned by evalcbn.
+This kind of equivalence is also called &quot;beta-equivalence&quot;.</li>
+</ul>
+<p>Most importantly, however, eval and evalcbn differ with regard to their termination behavior. We have seen that omega is a diverging
+expression. In eval, the term</p>
+<pre><code class="language-scala"> val test4 = Ap(Fun(&quot;x&quot;,5),omega)
+</code></pre>
+<p>is hence also diverging. In contrast:</p>
+<pre><code class="language-scala">assert(evalcbn(test4) == Num(5))
+</code></pre>
+<h2 id="extra-material-infinite-lists-in-fae-not-relevant-for-exam"><a class="header" href="#extra-material-infinite-lists-in-fae-not-relevant-for-exam">Extra material: Infinite lists in FAE (not relevant for exam)</a></h2>
+<p>Using our call-by-name interpreter, we can express the same kinds of programming patterns that we have tried in Haskell, such as
+infinite lists.</p>
+<p>We do not have direct support for lists, but we can encode lists. This kind of encoding is called <em>Church encoding</em>.</p>
+<pre><code class="language-scala">val nil = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
 val cons  = Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;x&quot;), Ap(Ap(&quot;xs&quot;, &quot;c&quot;),&quot;e&quot;))))))
-// cons: Fun = Fun(
-//   param = &quot;x&quot;,
-//   body = Fun(
-//     param = &quot;xs&quot;,
-//     body = Fun(
-//       param = &quot;c&quot;,
-//       body = Fun(
-//         param = &quot;e&quot;,
-//         body = Ap(
-//           funExpr = Ap(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;x&quot;)),
-//           argExpr = Ap(
-//             funExpr = Ap(funExpr = Id(name = &quot;xs&quot;), argExpr = Id(name = &quot;c&quot;)),
-//             argExpr = Id(name = &quot;e&quot;)
-//           )
-//         )
-//       )
-//     )
-//   )
-// )
-/* For instance, the list 1,2,3 is encoded as: */
-val list123 = Ap(Ap(&quot;cons&quot;,1),Ap(Ap(&quot;cons&quot;,2),Ap(Ap(&quot;cons&quot;,3), &quot;nil&quot;)))
-// list123: Ap = Ap(
-//   funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 1)),
-//   argExpr = Ap(
-//     funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 2)),
-//     argExpr = Ap(
-//       funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 3)),
-//       argExpr = Id(name = &quot;nil&quot;)
-//     )
-//   )
-// )
-/* The map function on lists becomes :*/
-val maplist = Fun(&quot;f&quot;, Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Ap(Ap(&quot;cons&quot;, Ap(&quot;f&quot;,&quot;x&quot;)),&quot;xs&quot;)))), &quot;nil&quot;)))
-// maplist: Fun = Fun(
-//   param = &quot;f&quot;,
-//   body = Fun(
-//     param = &quot;l&quot;,
-//     body = Ap(
-//       funExpr = Ap(
-//         funExpr = Id(name = &quot;l&quot;),
-//         argExpr = Fun(
-//           param = &quot;x&quot;,
-//           body = Fun(
-//             param = &quot;xs&quot;,
-//             body = Ap(
-//               funExpr = Ap(
-//                 funExpr = Id(name = &quot;cons&quot;),
-//                 argExpr = Ap(funExpr = Id(name = &quot;f&quot;), argExpr = Id(name = &quot;x&quot;))
-//               ),
-//               argExpr = Id(name = &quot;xs&quot;)
-//             )
-//           )
-//         )
-//       ),
-//       argExpr = Id(name = &quot;nil&quot;)
-//     )
-//   )
-// )
-/**
-For instance, we can map the successor function over the 1,2,3 list.
-*/
-val test5 = wth(&quot;cons&quot;,cons,
+</code></pre>
+<p>For instance, the list 1,2,3 is encoded as:</p>
+<pre><code class="language-scala">val list123 = Ap(Ap(&quot;cons&quot;,1),Ap(Ap(&quot;cons&quot;,2),Ap(Ap(&quot;cons&quot;,3), &quot;nil&quot;)))
+</code></pre>
+<p>The map function on lists becomes :</p>
+<pre><code class="language-scala">val maplist = Fun(&quot;f&quot;, Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Ap(Ap(&quot;cons&quot;, Ap(&quot;f&quot;,&quot;x&quot;)),&quot;xs&quot;)))), &quot;nil&quot;)))
+</code></pre>
+<p>For instance, we can map the successor function over the 1,2,3 list.</p>
+<pre><code class="language-scala">val test5 = wth(&quot;cons&quot;,cons,
             wth(&quot;nil&quot;, nil,
             wth(&quot;maplist&quot;, maplist,
             Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,1))), list123))))
-// test5: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;cons&quot;,
-//     body = Ap(
-//       funExpr = Fun(
-//         param = &quot;nil&quot;,
-//         body = Ap(
-//           funExpr = Fun(
-//             param = &quot;maplist&quot;,
-//             body = Ap(
-//               funExpr = Ap(
-//                 funExpr = Id(name = &quot;maplist&quot;),
-//                 argExpr = Fun(
-//                   param = &quot;x&quot;,
-//                   body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))
-//                 )
-//               ),
-//               argExpr = Ap(
-//                 funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 1)),
-//                 argExpr = Ap(
-//                   funExpr = Ap(
-//                     funExpr = Id(name = &quot;cons&quot;),
-//                     argExpr = Num(n = 2)
-//                   ),
-//                   argExpr = Ap(
-//                     funExpr = Ap(
-//                       funExpr = Id(name = &quot;cons&quot;),
-//                       argExpr = Num(n = 3)
-//                     ),
-//                     argExpr = Id(name = &quot;nil&quot;)
-//                   )
-//                 )
-//               )
-//             )
-//           ),
-//           argExpr = Fun(
-//             param = &quot;f&quot;,
-//             body = Fun(
-//               param = &quot;l&quot;,
-//               body = Ap(
-//                 funExpr = Ap(
-//                   funExpr = Id(name = &quot;l&quot;),
-//                   argExpr = Fun(
-//                     param = &quot;x&quot;,
-//                     body = Fun(
-//                       param = &quot;xs&quot;,
-//                       body = Ap(
-//                         funExpr = Ap(
-//                           funExpr = Id(name = &quot;cons&quot;),
-// ...
-/**
-Since it is somewhat difficult to print out the resulting list in our primitive language we construct the result we expect explicitly.
-*/
-val test5res = wth(&quot;cons&quot;,cons,
+</code></pre>
+<p>Since it is somewhat difficult to print out the resulting list in our primitive language we construct the result we expect explicitly.</p>
+<pre><code class="language-scala">val test5res = wth(&quot;cons&quot;,cons,
                wth(&quot;nil&quot;, nil,
                  Ap(Ap(&quot;cons&quot;,2),Ap(Ap(&quot;cons&quot;,3),Ap(Ap(&quot;cons&quot;,4), &quot;nil&quot;)))))
-// test5res: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;cons&quot;,
-//     body = Ap(
-//       funExpr = Fun(
-//         param = &quot;nil&quot;,
-//         body = Ap(
-//           funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 2)),
-//           argExpr = Ap(
-//             funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 3)),
-//             argExpr = Ap(
-//               funExpr = Ap(funExpr = Id(name = &quot;cons&quot;), argExpr = Num(n = 4)),
-//               argExpr = Id(name = &quot;nil&quot;)
-//             )
-//           )
-//         )
-//       ),
-//       argExpr = Fun(param = &quot;c&quot;, body = Fun(param = &quot;e&quot;, body = Id(name = &quot;e&quot;)))
-//     )
-//   ),
-//   argExpr = Fun(
-//     param = &quot;x&quot;,
-//     body = Fun(
-//       param = &quot;xs&quot;,
-//       body = Fun(
-//         param = &quot;c&quot;,
-//         body = Fun(
-//           param = &quot;e&quot;,
-//           body = Ap(
-//             funExpr = Ap(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;x&quot;)),
-//             argExpr = Ap(
-//               funExpr = Ap(funExpr = Id(name = &quot;xs&quot;), argExpr = Id(name = &quot;c&quot;)),
-//               argExpr = Id(name = &quot;e&quot;)
-//             )
-//           )
-//         )
-//       )
-//     )
-//   )
-// )
 assert(eval(test5) == eval(test5res))
-/**
-Using evalcbn instead of eval the assertion does not hold (why?), but the results are beta-equivalent.
+</code></pre>
+<p>Using evalcbn instead of eval the assertion does not hold (why?), but the results are beta-equivalent.
 We can also construct infinite lists. To this end, we need some form of recursion. We choose the standard fixed-point operator Y.
-This operator only works under call-by-name or other so-called &quot;non-strict&quot; evaluation strategies.
-*/
-
-val y = Fun(&quot;f&quot;, Ap(Fun(&quot;x&quot;,Ap(&quot;f&quot;, Ap(&quot;x&quot;,&quot;x&quot;))), Fun(&quot;x&quot;,Ap(&quot;f&quot;,Ap(&quot;x&quot;,&quot;x&quot;)))))
+This operator only works under call-by-name or other so-called &quot;non-strict&quot; evaluation strategies.</p>
+<pre><code class="language-scala">val y = Fun(&quot;f&quot;, Ap(Fun(&quot;x&quot;,Ap(&quot;f&quot;, Ap(&quot;x&quot;,&quot;x&quot;))), Fun(&quot;x&quot;,Ap(&quot;f&quot;,Ap(&quot;x&quot;,&quot;x&quot;)))))
 // y: Fun = Fun(
 //   param = &quot;f&quot;,
 //   body = Ap(
@@ -1526,11 +1335,9 @@ val y = Fun(&quot;f&quot;, Ap(Fun(&quot;x&quot;,Ap(&quot;f&quot;, Ap(&quot;x&quo
 //     )
 //   )
 // )
-
-/**
-Using Y, we can construct infinite lists, such as the list of all natural numbers.
-*/
-val allnats = Ap(Ap(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, Ap(Ap(&quot;cons&quot;,&quot;n&quot;), Ap(&quot;nats&quot;, Add(&quot;n&quot;,1)))))),1)
+</code></pre>
+<p>Using Y, we can construct infinite lists, such as the list of all natural numbers.</p>
+<pre><code class="language-scala">val allnats = Ap(Ap(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, Ap(Ap(&quot;cons&quot;,&quot;n&quot;), Ap(&quot;nats&quot;, Add(&quot;n&quot;,1)))))),1)
 // allnats: Ap = Ap(
 //   funExpr = Ap(
 //     funExpr = Id(name = &quot;y&quot;),
@@ -1550,12 +1357,9 @@ val allnats = Ap(Ap(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, Ap(A
 //   ),
 //   argExpr = Num(n = 1)
 // )
-
-/**
-We can also perform standard computations on infinite lists, such as mapping the successor function over it.
-*/
-
-val list2toinfty = wth(&quot;cons&quot;,cons,
+</code></pre>
+<p>We can also perform standard computations on infinite lists, such as mapping the successor function over it.</p>
+<pre><code class="language-scala">val list2toinfty = wth(&quot;cons&quot;,cons,
                    wth(&quot;nil&quot;, nil,
                    wth(&quot;y&quot;, y,
                    wth(&quot;maplist&quot;, maplist,
@@ -1610,38 +1414,36 @@ val list2toinfty = wth(&quot;cons&quot;,cons,
 //               argExpr = Fun(
 //                 param = &quot;f&quot;,
 // ...
-/**
-Of course, ``list2toinfty`` diverges when we use ``eval``, but it works fine with ``evalcbn``. It is hard to verify the result due to
-an almost unreadable output. Hence we propose the following
-Exercise: Extend the language such that you can implement the &quot;take&quot; function as known from Haskell within the language
+</code></pre>
+<p>Of course, <code>list2toinfty</code> diverges when we use <code>eval</code>, but it works fine with <code>evalcbn</code>. It is hard to verify the result due to
+an almost unreadable output. Hence we propose the following</p>
+<p>Exercise: Extend the language such that you can implement the &quot;take&quot; function as known from Haskell within the language
 (if0-expressions or something like it are needed for that). Now add a &quot;print&quot; function that prints a number on the console.
-Use it to display the first 3 list elements of test2toinfty are 2,3,4.
--- end of extra material --
-*/
-
-/**
-Environment-based lazy evaluation
----------------------------------
-Let us now consider the question how we can implement call-by-name in the environment-based interpreter. Translating the idea of not
+Use it to display the first 3 list elements of test2toinfty are 2,3,4.</p>
+<p><em>end of extra material</em></p>
+<h2 id="environment-based-lazy-evaluation"><a class="header" href="#environment-based-lazy-evaluation">Environment-based lazy evaluation</a></h2>
+<p>Let us now consider the question how we can implement call-by-name in the environment-based interpreter. Translating the idea of not
 evaluating the function argument to the environment-based version seems to  suggest that the environment should map identifiers to
-expression instead of values.
-However, we run into the same problems that we had with first-class functions before we introduced closures: What happens to the
+expression instead of values.</p>
+<p>However, we run into the same problems that we had with first-class functions before we introduced closures: What happens to the
 deferred substitutions that still have to be applied in the function argument? If we discard the environment in which the function
-argument was defined we again introduce a variant of dynamic scoping.
-Hence, like for closures, we need to store the environment together with the expression. We call such a  pair a _thunk_. An environment
+argument was defined we again introduce a variant of dynamic scoping.</p>
+<p>Hence, like for closures, we need to store the environment together with the expression. We call such a  pair a <em>thunk</em>. An environment
 hence becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
-not use type definitions of the form
-   type Thunk = (Exp, Env)
+not use type definitions of the form</p>
+<pre><code>   type Thunk = (Exp, Env)
    type Env = Map[String, Thunk]
-Instead, we use a Scala class Env to express this recursion.
+</code></pre>
+<p>Instead, we use a Scala class Env to express this recursion.
 Since we want to experiment with different variants of how to generate and evaluate thunks we first create a parameterizable variant
-of the evaluator that leaves open how to
-  1. represent thunks (type Thunk)
-  2. create thunks (method delay)
-  3. evaluate thunks (method force).
-Hint: Research on the internet what abstract type members in Scala are.  For instance, here: http://www.scala-lang.org/node/105
-*/
-trait CBN {
+of the evaluator that leaves open how to</p>
+<ol>
+<li>represent thunks (type Thunk)</li>
+<li>create thunks (method delay)</li>
+<li>evaluate thunks (method force).
+<strong>Hint</strong>: Research on the internet what abstract type members in Scala are.  For instance, here: http://www.scala-lang.org/node/105</li>
+</ol>
+<pre><code class="language-scala">trait CBN {
     type Thunk
 
     case class EnvThunk(map: Map[String, Thunk]) {
@@ -1674,13 +1476,11 @@ trait CBN {
       case f@Fun(x,body) =&gt; ClosureV(f,env)
     }
 }
-/**
-Let's now create an instance of CBN that corresponds to the substitution-based call-by-name interpreter. A thunk is just a pair
+</code></pre>
+<p>Let's now create an instance of CBN that corresponds to the substitution-based call-by-name interpreter. A thunk is just a pair
 of expression and environment. Forcing a thunk just evaluates it in the stored environment.
-To understand what is going on during evaluation of tests we trace argument evaluation by a  printout to the console.
-*/
-
-object CallByName extends CBN {
+To understand what is going on during evaluation of tests we trace argument evaluation by a  printout to the console.</p>
+<pre><code class="language-scala">object CallByName extends CBN {
   type Thunk = (Exp,EnvThunk)
   def delay(e: Exp, env: EnvThunk) = (e,env)
   def force(t: Thunk) = {
@@ -1691,96 +1491,27 @@ object CallByName extends CBN {
 
 assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.NumV(12))
 // Forcing evaluation of expression: Num(7)
-/**
-Call-by-need
-------------
-Call-by-name is rather wasteful: If an argument is used n times in the body, the argument expression is re-evaluated n-times.
-For instance, in
-*/
-val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&quot;)),
+</code></pre>
+<h2 id="call-by-need"><a class="header" href="#call-by-need">Call-by-need</a></h2>
+<p>Call-by-name is rather wasteful: If an argument is used <em>n</em> times in the body, the argument expression is re-evaluated <em>n</em>-times.
+For instance, in</p>
+<pre><code class="language-scala">val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&quot;)),
                Ap(&quot;double&quot;, Add(2,3)))
-// cbntest: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;double&quot;,
-//     body = Ap(
-//       funExpr = Id(name = &quot;double&quot;),
-//       argExpr = Add(lhs = Num(n = 2), rhs = Num(n = 3))
-//     )
-//   ),
-//   argExpr = Fun(
-//     param = &quot;x&quot;,
-//     body = Add(lhs = Id(name = &quot;x&quot;), rhs = Id(name = &quot;x&quot;))
-//   )
-// )
-/**
-the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blow-up.
-Example:
-*/
-
-val blowup  = wth(&quot;a&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&quot;)),
+</code></pre>
+<p>the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blow-up.</p>
+<p>Example:</p>
+<pre><code class="language-mdoc:silent">val blowup  = wth(&quot;a&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&quot;)),
               wth(&quot;b&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;a&quot;,&quot;x&quot;), Ap(&quot;a&quot;,&quot;x&quot;))),
               wth(&quot;c&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;b&quot;,&quot;x&quot;), Ap(&quot;b&quot;,&quot;x&quot;))),
               wth(&quot;d&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;c&quot;,&quot;x&quot;), Ap(&quot;c&quot;,&quot;x&quot;))),
               wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;d&quot;,&quot;x&quot;), Ap(&quot;d&quot;,&quot;x&quot;))),
               wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;e&quot;,&quot;x&quot;), Ap(&quot;e&quot;,&quot;x&quot;))),
               Ap(&quot;f&quot;, Add(2,3))))))))
-// blowup: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;a&quot;,
-//     body = Ap(
-//       funExpr = Fun(
-//         param = &quot;b&quot;,
-//         body = Ap(
-//           funExpr = Fun(
-//             param = &quot;c&quot;,
-//             body = Ap(
-//               funExpr = Fun(
-//                 param = &quot;d&quot;,
-//                 body = Ap(
-//                   funExpr = Fun(
-//                     param = &quot;e&quot;,
-//                     body = Ap(
-//                       funExpr = Fun(
-//                         param = &quot;f&quot;,
-//                         body = Ap(
-//                           funExpr = Id(name = &quot;f&quot;),
-//                           argExpr = Add(lhs = Num(n = 2), rhs = Num(n = 3))
-//                         )
-//                       ),
-//                       argExpr = Fun(
-//                         param = &quot;x&quot;,
-//                         body = Add(
-//                           lhs = Ap(
-//                             funExpr = Id(name = &quot;e&quot;),
-//                             argExpr = Id(name = &quot;x&quot;)
-//                           ),
-//                           rhs = Ap(
-//                             funExpr = Id(name = &quot;e&quot;),
-//                             argExpr = Id(name = &quot;x&quot;)
-//                           )
-//                         )
-//                       )
-//                     )
-//                   ),
-//                   argExpr = Fun(
-//                     param = &quot;x&quot;,
-//                     body = Add(
-//                       lhs = Ap(
-//                         funExpr = Id(name = &quot;d&quot;),
-//                         argExpr = Id(name = &quot;x&quot;)
-//                       ),
-//                       rhs = Ap(
-//                         funExpr = Id(name = &quot;d&quot;),
-//                         argExpr = Id(name = &quot;x&quot;)
-//                       )
-// ...
-/**
-Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is
-called _call-by-need_.
-Caching is easy to implement in Scala:
-*/
-
-object CallByNeed extends CBN {
+</code></pre>
+<p>Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is
+called <em>call-by-need</em>.</p>
+<p>Caching is easy to implement in Scala:</p>
+<pre><code class="language-scala">object CallByNeed extends CBN {
   case class MemoThunk(e: Exp, env: EnvThunk) {
     var cache: ValueCBN = null
   }
@@ -1796,18 +1527,27 @@ object CallByNeed extends CBN {
   }
 }
 </code></pre>
+<p>For instance, compare call-by-need and call-by-name in cbntest or blowup.
+However, the meta-language (i.e., the subset of Scala features) used in the interpreter has become more complicated:</p>
+<p>Since we are using mutation, the order of evaluation and aliasing of object references becomes important.
+Luckily,  call-by-need agrees with call-by-name with regard to produced values and termination behavior, hence it is usually not
+necessary to reason about programs with the call-by-need semantics. If, however, one wants to reason about the performance of a
+program in a call-by-need setting, one has to take these additional complications into account.
+In practice, it is even worse, since languages like Haskell perform additional optimizations that, for instance, switch to call-by-value if an analysis can
+determine that an argument will definitely be used (lookup &quot;strictness analysis&quot;).</p>
+<p>Topics for class discussion:</p>
+<ul>
+<li>Is it a good idea to mix a language with implicit mutation (such as Java, Scala, C++, Python, ...) with lazy evaluation?</li>
+<li>How can one simulate lazy evaluation in an eager language? Basic idea: 'Lambda' as evaluation firewall.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="recursive-functions"><a class="header" href="#recursive-functions">Recursive Functions</a></h1>
 <p>The content of this chapter is available as a scala file <a href="09-recursive-functions/./recursive-functions.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-/**
-Recursion
-=========
-Let's try to write a function that computes the sum of the first n integers. Let's pretend we do not know that the sum of the
-first n integers is n*(n+1)/2 and instead compute the sum in a loop. Let's try to do this in FAE (with if0):
-*/
-object Syntax {
-  sealed abstract class Exp
+<h2 id="recursion"><a class="header" href="#recursion">Recursion</a></h2>
+<p>Let's try to write a function that computes the sum of the first n integers. Let's pretend we do not know that the sum of the
+first n integers is $n*(n+1)/2$ and instead compute the sum in a loop. Let's try to do this in FAE (with if0):</p>
+<pre><code class="language-scala">object Syntax {
+</code></pre>
+<pre><code class="language-scala">sealed abstract class Exp
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
   case class Add(lhs: Exp, rhs: Exp) extends Exp
@@ -1819,26 +1559,12 @@ object Syntax {
   def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
   val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
-
-  /**
-  However, sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
-  y combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
-  we want a language construct &quot;letrec&quot; that is similar to &quot;with&quot;,  except that the bound String can be used in the expression
-  the String is bound to:
-  */
-
-  case class Letrec(x: String, e: Exp, body: Exp) extends Exp
-}
-import Syntax._
-
-/**
-Using letrec, our example can be expressed as follows.
-*/
-
-val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
-// sum: Letrec = Letrec(
-//   x = &quot;sum&quot;,
-//   e = Fun(
+// sumattempt: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;sum&quot;,
+//     body = Ap(funExpr = Id(name = &quot;sum&quot;), argExpr = Num(n = 10))
+//   ),
+//   argExpr = Fun(
 //     param = &quot;n&quot;,
 //     body = If0(
 //       cond = Id(name = &quot;n&quot;),
@@ -1851,30 +1577,42 @@ val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&
 //         )
 //       )
 //     )
-//   ),
-//   body = Ap(funExpr = Id(name = &quot;sum&quot;), argExpr = Num(n = 10))
+//   )
 // )
-
-/**
-Let's now consider the semantics of letrec. Consider the evaluation of ``Letrec(x,e,body)`` in an environment ``env``.
-What environment should we use to evaluate e and body, respectively? Using env for e will produce a ``ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;'...),env)``,
-and hence the environment when evaluating body will be ``envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env))``. This is bad,
-because the ``env`` in the closure does not contain a binding for ``&quot;sum&quot;`` and hence the recursive invocation will fail.
-The environment in the closure must contain a mapping for ``&quot;sum&quot;``. Hence envbody should look like
-    envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...),
+</code></pre>
+<p>However, sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
+<em>y</em> combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
+we want a language construct &quot;letrec&quot; that is similar to &quot;with&quot;,  except that the bound String can be used in the expression
+the String is bound to:</p>
+<pre><code class="language-scala">case class Letrec(x: String, e: Exp, body: Exp) extends Exp
+</code></pre>
+<pre><code class="language-scala">}
+</code></pre>
+<pre><code class="language-scala">import Syntax._
+</code></pre>
+<p>Using letrec, our example can be expressed as follows.</p>
+<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
+</code></pre>
+<p>Let's now consider the semantics of letrec. Consider the evaluation of <code>Letrec(x,e,body)</code> in an environment <code>env</code>.
+What environment should we use to evaluate e and body, respectively? Using env for e will produce a <code>ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;'...),env)</code>,
+and hence the environment when evaluating body will be <code>envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env))</code>.</p>
+<p>This is bad, because the <code>env</code> in the closure does not contain a binding for <code>&quot;sum&quot;</code> and hence the recursive invocation will fail.
+The environment in the closure must contain a mapping for <code>&quot;sum&quot;</code>. Hence envbody should look like</p>
+<pre><code>    envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...),
                                    env+(&quot;sum&quot; -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env)))
-This looks better, but now the second closure contains an environment with no binding of ``&quot;sum&quot;``. What we need is an environment
-that satisfies the equation:
-    envbody == env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;..), envbody))
-Obviously envbody must be circular. There are different ways to create such a circular environment. We will choose mutation to create
-a circle. More specifically, we introduce a mutable pointer to a value (class ValuePointer) which will be initialized with a null pointer.
-In the Letrec case, we put such a ValuePointer in the environment and evaluate the (recursive) expression in that environment.
-Then we update the pointer with the result of evaluating that epxression.
-The only other change we need to make is to dereference a potential value pointer in the Id case. We deal with the necessary case
+</code></pre>
+<p>This looks better, but now the second closure contains an environment with no binding of <code>&quot;sum&quot;</code>. What we need is an environment
+that satisfies the equation:</p>
+<pre><code>    envbody == env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;..), envbody))
+</code></pre>
+<p>Obviously envbody must be circular. There are different ways to create such a circular environment. We will choose mutation to create
+a circle. More specifically, we introduce a mutable pointer to a value <code>class ValuePointer</code> which will be initialized with a null pointer.</p>
+<p>In the Letrec case, we put such a ValuePointer in the environment and evaluate the (recursive) expression in that environment.
+Then we update the pointer with the result of evaluating that expression.</p>
+<p>The only other change we need to make is to dereference a potential value pointer in the Id case. We deal with the necessary case
 distinction by a polymorphic &quot;value&quot; method.
-Due to the mutual recursion between ValueHolder and Value the definitions are put into an object.
-*/
-object Values {
+Due to the mutual recursion between ValueHolder and Value the definitions are put into an object.</p>
+<pre><code class="language-scala">object Values {
   trait ValueHolder {
     def value : Value
   }
@@ -1885,13 +1623,10 @@ object Values {
   type Env = Map[String, ValueHolder]
 }
 
-import Values._  // such that we do not have to write Values.ValueHolder etc.  // such that we do not have to write Values.ValueHolder etc.
-
-
-/**
-The interpreter is unchanged except for the additional Letrec case and the modified Id case.
-*/
-def eval(e: Exp, env: Env) : Value = e match {
+import Values._  // such that we do not have to write Values.ValueHolder etc.
+</code></pre>
+<p>The interpreter is unchanged except for the additional Letrec case and the modified Id case.</p>
+<pre><code class="language-scala">def eval(e: Exp, env: Env) : Value = e match {
   case Num(n: Int) =&gt; NumV(n)
   case Id(x) =&gt; env(x).value  // dereference potential ValuePointer
   case If0(cond, thenExp, elseExp) =&gt; eval(cond,env) match {
@@ -1916,11 +1651,9 @@ def eval(e: Exp, env: Env) : Value = e match {
     eval(body,newenv) // evaluate body in circular environment
   }
 }
-
-/**
-The sum of numbers from 1 to 10 should be 55.
-*/
-assert(eval(sum, Map.empty) == NumV(55))
+</code></pre>
+<p>The sum of numbers from 1 to 10 should be 55.</p>
+<pre><code class="language-scala">assert(eval(sum, Map.empty) == NumV(55))
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
 var func = Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Ap(&quot;func&quot;, Add(&quot;n&quot;, -1))))
@@ -3385,13 +3118,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$$anon$4@8ad08cc
+// zero: Num = repl.MdocSession$$anon$4@5ada9396
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$$anon$6@751ea36c
+// one: Num = repl.MdocSession$$anon$6@77aec1e2
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$$anon$8@29778ddc
+// two: Num = repl.MdocSession$$anon$8@bf326e6
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$$anon$10@429abf79
+// three: Num = repl.MdocSession$$anon$10@6ee8bc8a
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {
@@ -3598,7 +3331,7 @@ def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot;+ n1 + &quot;
  * We can express the continuation as a function: */
 
 val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
-// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2839/0x0000000100cef040@448a93dc
+// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2839/0x0000000100ccb040@7e8ac09f
 
 /* Similarly, the continuation at the second point of interaction is:
  * val cont2 = (m: Int) =&gt; println(n+m)
@@ -4777,7 +4510,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }  
-// iomonad: IOMonad = repl.MdocSession$$anon$1@727ea936  
+// iomonad: IOMonad = repl.MdocSession$$anon$1@5084813d  
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] = 
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;

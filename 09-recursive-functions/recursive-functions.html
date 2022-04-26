@@ -144,16 +144,12 @@
                     <main>
                         <h1 id="recursive-functions"><a class="header" href="#recursive-functions">Recursive Functions</a></h1>
 <p>The content of this chapter is available as a scala file <a href="./recursive-functions.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-/**
-Recursion
-=========
-Let's try to write a function that computes the sum of the first n integers. Let's pretend we do not know that the sum of the
-first n integers is n*(n+1)/2 and instead compute the sum in a loop. Let's try to do this in FAE (with if0):
-*/
-object Syntax {
-  sealed abstract class Exp
+<h2 id="recursion"><a class="header" href="#recursion">Recursion</a></h2>
+<p>Let's try to write a function that computes the sum of the first n integers. Let's pretend we do not know that the sum of the
+first n integers is $n*(n+1)/2$ and instead compute the sum in a loop. Let's try to do this in FAE (with if0):</p>
+<pre><code class="language-scala">object Syntax {
+</code></pre>
+<pre><code class="language-scala">sealed abstract class Exp
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
   case class Add(lhs: Exp, rhs: Exp) extends Exp
@@ -165,26 +161,12 @@ object Syntax {
   def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
   val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
-
-  /**
-  However, sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
-  y combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
-  we want a language construct &quot;letrec&quot; that is similar to &quot;with&quot;,  except that the bound String can be used in the expression
-  the String is bound to:
-  */
-
-  case class Letrec(x: String, e: Exp, body: Exp) extends Exp
-}
-import Syntax._
-
-/**
-Using letrec, our example can be expressed as follows.
-*/
-
-val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
-// sum: Letrec = Letrec(
-//   x = &quot;sum&quot;,
-//   e = Fun(
+// sumattempt: Exp = Ap(
+//   funExpr = Fun(
+//     param = &quot;sum&quot;,
+//     body = Ap(funExpr = Id(name = &quot;sum&quot;), argExpr = Num(n = 10))
+//   ),
+//   argExpr = Fun(
 //     param = &quot;n&quot;,
 //     body = If0(
 //       cond = Id(name = &quot;n&quot;),
@@ -197,30 +179,42 @@ val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&
 //         )
 //       )
 //     )
-//   ),
-//   body = Ap(funExpr = Id(name = &quot;sum&quot;), argExpr = Num(n = 10))
+//   )
 // )
-
-/**
-Let's now consider the semantics of letrec. Consider the evaluation of ``Letrec(x,e,body)`` in an environment ``env``.
-What environment should we use to evaluate e and body, respectively? Using env for e will produce a ``ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;'...),env)``,
-and hence the environment when evaluating body will be ``envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env))``. This is bad,
-because the ``env`` in the closure does not contain a binding for ``&quot;sum&quot;`` and hence the recursive invocation will fail.
-The environment in the closure must contain a mapping for ``&quot;sum&quot;``. Hence envbody should look like
-    envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...),
+</code></pre>
+<p>However, sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
+<em>y</em> combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
+we want a language construct &quot;letrec&quot; that is similar to &quot;with&quot;,  except that the bound String can be used in the expression
+the String is bound to:</p>
+<pre><code class="language-scala">case class Letrec(x: String, e: Exp, body: Exp) extends Exp
+</code></pre>
+<pre><code class="language-scala">}
+</code></pre>
+<pre><code class="language-scala">import Syntax._
+</code></pre>
+<p>Using letrec, our example can be expressed as follows.</p>
+<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
+</code></pre>
+<p>Let's now consider the semantics of letrec. Consider the evaluation of <code>Letrec(x,e,body)</code> in an environment <code>env</code>.
+What environment should we use to evaluate e and body, respectively? Using env for e will produce a <code>ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;'...),env)</code>,
+and hence the environment when evaluating body will be <code>envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env))</code>.</p>
+<p>This is bad, because the <code>env</code> in the closure does not contain a binding for <code>&quot;sum&quot;</code> and hence the recursive invocation will fail.
+The environment in the closure must contain a mapping for <code>&quot;sum&quot;</code>. Hence envbody should look like</p>
+<pre><code>    envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...),
                                    env+(&quot;sum&quot; -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env)))
-This looks better, but now the second closure contains an environment with no binding of ``&quot;sum&quot;``. What we need is an environment
-that satisfies the equation:
-    envbody == env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;..), envbody))
-Obviously envbody must be circular. There are different ways to create such a circular environment. We will choose mutation to create
-a circle. More specifically, we introduce a mutable pointer to a value (class ValuePointer) which will be initialized with a null pointer.
-In the Letrec case, we put such a ValuePointer in the environment and evaluate the (recursive) expression in that environment.
-Then we update the pointer with the result of evaluating that epxression.
-The only other change we need to make is to dereference a potential value pointer in the Id case. We deal with the necessary case
+</code></pre>
+<p>This looks better, but now the second closure contains an environment with no binding of <code>&quot;sum&quot;</code>. What we need is an environment
+that satisfies the equation:</p>
+<pre><code>    envbody == env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;..), envbody))
+</code></pre>
+<p>Obviously envbody must be circular. There are different ways to create such a circular environment. We will choose mutation to create
+a circle. More specifically, we introduce a mutable pointer to a value <code>class ValuePointer</code> which will be initialized with a null pointer.</p>
+<p>In the Letrec case, we put such a ValuePointer in the environment and evaluate the (recursive) expression in that environment.
+Then we update the pointer with the result of evaluating that expression.</p>
+<p>The only other change we need to make is to dereference a potential value pointer in the Id case. We deal with the necessary case
 distinction by a polymorphic &quot;value&quot; method.
-Due to the mutual recursion between ValueHolder and Value the definitions are put into an object.
-*/
-object Values {
+Due to the mutual recursion between ValueHolder and Value the definitions are put into an object.</p>
+<pre><code class="language-scala">object Values {
   trait ValueHolder {
     def value : Value
   }
@@ -231,13 +225,10 @@ object Values {
   type Env = Map[String, ValueHolder]
 }
 
-import Values._  // such that we do not have to write Values.ValueHolder etc.  // such that we do not have to write Values.ValueHolder etc.
-
-
-/**
-The interpreter is unchanged except for the additional Letrec case and the modified Id case.
-*/
-def eval(e: Exp, env: Env) : Value = e match {
+import Values._  // such that we do not have to write Values.ValueHolder etc.
+</code></pre>
+<p>The interpreter is unchanged except for the additional Letrec case and the modified Id case.</p>
+<pre><code class="language-scala">def eval(e: Exp, env: Env) : Value = e match {
   case Num(n: Int) =&gt; NumV(n)
   case Id(x) =&gt; env(x).value  // dereference potential ValuePointer
   case If0(cond, thenExp, elseExp) =&gt; eval(cond,env) match {
@@ -262,11 +253,9 @@ def eval(e: Exp, env: Env) : Value = e match {
     eval(body,newenv) // evaluate body in circular environment
   }
 }
-
-/**
-The sum of numbers from 1 to 10 should be 55.
-*/
-assert(eval(sum, Map.empty) == NumV(55))
+</code></pre>
+<p>The sum of numbers from 1 to 10 should be 55.</p>
+<pre><code class="language-scala">assert(eval(sum, Map.empty) == NumV(55))
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
 var func = Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Ap(&quot;func&quot;, Add(&quot;n&quot;, -1))))
