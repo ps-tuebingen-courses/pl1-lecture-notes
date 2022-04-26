@@ -2,16 +2,20 @@
 
 The content of this chapter is available as a scala file [here.](./recursive-functions.scala)
 
-```scala mdoc
+```scala mdoc:invisible
 import scala.language.implicitConversions
+```
 
-/**
-Recursion
-=========
+## Recursion
+
 Let's try to write a function that computes the sum of the first n integers. Let's pretend we do not know that the sum of the
-first n integers is n*(n+1)/2 and instead compute the sum in a loop. Let's try to do this in FAE (with if0):
-*/
+first n integers is $n*(n+1)/2$ and instead compute the sum in a loop. Let's try to do this in FAE (with if0):
+
+```scala
 object Syntax {
+```
+
+```scala mdoc
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
@@ -24,43 +28,61 @@ object Syntax {
   def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 
   val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
+```
 
-  /**
   However, sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
-  y combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
+  _y_ combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
   we want a language construct "letrec" that is similar to "with",  except that the bound String can be used in the expression
   the String is bound to:
-  */
 
+```scala mdoc
   case class Letrec(x: String, e: Exp, body: Exp) extends Exp
+```
+
+```scala
 }
+```
+
+```scala
 import Syntax._
+```
 
-/**
 Using letrec, our example can be expressed as follows.
-*/
 
+```scala mdoc:silent
 val sum = Letrec("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
+```
 
-/**
 Let's now consider the semantics of letrec. Consider the evaluation of ``Letrec(x,e,body)`` in an environment ``env``.
 What environment should we use to evaluate e and body, respectively? Using env for e will produce a ``ClosureV(Fun("n",..."sum"'...),env)``,
-and hence the environment when evaluating body will be ``envbody = env + (x -> ClosureV(Fun("n",..."sum"...),env))``. This is bad,
-because the ``env`` in the closure does not contain a binding for ``"sum"`` and hence the recursive invocation will fail.
+and hence the environment when evaluating body will be ``envbody = env + (x -> ClosureV(Fun("n",..."sum"...),env))``.
+
+This is bad, because the ``env`` in the closure does not contain a binding for ``"sum"`` and hence the recursive invocation will fail.
 The environment in the closure must contain a mapping for ``"sum"``. Hence envbody should look like
+
+```
     envbody = env + (x -> ClosureV(Fun("n", ..."sum"...),
                                    env+("sum" -> ClosureV(Fun("n",..."sum"...),env)))
+```
+
 This looks better, but now the second closure contains an environment with no binding of ``"sum"``. What we need is an environment
 that satisfies the equation:
+
+```
     envbody == env + (x -> ClosureV(Fun("n", ..."sum"..), envbody))
+```
+
 Obviously envbody must be circular. There are different ways to create such a circular environment. We will choose mutation to create
-a circle. More specifically, we introduce a mutable pointer to a value (class ValuePointer) which will be initialized with a null pointer.
+a circle. More specifically, we introduce a mutable pointer to a value ``class ValuePointer`` which will be initialized with a null pointer.
+
 In the Letrec case, we put such a ValuePointer in the environment and evaluate the (recursive) expression in that environment.
-Then we update the pointer with the result of evaluating that epxression.
+Then we update the pointer with the result of evaluating that expression.
+
 The only other change we need to make is to dereference a potential value pointer in the Id case. We deal with the necessary case
 distinction by a polymorphic "value" method.
 Due to the mutual recursion between ValueHolder and Value the definitions are put into an object.
-*/
+
+```scala mdoc
 object Values {
   trait ValueHolder {
     def value : Value
@@ -73,11 +95,12 @@ object Values {
 }
 
 import Values._  // such that we do not have to write Values.ValueHolder etc.
+```
 
 
-/**
 The interpreter is unchanged except for the additional Letrec case and the modified Id case.
-*/
+
+```scala mdoc
 def eval(e: Exp, env: Env) : Value = e match {
   case Num(n: Int) => NumV(n)
   case Id(x) => env(x).value  // dereference potential ValuePointer
@@ -103,10 +126,11 @@ def eval(e: Exp, env: Env) : Value = e match {
     eval(body,newenv) // evaluate body in circular environment
   }
 }
+```
 
-/**
 The sum of numbers from 1 to 10 should be 55.
-*/
+
+```scala mdoc
 assert(eval(sum, Map.empty) == NumV(55))
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
