@@ -3,8 +3,6 @@
 The content of this chapter is available as a scala file [here.](./lazy-evaluation.scala)
 
 
-
-// load 07-fae.scala before loading this file or copy&paste it here
 ```scala mdoc:invisible
 object Syntax {
   sealed abstract class Exp
