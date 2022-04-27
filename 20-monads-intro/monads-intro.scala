@@ -3,7 +3,6 @@ Monads
 ======
 */
 import scala.language.higherKinds
-import scala.language.implicitConversions
 import scala.language.reflectiveCalls
 
 /** 
@@ -132,11 +131,11 @@ If the API is parametric in the monad, we can make the client code fully paramet
 implicit parameter to save the work of passing on the monad in every call. 
 */
   
-def fM[M[_]](n: Int)(implicit m: Monad[M]) : M[String] = sys.error("not implemented")
-def gM[M[_]](x: String)(implicit m: Monad[M]) : M[Boolean] = sys.error("not implemented")
-def hM[M[_]](b: Boolean)(implicit m: Monad[M]) : M[Int] = sys.error("not implemented")
+def fM[M[_]](n: Int)(using m: Monad[M]) : M[String] = sys.error("not implemented")
+def gM[M[_]](x: String)(using m: Monad[M]) : M[Boolean] = sys.error("not implemented")
+def hM[M[_]](b: Boolean)(using m: Monad[M]) : M[Int] = sys.error("not implemented")
 
-def clientCode2[M[_]](implicit m: Monad[M]) =
+def clientCode2[M[_]](using m: Monad[M]) =
   m.bind(fM(27), (x: String) =>
   m.bind(gM(x+"z"), (y: Boolean) =>
   m.unit(!y)))
@@ -178,8 +177,8 @@ def clientCode2Op(m: Monad[Option]) =
 
 to this:
 */
-    
-def clientCode2OpFor(implicit m: Monad[Option]) =
+
+def clientCode2OpFor(using m: Monad[Option]) =
   for {
     x <- fOp(27)
     y <- gOp(x+"z")
@@ -214,11 +213,11 @@ enough to be useful for many different monads. Here are some of these functions:
 */
 
 // fmap turns every function between A and B into a function between M[A] and M[B]
-def fmap[M[_],A,B](f: A => B)(implicit m: Monad[M]): M[A] => M[B] = a => m.bind(a,(x:A) => m.unit(f(x)))
+def fmap[M[_],A,B](f: A => B)(using m: Monad[M]): M[A] => M[B] = a => m.bind(a,(x:A) => m.unit(f(x)))
 // In fancy category theory terms, we can say that every monad is a functor.
 
 // sequence composes a list of monadic values into a single monadic value which is a list.
-def sequence[M[_],A](l: List[M[A]])(implicit m: Monad[M]) : M[List[A]] = l match {
+def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]) : M[List[A]] = l match {
   case x :: xs => m.bind(x, (y: A) => 
     m.bind(sequence(xs), (ys : List[A]) =>
       m.unit(y :: ys)))
@@ -226,14 +225,14 @@ def sequence[M[_],A](l: List[M[A]])(implicit m: Monad[M]) : M[List[A]] = l match
 }
 
 // mapM composes sequence and the standard map function.
-def mapM[M[_],A,B](f : A => M[B], l: List[A])(implicit m: Monad[M]) : M[List[B]] =
+def mapM[M[_],A,B](f : A => M[B], l: List[A])(using m: Monad[M]) : M[List[B]] =
   sequence(l.map(f))
 
 // join is another useful function to unwrap a layer of monads
 // in category theory, monads are defined via unit (denoted by the greek letter "eta") 
 // and join ("mu") instead of unit and bind. There are additional "naturality" and 
 // "coherence conditions" that make the category theory definition equivalent to ours.
-def join[M[_],A](x : M[M[A]])(implicit m: Monad[M]) : M[A] = m.bind(x, (y : M[A]) => y)
+def join[M[_],A](x : M[M[A]])(using m: Monad[M]) : M[A] = m.bind(x, (y : M[A]) => y)
   
 /** Here are some other common monads: 
 The Identity Monad
@@ -260,7 +259,7 @@ This is the _reader monad_, a.k.a. _environment monad_. It captures the essence 
 // The type parameter ({type M[A] = R => A})#M looks complicated, but
 // it is merely "currying" the function arrow type constructor.
 // The type constructor which is created here is M[A] = R => A
-trait ReaderMonad[R] extends Monad[({type M[A] = R => A})#M] {
+trait ReaderMonad[R] extends Monad[[A] =>> R => A] {
   override def bind[A,B](x: R => A, f: A => R => B) : R => B = r => f(x(r))(r) // pass the "environment" r into both computations
   override def unit[A](a: A) : R => A = (_) => a
 }

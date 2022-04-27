@@ -233,13 +233,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$$anon$4@5738cc9d
+// zero: Num = repl.MdocSession$$anon$4@70bbdfaa
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$$anon$6@6f481fa8
+// one: Num = repl.MdocSession$$anon$6@459bcaa
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$$anon$8@14f8f784
+// two: Num = repl.MdocSession$$anon$8@521e57e1
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$$anon$10@84ef92b
+// three: Num = repl.MdocSession$$anon$10@eb765fd
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {
