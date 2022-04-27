@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a scala file [here.](./modular-interpreters.scala)
 
-```scala
+```scala mdoc
 import scala.language.higherKinds
 import scala.language.implicitConversions
 import scala.language.reflectiveCalls
@@ -13,16 +13,18 @@ A Monad Library
  A Monad library in Scala. Monad libraries like
 in scalaz and cats (for Scala) or the Haskell
 standard library look similar. */
+
 trait Monad {
     type M[_] // this time we treat M as a type member and not as type parameter
               // because it leads to shorter type signatures
     def unit[A](a: A) : M[A]
     def bind[A,B](m: M[A], f: A => M[B]) : M[B]
-    implicit def monadicSyntax[A](m:M[A]) = new {
-        def map[B](f: A => B) = bind(m, (x:A) => unit(f(x)))
-        def flatMap[B](f: A => M[B]) : M[B] = bind(m,f)
-    }
+
+    extension [A](m: M[A])
+      def map[B](f: A => B): M[B] = bind(m, (x:A) => unit(f(x)))
+      def flatMap[B](f: A => M[B]): M[B] = bind(m,f)
 }
+
 /**
   We formulate concrete monads in the form of abstract interfaces first.
   The idea of those interfaces is that it should be possible to use
@@ -37,7 +39,7 @@ trait Monad {
   on an environment of type R.
   The ask function yields the current environment, the local function
   is used to transform the environment in a subcomputation a by an
-  environment transformer f. */ 
+  environment transformer f. */
 trait ReaderMonad extends Monad {
     type R
     def ask: M[R]
@@ -91,7 +93,7 @@ object ReaderExample2 extends ReaderMonadImp {
         //    x && y
         //}
         // However, the monadic code is more abstract (and hence
-        // more reusable) because it is not coupled to the 
+        // more reusable) because it is not coupled to the
         // concrete M
         case Or(l,r) => for {
             x <- eval(l)
@@ -101,7 +103,7 @@ object ReaderExample2 extends ReaderMonadImp {
 }
 
 trait StateMonad extends Monad {
-    type S 
+    type S
     def getState : M[S]
     def putState(s: S) : M[Unit]
 }
@@ -138,12 +140,12 @@ object IdentityMonad extends IdentityMonad
 
 // We organize most other monads as monad _transformers_.
 // A monad transformer is parameterized with another monad.
-// The monads are organized in a chain. Operations of 
+// The monads are organized in a chain. Operations of
 // "inner" monads must be lifted to top-level operations.
 
 trait MonadTransformer extends Monad {
-  protected val m : Monad
-}  
+  val m : Monad
+}
 
 // The Reader monad transformer. We provide some convenient
 // functions lift, lift2 etc. to lift functions from the inner monad.
@@ -161,8 +163,8 @@ trait ReaderT extends MonadTransformer with ReaderMonad {
   override def local[A](f: R => R, a: M[A]) : M[A] = r => a(f(r))
   protected implicit def lift[A](x: m.M[A]) : M[A] = r => x
   protected implicit def lift2[A,B](x: A => m.M[B]) : A => M[B] = a => lift(x(a))
-  protected implicit def lift3[A,B,C](x: (A => m.M[B]) => m.M[C]) : (A => M[B]) => M[C] = f => r => x( (a: A) => f(a)(r)) 
-  protected implicit def lift4[A,B,C,D](x: ((A => m.M[B]) => m.M[C]) => m.M[D]) : ((A => M[B]) => M[C]) => M[D] = f => r => x( (a: A => m.M[B]) => f(lift2(a))(r)) 
+  protected implicit def lift3[A,B,C](x: (A => m.M[B]) => m.M[C]) : (A => M[B]) => M[C] = f => r => x( (a: A) => f(a)(r))
+  protected implicit def lift4[A,B,C,D](x: ((A => m.M[B]) => m.M[C]) => m.M[D]) : ((A => M[B]) => M[C]) => M[D] = f => r => x( (a: A => m.M[B]) => f(lift2(a))(r))
 }
 
 // The original Reader monad can be reconstructed by composing ReaderT with the identity monad.
@@ -178,7 +180,7 @@ trait ReaderMonadImpl extends ReaderMonad {
   def bind[A,B](m: M[A], f: A => M[B]) : M[B] = r => f(m(r))(r)
   def ask : M[R] = identity
   def local[A](f: R => R, a: M[A]) : M[A] = (r) => a(f(r))
-}  
+}
 */
 
 // The design of StateT is similar to that of ReaderT
@@ -195,8 +197,8 @@ trait StateT extends MonadTransformer with StateMonad {
 // and again we can reconstruct the ordinary state monad.
 
 trait StateMonadImpl extends StateT {
-  val m = IdentityMonad
-}  
+  val m: IdentityMonad.type = IdentityMonad
+}
 
 /* We do not need this because we have just synthesized it.
 trait StateMonadImpl extends StateMonad {
@@ -204,7 +206,7 @@ trait StateMonadImpl extends StateMonad {
   def unit[A](a: A) : M[A] = (s: S) => (a,s)
   def bind[A,B](m: M[A], f: A => M[B]) : M[B] = (s: S) => {
      val (a,s2) = m(s)
-	 f(a)(s2)
+     f(a)(s2)
   }
   def getState : M[S] = s => (s,s)
   def putState(s: S) : M[Unit] = _ => ((),s)
@@ -213,7 +215,7 @@ trait StateMonadImpl extends StateMonad {
 
 // We could also synthesize ContinuationMonadImpl from a ContT
 // just as we did for ReaderMonadImpl and StateMonadImpl
-// But for simplicity we only present the ordinary 
+// But for simplicity we only present the ordinary
 // continuation monad here.
 
 trait ContinuationMonadImpl extends ContinuationMonad {
@@ -227,14 +229,15 @@ trait ContinuationMonadImpl extends ContinuationMonad {
 // The composition of the Reader monad and some continuation monad.
 trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
   val m : ContinuationMonad
-  override def callcc[A,B](f : (A => M[B]) => M[A]) : M[A] = (m.callcc[A,B] _)(f) // call to lift4 inserted automatically                                                                                    
+  override def callcc[A,B](f : (A => M[B]) => M[A]) : M[A] = (m.callcc[A,B] _)(f) // call to lift4 inserted automatically
 }
 
 // The composition of the Reader monad and the continuation monad implementation.
 trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
   type T
-  val m = new ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
-}  
+//  val m = new ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
+  object m extends ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
+}
 
 // Composition of reader monad with some state monad.
 trait ReaderStateMonadForwarder extends ReaderT with StateMonad {
@@ -245,7 +248,8 @@ trait ReaderStateMonadForwarder extends ReaderT with StateMonad {
 
 // Composition of reader monad with StateMonadImpl
 trait ReaderStateMonadImpl extends ReaderStateMonadForwarder {
-  val m = new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
+//  val m = new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
+  object m extends StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
 }
 
 /**
@@ -253,10 +257,10 @@ Now we use the monad library to modularize the interpreters of
 the various language variants we have seen so far. */
 
 trait Expressions extends Monad {
-  abstract class Value 
+  abstract class Value
   abstract class Exp {
     def eval : M[Value]
-  }  
+  }
 }
 
 trait Numbers extends Expressions {
@@ -267,26 +271,28 @@ trait Arithmetic extends Numbers {
   case class Num(n: Int) extends Exp {
     def eval = unit(NumV(n))
   }
-  implicit def num2exp(n: Int) = Num(n)
-  
+  implicit def num2exp(n: Int): Exp = Num(n)
+
   case class Add(lhs: Exp, rhs: Exp) extends Exp {
-    def eval = for { 
-	             l <- lhs.eval 
-				 r <- rhs.eval
-			   } yield (l,r) match {
-			                case (NumV(v1), NumV(v2)) => NumV(v1+v2)
-							case _ => sys.error("can only add numbers")
-						}
-  }		
+    def eval = for {
+                 l <- lhs.eval
+                 r <- rhs.eval
+               } yield (l,r) match {
+                 case (NumV(v1), NumV(v2)) => NumV(v1+v2)
+                 case _ => sys.error("can only add numbers")
+               }
+  }
 }
 
-trait If0 extends Numbers {  
+trait If0 extends Numbers {
   case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp {
     def eval = for {
-	             c <- cond.eval
-	             res <- c match { case NumV(0) => thenExp.eval
-	                              case _ => elseExp.eval }
-	           } yield res 
+                c <- cond.eval
+                res <- c match {
+                  case NumV(0) => thenExp.eval
+                  case _ => elseExp.eval
+                }
+              } yield res
   }
 }
 
@@ -297,23 +303,24 @@ trait Functions extends Expressions with ReaderMonad {
   case class ClosureV(f: Fun, env: Env) extends Value
   case class Fun(param: String, body: Exp) extends Exp {
     def eval = for { env <- ask } yield ClosureV(this, env)
-  }	
+  }
   case class Ap(f: Exp, a: Exp) extends Exp {
     def eval = for {
-	            fv <- f.eval
-				av <- a.eval
-				res <- fv match { case ClosureV(fun,cenv) => local( env => cenv + (fun.param -> av), fun.body.eval) }
-		       } yield res
-
+                fv <- f.eval
+                av <- a.eval
+                res <- fv match {
+                  case ClosureV(fun,cenv) => local( env => cenv + (fun.param -> av), fun.body.eval)
+                }
+       } yield res
   }
   case class Id(x: String) extends Exp {
     def eval = for {
-	             env <- ask
-			   } yield env(x)
+               env <- ask
+             } yield env(x)
   }
-  implicit def id2exp(x: String) = Id(x)
+  implicit def id2exp(x: String): Exp = Id(x)
   def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
-}  
+}
 
 
 trait Boxes extends Expressions with StateMonad  {
@@ -327,57 +334,57 @@ trait Boxes extends Expressions with StateMonad  {
     _nextAddress += 1
     _nextAddress
   }
-  
+
   case class AddressV(a: Address) extends Value
 
   case class NewBox(e: Exp) extends Exp {
     def eval = {
-	  val a = nextAddress
-	  for {
-	    v <- e.eval
-		s <- getState
-		_ <- putState(s + (a -> v))
-	  } yield AddressV(a)
+      val a = nextAddress
+      for {
+        v <- e.eval
+        s <- getState
+        _ <- putState(s + (a -> v))
+      } yield AddressV(a)
     }
   }
   case class SetBox(b: Exp, e: Exp) extends Exp {
-     def eval = 
-       for {
-          box <- b.eval
-          ev  <- e.eval
-          s   <- getState
-          _   <- putState(box match { case AddressV(a) => s.updated(a,ev) })
-	   } yield ev
+    def eval =
+      for {
+         box <- b.eval
+         ev  <- e.eval
+         s   <- getState
+         _   <- putState(box match { case AddressV(a) => s.updated(a,ev) })
+      } yield ev
   }
-  
-  
+
+
   case class OpenBox(b: Exp) extends Exp {
     def eval = for {
-	             bv <- b.eval
-	             s  <- getState
-			   } yield (bv match { case AddressV(a) => s(a) })
+                 bv <- b.eval
+                 s  <- getState
+              } yield (bv match { case AddressV(a) => s(a) })
   }
   case class Seq(e1: Exp, e2: Exp) extends Exp {
     def eval = bind(e1.eval,(_:Value) => e2.eval)
   }
-  
+
 }
 
 trait Letcc extends Expressions with ContinuationMonad with ReaderMonad{
   override type R = Map[String,Value]
-  
+
   // We introduce a new application form CAp instead of using Ap because we cannot extend Ap
   case class CAp(f: Exp, a: Exp) extends Exp {
-    override def eval : M[Value] = 
-        for {
-           fv <- f.eval
-           av <- a.eval
-           res <- fv match { case ContV(f) => f(av) }
-         } yield res
+    override def eval : M[Value] =
+      for {
+         fv <- f.eval
+         av <- a.eval
+         res <- fv match { case ContV(f) => f(av) }
+       } yield res
   }
   case class Letcc(param: String, body: Exp) extends Exp {
     override def eval : M[Value] = callcc[Value,Value](k => local( env => env + (param -> ContV(k)), body.eval))
-  }  
+  }
   case class ContV(f: Value => M[Value]) extends Value
 }
 
@@ -387,7 +394,7 @@ trait Letcc extends Expressions with ContinuationMonad with ReaderMonad{
 object AE extends Arithmetic with IdentityMonad {
   val aetest = Add(1,Add(2,3))
 }
-assert(AE.aetest.eval == AE.NumV(6)) 
+assert(AE.aetest.eval == AE.NumV(6))
 
 object FAELang extends Functions with Arithmetic with ReaderMonadImpl {
   val faetest = Ap(Fun("x", Add("x", 1)), Add(2,3))
@@ -398,15 +405,15 @@ object BCFAE extends Boxes with Arithmetic with Functions with If0 with ReaderSt
                 wth("toggle", Fun("dummy", If0(OpenBox("switch"),
                                           Seq(SetBox("switch", 1), 1),
                                           Seq(SetBox("switch", 0), 0))),
-                             Add(Ap("toggle",42), Ap("toggle",42))))  
-}  
+                             Add(Ap("toggle",42), Ap("toggle",42))))
+}
 
 assert(BCFAE.test.eval(Map.empty)(Map.empty)._1 == BCFAE.NumV(1))
 
 object FAEwLetcc extends Arithmetic with Functions with If0 with Letcc with ReaderContinuationMonadImpl {
   override type T = Value
-  val testprog = Add(1, Letcc("k", Add(2, CAp("k", 3))))  
-}  
+  val testprog = Add(1, Letcc("k", Add(2, CAp("k", 3))))
+}
 
 assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
 ```
