@@ -163,8 +163,8 @@ We support these functions by an implicit conversion to an object that supports 
 */
 
 extension [A, M[_]](m: M[A])(using mm: Monad[M])
-  def map[B](f: A => B) = mm.bind(m, (x: A) => mm.unit(f(x)))
-  def flatMap[B](f: A => M[B]) : M[B] = mm.bind(m, f)
+  def map[B](f: A => B): M[B] = mm.bind(m, (x: A) => mm.unit(f(x)))
+  def flatMap[B](f: A => M[B]): M[B] = mm.bind(m, f)
 
 /** 
 Using the new support for for-comprehension syntax, we can rewrite our client code as follows: Given the API from above,

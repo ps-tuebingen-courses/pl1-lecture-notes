@@ -170,7 +170,7 @@ trait ReaderT extends MonadTransformer with ReaderMonad {
 // The original Reader monad can be reconstructed by composing ReaderT with the identity monad.
 
 trait ReaderMonadImpl extends ReaderT {
-  val m = IdentityMonad
+  val m: IdentityMonad = IdentityMonad
 }
 
 /* We do not need this because we have just synthesized it.
@@ -197,7 +197,7 @@ trait StateT extends MonadTransformer with StateMonad {
 // and again we can reconstruct the ordinary state monad.
 
 trait StateMonadImpl extends StateT {
-  val m: IdentityMonad.type = IdentityMonad
+  val m: IdentityMonad = IdentityMonad
 }
 
 /* We do not need this because we have just synthesized it.
@@ -235,8 +235,8 @@ trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
 // The composition of the Reader monad and the continuation monad implementation.
 trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
   type T
-//  val m = new ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
-  object m extends ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
+  val m: ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T } =
+    new ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
 }
 
 // Composition of reader monad with some state monad.
@@ -248,8 +248,8 @@ trait ReaderStateMonadForwarder extends ReaderT with StateMonad {
 
 // Composition of reader monad with StateMonadImpl
 trait ReaderStateMonadImpl extends ReaderStateMonadForwarder {
-//  val m = new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
-  object m extends StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
+  val m: StateMonadImpl { type S = ReaderStateMonadImpl.this.S } =
+    new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
 }
 
 /**
