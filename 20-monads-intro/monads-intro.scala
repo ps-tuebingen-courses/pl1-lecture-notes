@@ -9,7 +9,7 @@ import scala.language.reflectiveCalls
 /** 
 We have seen various patterns of function composition:
 - The environment passing style, in which an environment is passed down in recursive calls
-- The store passing style, in which a store is threaded  in and out of every computation
+- The store passing style, in which a store is threaded in and out of every computation
 - The continuation passing style, in which every function call is a tail call.
 Monads are way to abstract over such patterns of function composition. 
 Motivation
@@ -29,21 +29,21 @@ Now suppose that these functions can possibly fail (say, because they involve re
 failures is to use the Option datatype: 
 */
 
-def f(n: Int) : Option[String] = if (n < 100) Some("x") else None
-def g(x: String) : Option[Boolean] = Some(x == "x")
-def h(b: Boolean) : Option[Int] = if (b) Some(27) else None
+def fOp(n: Int) : Option[String] = if (n < 100) Some("x") else None
+def gOp(x: String) : Option[Boolean] = Some(x == "x")
+def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
 
 /** 
 However, now the clientCode must be changed rather dramatically: 
 */
 
-def clientCode = 
-  f(27) match {
-    case Some(x) => g(x+"z") match {
-	                     case Some(y) => h(!y)
-						 case None => None
-					}
-	case None => None
+def clientCodeOp =
+  fOp(27) match {
+    case Some(x) => gOp(x+"z") match {
+            case Some(y) => hOp(!y)
+            case None => None
+      }
+    case None => None
   }
  
 /**
@@ -54,20 +54,18 @@ We can capture this pattern in the form of a function:
 */
 
 def bindOption[A,B](a: Option[A], f: A => Option[B]) : Option[B] = a match {
-    case Some(x) => f(x)
-	case None => None
-}	
+  case Some(x) => f(x)
+  case None => None
+}
 
 /** 
 Using bindOption, we can rewrite the code above as follows: 
 */
 
-def clientCode =
-  bindOption(f(27), (x:String) => 
-      bindOption(g(x+"z"), (y:Boolean) =>
-	    h(!y)))
-		
-
+def clientCodeOpBind =
+  bindOption(fOp(27), (x:String) =>
+    bindOption(gOp(x+"z"), (y:Boolean) =>
+      hOp(!y)))
 
 /** 
 Now suppose that our original client code was not ``h(!g(f(27)+"z"))`` 
@@ -80,9 +78,9 @@ thing does not type check:
 One way to fix the situation is to insert a call to ``Some``, like so:  
 */
       
-def clientCode =
-  bindOption(f(27), ((x: String) =>
-  bindOption(g(x+"z"), ((y: Boolean) =>
+def clientCode2Op =
+  bindOption(fOp(27), ((x: String) =>
+  bindOption(gOp(x+"z"), ((y: Boolean) =>
   Some(!y)))))
 
 /** 
@@ -93,9 +91,9 @@ function "unit" to our function composition interface:
 
 def unit[A](x: A) : Option[A] = Some(x)
 
-def clientCode =
-  bindOption(f(27), ((x: String) =>
-  bindOption(g(x+"z"), ((y: Boolean) =>
+def clientCode2OpUnit =
+  bindOption(fOp(27), ((x: String) =>
+  bindOption(gOp(x+"z"), ((y: Boolean) =>
   unit(!y)))))
   
 /**
@@ -124,9 +122,9 @@ trait Monad[M[_]] {
 Using this interface, we can now make clientCode depend only on this interface, but no longer on the Option type: 
 */
 
-def clientCode(m: Monad[Option]) =
-  m.bind(f(27),  (x: String) =>
-  m.bind(g(x+"z"),  (y: Boolean) =>
+def clientCode2Op(m: Monad[Option]) =
+  m.bind(fOp(27), (x: String) =>
+  m.bind(gOp(x+"z"), (y: Boolean) =>
   m.unit(!y)))
   
 /** 
@@ -134,13 +132,13 @@ If the API is parametric in the monad, we can make the client code fully paramet
 implicit parameter to save the work of passing on the monad in every call. 
 */
   
-def f[M[_]](n: Int)(implicit m: Monad[M]) : M[String] = sys.error("not implemented")
-def g[M[_]](x: String)(implicit m: Monad[M]) : M[Boolean] = sys.error("not implemented")
-def h[M[_]](b: Boolean)(implicit m: Monad[M]) : M[Int] = sys.error("not implemented")
+def fM[M[_]](n: Int)(implicit m: Monad[M]) : M[String] = sys.error("not implemented")
+def gM[M[_]](x: String)(implicit m: Monad[M]) : M[Boolean] = sys.error("not implemented")
+def hM[M[_]](b: Boolean)(implicit m: Monad[M]) : M[Int] = sys.error("not implemented")
 
-def clientCode[M[_]](implicit m: Monad[M]) =
-  m.bind(f(27),  (x: String) =>
-  m.bind(g(x+"z"),  (y: Boolean) =>
+def clientCode2[M[_]](implicit m: Monad[M]) =
+  m.bind(fM(27), (x: String) =>
+  m.bind(gM(x+"z"), (y: Boolean) =>
   m.unit(!y)))
 
 /** 
@@ -156,50 +154,35 @@ The Scala compiler desugars the for-comprehension above into calls of the standa
 for comprehension is equivalent to:
     assert(l.flatMap(x => x.map(y => y+1)) == List(2,3,4,5))
 We will make use of for-comprehension syntax by supporting both ``flatMap`` (which is like ``bind``) and ``map`` (which is like ``fmap``).
-We support these functions by an implicit conversion to an object that supports these functions. That is, our new monad interface is: 
-*/  
+We support these functions by an implicit conversion to an object that supports these functions as follows:
+*/
 
-trait Monad[M[_]] {
-  def unit[A](a: A): M[A]
-  def bind[A,B](m: M[A], f: A => M[B]): M[B]
-  // The "monad laws":
-  // 1) "unit" acts as a kind of neutral element of "bind", that is:
-  //    1a) bind(unit(x),f) == f(x) and
-  //    1b) bind(x, y => unit(y)) == x
-  // 2) Bind enjoys an associative property
-  //     bind(bind(x,f),g) == bind(x, y => bind(f(y),g))
-}
-
-implicit def monadicSyntax[A, M[_]](m: M[A])(implicit mm: Monad[M]) = new {
+extension [A, M[_]](m: M[A])(using mm: Monad[M])
   def map[B](f: A => B) = mm.bind(m, (x: A) => mm.unit(f(x)))
-  def flatMap[B](f: A => M[B]): M[B] = mm.bind(m, f)
-}
+  def flatMap[B](f: A => M[B]) : M[B] = mm.bind(m, f)
 
 /** 
 Using the new support for for-comprehension syntax, we can rewrite our client code as follows: Given the API from above,
-*/
 
-def f(n: Int) : Option[String] = if (n < 100) Some("x") else None
-def g(x: String) : Option[Boolean] = Some(x == "x")
-def h(b: Boolean) : Option[Int] = if (b) Some(27) else None
+def fOp(n: Int) : Option[String] = if (n < 100) Some("x") else None
+def gOp(x: String) : Option[Boolean] = Some(x == "x")
+def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
 
-/** 
+
 we can now rewrite this:
-*/
 
-def clientCode(implicit m: Monad[Option]) =
-  bindOption(f(27), ((x: String) =>
-  bindOption(g(x+"z"), ((y: Boolean) =>
-  Some(!y)))))
-  
-/** 
-to this:  
+def clientCode2Op(m: Monad[Option]) =
+  m.bind(fOp(27), (x: String) =>
+  m.bind(gOp(x+"z"), (y: Boolean) =>
+  m.unit(!y)))
+
+to this:
 */
     
-def clientCode(implicit m: Monad[Option]) =
+def clientCode2OpFor(implicit m: Monad[Option]) =
   for {
-    x <- f(27)
-    y <- g(x+"z")
+    x <- fOp(27)
+    y <- gOp(x+"z")
   } yield !y
 
   
@@ -214,16 +197,16 @@ object OptionMonad extends Monad[Option] {
   override def bind[A,B](a: Option[A], f: A => Option[B]) : Option[B] =
     a match {
       case Some(x) => f(x)
-	  case None => None
+      case None => None
     }
   override def unit[A](a: A) = Some(a)
-}	
+}
 
 /** 
 We can now parameterize clientCode with OptionMonad. 
 */
 
-def v : Option[Boolean] = clientCode(OptionMonad)  
+def v : Option[Boolean] = clientCode2Op(OptionMonad)
 
 /** 
 There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
@@ -237,10 +220,10 @@ def fmap[M[_],A,B](f: A => B)(implicit m: Monad[M]): M[A] => M[B] = a => m.bind(
 // sequence composes a list of monadic values into a single monadic value which is a list.
 def sequence[M[_],A](l: List[M[A]])(implicit m: Monad[M]) : M[List[A]] = l match {
   case x :: xs => m.bind(x, (y: A) => 
-                  m.bind(sequence(xs), (ys : List[A]) =>
-				  m.unit(y :: ys)))
+    m.bind(sequence(xs), (ys : List[A]) =>
+      m.unit(y :: ys)))
   case Nil => m.unit(List.empty)
-}  
+}
 
 // mapM composes sequence and the standard map function.
 def mapM[M[_],A,B](f : A => M[B], l: List[A])(implicit m: Monad[M]) : M[List[B]] =

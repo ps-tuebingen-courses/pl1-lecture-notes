@@ -3122,13 +3122,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$$anon$4@74abbce5
+// zero: Num = repl.MdocSession$$anon$4@205fbd0e
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$$anon$6@3231898a
+// one: Num = repl.MdocSession$$anon$6@69aae943
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$$anon$8@3516799e
+// two: Num = repl.MdocSession$$anon$8@492b1ac8
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$$anon$10@592772d5
+// three: Num = repl.MdocSession$$anon$10@7c86069d
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {
@@ -3335,7 +3335,7 @@ def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot;+ n1 + &quot;
  * We can express the continuation as a function: */
 
 val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
-// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2897/0x0000000100cfe840@2a8ecf5b
+// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2897/0x0000000100cce040@42346ec2
 
 /* Similarly, the continuation at the second point of interaction is:
  * val cont2 = (m: Int) =&gt; println(n+m)
@@ -3974,7 +3974,7 @@ import scala.language.reflectiveCalls
 /** 
 We have seen various patterns of function composition:
 - The environment passing style, in which an environment is passed down in recursive calls
-- The store passing style, in which a store is threaded  in and out of every computation
+- The store passing style, in which a store is threaded in and out of every computation
 - The continuation passing style, in which every function call is a tail call.
 Monads are way to abstract over such patterns of function composition. 
 Motivation
@@ -3994,21 +3994,21 @@ Now suppose that these functions can possibly fail (say, because they involve re
 failures is to use the Option datatype: 
 */
 
-def f(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
-def g(x: String) : Option[Boolean] = Some(x == &quot;x&quot;)
-def h(b: Boolean) : Option[Int] = if (b) Some(27) else None
+def fOp(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
+def gOp(x: String) : Option[Boolean] = Some(x == &quot;x&quot;)
+def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
 
 /** 
 However, now the clientCode must be changed rather dramatically: 
 */
 
-def clientCode = 
-  f(27) match {
-    case Some(x) =&gt; g(x+&quot;z&quot;) match {
-	                     case Some(y) =&gt; h(!y)
-						 case None =&gt; None
-					}
-	case None =&gt; None
+def clientCodeOp =
+  fOp(27) match {
+    case Some(x) =&gt; gOp(x+&quot;z&quot;) match {
+            case Some(y) =&gt; hOp(!y)
+            case None =&gt; None
+      }
+    case None =&gt; None
   }
  
 /**
@@ -4019,20 +4019,18 @@ We can capture this pattern in the form of a function:
 */
 
 def bindOption[A,B](a: Option[A], f: A =&gt; Option[B]) : Option[B] = a match {
-    case Some(x) =&gt; f(x)
-	case None =&gt; None
-}	
+  case Some(x) =&gt; f(x)
+  case None =&gt; None
+}
 
 /** 
 Using bindOption, we can rewrite the code above as follows: 
 */
 
-def clientCode =
-  bindOption(f(27), (x:String) =&gt; 
-      bindOption(g(x+&quot;z&quot;), (y:Boolean) =&gt;
-	    h(!y)))
-		
-
+def clientCodeOpBind =
+  bindOption(fOp(27), (x:String) =&gt;
+    bindOption(gOp(x+&quot;z&quot;), (y:Boolean) =&gt;
+      hOp(!y)))
 
 /** 
 Now suppose that our original client code was not ``h(!g(f(27)+&quot;z&quot;))`` 
@@ -4045,9 +4043,9 @@ thing does not type check:
 One way to fix the situation is to insert a call to ``Some``, like so:  
 */
       
-def clientCode =
-  bindOption(f(27), ((x: String) =&gt;
-  bindOption(g(x+&quot;z&quot;), ((y: Boolean) =&gt;
+def clientCode2Op =
+  bindOption(fOp(27), ((x: String) =&gt;
+  bindOption(gOp(x+&quot;z&quot;), ((y: Boolean) =&gt;
   Some(!y)))))
 
 /** 
@@ -4058,9 +4056,9 @@ function &quot;unit&quot; to our function composition interface:
 
 def unit[A](x: A) : Option[A] = Some(x)
 
-def clientCode =
-  bindOption(f(27), ((x: String) =&gt;
-  bindOption(g(x+&quot;z&quot;), ((y: Boolean) =&gt;
+def clientCode2OpUnit =
+  bindOption(fOp(27), ((x: String) =&gt;
+  bindOption(gOp(x+&quot;z&quot;), ((y: Boolean) =&gt;
   unit(!y)))))
   
 /**
@@ -4089,9 +4087,9 @@ trait Monad[M[_]] {
 Using this interface, we can now make clientCode depend only on this interface, but no longer on the Option type: 
 */
 
-def clientCode(m: Monad[Option]) =
-  m.bind(f(27),  (x: String) =&gt;
-  m.bind(g(x+&quot;z&quot;),  (y: Boolean) =&gt;
+def clientCode2Op(m: Monad[Option]) =
+  m.bind(fOp(27), (x: String) =&gt;
+  m.bind(gOp(x+&quot;z&quot;), (y: Boolean) =&gt;
   m.unit(!y)))
   
 /** 
@@ -4099,13 +4097,13 @@ If the API is parametric in the monad, we can make the client code fully paramet
 implicit parameter to save the work of passing on the monad in every call. 
 */
   
-def f[M[_]](n: Int)(implicit m: Monad[M]) : M[String] = sys.error(&quot;not implemented&quot;)
-def g[M[_]](x: String)(implicit m: Monad[M]) : M[Boolean] = sys.error(&quot;not implemented&quot;)
-def h[M[_]](b: Boolean)(implicit m: Monad[M]) : M[Int] = sys.error(&quot;not implemented&quot;)
+def fM[M[_]](n: Int)(implicit m: Monad[M]) : M[String] = sys.error(&quot;not implemented&quot;)
+def gM[M[_]](x: String)(implicit m: Monad[M]) : M[Boolean] = sys.error(&quot;not implemented&quot;)
+def hM[M[_]](b: Boolean)(implicit m: Monad[M]) : M[Int] = sys.error(&quot;not implemented&quot;)
 
-def clientCode[M[_]](implicit m: Monad[M]) =
-  m.bind(f(27),  (x: String) =&gt;
-  m.bind(g(x+&quot;z&quot;),  (y: Boolean) =&gt;
+def clientCode2[M[_]](implicit m: Monad[M]) =
+  m.bind(fM(27), (x: String) =&gt;
+  m.bind(gM(x+&quot;z&quot;), (y: Boolean) =&gt;
   m.unit(!y)))
 
 /** 
@@ -4121,50 +4119,35 @@ The Scala compiler desugars the for-comprehension above into calls of the standa
 for comprehension is equivalent to:
     assert(l.flatMap(x =&gt; x.map(y =&gt; y+1)) == List(2,3,4,5))
 We will make use of for-comprehension syntax by supporting both ``flatMap`` (which is like ``bind``) and ``map`` (which is like ``fmap``).
-We support these functions by an implicit conversion to an object that supports these functions. That is, our new monad interface is: 
-*/  
+We support these functions by an implicit conversion to an object that supports these functions as follows:
+*/
 
-trait Monad[M[_]] {
-  def unit[A](a: A): M[A]
-  def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B]
-  // The &quot;monad laws&quot;:
-  // 1) &quot;unit&quot; acts as a kind of neutral element of &quot;bind&quot;, that is:
-  //    1a) bind(unit(x),f) == f(x) and
-  //    1b) bind(x, y =&gt; unit(y)) == x
-  // 2) Bind enjoys an associative property
-  //     bind(bind(x,f),g) == bind(x, y =&gt; bind(f(y),g))
-}
-
-implicit def monadicSyntax[A, M[_]](m: M[A])(implicit mm: Monad[M]) = new {
+extension [A, M[_]](m: M[A])(using mm: Monad[M])
   def map[B](f: A =&gt; B) = mm.bind(m, (x: A) =&gt; mm.unit(f(x)))
-  def flatMap[B](f: A =&gt; M[B]): M[B] = mm.bind(m, f)
-}
+  def flatMap[B](f: A =&gt; M[B]) : M[B] = mm.bind(m, f)
 
 /** 
 Using the new support for for-comprehension syntax, we can rewrite our client code as follows: Given the API from above,
-*/
 
-def f(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
-def g(x: String) : Option[Boolean] = Some(x == &quot;x&quot;)
-def h(b: Boolean) : Option[Int] = if (b) Some(27) else None
+def fOp(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
+def gOp(x: String) : Option[Boolean] = Some(x == &quot;x&quot;)
+def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
 
-/** 
+
 we can now rewrite this:
-*/
 
-def clientCode(implicit m: Monad[Option]) =
-  bindOption(f(27), ((x: String) =&gt;
-  bindOption(g(x+&quot;z&quot;), ((y: Boolean) =&gt;
-  Some(!y)))))
-  
-/** 
-to this:  
+def clientCode2Op(m: Monad[Option]) =
+  m.bind(fOp(27), (x: String) =&gt;
+  m.bind(gOp(x+&quot;z&quot;), (y: Boolean) =&gt;
+  m.unit(!y)))
+
+to this:
 */
     
-def clientCode(implicit m: Monad[Option]) =
+def clientCode2OpFor(implicit m: Monad[Option]) =
   for {
-    x &lt;- f(27)
-    y &lt;- g(x+&quot;z&quot;)
+    x &lt;- fOp(27)
+    y &lt;- gOp(x+&quot;z&quot;)
   } yield !y
 
   
@@ -4179,16 +4162,16 @@ object OptionMonad extends Monad[Option] {
   override def bind[A,B](a: Option[A], f: A =&gt; Option[B]) : Option[B] =
     a match {
       case Some(x) =&gt; f(x)
-	  case None =&gt; None
+      case None =&gt; None
     }
   override def unit[A](a: A) = Some(a)
-}	
+}
 
 /** 
 We can now parameterize clientCode with OptionMonad. 
 */
 
-def v : Option[Boolean] = clientCode(OptionMonad)  
+def v : Option[Boolean] = clientCode2Op(OptionMonad)
 
 /** 
 There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
@@ -4202,10 +4185,10 @@ def fmap[M[_],A,B](f: A =&gt; B)(implicit m: Monad[M]): M[A] =&gt; M[B] = a =&gt
 // sequence composes a list of monadic values into a single monadic value which is a list.
 def sequence[M[_],A](l: List[M[A]])(implicit m: Monad[M]) : M[List[A]] = l match {
   case x :: xs =&gt; m.bind(x, (y: A) =&gt; 
-                  m.bind(sequence(xs), (ys : List[A]) =&gt;
-				  m.unit(y :: ys)))
+    m.bind(sequence(xs), (ys : List[A]) =&gt;
+      m.unit(y :: ys)))
   case Nil =&gt; m.unit(List.empty)
-}  
+}
 
 // mapM composes sequence and the standard map function.
 def mapM[M[_],A,B](f : A =&gt; M[B], l: List[A])(implicit m: Monad[M]) : M[List[B]] =
@@ -4225,7 +4208,7 @@ The _identity monad_ is the simplest monad which corresponds to ordinary functio
 with the Identity monad, we get the behavior of the original non-monadic code. 
 */
    
-type Id[X] = X   
+type Id[X] = X      
 object IdentityMonad extends Monad[Id] {
   def bind[A,B](x: A, f: A =&gt; B) : B = f(x) 
   def unit[A](a: A) : A = a
@@ -4253,9 +4236,9 @@ For simplicitly, let's assume  that the current configuration is just an ``Int``
 the form ``Int =&gt; A```:
 */
 
-def f(n: Int) : Int =&gt; String  = sys.error(&quot;not implemented&quot;)
-def g(x: String) : Int =&gt; Boolean  = sys.error(&quot;not implemented&quot;)
-def h(b: Boolean) : Int =&gt; Int = sys.error(&quot;not implemented&quot;)
+def fRead(n: Int) : Int =&gt; String  = sys.error(&quot;not implemented&quot;)
+def gRead(x: String) : Int =&gt; Boolean  = sys.error(&quot;not implemented&quot;)
+def hRead(b: Boolean) : Int =&gt; Int = sys.error(&quot;not implemented&quot;)
 
 /**
 Our original code, 
@@ -4263,22 +4246,23 @@ Our original code,
 becomes :
 */
 
-def clientCode(env: Int) = h(!g(f(27)(env)+&quot;z&quot;)(env))(env)
+def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env)+&quot;z&quot;)(env))(env)
 
 /** 
 In monadic form, the explicit handling of the environment disappears again.
 */
-def clientCode(implicit m: ReaderMonad[Int]) =
-  m.bind(f(27), ((x: String) =&gt;
-  m.bind(g(x+&quot;z&quot;), ((y: Boolean) =&gt;
+
+def clientCodeRead(implicit m: ReaderMonad[Int]) =
+  m.bind(fRead(27), ((x: String) =&gt;
+  m.bind(gRead(x+&quot;z&quot;), ((y: Boolean) =&gt;
   m.unit(!y)))))
 
 /* this code does not work in older versions of Scala */
-def clientCode2(implicit m: ReaderMonad[Int]) =
+def clientCode2Read(implicit m: ReaderMonad[Int]) =
     for {
-      x &lt;- f(27)
-      y &lt;- g(x+&quot;z&quot;)
-} yield !y
+      x &lt;- fRead(27)
+      y &lt;- gRead(x+&quot;z&quot;)
+    } yield !y
 
 /**  
  
@@ -4298,29 +4282,30 @@ trait StateMonad[S] extends Monad[({type M[A] = S =&gt; (A,S)})#M] {
 Example: Assume that our API maintains a state which (for simplicity) we assume to be a single integer. That is, it would look like this:
 */
 
-def f(n: Int) : Int =&gt; (String,Int)  = sys.error(&quot;not implemented&quot;)
-def g(x: String) : Int =&gt; (Boolean,Int)  = sys.error(&quot;not implemented&quot;)
-def h(b: Boolean) : Int =&gt; (Int,Int) = sys.error(&quot;not implemented&quot;)
+def fState(n: Int) : Int =&gt; (String,Int)  = sys.error(&quot;not implemented&quot;)
+def gState(x: String) : Int =&gt; (Boolean,Int)  = sys.error(&quot;not implemented&quot;)
+def hState(b: Boolean) : Int =&gt; (Int,Int) = sys.error(&quot;not implemented&quot;)
 
 /** 
 The original code, 
    def clientCode = h(!g(f(27)+&quot;z&quot;))
 becomes :
 */
-def clientCode(s: Int) = 
-  f(27)(s) match {
-     case (x,s2) =&gt; g(x+&quot;z&quot;)(s2) match {
-        case (y,s3) =&gt; h(!y)(s3) }}
+
+def clientCodeState(s: Int) =
+  fState(27)(s) match {
+     case (x,s2) =&gt; gState(x+&quot;z&quot;)(s2) match {
+        case (y,s3) =&gt; hState(!y)(s3) }}
         
 /** 
 In monadic style, however, the state handling disappears once more.
 */
-        
-def clientCode(implicit m: StateMonad[Int]) =
-  m.bind(f(27), ((x: String) =&gt;
-  m.bind(g(x+&quot;z&quot;), ((y: Boolean) =&gt;
+
+def clientCode2State(implicit m: StateMonad[Int]) =
+  m.bind(fState(27), ((x: String) =&gt;
+  m.bind(gState(x+&quot;z&quot;), ((y: Boolean) =&gt;
   m.unit(!y)))))
- 
+
        
 /** 
 The List Monad
@@ -4330,15 +4315,15 @@ In the _list monad_, computations produce lists of results. The bind operator co
 object ListMonad extends Monad[List] {
   override def bind[A,B](x: List[A], f: A =&gt; List[B]) : List[B] = x.flatMap(f) // apply f to each element, concatenate the resulting lists
   override def unit[A](a: A) = List(a)
-}  
+}    
 
 /** 
 Example: Assume that our API functions return lists of results, and our client code must exercise the combination of all possible answers.
 */
 
-def f(n: Int) : List[String] = sys.error(&quot;not implemented&quot;)
-def g(x: String) : List[Boolean] = sys.error(&quot;not implemented&quot;)
-def h(b: Boolean) : List[Int] = sys.error(&quot;not implemented&quot;)
+def fList(n: Int) : List[String] = sys.error(&quot;not implemented&quot;)
+def gList(x: String) : List[Boolean] = sys.error(&quot;not implemented&quot;)
+def hList(b: Boolean) : List[Int] = sys.error(&quot;not implemented&quot;)
 
 /**
 The original code, 
@@ -4346,19 +4331,18 @@ The original code,
 becomes :
 */
 
-def clientCode = 
-  f(27).map(x =&gt; g(x+&quot;z&quot;)).flatten.map(y =&gt; h(!y)).flatten
+def clientCodeList =
+  fList(27).map(x =&gt; gList(x+&quot;z&quot;)).flatten.map(y =&gt; hList(!y)).flatten
 
 /** 
 The monadic version of the client code stays the same, as expected:
 */  
   
-
-def clientCode = {
+def clientCode2List = {
   implicit val m = ListMonad
   for {
-    x &lt;- f(27)
-    y &lt;- g(x+&quot;z&quot;)
+    x &lt;- fList(27)
+    y &lt;- gList(x+&quot;z&quot;)
   } yield !y
 }
 
@@ -4385,28 +4369,31 @@ trait ContinuationMonad[R] extends Monad[({type M[A] = (A =&gt; R) =&gt; R})#M] 
 Example: Suppose our API was CPS-transformed:
 */
 
-def f[R](n: Int) : (String =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
-def g[R](x: String) : (Boolean =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
-def h[R](b: Boolean) : (Int =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
+def fCPS[R](n: Int) : (String =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
+def gCPS[R](x: String) : (Boolean =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
+def hCPS[R](b: Boolean) : (Int =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
 
 /**
 The original code, 
     def clientCode = h(!g(f(27)+&quot;z&quot;))
 becomes :
-    def clientCode[R]: (Int =&gt; R) =&gt; R = 
-      k =&gt; f(27)( x=&gt; g(x+&quot;z&quot;)( y =&gt;  h(!y)(k)))
+*/
+
+def clientCodeCPS[R]: (Int =&gt; R) =&gt; R =
+  k =&gt; fCPS(27)( (x: String) =&gt; gCPS(x+&quot;z&quot;)( (y: Boolean) =&gt;  hCPS(!y)(k)))
+
+/**
 The monadic version hides the CPS transformation in the operations of the Monad.  
 */
 
 
-def clientCode[R](implicit m: ContinuationMonad[R]) =
-  m.bind(f(27), ((x: String) =&gt;
-  m.bind(g(x+&quot;z&quot;), ((y: Boolean) =&gt;
-  m.unit(!y)))))  
+def clientCode2CPS[R](implicit m: ContinuationMonad[R]) =
+  m.bind(fCPS(27), ((x: String) =&gt;
+  m.bind(gCPS(x+&quot;z&quot;), ((y: Boolean) =&gt;
+  m.unit(!y)))))    
 
 
-  
-// let's implement 1 + (2+3) in monadic style and implicitly CPS-transform using the continuation monad
+// let's implement 1 + (2 + 3) in monadic style and implicitly CPS-transform using the continuation monad
 
 // unfortunately we can, again, not use for-comprehension syntax, for the same
 // reason it does not work for the Reader monad
@@ -4415,9 +4402,9 @@ def ex123[R](implicit m: ContinuationMonad[R])  = {
     m.bind(m.unit(2), (two:Int) =&gt;
       m.bind(m.unit(3), (three:Int) =&gt; m.unit(two+three))),
     (five:Int) =&gt; m.unit(1+five))  
-}  
+}
 
-def runex123 = ex123(new ContinuationMonad[Int]{})(x=&gt;x)
+def runEx123 = ex123(new ContinuationMonad[Int]{})(x=&gt;x)
 
 // let's implement the (+ 1 (let/cc k (+ 2 (k 3)))) example using callcc
 
@@ -4426,8 +4413,8 @@ def excallcc[R](implicit m: ContinuationMonad[R])  = {
     m.bind(m.unit(2), 
            (two:Int) =&gt; m.callcc[Int,Int]( k =&gt; m.bind(k(3), (three:Int) =&gt; m.unit(two+three)))),
     (five:Int) =&gt; m.unit(1+five))  
-}  
-def runexcallcc = excallcc(new ContinuationMonad[Int]{})(x=&gt;x)
+}    
+def runExcallcc = excallcc(new ContinuationMonad[Int]{})(x=&gt;x)
 
 // Remember how we had to CPS-transform the &quot;map&quot; function in the &quot;allCosts&quot; example when we talked about continuations?
 // Now we can define a monadic version of &quot;map&quot; that works for any monad, including the continuation monad
@@ -4457,39 +4444,32 @@ class OptionTMonad[M[_]](val m : Monad[M]) extends Monad[OptionT[M]#x] {
   override def unit[A](a: A) = m.unit(Some(a))  
 
   def lift[A](x: M[A]) : M[Option[A]] = m.bind(x, (a: A) =&gt; m.unit(Some(a)))                                   
-}	
+}		
 
 val ListOptionM = new OptionTMonad(ListMonad)
+// ListOptionM: OptionTMonad[[A &gt;: Nothing &lt;: Any] =&gt; List[A]] = repl.MdocSession$App$OptionTMonad@51924d9f
 
 // in this case, for-comprehension syntax doesn't work because it clashes with the built-in support for
 // for-comprehensions for lists :-(
 def example = {
   val m = ListOptionM
   m.bind(List(Some(3),Some(4)), (x: Int) =&gt; m.unit(x+1))
-}        
+}                
 
 def example2 = {
   val m = ListOptionM
   m.bind(List(Some(3),Some(4)), (x: Int) =&gt; m.lift(List(1,2,3,x)))
-}        
+}                
 
 def example3 = {
   val m = ListOptionM
   m.bind(List(Some(3),None,Some(4)), (x: Int) =&gt; m.unit(x+1))
-}        
+}                
 
 def example4 = {
   val m = ListOptionM
   m.bind(List(Some(3),Some(4)), (x: Int) =&gt; if (x &gt; 3) m.m.unit(None) else m.unit(x*2))
-}        
-
-/*
-Monad transformers are a standard way to compose monads, e.g., in Haskell and in scalaz.
-They have a number of well-known disadvantages. For instance, one needs additional transformer
-versions of monads and the required lifting sometimes destroys modularity.
-There are a number of alternative proposals to monad transformers, such as &quot;extensible effects&quot;.
-https://hackage.haskell.org/package/extensible-effects
-*/
+}
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="io-monad"><a class="header" href="#io-monad">IO Monad</a></h1>
 <p>The content of this chapter is available as a scala file <a href="21-io-monad/./io-monad.scala">here.</a></p>
@@ -4514,7 +4494,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }  
-// iomonad: IOMonad = repl.MdocSession$$anon$1@57827ba9  
+// iomonad: IOMonad = repl.MdocSession$$anon$1@5656bc42  
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] = 
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;
@@ -4537,16 +4517,18 @@ A Monad Library
  A Monad library in Scala. Monad libraries like
 in scalaz and cats (for Scala) or the Haskell
 standard library look similar. */
+
 trait Monad {
     type M[_] // this time we treat M as a type member and not as type parameter
               // because it leads to shorter type signatures
     def unit[A](a: A) : M[A]
     def bind[A,B](m: M[A], f: A =&gt; M[B]) : M[B]
-    implicit def monadicSyntax[A](m:M[A]) = new {
-        def map[B](f: A =&gt; B) = bind(m, (x:A) =&gt; unit(f(x)))
-        def flatMap[B](f: A =&gt; M[B]) : M[B] = bind(m,f)
-    }
+
+    extension [A](m: M[A])
+      def map[B](f: A =&gt; B): M[B] = bind(m, (x:A) =&gt; unit(f(x)))
+      def flatMap[B](f: A =&gt; M[B]): M[B] = bind(m,f)
 }
+
 /**
   We formulate concrete monads in the form of abstract interfaces first.
   The idea of those interfaces is that it should be possible to use
@@ -4561,7 +4543,7 @@ trait Monad {
   on an environment of type R.
   The ask function yields the current environment, the local function
   is used to transform the environment in a subcomputation a by an
-  environment transformer f. */ 
+  environment transformer f. */
 trait ReaderMonad extends Monad {
     type R
     def ask: M[R]
@@ -4615,7 +4597,7 @@ object ReaderExample2 extends ReaderMonadImp {
         //    x &amp;&amp; y
         //}
         // However, the monadic code is more abstract (and hence
-        // more reusable) because it is not coupled to the 
+        // more reusable) because it is not coupled to the
         // concrete M
         case Or(l,r) =&gt; for {
             x &lt;- eval(l)
@@ -4625,7 +4607,7 @@ object ReaderExample2 extends ReaderMonadImp {
 }
 
 trait StateMonad extends Monad {
-    type S 
+    type S
     def getState : M[S]
     def putState(s: S) : M[Unit]
 }
@@ -4662,12 +4644,12 @@ object IdentityMonad extends IdentityMonad
 
 // We organize most other monads as monad _transformers_.
 // A monad transformer is parameterized with another monad.
-// The monads are organized in a chain. Operations of 
+// The monads are organized in a chain. Operations of
 // &quot;inner&quot; monads must be lifted to top-level operations.
 
 trait MonadTransformer extends Monad {
-  protected val m : Monad
-}  
+  val m : Monad
+}
 
 // The Reader monad transformer. We provide some convenient
 // functions lift, lift2 etc. to lift functions from the inner monad.
@@ -4685,8 +4667,8 @@ trait ReaderT extends MonadTransformer with ReaderMonad {
   override def local[A](f: R =&gt; R, a: M[A]) : M[A] = r =&gt; a(f(r))
   protected implicit def lift[A](x: m.M[A]) : M[A] = r =&gt; x
   protected implicit def lift2[A,B](x: A =&gt; m.M[B]) : A =&gt; M[B] = a =&gt; lift(x(a))
-  protected implicit def lift3[A,B,C](x: (A =&gt; m.M[B]) =&gt; m.M[C]) : (A =&gt; M[B]) =&gt; M[C] = f =&gt; r =&gt; x( (a: A) =&gt; f(a)(r)) 
-  protected implicit def lift4[A,B,C,D](x: ((A =&gt; m.M[B]) =&gt; m.M[C]) =&gt; m.M[D]) : ((A =&gt; M[B]) =&gt; M[C]) =&gt; M[D] = f =&gt; r =&gt; x( (a: A =&gt; m.M[B]) =&gt; f(lift2(a))(r)) 
+  protected implicit def lift3[A,B,C](x: (A =&gt; m.M[B]) =&gt; m.M[C]) : (A =&gt; M[B]) =&gt; M[C] = f =&gt; r =&gt; x( (a: A) =&gt; f(a)(r))
+  protected implicit def lift4[A,B,C,D](x: ((A =&gt; m.M[B]) =&gt; m.M[C]) =&gt; m.M[D]) : ((A =&gt; M[B]) =&gt; M[C]) =&gt; M[D] = f =&gt; r =&gt; x( (a: A =&gt; m.M[B]) =&gt; f(lift2(a))(r))
 }
 
 // The original Reader monad can be reconstructed by composing ReaderT with the identity monad.
@@ -4702,7 +4684,7 @@ trait ReaderMonadImpl extends ReaderMonad {
   def bind[A,B](m: M[A], f: A =&gt; M[B]) : M[B] = r =&gt; f(m(r))(r)
   def ask : M[R] = identity
   def local[A](f: R =&gt; R, a: M[A]) : M[A] = (r) =&gt; a(f(r))
-}  
+}
 */
 
 // The design of StateT is similar to that of ReaderT
@@ -4719,8 +4701,8 @@ trait StateT extends MonadTransformer with StateMonad {
 // and again we can reconstruct the ordinary state monad.
 
 trait StateMonadImpl extends StateT {
-  val m = IdentityMonad
-}  
+  val m: IdentityMonad.type = IdentityMonad
+}
 
 /* We do not need this because we have just synthesized it.
 trait StateMonadImpl extends StateMonad {
@@ -4728,7 +4710,7 @@ trait StateMonadImpl extends StateMonad {
   def unit[A](a: A) : M[A] = (s: S) =&gt; (a,s)
   def bind[A,B](m: M[A], f: A =&gt; M[B]) : M[B] = (s: S) =&gt; {
      val (a,s2) = m(s)
-	 f(a)(s2)
+     f(a)(s2)
   }
   def getState : M[S] = s =&gt; (s,s)
   def putState(s: S) : M[Unit] = _ =&gt; ((),s)
@@ -4737,7 +4719,7 @@ trait StateMonadImpl extends StateMonad {
 
 // We could also synthesize ContinuationMonadImpl from a ContT
 // just as we did for ReaderMonadImpl and StateMonadImpl
-// But for simplicity we only present the ordinary 
+// But for simplicity we only present the ordinary
 // continuation monad here.
 
 trait ContinuationMonadImpl extends ContinuationMonad {
@@ -4751,14 +4733,15 @@ trait ContinuationMonadImpl extends ContinuationMonad {
 // The composition of the Reader monad and some continuation monad.
 trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
   val m : ContinuationMonad
-  override def callcc[A,B](f : (A =&gt; M[B]) =&gt; M[A]) : M[A] = (m.callcc[A,B] _)(f) // call to lift4 inserted automatically                                                                                    
+  override def callcc[A,B](f : (A =&gt; M[B]) =&gt; M[A]) : M[A] = (m.callcc[A,B] _)(f) // call to lift4 inserted automatically
 }
 
 // The composition of the Reader monad and the continuation monad implementation.
 trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
   type T
-  val m = new ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
-}  
+//  val m = new ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
+  object m extends ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
+}
 
 // Composition of reader monad with some state monad.
 trait ReaderStateMonadForwarder extends ReaderT with StateMonad {
@@ -4769,7 +4752,8 @@ trait ReaderStateMonadForwarder extends ReaderT with StateMonad {
 
 // Composition of reader monad with StateMonadImpl
 trait ReaderStateMonadImpl extends ReaderStateMonadForwarder {
-  val m = new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
+//  val m = new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
+  object m extends StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
 }
 
 /**
@@ -4777,10 +4761,10 @@ Now we use the monad library to modularize the interpreters of
 the various language variants we have seen so far. */
 
 trait Expressions extends Monad {
-  abstract class Value 
+  abstract class Value
   abstract class Exp {
     def eval : M[Value]
-  }  
+  }
 }
 
 trait Numbers extends Expressions {
@@ -4791,26 +4775,28 @@ trait Arithmetic extends Numbers {
   case class Num(n: Int) extends Exp {
     def eval = unit(NumV(n))
   }
-  implicit def num2exp(n: Int) = Num(n)
-  
+  implicit def num2exp(n: Int): Exp = Num(n)
+
   case class Add(lhs: Exp, rhs: Exp) extends Exp {
-    def eval = for { 
-	             l &lt;- lhs.eval 
-				 r &lt;- rhs.eval
-			   } yield (l,r) match {
-			                case (NumV(v1), NumV(v2)) =&gt; NumV(v1+v2)
-							case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-						}
-  }		
+    def eval = for {
+                 l &lt;- lhs.eval
+                 r &lt;- rhs.eval
+               } yield (l,r) match {
+                 case (NumV(v1), NumV(v2)) =&gt; NumV(v1+v2)
+                 case _ =&gt; sys.error(&quot;can only add numbers&quot;)
+               }
+  }
 }
 
-trait If0 extends Numbers {  
+trait If0 extends Numbers {
   case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp {
     def eval = for {
-	             c &lt;- cond.eval
-	             res &lt;- c match { case NumV(0) =&gt; thenExp.eval
-	                              case _ =&gt; elseExp.eval }
-	           } yield res 
+                c &lt;- cond.eval
+                res &lt;- c match {
+                  case NumV(0) =&gt; thenExp.eval
+                  case _ =&gt; elseExp.eval
+                }
+              } yield res
   }
 }
 
@@ -4821,23 +4807,24 @@ trait Functions extends Expressions with ReaderMonad {
   case class ClosureV(f: Fun, env: Env) extends Value
   case class Fun(param: String, body: Exp) extends Exp {
     def eval = for { env &lt;- ask } yield ClosureV(this, env)
-  }	
+  }
   case class Ap(f: Exp, a: Exp) extends Exp {
     def eval = for {
-	            fv &lt;- f.eval
-				av &lt;- a.eval
-				res &lt;- fv match { case ClosureV(fun,cenv) =&gt; local( env =&gt; cenv + (fun.param -&gt; av), fun.body.eval) }
-		       } yield res
-
+                fv &lt;- f.eval
+                av &lt;- a.eval
+                res &lt;- fv match {
+                  case ClosureV(fun,cenv) =&gt; local( env =&gt; cenv + (fun.param -&gt; av), fun.body.eval)
+                }
+       } yield res
   }
   case class Id(x: String) extends Exp {
     def eval = for {
-	             env &lt;- ask
-			   } yield env(x)
+               env &lt;- ask
+             } yield env(x)
   }
-  implicit def id2exp(x: String) = Id(x)
+  implicit def id2exp(x: String): Exp = Id(x)
   def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
-}  
+}
 
 
 trait Boxes extends Expressions with StateMonad  {
@@ -4851,57 +4838,57 @@ trait Boxes extends Expressions with StateMonad  {
     _nextAddress += 1
     _nextAddress
   }
-  
+
   case class AddressV(a: Address) extends Value
 
   case class NewBox(e: Exp) extends Exp {
     def eval = {
-	  val a = nextAddress
-	  for {
-	    v &lt;- e.eval
-		s &lt;- getState
-		_ &lt;- putState(s + (a -&gt; v))
-	  } yield AddressV(a)
+      val a = nextAddress
+      for {
+        v &lt;- e.eval
+        s &lt;- getState
+        _ &lt;- putState(s + (a -&gt; v))
+      } yield AddressV(a)
     }
   }
   case class SetBox(b: Exp, e: Exp) extends Exp {
-     def eval = 
-       for {
-          box &lt;- b.eval
-          ev  &lt;- e.eval
-          s   &lt;- getState
-          _   &lt;- putState(box match { case AddressV(a) =&gt; s.updated(a,ev) })
-	   } yield ev
+    def eval =
+      for {
+         box &lt;- b.eval
+         ev  &lt;- e.eval
+         s   &lt;- getState
+         _   &lt;- putState(box match { case AddressV(a) =&gt; s.updated(a,ev) })
+      } yield ev
   }
-  
-  
+
+
   case class OpenBox(b: Exp) extends Exp {
     def eval = for {
-	             bv &lt;- b.eval
-	             s  &lt;- getState
-			   } yield (bv match { case AddressV(a) =&gt; s(a) })
+                 bv &lt;- b.eval
+                 s  &lt;- getState
+              } yield (bv match { case AddressV(a) =&gt; s(a) })
   }
   case class Seq(e1: Exp, e2: Exp) extends Exp {
     def eval = bind(e1.eval,(_:Value) =&gt; e2.eval)
   }
-  
+
 }
 
 trait Letcc extends Expressions with ContinuationMonad with ReaderMonad{
   override type R = Map[String,Value]
-  
+
   // We introduce a new application form CAp instead of using Ap because we cannot extend Ap
   case class CAp(f: Exp, a: Exp) extends Exp {
-    override def eval : M[Value] = 
-        for {
-           fv &lt;- f.eval
-           av &lt;- a.eval
-           res &lt;- fv match { case ContV(f) =&gt; f(av) }
-         } yield res
+    override def eval : M[Value] =
+      for {
+         fv &lt;- f.eval
+         av &lt;- a.eval
+         res &lt;- fv match { case ContV(f) =&gt; f(av) }
+       } yield res
   }
   case class Letcc(param: String, body: Exp) extends Exp {
     override def eval : M[Value] = callcc[Value,Value](k =&gt; local( env =&gt; env + (param -&gt; ContV(k)), body.eval))
-  }  
+  }
   case class ContV(f: Value =&gt; M[Value]) extends Value
 }
 
@@ -4911,7 +4898,7 @@ trait Letcc extends Expressions with ContinuationMonad with ReaderMonad{
 object AE extends Arithmetic with IdentityMonad {
   val aetest = Add(1,Add(2,3))
 }
-assert(AE.aetest.eval == AE.NumV(6)) 
+assert(AE.aetest.eval == AE.NumV(6))
 
 object FAELang extends Functions with Arithmetic with ReaderMonadImpl {
   val faetest = Ap(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Add(2,3))
@@ -4922,15 +4909,15 @@ object BCFAE extends Boxes with Arithmetic with Functions with If0 with ReaderSt
                 wth(&quot;toggle&quot;, Fun(&quot;dummy&quot;, If0(OpenBox(&quot;switch&quot;),
                                           Seq(SetBox(&quot;switch&quot;, 1), 1),
                                           Seq(SetBox(&quot;switch&quot;, 0), 0))),
-                             Add(Ap(&quot;toggle&quot;,42), Ap(&quot;toggle&quot;,42))))  
-}  
+                             Add(Ap(&quot;toggle&quot;,42), Ap(&quot;toggle&quot;,42))))
+}
 
 assert(BCFAE.test.eval(Map.empty)(Map.empty)._1 == BCFAE.NumV(1))
 
 object FAEwLetcc extends Arithmetic with Functions with If0 with Letcc with ReaderContinuationMonadImpl {
   override type T = Value
-  val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, CAp(&quot;k&quot;, 3))))  
-}  
+  val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, CAp(&quot;k&quot;, 3))))
+}
 
 assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
 </code></pre>
