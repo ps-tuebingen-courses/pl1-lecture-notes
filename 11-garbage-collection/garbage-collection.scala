@@ -109,7 +109,7 @@ def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
          case ClosureV(f, cEnv)
            => eval(
                 f.body,
-                (cEnv + (f.param -> eval(a, stack, store))) :: stack,
+                (cEnv += (f.param -> eval(a, stack, store))) :: stack,
                 store
               )
          case _ => sys.error("can only apply functions")
