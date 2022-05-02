@@ -1,6 +1,6 @@
 # First order functions
 
-The content of this chapter is available as a scala file [here.](./first-order-functions.scala)
+The content of this chapter is available as a Scala file [here.](./first-order-functions.scala)
 
 ```scala mdoc:invisible
 import scala.language.implicitConversions
@@ -17,7 +17,7 @@ Here we consider so-called first-order functions, that - unlike higher-order fun
 to or be returned from other functions. First-order functions are simply called by name.
 To introduce first-order functions, we need two new things: The possibility to define functions, and the possibility to call functions.
 A call to a function is an expression, whereas functions are defined separately. Functions can have an arbitrary number of arguments.
-The following definitions are the language we have analyzed so far
+The following definitions are the language we have analyzed so far together with the new language constructs for first-order functions:
 
 ```scala mdoc
 object Syntax {

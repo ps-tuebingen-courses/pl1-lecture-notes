@@ -1,6 +1,6 @@
 # Recursive Functions
 
-The content of this chapter is available as a scala file [here.](./recursive-functions.scala)
+The content of this chapter is available as a Scala file [here.](./recursive-functions.scala)
 
 ```scala mdoc:invisible
 import scala.language.implicitConversions

@@ -1,6 +1,6 @@
 # Defunctionalization
 
-The content of this chapter is available as a scala file [here.](./defunctionalization.scala)
+The content of this chapter is available as a Scala file [here.](./defunctionalization.scala)
 
 ```scala mdoc
 /**

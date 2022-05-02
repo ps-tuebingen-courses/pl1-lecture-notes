@@ -1,6 +1,6 @@
 # Type Inference
 
-The content of this chapter is available as a scala file [here.](./type-inference.scala)
+The content of this chapter is available as a Scala file [here.](./type-inference.scala)
 
 ```scala mdoc
 import scala.language.implicitConversions

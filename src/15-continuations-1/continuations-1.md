@@ -1,6 +1,6 @@
 # Continuations 1
 
-The content of this chapter is available as a scala file [here.](./continuations-1.scala)
+The content of this chapter is available as a Scala file [here.](./continuations-1.scala)
 
 ```scala mdoc
 import scala.io.StdIn.readLine

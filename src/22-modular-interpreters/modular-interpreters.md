@@ -1,6 +1,6 @@
 # Modular Interpreters
 
-The content of this chapter is available as a scala file [here.](./modular-interpreters.scala)
+The content of this chapter is available as a Scala file [here.](./modular-interpreters.scala)
 
 ```scala mdoc
 import scala.language.higherKinds

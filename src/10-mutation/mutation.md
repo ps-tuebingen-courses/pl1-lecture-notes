@@ -1,6 +1,6 @@
 # Mutation
 
-The content of this chapter is available as a scala file [here.](./mutation.scala)
+The content of this chapter is available as a Scala file [here.](./mutation.scala)
 
 ```scala mdoc
 import scala.language.implicitConversions
