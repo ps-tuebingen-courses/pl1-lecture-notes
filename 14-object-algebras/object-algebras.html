@@ -143,7 +143,7 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="object-algebras"><a class="header" href="#object-algebras">Object Algebras</a></h1>
-<p>The content of this chapter is available as a scala file <a href="./object-algebras.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="./object-algebras.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 
 /* Object algebras: A practical way of using Church Encodings */
@@ -233,13 +233,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$$anon$4@70bbdfaa
+// zero: Num = repl.MdocSession$$anon$4@3cf8f66b
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$$anon$6@459bcaa
+// one: Num = repl.MdocSession$$anon$6@4c1a0606
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$$anon$8@521e57e1
+// two: Num = repl.MdocSession$$anon$8@5738cc9d
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$$anon$10@eb765fd
+// three: Num = repl.MdocSession$$anon$10@6f481fa8
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {

@@ -198,7 +198,7 @@ like or dislike, and why?</li>
 <li>How important is the syntax of a PL?</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="scala-basics"><a class="header" href="#scala-basics">Scala Basics</a></h1>
-<p>The content of this chapter is available as a scala file <a href="02-scala-basics/./scala-basics.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="02-scala-basics/./scala-basics.scala">here.</a></p>
 <pre><code class="language-scala">val x = 2 + 2;
 // x: Int = 4
 </code></pre>
@@ -270,7 +270,7 @@ object AE {
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="arithmetic-expressions-with-variables"><a class="header" href="#arithmetic-expressions-with-variables">Arithmetic Expressions With Variables</a></h1>
-<p>The content of this chapter is available as a scala file <a href="03-arithmetic-expressions/./arithmetic-expressions.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="03-arithmetic-expressions/./arithmetic-expressions.scala">here.</a></p>
 <p>Let us now consider an extension of the arithmetic expression language with variables. We do this by a new kind of expression, which we
 call Identifier, or Id.</p>
 <p>\[
@@ -418,7 +418,7 @@ higher-order function is called <em>currying</em>.</p>
 <pre><code class="language-scala">}
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="desugaring"><a class="header" href="#desugaring">Desugaring</a></h1>
-<p>The content of this chapter is available as a scala file <a href="04-desugaring/./desugaring.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="04-desugaring/./desugaring.scala">here.</a></p>
 <h2 id="desugaring-1"><a class="header" href="#desugaring-1">Desugaring</a></h2>
 <p>You have already seen the basic structure of an interpreter by means of an interpreter for a language of arithmetic <code>Exps</code>:</p>
 <pre><code class="language-scala">object AE {
@@ -563,7 +563,7 @@ namely during the construction of the AST:</p>
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="name-binding"><a class="header" href="#name-binding">Name Binding</a></h1>
-<p>The content of this chapter is available as a scala file <a href="05-name-binding/./name-binding.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="05-name-binding/./name-binding.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 </code></pre>
 <h2 id="name-binding-1"><a class="header" href="#name-binding-1">Name Binding</a></h2>
@@ -806,7 +806,7 @@ assert(eval5(test5) == 5) // Success!
 <li>Correct implementations of substitution need to handle free, bound, and binding instances of names and their scopes correctly.</li>
 </ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="first-order-functions"><a class="header" href="#first-order-functions">First order functions</a></h1>
-<p>The content of this chapter is available as a scala file <a href="06-first-order-functions/./first-order-functions.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="06-first-order-functions/./first-order-functions.scala">here.</a></p>
 <h2 id="first-order-functions-1"><a class="header" href="#first-order-functions-1">First-Order Functions</a></h2>
 <p>In the last lecture we have seen how we can give commonly occuring (sub)expressions a name via the <code>With</code> construct. Often, however,
 we can identify <em>patterns</em> of expressions that occur in many places, such as <code>5*5/2</code>, <code>7*7/2</code> and <code>3*3/2</code>, the common pattern
@@ -817,7 +817,7 @@ Here we consider so-called first-order functions, that - unlike higher-order fun
 to or be returned from other functions. First-order functions are simply called by name.
 To introduce first-order functions, we need two new things: The possibility to define functions, and the possibility to call functions.
 A call to a function is an expression, whereas functions are defined separately. Functions can have an arbitrary number of arguments.
-The following definitions are the language we have analyzed so far</p>
+The following definitions are the language we have analyzed so far together with the new language constructs for first-order functions:</p>
 <pre><code class="language-scala">object Syntax {
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
@@ -985,7 +985,7 @@ and complex ﬂows of control. We will therefore regard dynamic scope as an erro
 that are quite useful. For instance, exception handlers are typically dynamically scoped: A thrown exception is dispatched to the
 most recently encountered active exception handler for that exception type. </p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="higher-order-functions"><a class="header" href="#higher-order-functions">Higher order functions</a></h1>
-<p>The content of this chapter is available as a scala file <a href="07-higher-order-functions/./higher-order-functions.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="07-higher-order-functions/./higher-order-functions.scala">here.</a></p>
 <h1 id="higher-order-functions-1"><a class="header" href="#higher-order-functions-1">Higher-Order Functions</a></h1>
 <p>F1-WAE, the language with first-order functions, lets us abstract over patterns that involve numbers. But what if we want to abstract
 over patterns that involve functions, such as the &quot;list fold&quot; pattern, whose instantiations include summing or multiplying a list of
@@ -1243,7 +1243,7 @@ assert( evalWithEnv(test, Map.empty) == NumV(12))
 assert( evalWithEnv(test2,Map.empty) == NumV(8))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="lazy-evaluation"><a class="header" href="#lazy-evaluation">Lazy Evaluation</a></h1>
-<p>The content of this chapter is available as a scala file <a href="08-lazy-evaluation/./lazy-evaluation.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="08-lazy-evaluation/./lazy-evaluation.scala">here.</a></p>
 <h2 id="motivation-for-lazy-evaluation"><a class="header" href="#motivation-for-lazy-evaluation">Motivation for Lazy Evaluation</a></h2>
 <p>Read &quot;Why Functional Programming Matters&quot; by John Hughes available at http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html
 What lazy evaluation means:</p>
@@ -1545,7 +1545,7 @@ determine that an argument will definitely be used (lookup &quot;strictness anal
 <li>How can one simulate lazy evaluation in an eager language? Basic idea: 'Lambda' as evaluation firewall.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="recursive-functions"><a class="header" href="#recursive-functions">Recursive Functions</a></h1>
-<p>The content of this chapter is available as a scala file <a href="09-recursive-functions/./recursive-functions.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="09-recursive-functions/./recursive-functions.scala">here.</a></p>
 <h2 id="recursion"><a class="header" href="#recursion">Recursion</a></h2>
 <p>Let's try to write a function that computes the sum of the first n integers. Let's pretend we do not know that the sum of the
 first n integers is $n*(n+1)/2$ and instead compute the sum in a loop. Let's try to do this in FAE (with if0):</p>
@@ -1714,7 +1714,7 @@ assert(eval(test1, Map()) == NumV(0))
 assert(eval(test2, Map()) == NumV(0))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="mutation"><a class="header" href="#mutation">Mutation</a></h1>
-<p>The content of this chapter is available as a scala file <a href="10-mutation/./mutation.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="10-mutation/./mutation.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 
 /**
@@ -2054,7 +2054,7 @@ val teststore = Map(
 assert(gc(Map(&quot;a&quot; -&gt; AddressV(10)), teststore) == teststore - 7 - 9)
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="garbage-collection"><a class="header" href="#garbage-collection">Garbage Collection</a></h1>
-<p>The content of this chapter is available as a scala file <a href="11-garbage-collection/./garbage-collection.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="11-garbage-collection/./garbage-collection.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 /**
 Garbage Collection
@@ -2356,7 +2356,7 @@ def runTest4 = eval(
                )
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="syntactic-and-meta-interpretation"><a class="header" href="#syntactic-and-meta-interpretation">Syntactic and Meta Interpretation</a></h1>
-<p>The content of this chapter is available as a scala file <a href="12-meta-interpretation/./meta-interpretation.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="12-meta-interpretation/./meta-interpretation.scala">here.</a></p>
 <pre><code class="language-scala">/**
 Syntactic interpretation vs meta intepretation
 ==============================================
@@ -2477,7 +2477,7 @@ object FAE {
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="church-encodings"><a class="header" href="#church-encodings">Church Encodings</a></h1>
-<p>The content of this chapter is available as a scala file <a href="13-church-encoding/./church-encoding.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="13-church-encoding/./church-encoding.scala">here.</a></p>
 <pre><code class="language-scala">/**
 Church Encoding
 ===============
@@ -3032,7 +3032,7 @@ val test = Ap(printnum, Ap(multlist, list323))
 def exec = eval(test, Map.empty)
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="object-algebras"><a class="header" href="#object-algebras">Object Algebras</a></h1>
-<p>The content of this chapter is available as a scala file <a href="14-object-algebras/./object-algebras.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="14-object-algebras/./object-algebras.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 
 /* Object algebras: A practical way of using Church Encodings */
@@ -3122,13 +3122,13 @@ def plus(a: Num, b: Num) = new Num {
 
 /* Here is the representation of some numbers. */
 val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$$anon$4@70bbdfaa
+// zero: Num = repl.MdocSession$$anon$4@3cf8f66b
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$$anon$6@459bcaa
+// one: Num = repl.MdocSession$$anon$6@4c1a0606
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$$anon$8@521e57e1
+// two: Num = repl.MdocSession$$anon$8@5738cc9d
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$$anon$10@eb765fd
+// three: Num = repl.MdocSession$$anon$10@6f481fa8
 
 /* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
 object NumAlg extends NumSig[Int] {
@@ -3263,7 +3263,7 @@ val testres3 = test2(prettyprintT)
 // testres3: String = &quot;(x0 =&gt; (x1 =&gt; (x1+x2)))(5)(3)&quot;
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-1"><a class="header" href="#continuations-1">Continuations 1</a></h1>
-<p>The content of this chapter is available as a scala file <a href="15-continuations-1/./continuations-1.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="15-continuations-1/./continuations-1.scala">here.</a></p>
 <pre><code class="language-scala">import scala.io.StdIn.readLine
 /*
 Continuations
@@ -3335,7 +3335,7 @@ def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot;+ n1 + &quot;
  * We can express the continuation as a function: */
 
 val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
-// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2884/0x0000000100cf7840@6b44fde
+// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2884/0x0000000100bb8840@19a4d07b
 
 /* Similarly, the continuation at the second point of interaction is:
  * val cont2 = (m: Int) =&gt; println(n+m)
@@ -3487,7 +3487,7 @@ def allCosts2_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing =
    map_k(itemList, (x:String,k2:Int=&gt;Nothing) =&gt; webread_k(&quot;Cost of item &quot;+x+ &quot;:&quot;, k2),(l:List[Int]) =&gt; k(l.sum))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-2"><a class="header" href="#continuations-2">Continuations 2</a></h1>
-<p>The content of this chapter is available as a scala file <a href="16-continuations-2/./continuations-2.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="16-continuations-2/./continuations-2.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 
 /* Today's goal is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
@@ -3629,7 +3629,7 @@ def cps(e: Exp) : CPSCont = e match {
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="first-class-continuations"><a class="header" href="#first-class-continuations">First Class Continuations</a></h1>
-<p>The content of this chapter is available as a scala file <a href="17-first-class-continuations/./first-class-continuations.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="17-first-class-continuations/./first-class-continuations.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 
 /** 
@@ -3901,7 +3901,7 @@ assert(starteval(testprog) == NumV(4))
 
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="shift-reset"><a class="header" href="#shift-reset">Shift Reset</a></h1>
-<p>The content of this chapter is available as a scala file <a href="19-shift-reset/./shift-reset.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="19-shift-reset/./shift-reset.scala">here.</a></p>
 <pre><code class="language-scala">/**
 Delimited Continuations
 =======================
@@ -3962,7 +3962,7 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value) : Value = e match {
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="introduction-to-monads"><a class="header" href="#introduction-to-monads">Introduction to Monads</a></h1>
-<p>The content of this chapter is available as a scala file <a href="20-monads-intro/./monads-intro.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="20-monads-intro/./monads-intro.scala">here.</a></p>
 <pre><code class="language-scala">/**
 Monads
 ======
@@ -4459,7 +4459,7 @@ class OptionTMonad[M[_]](val m : Monad[M]) extends Monad[OptionT[M]#x] {
 }		
 
 val ListOptionM = new OptionTMonad(ListMonad)
-// ListOptionM: OptionTMonad[[A &gt;: Nothing &lt;: Any] =&gt; List[A]] = repl.MdocSession$App$OptionTMonad@5e5795ab
+// ListOptionM: OptionTMonad[[A &gt;: Nothing &lt;: Any] =&gt; List[A]] = repl.MdocSession$App$OptionTMonad@4a7d88f6
 
 // in this case, for-comprehension syntax doesn't work because it clashes with the built-in support for
 // for-comprehensions for lists :-(
@@ -4484,7 +4484,7 @@ def example4 = {
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="io-monad"><a class="header" href="#io-monad">IO Monad</a></h1>
-<p>The content of this chapter is available as a scala file <a href="21-io-monad/./io-monad.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="21-io-monad/./io-monad.scala">here.</a></p>
 <pre><code class="language-scala">trait IOMonad {
   type IO[_]
   def unit[A](a: A): IO[A]
@@ -4506,7 +4506,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }  
-// iomonad: IOMonad = repl.MdocSession$$anon$1@1f1f578f  
+// iomonad: IOMonad = repl.MdocSession$$anon$1@305e4970  
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] = 
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;
@@ -4518,7 +4518,7 @@ def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
 def test = iomonad.performIO(someIOActions(iomonad))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="modular-interpreters"><a class="header" href="#modular-interpreters">Modular Interpreters</a></h1>
-<p>The content of this chapter is available as a scala file <a href="22-modular-interpreters/./modular-interpreters.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="22-modular-interpreters/./modular-interpreters.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.higherKinds
 import scala.language.implicitConversions
 import scala.language.reflectiveCalls
@@ -5007,7 +5007,7 @@ assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
 
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="defunctionalization"><a class="header" href="#defunctionalization">Defunctionalization</a></h1>
-<p>The content of this chapter is available as a scala file <a href="24-defunctionalization/./defunctionalization.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="24-defunctionalization/./defunctionalization.scala">here.</a></p>
 <pre><code class="language-scala">/**
 Defunctionalization
 ===================
@@ -5204,7 +5204,7 @@ object Defunctionalized {
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-systems"><a class="header" href="#type-systems">Type Systems</a></h1>
-<p>The content of this chapter is available as a scala file <a href="25-type-systems/./type-systems.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="25-type-systems/./type-systems.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 /**
 Type Systems
@@ -5305,7 +5305,7 @@ def typeCheck(e: Exp) : Type = e match {
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="simply-typed-lambda-calculus"><a class="header" href="#simply-typed-lambda-calculus">Simply Typed Lambda Calculus</a></h1>
-<p>The content of this chapter is available as a scala file <a href="26-stlc/./stlc.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="26-stlc/./stlc.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 
 /**
@@ -5494,7 +5494,7 @@ def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-inference"><a class="header" href="#type-inference">Type Inference</a></h1>
-<p>The content of this chapter is available as a scala file <a href="27-type-inference/./type-inference.scala">here.</a></p>
+<p>The content of this chapter is available as a Scala file <a href="27-type-inference/./type-inference.scala">here.</a></p>
 <pre><code class="language-scala">import scala.language.implicitConversions
 
 // Hindley-Milner type inference with let-polymorphism
