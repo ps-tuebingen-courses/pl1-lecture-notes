@@ -56,6 +56,7 @@ should give as result ``1`` in a proper implementation.
 Let's consider how our interpreter could handle sequencing.
 
 Here is an attempt:
+
 ```
      case Seq(e1, e2) => {
        eval(e1, env)
@@ -152,7 +153,7 @@ evaluation of this program.
 
 Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
-This is called _store-passing style:.  Consequently, we have to update the type of our evaluator.
+This is called _store-passing style_.  Consequently, we have to update the type of our evaluator.
 
 
 ```scala mdoc
@@ -161,12 +162,11 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
   case Num(n) => (NumV(n), s)
   case Id(x) => (env(x), s)
   case f@Fun(_, _) => (ClosureV(f, env), s)
-  ```
 
-  In recursive cases we have to thread the store through the
-   evaluation. In particular, we define the order of evaluation
-   explicitly through data flow dependencies.
-   ```scala mdoc
+
+// In recursive cases we have to thread the store through the evaluation. In particular, we define the order of evaluation
+// explicitly through data flow dependencies.
+
   case If0(cond, thenExp, elseExp)
     => eval(cond, env, s) match {
          case (NumV(0), s1) => eval(thenExp, env, s1)
@@ -208,13 +208,14 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
               }
          case _ => sys.error("can only apply functions")
        }
-```
-In a sequence, we ignore the result of evaluating e1 but not its effect on the store.
-```scala mdoc
+
+
+// In a sequence, we ignore the result of evaluating e1 but not its effect on the store.
+
   case Seq(e1, e2) => eval(e2, env, eval(e1, env, s)._2)
-```
-  A new box is created by putting it into the store at a new address.
-  ```scala mdoc
+
+//  A new box is created by putting it into the store at a new address.
+
   case NewBox(e: Exp)
     => eval(e, env, s) match {
          case (v, s1) => {
@@ -222,12 +223,11 @@ In a sequence, we ignore the result of evaluating e1 but not its effect on the s
            (AddressV(a), s1 + (a -> v))
          }
        }
-```
 
-Setting a box is now a two-step process: First evaluate b to an
-address, then lookup and update the value associated to the
-address in the store. Note that "updated" is a functional method.
-```scala mdoc
+// Setting a box is now a two-step process: First evaluate b to an
+// address, then lookup and update the value associated to the
+// address in the store. Note that "updated" is a functional method.
+
   case SetBox(b: Exp, e: Exp)
     => eval(b, env, s) match {
          case (AddressV(a), s1)
@@ -236,11 +236,10 @@ address in the store. Note that "updated" is a functional method.
               }
          case _ => sys.error("can only set boxes")
        }
-```
-  OpenBox uses the same two-step process but does not update the
-  store.
 
-```scala mdoc
+// OpenBox uses the same two-step process but does not update the
+// store.
+
   case OpenBox(b: Exp)
     => eval(b, env, s) match {
          case (AddressV(a), s1) => (s1(a), s1)
@@ -257,7 +256,7 @@ Our model of stores is sufficient to illustrate how modern languages deal with m
 Garbage collectors automatically reclaim memory that is no longer referenced from within the active part of the computation.
 We can* model a (naive) mark-and-sweep garbage collector as follows:
 
-```scala mdoc:silent
+```scala mdoc
 def gc(env: Env, store:Store) : Store = {
 
   def allAddrInVal(v: Value) : Set[Address] = v match {
@@ -279,6 +278,7 @@ def gc(env: Env, store:Store) : Store = {
   store.view.filterKeys(marked(_)).toMap           // and sweep!
 }
 ```
+
 ```scala mdoc
 val teststore = Map(
   6  -> NumV(42),
@@ -304,5 +304,3 @@ Furthermore, it must reclaim enough garbage to be actually useful. Reachability 
 out to be a rather useful (and sound) approximation of semantic disposability. Garbage collectors must also be efficient.
 Efficiency of GC is a huge research topic that we are not going to discuss. One efficiency problem with garbage collectors based on
 reachability that we want to mention is the "stop-the-world" phenomenon.
-
-```
