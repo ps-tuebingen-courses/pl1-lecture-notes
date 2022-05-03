@@ -1,6 +1,6 @@
 # Syntactic and Meta Interpretation
 
-The content of this chapter is available as a scala file [here.](./meta-interpretation.scala)
+The content of this chapter is available as a Scala file [here.](./meta-interpretation.scala)
 
 ```scala mdoc
 /**

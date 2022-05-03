@@ -1,6 +1,6 @@
 # Shift Reset
 
-The content of this chapter is available as a scala file [here.](./shift-reset.scala)
+The content of this chapter is available as a Scala file [here.](./shift-reset.scala)
 
 
 ```scala mdoc

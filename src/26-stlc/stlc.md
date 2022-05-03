@@ -1,6 +1,6 @@
 # Simply Typed Lambda Calculus
 
-The content of this chapter is available as a scala file [here.](./stlc.scala)
+The content of this chapter is available as a Scala file [here.](./stlc.scala)
 
 ```scala mdoc
 import scala.language.implicitConversions

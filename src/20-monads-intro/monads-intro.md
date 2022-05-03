@@ -1,6 +1,6 @@
 # Introduction to Monads
 
-The content of this chapter is available as a scala file [here.](./monads-intro.scala)
+The content of this chapter is available as a Scala file [here.](./monads-intro.scala)
 
 ```scala mdoc
 /**

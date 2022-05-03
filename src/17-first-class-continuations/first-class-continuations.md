@@ -1,6 +1,6 @@
 # First Class Continuations
 
-The content of this chapter is available as a scala file [here.](./first-class-continuations.scala)
+The content of this chapter is available as a Scala file [here.](./first-class-continuations.scala)
 
 ```scala mdoc
 import scala.language.implicitConversions

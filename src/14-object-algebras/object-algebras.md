@@ -1,5 +1,5 @@
 # Object Algebras
-The content of this chapter is available as a scala file [here.](./object-algebras.scala)
+The content of this chapter is available as a Scala file [here.](./object-algebras.scala)
 
 ```scala mdoc
 import scala.language.implicitConversions

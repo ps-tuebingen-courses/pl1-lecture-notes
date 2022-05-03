@@ -1,6 +1,6 @@
 # IO Monad
 
-The content of this chapter is available as a scala file [here.](./io-monad.scala)
+The content of this chapter is available as a Scala file [here.](./io-monad.scala)
 
 ```scala mdoc
 trait IOMonad {

@@ -1,6 +1,6 @@
 # Arithmetic Expressions With Variables
 
-The content of this chapter is available as a scala file [here.](./arithmetic-expressions.scala)
+The content of this chapter is available as a Scala file [here.](./arithmetic-expressions.scala)
 
 ```scala mdoc:invisible
 import scala.language.implicitConversions

@@ -1,6 +1,6 @@
 # Type Systems
 
-The content of this chapter is available as a scala file [here.](./type-systems.scala)
+The content of this chapter is available as a Scala file [here.](./type-systems.scala)
 
 ```scala mdoc
 import scala.language.implicitConversions

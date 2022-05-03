@@ -1,6 +1,6 @@
 # Church Encodings
 
-The content of this chapter is available as a scala file [here.](./church-encoding.scala)
+The content of this chapter is available as a Scala file [here.](./church-encoding.scala)
 
 ```scala mdoc
 /**

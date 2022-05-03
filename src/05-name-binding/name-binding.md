@@ -1,6 +1,6 @@
 # Name Binding
 
-The content of this chapter is available as a scala file [here.](./name-binding.scala)
+The content of this chapter is available as a Scala file [here.](./name-binding.scala)
 
 ```scala mdoc
 import scala.language.implicitConversions

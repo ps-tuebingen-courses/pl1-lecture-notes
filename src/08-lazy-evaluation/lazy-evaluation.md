@@ -1,6 +1,6 @@
 # Lazy Evaluation
 
-The content of this chapter is available as a scala file [here.](./lazy-evaluation.scala)
+The content of this chapter is available as a Scala file [here.](./lazy-evaluation.scala)
 
 
 ```scala mdoc:invisible
