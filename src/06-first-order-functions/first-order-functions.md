@@ -135,12 +135,12 @@ is captured in the following type definition:
 type Env = Map[String,Int]
 ```
 
-Initially, we have no substitutions to perform, so the repository is empty. Every time we encounter a construct (a with or application)
-that requires substitution, we augment the repository with one more entry, recording the identiﬁer’s name and the value (if eager) or
+Initially, we have no substitutions to perform, so the repository is empty. Every time we encounter a construct (a `With` or an application `Call`)
+that requires substitution, we augment the repository with one more entry, recording the identifier’s name and the value (if eager) or
 expression (if lazy) it should eventually be substituted with. We continue to evaluate without actually performing the substitution.
-This strategy breaks a key invariant we had established earlier, which is that any identiﬁer the interpreter could encounter must be
+This strategy breaks a key invariant we had established earlier, which is that any identifier the interpreter could encounter must be
 free, for had it been bound, it would have already been substituted.  Now that we’re longer using the substitution-based model, we may
-encounter bound identiﬁers during interpretation.  How do we handle them?  We must substitute them by consulting the repository.
+encounter bound identifiers during interpretation.  How do we handle them?  We must substitute them by consulting the repository.
 
 ```scala mdoc
 def evalWithEnv(funs: Funs, env: Env, e: Exp) : Int = e match {
@@ -148,7 +148,7 @@ def evalWithEnv(funs: Funs, env: Env, e: Exp) : Int = e match {
   case Id(x) => env(x) // look up in repository of deferred substitutions
   case Add(l,r) => evalWithEnv(funs,env,l) + evalWithEnv(funs,env,r)
   case Mul(l,r) => evalWithEnv(funs,env,l) * evalWithEnv(funs,env,r)
-  case With(x, xdef, body) => evalWithEnv(funs,env+ ((x,evalWithEnv(funs,env,xdef))),body)
+  case With(x, xdef, body) => evalWithEnv(funs,env + ((x,evalWithEnv(funs,env,xdef))),body)
   case Call(f,args) => {
      val fd = funs(f) // lookup function definition
      val vargs = args.map(evalWithEnv(funs,env,_)) // evaluate function arguments
@@ -200,19 +200,19 @@ assert(evalDynFunnyFun == 7)
 Obviously this interpreter is "buggy" in the sense that it does not agree with the substitution-based interpreter. But is this semantics reasonable?
 Let's introduce some terminology to make the discussion simpler:
 
-> **Deﬁnition (Static Scope)**:
-> In a language with static scope, the scope of an identiﬁer’s binding is a syntactically delimited region.
+> **Definition (Static Scope)**:
+> In a language with static scope, the scope of an identifier’s binding is a syntactically delimited region.
 > A typical region would be the body of a function or other binding construct.
 
-> **Deﬁnition (Dynamic Scope)**: In a language with dynamic scope, the scope of an identiﬁer’s binding is the entire remainder of the
+> **Definition (Dynamic Scope)**: In a language with dynamic scope, the scope of an identifier’s binding is the entire remainder of the
 > execution during which that binding is in effect.
 
 
 We see that ``eval`` and ``evalWithEnv`` give our language static scoping, whereas `evalDynScope` gives our language dynamic scoping.
 Armed with this terminology, we claim that dynamic scope is entirely unreasonable. The problem is that we simply cannot determine what
-the value of a program will be without knowing everything about its execution history. If the function `f` were invoked by some other
-sequence of functions that did not bind a value for `n`, then that particular application of `f` would result in an error, even though a
-previous application of `f` in the very same program’s execution completed successfully! In other words, simply by looking at the
+the value of a program will be without knowing everything about its execution history. If a function `f` were invoked by some
+sequence of other functions that did not bind a value for some parameter of `f`, then that particular application of `f` would result in an error, even though a
+previous application of `f` in the very same program’s execution may have completed successfully! In other words, simply by looking at the
 source text of `f`, it would be impossible to determine one of the most rudimentary properties of a program: whether or not a given
 identifier was bound. You can only imagine the mayhem this would cause in a large software system, especially with multiple developers
 and complex ﬂows of control. We will therefore regard dynamic scope as an error. That said, there are facets of dynamic binding
