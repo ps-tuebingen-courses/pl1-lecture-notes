@@ -1715,21 +1715,15 @@ assert(eval(test2, Map()) == NumV(0))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="mutation"><a class="header" href="#mutation">Mutation</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="10-mutation/./mutation.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-/**
-Mutation
-========
-Today we study _mutation_. More specifically, we want to equip our language with mutable data structures.
-Typical mutable data structures in common languages include objects with mutable fields or structures/records in languages like C or Pascal.
+<p>Today we study <em>mutation</em>. More specifically, we want to equip our language with mutable data structures.</p>
+<p>Typical mutable data structures in common languages include objects with mutable fields or structures/records in languages like C or Pascal.
 We will study a particularly simple mutable data structure: Boxes. In OO parlance, boxes can be thought of as an object with
 a single field that can be mutated. Despite their simplicity, boxes already illustrate all main issues associated with adding
-mutable state to a language.
-A different and less interesting form of mutation is the mutability of _variables_, such as the possibility to assign something
-to a 'local' variable bound via a lambda or ``with``. We will not talk about mutable variables today.
-We will add boxes to our base language, FAE.
-*/
-object Syntax {
+mutable state to a language.</p>
+<p>A different and less interesting form of mutation is the mutability of <em>variables</em>, such as the possibility to assign something
+to a 'local' variable bound via a lambda or <code>with</code>. We will not talk about mutable variables today.
+We will add boxes to our base language, FAE.</p>
+<pre><code class="language-scala">object Syntax {
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
@@ -1752,176 +1746,105 @@ object Syntax {
   case class Seq(e1: Exp, e2: Exp) extends Exp // sequencing of expressions
 }
 import Syntax._
-/**
-In this new language, the following sample program,
-*/
-
-val test1 = wth(&quot;b&quot;, NewBox(0),
+</code></pre>
+<p>In this new language, the following sample program,</p>
+<pre><code class="language-scala">val test1 = wth(&quot;b&quot;, NewBox(0),
               Seq(
                 SetBox(&quot;b&quot;, Add(1, OpenBox(&quot;b&quot;))),
                 OpenBox(&quot;b&quot;)))
-// test1: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;b&quot;,
-//     body = Seq(
-//       e1 = SetBox(
-//         b = Id(name = &quot;b&quot;),
-//         e = Add(lhs = Num(n = 1), rhs = OpenBox(b = Id(name = &quot;b&quot;)))
-//       ),
-//       e2 = OpenBox(b = Id(name = &quot;b&quot;))
-//     )
-//   ),
-//   argExpr = NewBox(e = Num(n = 0))
-// )
-
-/**
-should give as result ``1`` in a proper implementation.
-Let's consider how our interpreter could handle sequencing.
-Here is an attempt:
-     case Seq(e1, e2) =&gt; {
+</code></pre>
+<p>should give as result <code>1</code> in a proper implementation.
+Let's consider how our interpreter could handle sequencing.</p>
+<p>Here is an attempt:</p>
+<pre><code>     case Seq(e1, e2) =&gt; {
        eval(e1, env)
        eval(e2, env)
      }
-This cannot be correct. As long as our interpreter does not use mutation, evaluation could not make any changes to the environment,
-hence there is* no way the evaluation of e1 could have any effect on the evaluation of e2.
-In order to demostrate the actual nature of mutation, we will not use mutation in our meta-language to implement mutation
+</code></pre>
+<p>This cannot be correct. As long as our interpreter does not use mutation, evaluation could not make any changes to the environment,
+hence there is* no way the evaluation of e1 could have any effect on the evaluation of e2.</p>
+<p>In order to demostrate the actual nature of mutation, we will not use mutation in our meta-language to implement mutation
 in our object language. That said, we will not use a mutable data structure to implement environment in our interpreter.
 Instead, one may turn to the so-called environment-passing style, in which the interpreter returns also a possibly updated environment
 together with the computed value when it evaluates an expression.  However, this solution does not always work.  Consider the following
-example:
-*/
-
-val test2 = wth(&quot;a&quot;, NewBox(1),
+example:</p>
+<pre><code class="language-scala">val test2 = wth(&quot;a&quot;, NewBox(1),
               wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, OpenBox(&quot;a&quot;))),
                 Seq(SetBox(&quot;a&quot;,2),
                   Ap(&quot;f&quot;, 5))))
-// test2: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;a&quot;,
-//     body = Ap(
-//       funExpr = Fun(
-//         param = &quot;f&quot;,
-//         body = Seq(
-//           e1 = SetBox(b = Id(name = &quot;a&quot;), e = Num(n = 2)),
-//           e2 = Ap(funExpr = Id(name = &quot;f&quot;), argExpr = Num(n = 5))
-//         )
-//       ),
-//       argExpr = Fun(
-//         param = &quot;x&quot;,
-//         body = Add(lhs = Id(name = &quot;x&quot;), rhs = OpenBox(b = Id(name = &quot;a&quot;)))
-//       )
-//     )
-//   ),
-//   argExpr = NewBox(e = Num(n = 1))
-// )
-
-/**
-The mutation should affect the box stored in the closure bound to ``f``.  But with the implementation strategy described above it would not.
+</code></pre>
+<p>The mutation should affect the box stored in the closure bound to <code>f</code>.  But with the implementation strategy described above it would not.
 Note that changing the value of a in the example is not a vialation of static scope.  Scoping only says where an identifier is bound;
-it does not say to what an identifier is bound, in particular, whether whatever bound to the identifier is fixed.
-Indeed, the variable a is bound to the same box in both the static environment where the function f is created and the dynamic environment
-where the function f is applied.
-As before, when applying the function f to the argument 5, we can choose either
-   1) To use the static environment (where the variable a is bound to a boxed 1) stored in the closure created for f.
-   2) Or to use the dynamic environment (where the variable a is bound to a  boxed 2) present at the time of applying f.
-The first choice leads the program to evaluate to 6 rather than the expected 7.  The second will record the change to the box,
+it does not say to what an identifier is bound, in particular, whether whatever bound to the identifier is fixed.</p>
+<p>Indeed, the variable a is bound to the same box in both the static environment where the function f is created and the dynamic environment
+where the function f is applied.</p>
+<p>As before, when applying the function f to the argument 5, we can choose either#</p>
+<ol>
+<li>
+<p>To use the static environment (where the variable a is bound to a boxed 1) stored in the closure created for f.</p>
+</li>
+<li>
+<p>Or to use the dynamic environment (where the variable a is bound to a  boxed 2) present at the time of applying f.</p>
+</li>
+</ol>
+<p>The first choice leads the program to evaluate to 6 rather than the expected 7.  The second will record the change to the box,
 but it reintroduces dynamic scoping.  So both choices do not work.
-Insight: We need _two_ repositories of information.
-One, the environment, guards static scope.
-*/
-
-sealed abstract class Value
+Insight: We need <em>two</em> repositories of information.
+One, the environment, guards static scope.</p>
+<pre><code class="language-scala">sealed abstract class Value
 type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
-
-/**
-The other, which we call _store_, is trackis dynamic changes.
-Determining the value inside a box will become a two-step process: We first evaluate the box expression to an _address_,
-and then use the store to lookup the value stored at that address. We choose to represent addresses by integers.
-*/
-
-type Address = Int
+</code></pre>
+<p>The other, which we call <em>store</em>, is trackis dynamic changes.
+Determining the value inside a box will become a two-step process: We first evaluate the box expression to an <em>address</em>,
+and then use the store to lookup the value stored at that address. We choose to represent addresses by integers.</p>
+<pre><code class="language-scala">type Address = Int
 case class AddressV(a: Address) extends Value
 
 type Store = Map[Address, Value]
-
-/**
-We will often need a fresh address in the store. We do so using a counter variable.
-*/
-
-var _nextAddress = 0
+</code></pre>
+<p>We will often need a fresh address in the store. We do so using a counter variable.</p>
+<pre><code class="language-scala">var _nextAddress = 0
 // _nextAddress: Int = 0
 
 def nextAddress : Address = {
   _nextAddress += 1
   _nextAddress
 }
-
-/**
-Note: We promised to implement the interpreter without using mutation. Here we did use mutation, but this musage of mutation
+</code></pre>
+<p>Note: We promised to implement the interpreter without using mutation. Here we did use mutation, but this usage of mutation
 is not essential: we could instead just search for the largest address in the present store and add one to it.
-Let's now discuss the evaluation of FAE with conditionals and boxes, BCFAE. To this end, consider the following sample program:
-*/
-
-val test3 = wth(&quot;switch&quot;, NewBox(0),
+Let's now discuss the evaluation of FAE with conditionals and boxes, BCFAE. To this end, consider the following sample program:</p>
+<pre><code class="language-scala">val test3 = wth(&quot;switch&quot;, NewBox(0),
              wth(&quot;toggle&quot;, Fun(&quot;dummy&quot;, If0(OpenBox(&quot;switch&quot;),
                                           Seq(SetBox(&quot;switch&quot;, 1), 1),
                                           Seq(SetBox(&quot;switch&quot;, 0), 0))),
                  Add(Ap(&quot;toggle&quot;,42), Ap(&quot;toggle&quot;,42))))
-// test3: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;switch&quot;,
-//     body = Ap(
-//       funExpr = Fun(
-//         param = &quot;toggle&quot;,
-//         body = Add(
-//           lhs = Ap(funExpr = Id(name = &quot;toggle&quot;), argExpr = Num(n = 42)),
-//           rhs = Ap(funExpr = Id(name = &quot;toggle&quot;), argExpr = Num(n = 42))
-//         )
-//       ),
-//       argExpr = Fun(
-//         param = &quot;dummy&quot;,
-//         body = If0(
-//           cond = OpenBox(b = Id(name = &quot;switch&quot;)),
-//           thenExp = Seq(
-//             e1 = SetBox(b = Id(name = &quot;switch&quot;), e = Num(n = 1)),
-//             e2 = Num(n = 1)
-//           ),
-//           elseExp = Seq(
-//             e1 = SetBox(b = Id(name = &quot;switch&quot;), e = Num(n = 0)),
-//             e2 = Num(n = 0)
-//           )
-//         )
-//       )
-//     )
-//   ),
-//   argExpr = NewBox(e = Num(n = 0))
-// )
-
-/**
-This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
-evaluation of this program.
-ID      Exp                     Value   Env             Store
-A       wth(..                          &quot;switch&quot; -&gt; ..   1 -&gt; NumV(0)
-B        wth(..                         &quot;toggle&quot; -&gt; ..
-C         Add(..
-D          Ap(&quot;toggle&quot;)         1                       1 -&gt; NumV(1)
-E          Ap(&quot;toggle&quot;)         0                       1 -&gt; NumV(0)
-F         Add(0,1)              1
-Insight:
+</code></pre>
+<p>This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
+evaluation of this program.</p>
+<table><thead><tr><th>ID</th><th>Exp</th><th>Value</th><th>Env</th><th>Store</th></tr></thead><tbody>
+<tr><td>A</td><td>wth(..</td><td></td><td>&quot;switch&quot; -&gt; .</td><td>1 -&gt; NumV(0)</td></tr>
+<tr><td>B</td><td>wth(..</td><td></td><td>&quot;toggle&quot; -&gt; ..</td><td></td></tr>
+<tr><td>C</td><td>Add(..</td><td></td><td></td><td></td></tr>
+<tr><td>D</td><td>Ap(&quot;toggle&quot;)</td><td>1</td><td></td><td>1 -&gt; NumV(1)</td></tr>
+<tr><td>E</td><td>Ap(&quot;toggle&quot;)</td><td>0</td><td></td><td>1 -&gt; NumV(0)</td></tr>
+<tr><td>F</td><td>Add(0,1)</td><td>1</td><td></td><td></td></tr>
+</tbody></table>
+<p>Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
-This is called _store-passing style:.  Consequently, we have to update the type of our evaluator.
-*/
-
-def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
+This is called <em>store-passing style</em>.  Consequently, we have to update the type of our evaluator.</p>
+<pre><code class="language-scala">def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
   /* All expressions whose evaluation does not alter the store just return s. */
   case Num(n) =&gt; (NumV(n), s)
   case Id(x) =&gt; (env(x), s)
   case f@Fun(_, _) =&gt; (ClosureV(f, env), s)
-  /* In recursive cases we have to thread the store through the
-   * evaluation. In particular, we define the order of evaluation
-   * explicitly through data flow dependencies.  */
+
+
+// In recursive cases we have to thread the store through the evaluation. In particular, we define the order of evaluation
+// explicitly through data flow dependencies.
+
   case If0(cond, thenExp, elseExp)
     =&gt; eval(cond, env, s) match {
          case (NumV(0), s1) =&gt; eval(thenExp, env, s1)
@@ -1964,12 +1887,13 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
          case _ =&gt; sys.error(&quot;can only apply functions&quot;)
        }
 
-  /* In a sequence, we ignore the result of evaluating e1 but not its
-   * effect on the store. */
+
+// In a sequence, we ignore the result of evaluating e1 but not its effect on the store.
+
   case Seq(e1, e2) =&gt; eval(e2, env, eval(e1, env, s)._2)
 
-  /* A new box is created by putting it into the store at a new
-   * address.  */
+//  A new box is created by putting it into the store at a new address.
+
   case NewBox(e: Exp)
     =&gt; eval(e, env, s) match {
          case (v, s1) =&gt; {
@@ -1978,9 +1902,10 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
          }
        }
 
-  /* Setting a box is now a two-step process: First evaluate b to an
-   * address, then lookup and update the value associated to the
-   * address in the store. Note that &quot;updated&quot; is a functional method.  */
+// Setting a box is now a two-step process: First evaluate b to an
+// address, then lookup and update the value associated to the
+// address in the store. Note that &quot;updated&quot; is a functional method.
+
   case SetBox(b: Exp, e: Exp)
     =&gt; eval(b, env, s) match {
          case (AddressV(a), s1)
@@ -1990,25 +1915,23 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
          case _ =&gt; sys.error(&quot;can only set boxes&quot;)
        }
 
-  /* OpenBox uses the same two-step process but does not update the
-   * store.  */
+// OpenBox uses the same two-step process but does not update the
+// store.
+
   case OpenBox(b: Exp)
     =&gt; eval(b, env, s) match {
          case (AddressV(a), s1) =&gt; (s1(a), s1)
          case _                 =&gt; sys.error(&quot;can only open boxes&quot;)
        }
 }
-
-/**
-From an implementation point of view, our interpreter has the problem that nothing is ever removed from the store.
+</code></pre>
+<p>From an implementation point of view, our interpreter has the problem that nothing is ever removed from the store.
 One possibility would be to add an operation &quot;removeBox&quot; or the like to the language, but this would lead to dangling pointers
-and all the* problems associated with manual memory management.
-Our model of stores is sufficient to illustrate how modern languages deal with memory management: by garbage collection.
+and all the* problems associated with manual memory management.</p>
+<p>Our model of stores is sufficient to illustrate how modern languages deal with memory management: by garbage collection.
 Garbage collectors automatically reclaim memory that is no longer referenced from within the active part of the computation.
-We can* model a (naive) mark-and-sweep garbage collector as follows:
-*/
-
-def gc(env: Env, store:Store) : Store = {
+We can* model a (naive) mark-and-sweep garbage collector as follows:</p>
+<pre><code class="language-scala">def gc(env: Env, store:Store) : Store = {
 
   def allAddrInVal(v: Value) : Set[Address] = v match {
     case AddressV(a)      =&gt; Set(a)
@@ -2028,8 +1951,8 @@ def gc(env: Env, store:Store) : Store = {
   val marked = mark(allAddrInEnv(env)) // mark ...
   store.view.filterKeys(marked(_)).toMap           // and sweep!
 }
-
-val teststore = Map(
+</code></pre>
+<pre><code class="language-scala">val teststore = Map(
   6  -&gt; NumV(42),
   7  -&gt; NumV(6),
   8  -&gt; AddressV(6),
@@ -2053,23 +1976,19 @@ val teststore = Map(
 
 assert(gc(Map(&quot;a&quot; -&gt; AddressV(10)), teststore) == teststore - 7 - 9)
 </code></pre>
+<p>Note that garbage collectors only <em>approximate</em> the set of semantically disposable store entities. Even with garbage collectors,
+applications may very well suffer from memory leaks. The approximation should be <em>safe</em>, in the sense that a datum is never reclaimed
+when it is used by subsequent computations.</p>
+<p>Furthermore, it must reclaim enough garbage to be actually useful. Reachability has turned
+out to be a rather useful (and sound) approximation of semantic disposability. Garbage collectors must also be efficient.
+Efficiency of GC is a huge research topic that we are not going to discuss. One efficiency problem with garbage collectors based on
+reachability that we want to mention is the &quot;stop-the-world&quot; phenomenon.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="garbage-collection"><a class="header" href="#garbage-collection">Garbage Collection</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="11-garbage-collection/./garbage-collection.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-/**
-Garbage Collection
-==================
-Let us now consider a more accurate modeling of garbage collection (gc). This time, we will use a mutable store instead of
-a functional store, because our purpose is not to explain mutation but to explain gc.
-*/
-
-
-
-/**
-This is the well-known syntax of our language: FAE with boxes. 
-*/
-
-sealed abstract class Exp
+<p>Let us now consider a more accurate modeling of garbage collection (gc). This time, we will use a mutable store instead of
+a functional store, because our purpose is not to explain mutation but to explain gc.</p>
+<p>This is the well-known syntax of our language: FAE with boxes.</p>
+<pre><code class="language-scala">sealed abstract class Exp
 case class Num(n: Int) extends Exp
 case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
@@ -2085,44 +2004,32 @@ case class NewBox(e: Exp) extends Exp
 case class SetBox(b: Exp, e: Exp) extends Exp
 case class OpenBox(b: Exp) extends Exp
 case class Seq(e1: Exp, e2: Exp) extends Exp
-
-/** 
-We will equip our values with a mutable flag that is useful for mark-and-sweep garbage collection.
-In real systems it is implemented as a bit flag, or, if the so-called &quot;tri-color algorithm&quot; is used, with two bit flags.
-*/
-
-abstract class Value { 
+</code></pre>
+<p>We will equip our values with a mutable flag that is useful for mark-and-sweep garbage collection.
+In real systems it is implemented as a bit flag, or, if the so-called &quot;tri-color algorithm&quot; is used, with two bit flags.</p>
+<pre><code class="language-scala">abstract class Value {
   var marked : Boolean = false
 }
-
-/** 
-We will also use a mutable map instead of a map for environments. This is not needed for mark-and-sweep,
-but for copying garbage collectors such as Cheney&quot;s&quot; semi-space garbage collection algorithm.
-*/
-
-type Env = scala.collection.mutable.Map[String, Value]
+</code></pre>
+<p>We will also use a mutable map instead of a map for environments. This is not needed for mark-and-sweep,
+but for copying garbage collectors such as Cheney&quot;s&quot; semi-space garbage collection algorithm.</p>
+<pre><code class="language-scala">type Env = scala.collection.mutable.Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 case class AddressV(a: Int) extends Value
-
-/** 
-To be able to experiment with different store and gc designs, we create an interface for stores.
-The stack parameter in malloc is needed during gc to determine the root nodes from which the algorithms can start.
-*/
-
-trait Store {
+</code></pre>
+<p>To be able to experiment with different store and gc designs, we create an interface for stores.
+The stack parameter in malloc is needed during gc to determine the root nodes from which the algorithms can start.</p>
+<pre><code class="language-scala">trait Store {
   def malloc(stack: List[Env], v: Value) : Int
   def update(index: Int, v: Value) : Unit
   def apply(index: Int) : Value
 }
-
-/** 
-In our interpreter, the stack of environments is only implicitly available on the stack of the meta-language.
+</code></pre>
+<p>In our interpreter, the stack of environments is only implicitly available on the stack of the meta-language.
 To reify the call-stack we need to make it explicit. We do so by constructing the stack explicitly and passing it as parameter.
-The first element of the stack is the current environment; the rest is only needed for gc.
-*/
-
-def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
+The first element of the stack is the current environment; the rest is only needed for gc.</p>
+<pre><code class="language-scala">def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
 
   case Num(n) =&gt; NumV(n)
 
@@ -2202,12 +2109,9 @@ def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
          case _ =&gt; sys.error(&quot;can only open boxes&quot;)
        }
 }
-
-/** 
-Here is one implementation of the Store interface that does not perform gc. It just runs out of memory once the store is full.
-*/
-
-class NoGCStore(size: Int) extends Store {
+</code></pre>
+<p>Here is one implementation of the Store interface that does not perform gc. It just runs out of memory once the store is full.</p>
+<pre><code class="language-scala">class NoGCStore(size: Int) extends Store {
 
   val memory = new Array[Value](size)
 
@@ -2225,12 +2129,9 @@ class NoGCStore(size: Int) extends Store {
 
   def apply(index: Int) = memory(index)
 }
-
-/** 
-Here is a mark-and-sweep garbage collector.
-*/
-
-class MarkAndSweepStore(size: Int) extends Store {
+</code></pre>
+<p>Here is a mark-and-sweep garbage collector.</p>
+<pre><code class="language-scala">class MarkAndSweepStore(size: Int) extends Store {
 
   val memory = new Array[Value](size)
 
@@ -2313,76 +2214,67 @@ class MarkAndSweepStore(size: Int) extends Store {
             &quot;\nNUMBER OF FREE SLOTS = &quot; + free)
   }
 }
-
-val test4 = wth(&quot;makedata&quot;, Fun(&quot;x&quot;, NewBox(NewBox(NewBox(&quot;x&quot;)))),
+</code></pre>
+<pre><code class="language-scala">val test4 = wth(&quot;makedata&quot;, Fun(&quot;x&quot;, NewBox(NewBox(NewBox(&quot;x&quot;)))),
                 Seq(Ap(&quot;makedata&quot;, 1),
                 Seq(Ap(&quot;makedata&quot;, 2),
                 Seq(wth(&quot;s&quot;, Ap(&quot;makedata&quot;, 3),
                             Ap(&quot;makedata&quot;, &quot;s&quot;)),
                     Ap(&quot;makedata&quot;, 4)))))
-// test4: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;makedata&quot;,
-//     body = Seq(
-//       e1 = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 1)),
-//       e2 = Seq(
-//         e1 = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 2)),
-//         e2 = Seq(
-//           e1 = Ap(
-//             funExpr = Fun(
-//               param = &quot;s&quot;,
-//               body = Ap(
-//                 funExpr = Id(name = &quot;makedata&quot;),
-//                 argExpr = Id(name = &quot;s&quot;)
-//               )
-//             ),
-//             argExpr = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 3))
-//           ),
-//           e2 = Ap(funExpr = Id(name = &quot;makedata&quot;), argExpr = Num(n = 4))
-//         )
-//       )
-//     )
-//   ),
-//   argExpr = Fun(
-//     param = &quot;x&quot;,
-//     body = NewBox(e = NewBox(e = NewBox(e = Id(name = &quot;x&quot;))))
-//   )
-// )
-
-def runTest4 = eval(
+</code></pre>
+<pre><code class="language-scala">def runTest4 = eval(
                  test4,
                  List(scala.collection.mutable.Map.empty),
                  new MarkAndSweepStore(5)
                )
 </code></pre>
+<p>This model of garbage collection does not illustrate the difficulty of memory management. In most languages, the size of
+the allocated memory regions on the heap vary, and hence one needs an algorithm to find a free and large-enough spot on the heap.
+There are various algorithms and heuristics (best-fit, worst-fit, first-fit, ...) for that purpose.</p>
+<p>There are also various alternative gc designs. Mark-and-sweep is a non-moving algorithm, where reachable heap objects are never moved.
+In contrast to that, copying gc algorithms move the reachable objects to a different portion of the heap. One of the oldest algorithms
+is the semi-space garbage collector, in particular with the implementation purpose.
+http://www.cs.umd.edu/class/fall2002/cmsc631/cheney/cheney.html
+Topic for class discussion: What are the pros and cons of moving vs. non-moving gc?</p>
+<p>It can be shown empirically that most unreachable objects become unreachable while they are still young. Generational gc algorithms
+take this empirical fact into account and divide the objects into generations, whereby the (small) youngest generation of objects
+is garbage-collected more frequently.</p>
+<p>A typical problem of the simple gc algorithms we discussed is the stop-the-world phenomenon: All execution has to be stopped during
+a gc cycle. This issue is addressed by incremental or concurrent garbage collectors. Incremental garbage collectors typically reduce*
+the total throughput but increase responsiveness and real-time behavior.</p>
+<p>A completely different approach to memory management is <em>reference counting</em>. In reference counting, each object on the heap
+(in our case, each box) maintains a counter which says how many pointers currently point to that object. The counter is adjusted
+whenever a pointer variable is assigned to this object (incremented), or from this object to another object (decremented).
+When the counter is 0, the object can be reclaimed.</p>
+<p>The obvious disadvantage of reference counting is that it cannot detect cycles on the heap. Hence reference counting algorithm
+must be augmented with some means to detect cycles.
+Topic for class discussion: What are the pros and cons of reference counting vs. tracing garbage collectors such as mark-and-sweep
+or semi-space?</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="syntactic-and-meta-interpretation"><a class="header" href="#syntactic-and-meta-interpretation">Syntactic and Meta Interpretation</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="12-meta-interpretation/./meta-interpretation.scala">here.</a></p>
-<pre><code class="language-scala">/**
-Syntactic interpretation vs meta intepretation
-==============================================
-For each desired language semantics, there exist many different ways to implement an interpreter in some meta-language
-to encode this semantics.
-One question that is of particular importance is whether a language feature is implemented by using a corresponding
+<p>For each desired language semantics, there exist many different ways to implement an interpreter in some meta-language
+to encode this semantics.</p>
+<p>One question that is of particular importance is whether a language feature is implemented by using a corresponding
 language feature of the meta-language, or whether it is implemented using more primitive language constructs.
-The first case is called meta-interpretation, the second case syntactic interpretation. 
-Meta-interpretation can be convenient if we are not interested in having control over the exact meaning of the construct,
-or if the way the meta-language handles this construct is just what we want for our object language.
-Syntactic interpretation is required if we want to understand what the language feature really means in terms
+The first case is called meta-interpretation, the second case syntactic interpretation.</p>
+<p>Meta-interpretation can be convenient if we are not interested in having control over the exact meaning of the construct,
+or if the way the meta-language handles this construct is just what we want for our object language.</p>
+<p>Syntactic interpretation is required if we want to understand what the language feature really means in terms
 of more primitive constructs, or if we want to implement the language feature differently than the meta language.
-Of course, if the meta language has no corresponding feature, then we have no choice but to make a syntactic interpretation.
-Our FAE interpreter is a meta-interpreter with respect to many features. For instance, it does not tell us
- * the precision of numbers, or the algorithm for addition
- * how the call stack is managed, e.g. the maximum depth of recursion supported by the interpreter
- * whether/how memory management for closures works (they are objects on the heap!)
-That said, it is possible to make the FAE interpreters still more &quot;meta&quot;. Here are two examples.
+Of course, if the meta language has no corresponding feature, then we have no choice but to make a syntactic interpretation.</p>
+<p>Our FAE interpreter is a meta-interpreter with respect to many features. For instance, it does not tell us</p>
+<ul>
+<li>the precision of numbers, or the algorithm for addition</li>
+<li>how the call stack is managed, e.g. the maximum depth of recursion supported by the interpreter</li>
+<li>whether/how memory management for closures works (they are objects on the heap!)</li>
+</ul>
+<p>That said, it is possible to make the FAE interpreters still more &quot;meta&quot;. Here are two examples.
 Here is a version of FAE that uses a different representation of the program syntax, namely one using meta-language functions
 to represent object-language functions. This technique is called higher-order abstract syntax, or HOAS.
-For instance, the function ``Fun('x, Add('x,5))`` is now represented as ``Fun( x =&gt; Add(x,5))``.
+For instance, the function <code>Fun('x, Add('x,5))</code> is now represented as <code>Fun( x =&gt; Add(x,5))</code>.
 The interpreter becomes rather short, because substitution and lexical scoping are now being dealt with by the
-corresponding meta-level construct.
-*/
-
-object HOAS {
+corresponding meta-level construct.</p>
+<pre><code class="language-scala">object HOAS {
     sealed abstract class Exp
     case class Num(n: Int) extends Exp
     case class Id(name: String) extends Exp
@@ -2402,29 +2294,26 @@ object HOAS {
       case _ =&gt; e // numbers and functions evaluate to themselves
     }      
 }
-
-/** 
-A different way to use meta-level functions in the interpreter is to represent object-level closures by meta-level closures.
-Notice that this interpreter has no control anymore about scoping;  rather, it is completely inherited from the meta language. 
-A particularly pleasing and important property of this interpreter is that it is _compositional_, meaning that all recursive calls
+</code></pre>
+<p>A different way to use meta-level functions in the interpreter is to represent object-level closures by meta-level closures.
+Notice that this interpreter has no control anymore about scoping;  rather, it is completely inherited from the meta language.</p>
+<p>A particularly pleasing and important property of this interpreter is that it is <em>compositional</em>, meaning that all recursive calls
 of eval are only on subparts of the original expression. This means that it becomes particularly easy to reason about program equivalence
 in the object language in terms of program equivalence in the meta language: Two object language expressions are equivalent if their
-&quot;denotations&quot; as meta-level expressions are equivalent in the meta-level. 
- 
-Compositionality is the cornerstone of denotational semantics.  A denotational semantics can be thought of as a
+&quot;denotations&quot; as meta-level expressions are equivalent in the meta-level.</p>
+<p>Compositionality is the cornerstone of denotational semantics.  A denotational semantics can be thought of as a
 compositional interpreter in which the meta-language is mathematics.
 Compositionality also has a rather practical side-effect: It means that we can implement the interpreter in the internal visitor style
 that  we learned about in the first lecture (recall that the internal visitor  style enforces compositionality)
-Recommended exercise: Re-implement the interpreter as an internal visitor. 
-*/
-sealed abstract class Exp
+Recommended exercise: Re-implement the interpreter as an internal visitor.</p>
+<pre><code class="language-scala">sealed abstract class Exp
 case class Num(n: Int) extends Exp
 case class Id(name: String) extends Exp
 case class Add(lhs: Exp, rhs: Exp) extends Exp
 case class Fun(param: String, body: Exp) extends Exp
 case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
 
-object Compositional { 
+object Compositional {
     sealed abstract class Value
     type Env = Map[String, Value]
     case class NumV(n: Int) extends Value
@@ -2447,12 +2336,9 @@ object Compositional {
       }
     }
 }
-
-/** 
-For comparison, here is our original FAE interpreter. 
-*/
-
-object FAE {
+</code></pre>
+<p>For comparison, here is our original FAE interpreter.</p>
+<pre><code class="language-scala">object FAE {
     sealed abstract class Value
     type Env = Map[String, Value]
     case class NumV(n: Int) extends Value
@@ -2476,16 +2362,20 @@ object FAE {
     }
 }
 </code></pre>
+<p>We will soon learn about ways to make FAE more syntactic in various ways. For instance, we will no longer rely on call-stack management
+of the meta-language, or the existence of higher-order functions.</p>
+<p>One dimension in which the interpreter could easily be made more syntactic is the treatment of numbers and arithmetic.
+For instance, we could represent numbers as sequences of digits instead of Scala numbers.
+Another aspect in which our FAE interpreter relies on the host language is memory management.</p>
+<p>This is particularly relevant for environments stored inside closures. These environments cannot be organized on the call stack
+and hence need memory management. Since we are using Scala references to refer to environments, environments that are no longer
+needed are collected by the Scala (or rather, Java) virtual machine.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="church-encodings"><a class="header" href="#church-encodings">Church Encodings</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="13-church-encoding/./church-encoding.scala">here.</a></p>
-<pre><code class="language-scala">/**
-Church Encoding
-===============
-Today we shrink our language. It does not seem to be big, but today we want to  illustrate how powerful our core language,
+<p>Today we shrink our language. It does not seem to be big, but today we want to  illustrate how powerful our core language,
 the lambda calculus, is. Here is a shrinked version of FAE that does not even have numbers anymore. For testing purposes,
-we introduce a new expression ``PrintDot`` whose semantics is to print a dot on the screen. 
-*/
-sealed abstract class Exp
+we introduce a new expression <code>PrintDot</code> whose semantics is to print a dot on the screen.</p>
+<pre><code class="language-scala">sealed abstract class Exp
 case class Id(name: String) extends Exp
 implicit def id2exp(s: String): Exp = Id(s)
 case class Fun(param: String, body: Exp) extends Exp
@@ -2495,554 +2385,76 @@ case class PrintDot() extends Exp
 abstract class Value // the only values are closures // the only values are closures
 type Env = Map[String, Value]
 case class ClosureV(f:Fun, env:Env) extends Value
-
-/** 
-Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,
-say, a number but get in fact a closure. Hence, this language has the fascinating property that  no dynamic type errors can occur. 
-*/
- 
-def eval(e: Exp, env: Env) : Value = e match {
+</code></pre>
+<p>Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,
+say, a number but get in fact a closure. Hence, this language has the fascinating property that  no dynamic type errors can occur.</p>
+<pre><code class="language-scala">def eval(e: Exp, env: Env) : Value = e match {
   // We give the identity function as dummy value for PrintDot
-  case PrintDot() =&gt; print(&quot;.&quot;); ClosureV(Fun(&quot;x&quot;,&quot;x&quot;), Map.empty) 
+  case PrintDot() =&gt; print(&quot;.&quot;); ClosureV(Fun(&quot;x&quot;,&quot;x&quot;), Map.empty)
   case Id(x) =&gt; env(x)
   case f@Fun(param,body) =&gt; ClosureV(f, env)
   case Ap(f,a) =&gt; eval(f,env) match {
     case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
   }
 }
-
-/** 
-Now we want to illustrate that we can, in principle, bootstrap a full programming language from this small core.
+</code></pre>
+<p>Now we want to illustrate that we can, in principle, bootstrap a full programming language from this small core.
 To do so, we use the technique of Church encoding. This means that each datum is represented by its own fold function.
-Church Encoding of Booleans
----------------------------
-Let&quot;s&quot; start with booleans and boolean arithmetic. 
-*/
-val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
-// f: Fun = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))  // false
+Church Encoding of Booleans</p>
+<p>Let&quot;s&quot; start with booleans and boolean arithmetic.</p>
+<pre><code class="language-scala">val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
 val t = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;t&quot;))  // true
-// t: Fun = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;t&quot;)))  // true
 val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
-// and: Fun = Fun(
-//   param = &quot;a&quot;,
-//   body = Fun(
-//     param = &quot;b&quot;,
-//     body = Ap(
-//       funExpr = Ap(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;b&quot;)),
-//       argExpr = Id(name = &quot;a&quot;)
-//     )
-//   )
-// )
 val or = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;a&quot;), &quot;b&quot;)))
-// or: Fun = Fun(
-//   param = &quot;a&quot;,
-//   body = Fun(
-//     param = &quot;b&quot;,
-//     body = Ap(
-//       funExpr = Ap(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;a&quot;)),
-//       argExpr = Id(name = &quot;b&quot;)
-//     )
-//   )
-// )
 val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;a&quot;,&quot;f&quot;),&quot;t&quot;))))
-// not: Fun = Fun(
-//   param = &quot;a&quot;,
-//   body = Fun(
-//     param = &quot;t&quot;,
-//     body = Fun(
-//       param = &quot;f&quot;,
-//       body = Ap(
-//         funExpr = Ap(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;f&quot;)),
-//         argExpr = Id(name = &quot;t&quot;)
-//       )
-//     )
-//   )
-// )
-
-/** 
-We can now write our own control structures, such as if/then/else 
-*/
-val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
-// ifthenelse: Fun = Fun(
-//   param = &quot;cond&quot;,
-//   body = Fun(
-//     param = &quot;t&quot;,
-//     body = Fun(
-//       param = &quot;f&quot;,
-//       body = Ap(
-//         funExpr = Ap(funExpr = Id(name = &quot;cond&quot;), argExpr = Id(name = &quot;t&quot;)),
-//         argExpr = Id(name = &quot;f&quot;)
-//       )
-//     )
-//   )
-// )
-
-/**
-Church Encoding of Numbers
---------------------------
- 
-Let&quot;s&quot; now consider Numbers. We encode them as Peano numbers.  These encodings of numbers are often called _Church numbers_. 
-*/
-val zero = Fun(&quot;s&quot;, Fun(&quot;z&quot;, &quot;z&quot;))
-// zero: Fun = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
+</code></pre>
+<p>We can now write our own control structures, such as <code>if/then/else</code></p>
+<pre><code class="language-scala">val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
+</code></pre>
+<h2 id="church-encoding-of-numbers"><a class="header" href="#church-encoding-of-numbers">Church Encoding of Numbers</a></h2>
+<p>Let&quot;s&quot; now consider Numbers. We encode them as Peano numbers.  These encodings of numbers are often called <em>Church numbers</em>.</p>
+<pre><code class="language-scala">val zero = Fun(&quot;s&quot;, Fun(&quot;z&quot;, &quot;z&quot;))
 val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(&quot;s&quot;, Ap(Ap(&quot;n&quot;, &quot;s&quot;),&quot;z&quot;)))))
-// succ: Fun = Fun(
-//   param = &quot;n&quot;,
-//   body = Fun(
-//     param = &quot;s&quot;,
-//     body = Fun(
-//       param = &quot;z&quot;,
-//       body = Ap(
-//         funExpr = Id(name = &quot;s&quot;),
-//         argExpr = Ap(
-//           funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
-//           argExpr = Id(name = &quot;z&quot;)
-//         )
-//       )
-//     )
-//   )
-// )
 val one = Ap(succ, zero)
-// one: Ap = Ap(
-//   funExpr = Fun(
-//     param = &quot;n&quot;,
-//     body = Fun(
-//       param = &quot;s&quot;,
-//       body = Fun(
-//         param = &quot;z&quot;,
-//         body = Ap(
-//           funExpr = Id(name = &quot;s&quot;),
-//           argExpr = Ap(
-//             funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
-//             argExpr = Id(name = &quot;z&quot;)
-//           )
-//         )
-//       )
-//     )
-//   ),
-//   argExpr = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
-// )
 val two = Ap(succ, one)
-// two: Ap = Ap(
-//   funExpr = Fun(
-//     param = &quot;n&quot;,
-//     body = Fun(
-//       param = &quot;s&quot;,
-//       body = Fun(
-//         param = &quot;z&quot;,
-//         body = Ap(
-//           funExpr = Id(name = &quot;s&quot;),
-//           argExpr = Ap(
-//             funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
-//             argExpr = Id(name = &quot;z&quot;)
-//           )
-//         )
-//       )
-//     )
-//   ),
-//   argExpr = Ap(
-//     funExpr = Fun(
-//       param = &quot;n&quot;,
-//       body = Fun(
-//         param = &quot;s&quot;,
-//         body = Fun(
-//           param = &quot;z&quot;,
-//           body = Ap(
-//             funExpr = Id(name = &quot;s&quot;),
-//             argExpr = Ap(
-//               funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
-//               argExpr = Id(name = &quot;z&quot;)
-//             )
-//           )
-//         )
-//       )
-//     ),
-//     argExpr = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
-//   )
-// )
 val three = Ap(succ, two)
-// three: Ap = Ap(
-//   funExpr = Fun(
-//     param = &quot;n&quot;,
-//     body = Fun(
-//       param = &quot;s&quot;,
-//       body = Fun(
-//         param = &quot;z&quot;,
-//         body = Ap(
-//           funExpr = Id(name = &quot;s&quot;),
-//           argExpr = Ap(
-//             funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
-//             argExpr = Id(name = &quot;z&quot;)
-//           )
-//         )
-//       )
-//     )
-//   ),
-//   argExpr = Ap(
-//     funExpr = Fun(
-//       param = &quot;n&quot;,
-//       body = Fun(
-//         param = &quot;s&quot;,
-//         body = Fun(
-//           param = &quot;z&quot;,
-//           body = Ap(
-//             funExpr = Id(name = &quot;s&quot;),
-//             argExpr = Ap(
-//               funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
-//               argExpr = Id(name = &quot;z&quot;)
-//             )
-//           )
-//         )
-//       )
-//     ),
-//     argExpr = Ap(
-//       funExpr = Fun(
-//         param = &quot;n&quot;,
-//         body = Fun(
-//           param = &quot;s&quot;,
-//           body = Fun(
-//             param = &quot;z&quot;,
-//             body = Ap(
-//               funExpr = Id(name = &quot;s&quot;),
-//               argExpr = Ap(
-//                 funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
-//                 argExpr = Id(name = &quot;z&quot;)
-//               )
-//             )
-// ...
 val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;,&quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;),&quot;z&quot;))))))
-// add: Fun = Fun(
-//   param = &quot;a&quot;,
-//   body = Fun(
-//     param = &quot;b&quot;,
-//     body = Fun(
-//       param = &quot;s&quot;,
-//       body = Fun(
-//         param = &quot;z&quot;,
-//         body = Ap(
-//           funExpr = Ap(funExpr = Id(name = &quot;a&quot;), argExpr = Id(name = &quot;s&quot;)),
-//           argExpr = Ap(
-//             funExpr = Ap(funExpr = Id(name = &quot;b&quot;), argExpr = Id(name = &quot;s&quot;)),
-//             argExpr = Id(name = &quot;z&quot;)
-//           )
-//         )
-//       )
-//     )
-//   )
-// )
 val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, Ap(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
-// mult: Fun = Fun(
-//   param = &quot;a&quot;,
-//   body = Fun(
-//     param = &quot;b&quot;,
-//     body = Fun(
-//       param = &quot;s&quot;,
-//       body = Fun(
-//         param = &quot;z&quot;,
-//         body = Ap(
-//           funExpr = Ap(
-//             funExpr = Id(name = &quot;a&quot;),
-//             argExpr = Ap(funExpr = Id(name = &quot;b&quot;), argExpr = Id(name = &quot;s&quot;))
-//           ),
-//           argExpr = Id(name = &quot;z&quot;)
-//         )
-//       )
-//     )
-//   )
-// )
 val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;b&quot;, Ap(mult, &quot;a&quot;)), one)))
-// exp: Fun = Fun(
-//   param = &quot;a&quot;,
-//   body = Fun(
-//     param = &quot;b&quot;,
-//     body = Ap(
-//       funExpr = Ap(
-//         funExpr = Id(name = &quot;b&quot;),
-//         argExpr = Ap(
-//           funExpr = Fun(
-//             param = &quot;a&quot;,
-//             body = Fun(
-//               param = &quot;b&quot;,
-//               body = Fun(
-//                 param = &quot;s&quot;,
-//                 body = Fun(
-//                   param = &quot;z&quot;,
-//                   body = Ap(
-//                     funExpr = Ap(
-//                       funExpr = Id(name = &quot;a&quot;),
-//                       argExpr = Ap(
-//                         funExpr = Id(name = &quot;b&quot;),
-//                         argExpr = Id(name = &quot;s&quot;)
-//                       )
-//                     ),
-//                     argExpr = Id(name = &quot;z&quot;)
-//                   )
-//                 )
-//               )
-//             )
-//           ),
-//           argExpr = Id(name = &quot;a&quot;)
-//         )
-//       ),
-//       argExpr = Ap(
-//         funExpr = Fun(
-//           param = &quot;n&quot;,
-//           body = Fun(
-//             param = &quot;s&quot;,
-//             body = Fun(
-//               param = &quot;z&quot;,
-//               body = Ap(
-//                 funExpr = Id(name = &quot;s&quot;),
-//                 argExpr = Ap(
-//                   funExpr = Ap(
-//                     funExpr = Id(name = &quot;n&quot;),
-//                     argExpr = Id(name = &quot;s&quot;)
-//                   ),
-//                   argExpr = Id(name = &quot;z&quot;)
-//                 )
-// ...
 val iszero = Fun(&quot;a&quot;, Ap(Ap(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
-// iszero: Fun = Fun(
-//   param = &quot;a&quot;,
-//   body = Ap(
-//     funExpr = Ap(
-//       funExpr = Id(name = &quot;a&quot;),
-//       argExpr = Fun(
-//         param = &quot;x&quot;,
-//         body = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))
-//       )
-//     ),
-//     argExpr = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;t&quot;)))
-//   )
-// )
-/** 
-The predecessor function is more complicated (why?). We do not show it here. 
-For testing, here is a function that prints a unary representation of a number. */
-val printnum = Fun(&quot;a&quot;, Ap(Ap(&quot;a&quot;, Fun(&quot;x&quot;, PrintDot())), f))
-// printnum: Fun = Fun(
-//   param = &quot;a&quot;,
-//   body = Ap(
-//     funExpr = Ap(
-//       funExpr = Id(name = &quot;a&quot;),
-//       argExpr = Fun(param = &quot;x&quot;, body = PrintDot())
-//     ),
-//     argExpr = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))
-//   )
-// )
-
-/** 
-Church encoding of lists
-------------------------
-Again straightforward, except &quot;tail&quot;, which we do not show here. It needs the same kind of trick (called &quot;pairing trick&quot;)
-as the predecessor function. 
-*/
-val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-// emptylist: Fun = Fun(
-//   param = &quot;c&quot;,
-//   body = Fun(param = &quot;e&quot;, body = Id(name = &quot;e&quot;))
-// )
+</code></pre>
+<p>The predecessor function is more complicated (why?). We do not show it here.
+For testing, here is a function that prints a unary representation of a number.</p>
+<pre><code class="language-scala">val printnum = Fun(&quot;a&quot;, Ap(Ap(&quot;a&quot;, Fun(&quot;x&quot;, PrintDot())), f))
+</code></pre>
+<h2 id="church-encoding-of-lists"><a class="header" href="#church-encoding-of-lists">Church encoding of lists</a></h2>
+<p>Again straightforward, except &quot;tail&quot;, which we do not show here. It needs the same kind of trick (called &quot;pairing trick&quot;)
+as the predecessor function.</p>
+<pre><code class="language-scala">val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
 val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;,&quot;c&quot;),&quot;e&quot;))))))
-// cons: Fun = Fun(
-//   param = &quot;h&quot;,
-//   body = Fun(
-//     param = &quot;r&quot;,
-//     body = Fun(
-//       param = &quot;c&quot;,
-//       body = Fun(
-//         param = &quot;e&quot;,
-//         body = Ap(
-//           funExpr = Ap(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;h&quot;)),
-//           argExpr = Ap(
-//             funExpr = Ap(funExpr = Id(name = &quot;r&quot;), argExpr = Id(name = &quot;c&quot;)),
-//             argExpr = Id(name = &quot;e&quot;)
-//           )
-//         )
-//       )
-//     )
-//   )
-// )
 val head = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
-// head: Fun = Fun(
-//   param = &quot;l&quot;,
-//   body = Ap(
-//     funExpr = Ap(
-//       funExpr = Id(name = &quot;l&quot;),
-//       argExpr = Fun(param = &quot;h&quot;, body = Fun(param = &quot;t&quot;, body = Id(name = &quot;h&quot;)))
-//     ),
-//     argExpr = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))
-//   )
-// )
+</code></pre>
+<p>For instance, we can multiply all numbers in a list</p>
+<pre><code class="language-scala">val multlist = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, mult), one))
+</code></pre>
+<p>Here is the list 3,2,3:</p>
+<pre><code class="language-scala">val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three),emptylist)))
 
-/** 
-For instance, we can multiply all numbers in a list 
-*/
-val multlist = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, mult), one))
-// multlist: Fun = Fun(
-//   param = &quot;l&quot;,
-//   body = Ap(
-//     funExpr = Ap(
-//       funExpr = Id(name = &quot;l&quot;),
-//       argExpr = Fun(
-//         param = &quot;a&quot;,
-//         body = Fun(
-//           param = &quot;b&quot;,
-//           body = Fun(
-//             param = &quot;s&quot;,
-//             body = Fun(
-//               param = &quot;z&quot;,
-//               body = Ap(
-//                 funExpr = Ap(
-//                   funExpr = Id(name = &quot;a&quot;),
-//                   argExpr = Ap(
-//                     funExpr = Id(name = &quot;b&quot;),
-//                     argExpr = Id(name = &quot;s&quot;)
-//                   )
-//                 ),
-//                 argExpr = Id(name = &quot;z&quot;)
-//               )
-//             )
-//           )
-//         )
-//       )
-//     ),
-//     argExpr = Ap(
-//       funExpr = Fun(
-//         param = &quot;n&quot;,
-//         body = Fun(
-//           param = &quot;s&quot;,
-//           body = Fun(
-//             param = &quot;z&quot;,
-//             body = Ap(
-//               funExpr = Id(name = &quot;s&quot;),
-//               argExpr = Ap(
-//                 funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
-//                 argExpr = Id(name = &quot;z&quot;)
-//               )
-//             )
-//           )
-//         )
-//       ),
-//       argExpr = Fun(param = &quot;s&quot;, body = Fun(param = &quot;z&quot;, body = Id(name = &quot;z&quot;)))
-//     )
-//   )
-// )
-/* Here is the list 3,2,3 */
-val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three),emptylist)))
-// list323: Ap = Ap(
-//   funExpr = Ap(
-//     funExpr = Fun(
-//       param = &quot;h&quot;,
-//       body = Fun(
-//         param = &quot;r&quot;,
-//         body = Fun(
-//           param = &quot;c&quot;,
-//           body = Fun(
-//             param = &quot;e&quot;,
-//             body = Ap(
-//               funExpr = Ap(funExpr = Id(name = &quot;c&quot;), argExpr = Id(name = &quot;h&quot;)),
-//               argExpr = Ap(
-//                 funExpr = Ap(funExpr = Id(name = &quot;r&quot;), argExpr = Id(name = &quot;c&quot;)),
-//                 argExpr = Id(name = &quot;e&quot;)
-//               )
-//             )
-//           )
-//         )
-//       )
-//     ),
-//     argExpr = Ap(
-//       funExpr = Fun(
-//         param = &quot;n&quot;,
-//         body = Fun(
-//           param = &quot;s&quot;,
-//           body = Fun(
-//             param = &quot;z&quot;,
-//             body = Ap(
-//               funExpr = Id(name = &quot;s&quot;),
-//               argExpr = Ap(
-//                 funExpr = Ap(funExpr = Id(name = &quot;n&quot;), argExpr = Id(name = &quot;s&quot;)),
-//                 argExpr = Id(name = &quot;z&quot;)
-//               )
-//             )
-//           )
-//         )
-//       ),
-//       argExpr = Ap(
-//         funExpr = Fun(
-//           param = &quot;n&quot;,
-//           body = Fun(
-//             param = &quot;s&quot;,
-//             body = Fun(
-//               param = &quot;z&quot;,
-//               body = Ap(
-//                 funExpr = Id(name = &quot;s&quot;),
-// ...
-
-val test = Ap(printnum, Ap(multlist, list323))
-// test: Ap = Ap(
-//   funExpr = Fun(
-//     param = &quot;a&quot;,
-//     body = Ap(
-//       funExpr = Ap(
-//         funExpr = Id(name = &quot;a&quot;),
-//         argExpr = Fun(param = &quot;x&quot;, body = PrintDot())
-//       ),
-//       argExpr = Fun(param = &quot;t&quot;, body = Fun(param = &quot;f&quot;, body = Id(name = &quot;f&quot;)))
-//     )
-//   ),
-//   argExpr = Ap(
-//     funExpr = Fun(
-//       param = &quot;l&quot;,
-//       body = Ap(
-//         funExpr = Ap(
-//           funExpr = Id(name = &quot;l&quot;),
-//           argExpr = Fun(
-//             param = &quot;a&quot;,
-//             body = Fun(
-//               param = &quot;b&quot;,
-//               body = Fun(
-//                 param = &quot;s&quot;,
-//                 body = Fun(
-//                   param = &quot;z&quot;,
-//                   body = Ap(
-//                     funExpr = Ap(
-//                       funExpr = Id(name = &quot;a&quot;),
-//                       argExpr = Ap(
-//                         funExpr = Id(name = &quot;b&quot;),
-//                         argExpr = Id(name = &quot;s&quot;)
-//                       )
-//                     ),
-//                     argExpr = Id(name = &quot;z&quot;)
-//                   )
-//                 )
-//               )
-//             )
-//           )
-//         ),
-//         argExpr = Ap(
-//           funExpr = Fun(
-//             param = &quot;n&quot;,
-//             body = Fun(
-//               param = &quot;s&quot;,
-//               body = Fun(
-//                 param = &quot;z&quot;,
-//                 body = Ap(
-//                   funExpr = Id(name = &quot;s&quot;),
-// ...
-/* Calling exec should yield 18 dots before the dummy result */
+</code></pre>
+<pre><code class="language-scala">val test = Ap(printnum, Ap(multlist, list323))
+// Calling exec should yield 18 dots before the dummy result
 def exec = eval(test, Map.empty)
+</code></pre>
+<p>Topic for class discussion: Can we do these encodings directly in Scala or Haskell?</p>
+<pre><code>
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="object-algebras"><a class="header" href="#object-algebras">Object Algebras</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="14-object-algebras/./object-algebras.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-/* Object algebras: A practical way of using Church Encodings */
-
-/* 
-Let's look at a Scala version of the Church encodings we saw for the lambda
-calculus. We use objects instead of functions, but otherwise 
-it is the same. Let's start with booleans. */
-
-trait Bool {
+<p>Object algebras: A practical way of using Church Encodings</p>
+<p>Let's look at a Scala version of the Church encodings we saw for the lambda
+calculus. We use objects instead of functions, but otherwise
+it is the same. Let's start with booleans.</p>
+<pre><code class="language-scala">trait Bool {
   def ifthenelse[T](t: T, e: T) : T
 }
 
@@ -3053,13 +2465,11 @@ case object F extends Bool {
   def ifthenelse[T](t: T, e: T) = e
 }
 def and(a: Bool, b: Bool) : Bool = a.ifthenelse(b,a)
-
-/* In Smalltalk and related languages, booleans are actually implemented 
-like that (at least conceptually). 
-In the same way, we can encode Church numerals.
-*/
-
-trait NumC {
+</code></pre>
+<p>In Smalltalk and related languages, booleans are actually implemented
+like that (at least conceptually).</p>
+<p>In the same way, we can encode Church numerals.</p>
+<pre><code class="language-scala">trait NumC {
   def fold[T](z : T, s: T =&gt; T) : T
 }
 case object Zero extends NumC {
@@ -3077,75 +2487,60 @@ def plus(a: NumC, b: NumC) = {
     }
   }
 }
-
-val oneC = Succ(Zero)
-// oneC: Succ = Succ(n = Zero)
+</code></pre>
+<pre><code class="language-scala">val oneC = Succ(Zero)
 val twoC = Succ(oneC)
-// twoC: Succ = Succ(n = Succ(n = Zero))
 val threeC = Succ(twoC)
-// threeC: Succ = Succ(n = Succ(n = Succ(n = Zero)))
 
 def testplusC = plus(twoC,threeC).fold[Unit]( (), _ =&gt; print(&quot;.&quot;))
-
-/*
-Object algebras are a different way to do Church encodings
+</code></pre>
+<p>Object algebras are a different way to do Church encodings
 in object-oriented languages. This is what the encoding
-of Church numbers looks like in object algebra style.
-*/
-
-
-trait NumSig[T] {
+of Church numbers looks like in object algebra style.</p>
+<pre><code class="language-scala">trait NumSig[T] {
   def z : T
   def s(p: T) : T
 }
 
-trait Num { def apply[T](x: NumSig[T]) : T }
-
-/* In other words, every constructor of data type is turned into
+trait Num {
+  def apply[T](x: NumSig[T]) : T
+}
+</code></pre>
+<p>In other words, every constructor of data type is turned into
 a function of the NumSig type, whereby recursive occurences are replaced
-by the type constructor T. Actual numbers have the type Num, i.e.,
-they are basically functions of type NumSig[T] =&gt; T.
-In the terminology of universal algebra, NumSig is an algebraic
+by the type constructor T.
+Actual numbers have the type Num, i.e., they are basically functions of type NumSig[T] =&gt; T.</p>
+<p>In the terminology of universal algebra, NumSig is an algebraic
 signature, and NumSig[T] =&gt; T is the type of algebras for that signature.
 Compared to the Church encoding above, we bundle the arguments of the
 fold function into a trait NumSig and pass them as a single object.
 The advantage of this encoding is that we can extend the set of parameters
-of the fold by using inheritance.
-In this encoding, the plus function looks like this: */
-
-def plus(a: Num, b: Num) = new Num {
+of the fold by using inheritance.</p>
+<p>In this encoding, the plus function looks like this:</p>
+<pre><code class="language-scala">def plus(a: Num, b: Num) = new Num {
   def apply[T](x: NumSig[T]) : T = a( new NumSig[T] {
     def z = b(x)
     def s(p:T) = x.s(p)
   })
 }
-
-/* Here is the representation of some numbers. */
-val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-// zero: Num = repl.MdocSession$$anon$4@3cf8f66b
+</code></pre>
+<p>Here is the representation of some numbers.</p>
+<pre><code class="language-scala">val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
 val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-// one: Num = repl.MdocSession$$anon$6@4c1a0606
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-// two: Num = repl.MdocSession$$anon$8@5738cc9d
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
-// three: Num = repl.MdocSession$$anon$10@6f481fa8
-
-/* This is an interpretation of the Num &quot;language&quot; as Scala integers. */
-object NumAlg extends NumSig[Int] {
+</code></pre>
+<p>This is an interpretation of the Num &quot;language&quot; as Scala integers:</p>
+<pre><code class="language-scala">object NumAlg extends NumSig[Int] {
   def z = 0
   def s(x : Int ) = x+1
 }
-
-val testplus = plus(two, three)(NumAlg) // yields 5
-// testplus: Int = 5 // yields 5
-
-/*
-Let's look at a more useful application of object algebras. We encode
-expression trees as object algebras.
-*/
-
-
-trait Exp[T] {
+</code></pre>
+<pre><code class="language-scala">val testplus = plus(two, three)(NumAlg) // yields 5
+</code></pre>
+<p>Let's look at a more useful application of object algebras. We encode
+expression trees as object algebras.</p>
+<pre><code class="language-scala">trait Exp[T] {
   implicit def id(name: String) : T
   def fun(param: String, body: T): T
   def ap(funExpr: T, argExpr: T) :T
@@ -3153,17 +2548,17 @@ trait Exp[T] {
   def add(e1: T, e2: T) : T
   def wth(x: String, xdef: T, body: T) : T = ap(fun(x,body),xdef)
 }
-
-/* The structure of expression forces compositional interpretations. Hence
+</code></pre>
+<p>The structure of expression forces compositional interpretations. Hence
 we use the compositional interpretation using meta-level closures to represent
-closures. */
-sealed abstract class Value
+closures.</p>
+<pre><code class="language-scala">sealed abstract class Value
 type Env = Map[String, Value]
 case class ClosureV(f: Value =&gt; Value) extends Value
 case class NumV(n: Int) extends Value
-
-/* An interpretation of expressions is now an implementation of the Exp interface */
-trait eval extends Exp[Env =&gt; Value] {
+</code></pre>
+<p>An interpretation of expressions is now an implementation of the Exp interface</p>
+<pre><code class="language-scala">trait eval extends Exp[Env =&gt; Value] {
   def id(name: String) = env =&gt; env(name)
   def fun(param: String, body: Env =&gt; Value) = env =&gt; ClosureV(v =&gt; body(env + (param -&gt; v)))
   def ap(funExpr: Env =&gt; Value, argExpr: Env =&gt; Value) = env =&gt; funExpr(env) match {
@@ -3176,23 +2571,22 @@ trait eval extends Exp[Env =&gt; Value] {
     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
   }
 }
-object eval extends eval
 
-/* An example program becomes a function that is parametric in the choosen interpretation */
-def test[T](semantics : Exp[T]) = {
+object eval extends eval
+</code></pre>
+<p>An example program becomes a function that is parametric in the choosen interpretation:</p>
+<pre><code class="language-scala">def test[T](semantics : Exp[T]) = {
   import semantics._
-  
+
   ap(ap(fun(&quot;x&quot;,fun(&quot;y&quot;,add(&quot;x&quot;,&quot;y&quot;))),5),3)
 }
-
-/* We evaluate the program by folding the eval visitor over it. */
-val testres = test(eval)(Map.empty)
-// testres: Value = NumV(n = 8)
-
-/* The object algebra encoding of expressions is quite extensible. For instance, we can
-add another case to the expression datatype by extending the interface. */
-
-trait ExpWithMult[T] extends Exp[T] {
+</code></pre>
+<p>We evaluate the program by folding the eval visitor over it.</p>
+<pre><code class="language-scala">val testres = test(eval)(Map.empty)
+</code></pre>
+<p>The object algebra encoding of expressions is quite extensible. For instance, we can
+add another case to the expression datatype by extending the interface.</p>
+<pre><code class="language-scala">trait ExpWithMult[T] extends Exp[T] {
   def mult(e1 : T, e2: T) : T
 }
 
@@ -3206,32 +2600,29 @@ object evalWithMult extends evalWithMult
 
 def testMult[T](semantics : ExpWithMult[T]) = {
   import semantics._
-  
+
   ap(ap(fun(&quot;x&quot;,fun(&quot;y&quot;,mult(&quot;x&quot;,&quot;y&quot;))),5),3)
 }
-
-val testresMult = testMult(evalWithMult)(Map.empty)
-// testresMult: Value = NumV(n = 15)
-
-/* Note that there is no danger of confusing the language variants. For instance,
-an attempt to pass testMult to eval will be a static type error. */
-
-/* We can also go one step further and combine object algebras with 
-typed higher-order abstract syntax, using higher-kinded type members. 
-Don't panic if you don't understand what is going on here. 
-*/
-trait ExpT {
+</code></pre>
+<pre><code class="language-scala">val testresMult = testMult(evalWithMult)(Map.empty)
+</code></pre>
+<p>Note that there is no danger of confusing the language variants. For instance,
+an attempt to pass testMult to eval will be a static type error.</p>
+<p>We can also go one step further and combine object algebras with
+typed higher-order abstract syntax, using higher-kinded type members.
+Don't panic if you don't understand what is going on here.</p>
+<pre><code class="language-scala">trait ExpT {
   type Rep[_]
   def fun[S,T](f : Rep[S] =&gt; Rep[T]): Rep[S=&gt;T]
   def ap[S,T](funExpr: Rep[S=&gt;T], argExpr: Rep[S]) :Rep[T]
   implicit def num(n: Int) : Rep[Int]
   def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
 }
-
-/* Note that, in contrast to eval, no dynamic checks (match ...) are needed
+</code></pre>
+<p>Note that, in contrast to eval, no dynamic checks (match ...) are needed
 in the interpreter. This is because the ExpT datatype guarantees well-typedness
-of expressions. */
-object evalT extends ExpT {
+of expressions.</p>
+<pre><code class="language-scala">object evalT extends ExpT {
   type Rep[X] = X
   def fun[S,T](f: S=&gt;T) =f
   def ap[S,T](f: S=&gt;T, a: S) = f(a)
@@ -3256,12 +2647,25 @@ def test2(semantics: ExpT) = {
   import semantics._
   ap(ap(fun((x:Rep[Int])=&gt;fun((y:Rep[Int])=&gt;add(x,y))),5),3)
 }
-
-val testres2 = test2(evalT)
-// testres2: Int = 8
-val testres3 = test2(prettyprintT)
-// testres3: String = &quot;(x0 =&gt; (x1 =&gt; (x1+x2)))(5)(3)&quot;
 </code></pre>
+<pre><code class="language-scala">val testres2 = test2(evalT)
+val testres3 = test2(prettyprintT)
+</code></pre>
+<p>An attempt to construct an ill-formed object program will be detected by
+the Scala type checker. For instance, the following program which adds
+a number and a function is rejected by the Scala type checker:</p>
+<pre><code class="language-scala">def testilltyped(semantics: ExpT) = {
+  import semantics._
+  add(5,fun((x: Rep[Int]) =&gt; x))
+}
+// error:
+// Found:    semantics.Rep[Int =&gt; Int]
+// Required: semantics.Rep[Int]
+//   add(5,fun((x: Rep[Int]) =&gt; x))
+//         ^^^^^^^^^^^^^^^^^^^^^^^
+</code></pre>
+<p>References:
+B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with Object Algebras. Proc. ECOOP 2012.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-1"><a class="header" href="#continuations-1">Continuations 1</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="15-continuations-1/./continuations-1.scala">here.</a></p>
 <pre><code class="language-scala">import scala.io.StdIn.readLine
@@ -3335,7 +2739,7 @@ def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot;+ n1 + &quot;
  * We can express the continuation as a function: */
 
 val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
-// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2884/0x0000000100bb8840@19a4d07b
+// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2892/0x0000000100c27840@794bb6d5
 
 /* Similarly, the continuation at the second point of interaction is:
  * val cont2 = (m: Int) =&gt; println(n+m)
@@ -4459,7 +3863,7 @@ class OptionTMonad[M[_]](val m : Monad[M]) extends Monad[OptionT[M]#x] {
 }		
 
 val ListOptionM = new OptionTMonad(ListMonad)
-// ListOptionM: OptionTMonad[[A &gt;: Nothing &lt;: Any] =&gt; List[A]] = repl.MdocSession$App$OptionTMonad@4a7d88f6
+// ListOptionM: OptionTMonad[[A &gt;: Nothing &lt;: Any] =&gt; List[A]] = repl.MdocSession$App$OptionTMonad@69bc1ccf
 
 // in this case, for-comprehension syntax doesn't work because it clashes with the built-in support for
 // for-comprehensions for lists :-(
@@ -4506,7 +3910,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }  
-// iomonad: IOMonad = repl.MdocSession$$anon$1@305e4970  
+// iomonad: IOMonad = repl.MdocSession$$anon$1@2e4604bf  
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] = 
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;

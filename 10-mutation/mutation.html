@@ -144,21 +144,15 @@
                     <main>
                         <h1 id="mutation"><a class="header" href="#mutation">Mutation</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="./mutation.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-/**
-Mutation
-========
-Today we study _mutation_. More specifically, we want to equip our language with mutable data structures.
-Typical mutable data structures in common languages include objects with mutable fields or structures/records in languages like C or Pascal.
+<p>Today we study <em>mutation</em>. More specifically, we want to equip our language with mutable data structures.</p>
+<p>Typical mutable data structures in common languages include objects with mutable fields or structures/records in languages like C or Pascal.
 We will study a particularly simple mutable data structure: Boxes. In OO parlance, boxes can be thought of as an object with
 a single field that can be mutated. Despite their simplicity, boxes already illustrate all main issues associated with adding
-mutable state to a language.
-A different and less interesting form of mutation is the mutability of _variables_, such as the possibility to assign something
-to a 'local' variable bound via a lambda or ``with``. We will not talk about mutable variables today.
-We will add boxes to our base language, FAE.
-*/
-object Syntax {
+mutable state to a language.</p>
+<p>A different and less interesting form of mutation is the mutability of <em>variables</em>, such as the possibility to assign something
+to a 'local' variable bound via a lambda or <code>with</code>. We will not talk about mutable variables today.
+We will add boxes to our base language, FAE.</p>
+<pre><code class="language-scala">object Syntax {
   sealed abstract class Exp
   case class Num(n: Int) extends Exp
   case class Id(name: String) extends Exp
@@ -181,176 +175,105 @@ object Syntax {
   case class Seq(e1: Exp, e2: Exp) extends Exp // sequencing of expressions
 }
 import Syntax._
-/**
-In this new language, the following sample program,
-*/
-
-val test1 = wth(&quot;b&quot;, NewBox(0),
+</code></pre>
+<p>In this new language, the following sample program,</p>
+<pre><code class="language-scala">val test1 = wth(&quot;b&quot;, NewBox(0),
               Seq(
                 SetBox(&quot;b&quot;, Add(1, OpenBox(&quot;b&quot;))),
                 OpenBox(&quot;b&quot;)))
-// test1: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;b&quot;,
-//     body = Seq(
-//       e1 = SetBox(
-//         b = Id(name = &quot;b&quot;),
-//         e = Add(lhs = Num(n = 1), rhs = OpenBox(b = Id(name = &quot;b&quot;)))
-//       ),
-//       e2 = OpenBox(b = Id(name = &quot;b&quot;))
-//     )
-//   ),
-//   argExpr = NewBox(e = Num(n = 0))
-// )
-
-/**
-should give as result ``1`` in a proper implementation.
-Let's consider how our interpreter could handle sequencing.
-Here is an attempt:
-     case Seq(e1, e2) =&gt; {
+</code></pre>
+<p>should give as result <code>1</code> in a proper implementation.
+Let's consider how our interpreter could handle sequencing.</p>
+<p>Here is an attempt:</p>
+<pre><code>     case Seq(e1, e2) =&gt; {
        eval(e1, env)
        eval(e2, env)
      }
-This cannot be correct. As long as our interpreter does not use mutation, evaluation could not make any changes to the environment,
-hence there is* no way the evaluation of e1 could have any effect on the evaluation of e2.
-In order to demostrate the actual nature of mutation, we will not use mutation in our meta-language to implement mutation
+</code></pre>
+<p>This cannot be correct. As long as our interpreter does not use mutation, evaluation could not make any changes to the environment,
+hence there is* no way the evaluation of e1 could have any effect on the evaluation of e2.</p>
+<p>In order to demostrate the actual nature of mutation, we will not use mutation in our meta-language to implement mutation
 in our object language. That said, we will not use a mutable data structure to implement environment in our interpreter.
 Instead, one may turn to the so-called environment-passing style, in which the interpreter returns also a possibly updated environment
 together with the computed value when it evaluates an expression.  However, this solution does not always work.  Consider the following
-example:
-*/
-
-val test2 = wth(&quot;a&quot;, NewBox(1),
+example:</p>
+<pre><code class="language-scala">val test2 = wth(&quot;a&quot;, NewBox(1),
               wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, OpenBox(&quot;a&quot;))),
                 Seq(SetBox(&quot;a&quot;,2),
                   Ap(&quot;f&quot;, 5))))
-// test2: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;a&quot;,
-//     body = Ap(
-//       funExpr = Fun(
-//         param = &quot;f&quot;,
-//         body = Seq(
-//           e1 = SetBox(b = Id(name = &quot;a&quot;), e = Num(n = 2)),
-//           e2 = Ap(funExpr = Id(name = &quot;f&quot;), argExpr = Num(n = 5))
-//         )
-//       ),
-//       argExpr = Fun(
-//         param = &quot;x&quot;,
-//         body = Add(lhs = Id(name = &quot;x&quot;), rhs = OpenBox(b = Id(name = &quot;a&quot;)))
-//       )
-//     )
-//   ),
-//   argExpr = NewBox(e = Num(n = 1))
-// )
-
-/**
-The mutation should affect the box stored in the closure bound to ``f``.  But with the implementation strategy described above it would not.
+</code></pre>
+<p>The mutation should affect the box stored in the closure bound to <code>f</code>.  But with the implementation strategy described above it would not.
 Note that changing the value of a in the example is not a vialation of static scope.  Scoping only says where an identifier is bound;
-it does not say to what an identifier is bound, in particular, whether whatever bound to the identifier is fixed.
-Indeed, the variable a is bound to the same box in both the static environment where the function f is created and the dynamic environment
-where the function f is applied.
-As before, when applying the function f to the argument 5, we can choose either
-   1) To use the static environment (where the variable a is bound to a boxed 1) stored in the closure created for f.
-   2) Or to use the dynamic environment (where the variable a is bound to a  boxed 2) present at the time of applying f.
-The first choice leads the program to evaluate to 6 rather than the expected 7.  The second will record the change to the box,
+it does not say to what an identifier is bound, in particular, whether whatever bound to the identifier is fixed.</p>
+<p>Indeed, the variable a is bound to the same box in both the static environment where the function f is created and the dynamic environment
+where the function f is applied.</p>
+<p>As before, when applying the function f to the argument 5, we can choose either#</p>
+<ol>
+<li>
+<p>To use the static environment (where the variable a is bound to a boxed 1) stored in the closure created for f.</p>
+</li>
+<li>
+<p>Or to use the dynamic environment (where the variable a is bound to a  boxed 2) present at the time of applying f.</p>
+</li>
+</ol>
+<p>The first choice leads the program to evaluate to 6 rather than the expected 7.  The second will record the change to the box,
 but it reintroduces dynamic scoping.  So both choices do not work.
-Insight: We need _two_ repositories of information.
-One, the environment, guards static scope.
-*/
-
-sealed abstract class Value
+Insight: We need <em>two</em> repositories of information.
+One, the environment, guards static scope.</p>
+<pre><code class="language-scala">sealed abstract class Value
 type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
-
-/**
-The other, which we call _store_, is trackis dynamic changes.
-Determining the value inside a box will become a two-step process: We first evaluate the box expression to an _address_,
-and then use the store to lookup the value stored at that address. We choose to represent addresses by integers.
-*/
-
-type Address = Int
+</code></pre>
+<p>The other, which we call <em>store</em>, is trackis dynamic changes.
+Determining the value inside a box will become a two-step process: We first evaluate the box expression to an <em>address</em>,
+and then use the store to lookup the value stored at that address. We choose to represent addresses by integers.</p>
+<pre><code class="language-scala">type Address = Int
 case class AddressV(a: Address) extends Value
 
 type Store = Map[Address, Value]
-
-/**
-We will often need a fresh address in the store. We do so using a counter variable.
-*/
-
-var _nextAddress = 0
+</code></pre>
+<p>We will often need a fresh address in the store. We do so using a counter variable.</p>
+<pre><code class="language-scala">var _nextAddress = 0
 // _nextAddress: Int = 0
 
 def nextAddress : Address = {
   _nextAddress += 1
   _nextAddress
 }
-
-/**
-Note: We promised to implement the interpreter without using mutation. Here we did use mutation, but this musage of mutation
+</code></pre>
+<p>Note: We promised to implement the interpreter without using mutation. Here we did use mutation, but this usage of mutation
 is not essential: we could instead just search for the largest address in the present store and add one to it.
-Let's now discuss the evaluation of FAE with conditionals and boxes, BCFAE. To this end, consider the following sample program:
-*/
-
-val test3 = wth(&quot;switch&quot;, NewBox(0),
+Let's now discuss the evaluation of FAE with conditionals and boxes, BCFAE. To this end, consider the following sample program:</p>
+<pre><code class="language-scala">val test3 = wth(&quot;switch&quot;, NewBox(0),
              wth(&quot;toggle&quot;, Fun(&quot;dummy&quot;, If0(OpenBox(&quot;switch&quot;),
                                           Seq(SetBox(&quot;switch&quot;, 1), 1),
                                           Seq(SetBox(&quot;switch&quot;, 0), 0))),
                  Add(Ap(&quot;toggle&quot;,42), Ap(&quot;toggle&quot;,42))))
-// test3: Exp = Ap(
-//   funExpr = Fun(
-//     param = &quot;switch&quot;,
-//     body = Ap(
-//       funExpr = Fun(
-//         param = &quot;toggle&quot;,
-//         body = Add(
-//           lhs = Ap(funExpr = Id(name = &quot;toggle&quot;), argExpr = Num(n = 42)),
-//           rhs = Ap(funExpr = Id(name = &quot;toggle&quot;), argExpr = Num(n = 42))
-//         )
-//       ),
-//       argExpr = Fun(
-//         param = &quot;dummy&quot;,
-//         body = If0(
-//           cond = OpenBox(b = Id(name = &quot;switch&quot;)),
-//           thenExp = Seq(
-//             e1 = SetBox(b = Id(name = &quot;switch&quot;), e = Num(n = 1)),
-//             e2 = Num(n = 1)
-//           ),
-//           elseExp = Seq(
-//             e1 = SetBox(b = Id(name = &quot;switch&quot;), e = Num(n = 0)),
-//             e2 = Num(n = 0)
-//           )
-//         )
-//       )
-//     )
-//   ),
-//   argExpr = NewBox(e = Num(n = 0))
-// )
-
-/**
-This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
-evaluation of this program.
-ID      Exp                     Value   Env             Store
-A       wth(..                          &quot;switch&quot; -&gt; ..   1 -&gt; NumV(0)
-B        wth(..                         &quot;toggle&quot; -&gt; ..
-C         Add(..
-D          Ap(&quot;toggle&quot;)         1                       1 -&gt; NumV(1)
-E          Ap(&quot;toggle&quot;)         0                       1 -&gt; NumV(0)
-F         Add(0,1)              1
-Insight:
+</code></pre>
+<p>This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
+evaluation of this program.</p>
+<table><thead><tr><th>ID</th><th>Exp</th><th>Value</th><th>Env</th><th>Store</th></tr></thead><tbody>
+<tr><td>A</td><td>wth(..</td><td></td><td>&quot;switch&quot; -&gt; .</td><td>1 -&gt; NumV(0)</td></tr>
+<tr><td>B</td><td>wth(..</td><td></td><td>&quot;toggle&quot; -&gt; ..</td><td></td></tr>
+<tr><td>C</td><td>Add(..</td><td></td><td></td><td></td></tr>
+<tr><td>D</td><td>Ap(&quot;toggle&quot;)</td><td>1</td><td></td><td>1 -&gt; NumV(1)</td></tr>
+<tr><td>E</td><td>Ap(&quot;toggle&quot;)</td><td>0</td><td></td><td>1 -&gt; NumV(0)</td></tr>
+<tr><td>F</td><td>Add(0,1)</td><td>1</td><td></td><td></td></tr>
+</tbody></table>
+<p>Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
-This is called _store-passing style:.  Consequently, we have to update the type of our evaluator.
-*/
-
-def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
+This is called <em>store-passing style</em>.  Consequently, we have to update the type of our evaluator.</p>
+<pre><code class="language-scala">def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
   /* All expressions whose evaluation does not alter the store just return s. */
   case Num(n) =&gt; (NumV(n), s)
   case Id(x) =&gt; (env(x), s)
   case f@Fun(_, _) =&gt; (ClosureV(f, env), s)
-  /* In recursive cases we have to thread the store through the
-   * evaluation. In particular, we define the order of evaluation
-   * explicitly through data flow dependencies.  */
+
+
+// In recursive cases we have to thread the store through the evaluation. In particular, we define the order of evaluation
+// explicitly through data flow dependencies.
+
   case If0(cond, thenExp, elseExp)
     =&gt; eval(cond, env, s) match {
          case (NumV(0), s1) =&gt; eval(thenExp, env, s1)
@@ -393,12 +316,13 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
          case _ =&gt; sys.error(&quot;can only apply functions&quot;)
        }
 
-  /* In a sequence, we ignore the result of evaluating e1 but not its
-   * effect on the store. */
+
+// In a sequence, we ignore the result of evaluating e1 but not its effect on the store.
+
   case Seq(e1, e2) =&gt; eval(e2, env, eval(e1, env, s)._2)
 
-  /* A new box is created by putting it into the store at a new
-   * address.  */
+//  A new box is created by putting it into the store at a new address.
+
   case NewBox(e: Exp)
     =&gt; eval(e, env, s) match {
          case (v, s1) =&gt; {
@@ -407,9 +331,10 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
          }
        }
 
-  /* Setting a box is now a two-step process: First evaluate b to an
-   * address, then lookup and update the value associated to the
-   * address in the store. Note that &quot;updated&quot; is a functional method.  */
+// Setting a box is now a two-step process: First evaluate b to an
+// address, then lookup and update the value associated to the
+// address in the store. Note that &quot;updated&quot; is a functional method.
+
   case SetBox(b: Exp, e: Exp)
     =&gt; eval(b, env, s) match {
          case (AddressV(a), s1)
@@ -419,25 +344,23 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
          case _ =&gt; sys.error(&quot;can only set boxes&quot;)
        }
 
-  /* OpenBox uses the same two-step process but does not update the
-   * store.  */
+// OpenBox uses the same two-step process but does not update the
+// store.
+
   case OpenBox(b: Exp)
     =&gt; eval(b, env, s) match {
          case (AddressV(a), s1) =&gt; (s1(a), s1)
          case _                 =&gt; sys.error(&quot;can only open boxes&quot;)
        }
 }
-
-/**
-From an implementation point of view, our interpreter has the problem that nothing is ever removed from the store.
+</code></pre>
+<p>From an implementation point of view, our interpreter has the problem that nothing is ever removed from the store.
 One possibility would be to add an operation &quot;removeBox&quot; or the like to the language, but this would lead to dangling pointers
-and all the* problems associated with manual memory management.
-Our model of stores is sufficient to illustrate how modern languages deal with memory management: by garbage collection.
+and all the* problems associated with manual memory management.</p>
+<p>Our model of stores is sufficient to illustrate how modern languages deal with memory management: by garbage collection.
 Garbage collectors automatically reclaim memory that is no longer referenced from within the active part of the computation.
-We can* model a (naive) mark-and-sweep garbage collector as follows:
-*/
-
-def gc(env: Env, store:Store) : Store = {
+We can* model a (naive) mark-and-sweep garbage collector as follows:</p>
+<pre><code class="language-scala">def gc(env: Env, store:Store) : Store = {
 
   def allAddrInVal(v: Value) : Set[Address] = v match {
     case AddressV(a)      =&gt; Set(a)
@@ -457,8 +380,8 @@ def gc(env: Env, store:Store) : Store = {
   val marked = mark(allAddrInEnv(env)) // mark ...
   store.view.filterKeys(marked(_)).toMap           // and sweep!
 }
-
-val teststore = Map(
+</code></pre>
+<pre><code class="language-scala">val teststore = Map(
   6  -&gt; NumV(42),
   7  -&gt; NumV(6),
   8  -&gt; AddressV(6),
@@ -482,6 +405,13 @@ val teststore = Map(
 
 assert(gc(Map(&quot;a&quot; -&gt; AddressV(10)), teststore) == teststore - 7 - 9)
 </code></pre>
+<p>Note that garbage collectors only <em>approximate</em> the set of semantically disposable store entities. Even with garbage collectors,
+applications may very well suffer from memory leaks. The approximation should be <em>safe</em>, in the sense that a datum is never reclaimed
+when it is used by subsequent computations.</p>
+<p>Furthermore, it must reclaim enough garbage to be actually useful. Reachability has turned
+out to be a rather useful (and sound) approximation of semantic disposability. Garbage collectors must also be efficient.
+Efficiency of GC is a huge research topic that we are not going to discuss. One efficiency problem with garbage collectors based on
+reachability that we want to mention is the &quot;stop-the-world&quot; phenomenon.</p>
 
                     </main>
 
