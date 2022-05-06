@@ -37,7 +37,6 @@ object Me extends Tillmann("Tillmann")
 
 
 
-
 trait UniPerson
 case class Student(val matrikelnummer: Int) extends UniPerson
 case class Professor(val fachgebiet: String) extends UniPerson
@@ -56,11 +55,33 @@ object PatternMatching {
 }
 
 
+enum UniPersonEnum:
+  case StudentEnum(val matrikelnummer: Int)
+  case ProfessorEnum(val fachgebiet: String)
+
+object PatternMatchingEnum {
+  import UniPersonEnum._
+
+  def showUniPerson(p: UniPersonEnum): String =
+    p match {
+      case StudentEnum(m) => "student nr " + m
+      case ProfessorEnum(f) => "professor on " + f
+    }
+
+  def test = {
+    print(showUniPerson(StudentEnum(123)))
+    print(showUniPerson(ProfessorEnum("programming languages")))
+  }
+}
+
+
 object AE {
   // Abstract Syntax Tree
-  trait Exp
-  case class Num(n: Int) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
+  enum Exp:
+    case Num(n: Int)
+    case Add(lhs: Exp, rhs: Exp)
+
+  import Exp._
 
   // Example
   val onePlusEight = Add(Num(1), Add(Num(5), Num(3)))

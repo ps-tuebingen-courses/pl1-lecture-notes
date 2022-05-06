@@ -12,39 +12,39 @@ Let's try to write a function that computes the sum of the first n integers. Let
 first n integers is $n*(n+1)/2$ and instead compute the sum in a loop. Let's try to do this in FAE (with if0):
 
 ```scala
+val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
+```
+
+Sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
+_y_ combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
+we want a language construct "letrec" that is similar to "with", except that the bound String can be used in the expression
+the String is bound to:
+
+```
+Letrec(x: String, e: Exp, body: Exp)
+```
+
+With this new construct our language looks like this:
+
+```scala mdoc
 object Syntax {
-```
-
-```scala mdoc
-  sealed abstract class Exp
-  case class Num(n: Int) extends Exp
-  case class Id(name: String) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
-  case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp
-  implicit def num2exp(n: Int): Exp = Num(n)
-  implicit def id2exp(s: String): Exp = Id(s)
-  case class Fun(param: String, body: Exp) extends Exp
-  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
-
-  val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
-```
-
-  However, sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
-  _y_ combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
-  we want a language construct "letrec" that is similar to "with",  except that the bound String can be used in the expression
-  the String is bound to:
-
-```scala mdoc
-  case class Letrec(x: String, e: Exp, body: Exp) extends Exp
-```
-
-```scala
+  enum Exp:
+    case Num(n: Int)
+    case Id(name: String)
+    case Add(lhs: Exp, rhs: Exp)
+    case If0(cond: Exp, thenExp: Exp, elseExp: Exp)
+    case Fun(param: String, body: Exp)
+    case Ap (funExpr: Exp, argExpr: Exp)
+    case Letrec(x: String, e: Exp, body: Exp)
+  
+  object Exp:
+    implicit def num2exp(n: Int): Exp = Num(n)
+    implicit def id2exp(s: String): Exp = Id(s)
+    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 }
-```
 
-```scala
 import Syntax._
+import Exp._
 ```
 
 Using letrec, our example can be expressed as follows.
@@ -61,15 +61,15 @@ This is bad, because the ``env`` in the closure does not contain a binding for `
 The environment in the closure must contain a mapping for ``"sum"``. Hence envbody should look like
 
 ```
-    envbody = env + (x -> ClosureV(Fun("n", ..."sum"...),
-                                   env+("sum" -> ClosureV(Fun("n",..."sum"...),env)))
+  envbody = env + (x -> ClosureV(Fun("n", ..."sum"...),
+                                 env + ("sum" -> ClosureV(Fun("n",..."sum"...),env)))
 ```
 
 This looks better, but now the second closure contains an environment with no binding of ``"sum"``. What we need is an environment
 that satisfies the equation:
 
 ```
-    envbody == env + (x -> ClosureV(Fun("n", ..."sum"..), envbody))
+  envbody == env + (x -> ClosureV(Fun("n", ..."sum"..), envbody))
 ```
 
 Obviously envbody must be circular. There are different ways to create such a circular environment. We will choose mutation to create

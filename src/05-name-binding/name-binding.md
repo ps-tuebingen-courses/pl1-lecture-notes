@@ -18,14 +18,15 @@ We study this WAE language to better understand what names mean in  programming 
 
 ```scala mdoc
 object Syntax {
-  sealed abstract class Exp
-  case class Num(n: Int) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
-  case class Mul(lhs: Exp, rhs: Exp) extends Exp
-  case class Id(x: String) extends Exp
-  case class With(x: String, xdef: Exp, body: Exp) extends Exp
+  enum Exp:
+    case Num(n: Int) extends Exp
+    case Add(lhs: Exp, rhs: Exp) extends Exp
+    case Mul(lhs: Exp, rhs: Exp) extends Exp
+    case Id(x: String) extends Exp
+    case With(x: String, xdef: Exp, body: Exp) extends Exp
 }
 import Syntax._
+import Exp._
 ```
 
 We use implicits again to make example programs less verbose.

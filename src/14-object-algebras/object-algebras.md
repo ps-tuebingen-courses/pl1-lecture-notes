@@ -179,7 +179,7 @@ def test[T](semantics : Exp[T]) = {
 
 We evaluate the program by folding the eval visitor over it.
 
-```scala mdoc:silent
+```scala mdoc
 val testres = test(eval)(Map.empty)
 ```
 
@@ -206,7 +206,7 @@ def testMult[T](semantics : ExpWithMult[T]) = {
 }
 ```
 
-```scala mdoc:silent
+```scala mdoc
 val testresMult = testMult(evalWithMult)(Map.empty)
 ```
 
@@ -259,7 +259,7 @@ def test2(semantics: ExpT) = {
 }
 ```
 
-```scala mdoc:silent
+```scala mdoc
 val testres2 = test2(evalT)
 val testres3 = test2(prettyprintT)
 ```

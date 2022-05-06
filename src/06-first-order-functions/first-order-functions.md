@@ -21,24 +21,27 @@ The following definitions are the language we have analyzed so far together with
 
 ```scala mdoc
 object Syntax {
-  sealed abstract class Exp
-  case class Num(n: Int) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
-  case class Mul(lhs: Exp, rhs: Exp) extends Exp
-  case class Id(x: String) extends Exp
-  case class With(x: String, xdef: Exp, body: Exp) extends Exp
-  /** We use implicits again to make example programs less verbose. */
-  implicit def num2exp(n: Int): Exp = Num(n)
-  implicit def string2exp(x: String): Exp = Id(x)
+  enum Exp:
+    case Num(n: Int) extends Exp
+    case Add(lhs: Exp, rhs: Exp) extends Exp
+    case Mul(lhs: Exp, rhs: Exp) extends Exp
+    case Id(x: String) extends Exp
+    case With(x: String, xdef: Exp, body: Exp) extends Exp
 
+    /** The new language constructs for first-order functions: */
+    case Call(f: String, args: List[Exp]) extends Exp // functions are called by name
 
-  /** The new language constructs for first-order functions: */
-  case class Call(f: String, args: List[Exp]) extends Exp // functions are called by name
-
-  case class FunDef(args: List[String], body: Exp)
-  type Funs = Map[String,FunDef]
+  object Exp:
+    /** The new language constructs for first-order functions: */
+    case class FunDef(args: List[String], body: Exp)
+    type Funs = Map[String,FunDef]
+ 
+    /** We use implicits again to make example programs less verbose. */
+    implicit def num2exp(n: Int): Exp = Num(n)
+    implicit def string2exp(x: String): Exp = Id(x)
 }
 import Syntax._
+import Exp._
 ```
 
 A function has a number of formal args and a body. Note that a first-order function also
@@ -96,8 +99,8 @@ to support a common namespace for function names and variable names.
 A test case:
 
 ```scala mdoc:silent
-val someFuns = Map( "adder" -> FunDef(List("a","b"), Add("a","b")),
-                 "doubleadder" -> FunDef(List("a","x"), Add(Call("adder", List("a",5)),Call("adder", List("x",7)))))
+val someFuns: Funs = Map( "adder" -> FunDef(List("a","b"), Add("a","b")),
+                     "doubleadder" -> FunDef(List("a","x"), Add(Call("adder", List("a",5)),Call("adder", List("x",7)))))
 ```
 
 ```scala mdoc
@@ -189,7 +192,7 @@ assert( evalDynSomeFuns == 17)
 Does this make a difference? Yes, it does. Here is an example:
 
 ```scala mdoc:silent
-val funnyFun = Map( "funny" -> FunDef(List("a"), Add("a","b")))
+val funnyFun: Funs = Map( "funny" -> FunDef(List("a"), Add("a","b")))
 ```
 
 ```scala mdoc

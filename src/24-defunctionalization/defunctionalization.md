@@ -16,15 +16,16 @@ with which we can take control over the call stack management: CPS transformatio
 rely on the order of evaluation and call stack management of the meta language anymore.  We replicate its definition here:
 */
 
-sealed abstract class Exp
-case class Num(n : Int) extends Exp
-case class Id(name : Symbol) extends Exp
-case class Add(lhs : Exp, rhs : Exp) extends Exp
-case class Fun(param : Symbol, body : Exp) extends Exp
-case class Ap (funExpr : Exp, argExpr : Exp) extends Exp
+enum Exp:
+  case Num(n : Int)
+  case Id(name : String)
+  case Add(lhs : Exp, rhs : Exp)
+  case Fun(param : String, body : Exp)
+  case Ap (funExpr : Exp, argExpr : Exp)
+import Exp._
 
 sealed abstract class Value
-type Env = Map[Symbol, Value]
+type Env = Map[String, Value]
 case class NumV(n : Int) extends Value
 case class ClosureV(f : Fun, env : Env) extends Value
 

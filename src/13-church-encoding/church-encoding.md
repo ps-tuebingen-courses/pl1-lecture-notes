@@ -7,12 +7,16 @@ the lambda calculus, is. Here is a shrinked version of FAE that does not even ha
 we introduce a new expression ``PrintDot`` whose semantics is to print a dot on the screen.
 
 ```scala mdoc
-sealed abstract class Exp
-case class Id(name: String) extends Exp
-implicit def id2exp(s: String): Exp = Id(s)
-case class Fun(param: String, body: Exp) extends Exp
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-case class PrintDot() extends Exp
+enum Exp:
+  case Id(name: String)
+  case Fun(param: String, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
+  case PrintDot()
+
+object Exp:
+  implicit def id2exp(s: String): Exp = Id(s)
+
+import Exp._
 
 abstract class Value // the only values are closures
 type Env = Map[String, Value]
@@ -104,8 +108,12 @@ val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three),emptylist)
 
 ```scala mdoc:silent
 val test = Ap(printnum, Ap(multlist, list323))
-// Calling exec should yield 18 dots before the dummy result
-def exec = eval(test, Map.empty)
+```
+
+Calling exec should yield 18 dots before the dummy result
+
+```scala mdoc
+val exec = eval(test, Map.empty)
 ```
 
 Topic for class discussion: Can we do these encodings directly in Scala or Haskell?

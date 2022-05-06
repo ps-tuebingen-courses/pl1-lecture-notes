@@ -10,22 +10,23 @@ First-Class Continuations
 =========================
 Today's goal is to formalize first-class continuations as illustrated by Scheme's let/cc construct. In the previous lecture we have
 learned why first class continuations are a powerful language construct. Today we learn the semantics of first-class continuations by
-extending our interpreter to support letcc. Here is the abstract syntax of the language we want to extend: 
+extending our interpreter to support letcc. Here is the abstract syntax of the language extended with letcc:
 */
 
-sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Id(name: String) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Fun(param: String, body: Exp) extends Exp
-implicit def num2exp(n: Int): Exp = Num(n)
-implicit def id2exp(s: String): Exp = Id(s)
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+enum Exp:
+  case Num(n: Int)
+  case Id(name: String)
+  case Add(lhs: Exp, rhs: Exp)
+  case Fun(param: String, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
+  /** The abstract syntax of Letcc is as follows */
+  case Letcc(param: String, body: Exp)
 
-/** 
-The abstract syntax of Letcc is as follows: 
-*/
-case class Letcc(param: String, body: Exp) extends Exp
+object Exp:
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
+
+import Exp._
 
 /**
 But how do we implement letcc? How do we get hold of the rest of the computation of the object (=interpreted) program? 

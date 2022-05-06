@@ -13,22 +13,26 @@ a functional store, because our purpose is not to explain mutation but to explai
 This is the well-known syntax of our language: FAE with boxes.
 
 ```scala mdoc
-sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Id(name: String) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Mul(lhs: Exp, rhs: Exp) extends Exp
-case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp
-implicit def num2exp(n: Int): Exp = Num(n)
-implicit def id2exp(s: String): Exp = Id(s)
-case class Fun(param: String, body: Exp) extends Exp
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+enum Exp:
+  case Num(n: Int)
+  case Id(name: String)
+  case Add(lhs: Exp, rhs: Exp)
+  case Mul(lhs: Exp, rhs: Exp)
+  case If0(cond: Exp, thenExp: Exp, elseExp: Exp)
+  case Fun(param: String, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
 
-case class NewBox(e: Exp) extends Exp
-case class SetBox(b: Exp, e: Exp) extends Exp
-case class OpenBox(b: Exp) extends Exp
-case class Seq(e1: Exp, e2: Exp) extends Exp
+  case NewBox(e: Exp)
+  case SetBox(b: Exp, e: Exp)
+  case OpenBox(b: Exp)
+  case Seq(e1: Exp, e2: Exp)
+
+object Exp:
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
+  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+
+import Exp._
 ```
 
 

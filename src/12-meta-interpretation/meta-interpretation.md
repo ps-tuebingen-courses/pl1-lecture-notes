@@ -31,13 +31,16 @@ corresponding meta-level construct.
 
 ```scala mdoc
 object HOAS {
-    sealed abstract class Exp
-    case class Num(n: Int) extends Exp
-    case class Id(name: String) extends Exp
-    case class Add(lhs: Exp, rhs: Exp) extends Exp
-    case class Fun(f: Exp => Exp) extends Exp
-    case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-    def eval(e: Exp) : Exp = e match {
+  enum Exp:
+    case class Num(n: Int)
+    case class Id(name: String)
+    case class Add(lhs: Exp, rhs: Exp)
+    case class Fun(f: Exp => Exp)
+    case class Ap (funExpr: Exp, argExpr: Exp)
+
+  import Exp._
+
+  def eval(e: Exp) : Exp = e match {
       case Id(v) => sys.error("unbound identifier: "+v)
       case Add(l,r) => (eval(l), eval(r)) match {
                          case (Num(x),Num(y)) => Num(x+y)
@@ -67,12 +70,14 @@ that  we learned about in the first lecture (recall that the internal visitor  s
 Recommended exercise: Re-implement the interpreter as an internal visitor.
 
 ```scala mdoc
-sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Id(name: String) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Fun(param: String, body: Exp) extends Exp
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+enum Exp:
+  case class Num(n: Int)
+  case class Id(name: String)
+  case class Add(lhs: Exp, rhs: Exp)
+  case class Fun(param: String, body: Exp)
+  case class Ap (funExpr: Exp, argExpr: Exp)
+
+import Exp._
 
 object Compositional {
     sealed abstract class Value

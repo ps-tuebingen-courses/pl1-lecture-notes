@@ -23,14 +23,17 @@ but is defined as an additional filter which rules out some syntactically correc
 Let's look at a small toy language to illustrate type systems:
 */
 
-sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Bool(x: Boolean) extends Exp
-case class If(cond: Exp, thenExp: Exp, els: Exp) extends Exp
-implicit def num2exp(n: Int): Exp = Num(n)
-implicit def bool2exp(x: Boolean): Exp = Bool(x)
+enum Exp:
+  case Num(n: Int)
+  case Add(lhs: Exp, rhs: Exp)
+  case Bool(x: Boolean)
+  case If(cond: Exp, thenExp: Exp, els: Exp)
 
+object Exp:
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def bool2exp(x: Boolean): Exp = Bool(x)
+
+import Exp._
 
 def eval(e: Exp) : Exp = e match {
   case Add(l,r) => (eval(l), eval(r)) match {
@@ -66,9 +69,10 @@ In this type system, we choose to define two types, one called BoolType and one 
 */
 
 
-sealed abstract class Type
-case class BoolType() extends Type
-case class IntType() extends Type
+enum Type:
+  case BoolType()
+  case IntType()
+import Type._
 
 /**
 A type checker is a compositional assignment of types (or type errors) to expressions. Compositionality means that the type of a

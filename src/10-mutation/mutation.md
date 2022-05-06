@@ -19,28 +19,28 @@ We will add boxes to our base language, FAE.
 
 ```scala mdoc
 object Syntax {
-  sealed abstract class Exp
-  case class Num(n: Int) extends Exp
-  case class Id(name: String) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
-  case class Mul(lhs: Exp, rhs: Exp) extends Exp
-  case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp
-  implicit def num2exp(n: Int): Exp = Num(n)
-  implicit def id2exp(s: String): Exp = Id(s)
-  case class Fun(param: String, body: Exp) extends Exp
-  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+  enum Exp:
+    case Num(n: Int)
+    case Id(name: String)
+    case Add(lhs: Exp, rhs: Exp)
+    case Mul(lhs: Exp, rhs: Exp)
+    case If0(cond: Exp, thenExp: Exp, elseExp: Exp)
+    case Fun(param: String, body: Exp)
+    case Ap (funExpr: Exp, argExpr: Exp)
 
-  /**
-  To add mutation to FAE, we add four language constructs:
-  */
+    /** To add mutation to FAE, we add four language constructs: */
+    case NewBox(e: Exp) // create a new box
+    case SetBox(b: Exp, e: Exp) // assign to a box
+    case OpenBox(b: Exp) // read value in a box
+    case Seq(e1: Exp, e2: Exp) // sequencing of expressions
 
-  case class NewBox(e: Exp) extends Exp // create a new box
-  case class SetBox(b: Exp, e: Exp) extends Exp // assign to a box
-  case class OpenBox(b: Exp) extends Exp // read value in a box
-  case class Seq(e1: Exp, e2: Exp) extends Exp // sequencing of expressions
+  object Exp:
+    implicit def num2exp(n: Int): Exp = Num(n)
+    implicit def id2exp(s: String): Exp = Id(s)
+    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 }
 import Syntax._
+import Exp._
 ```
 
 In this new language, the following sample program,

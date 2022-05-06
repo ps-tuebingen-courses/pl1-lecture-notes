@@ -24,16 +24,20 @@ thanks to work in our research group, in Java.
 Fortunately, a definitional interpreter for delimited continuations is pretty simple.
 */
 
-sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Id(name: Symbol) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Fun(param: Symbol, body: Exp) extends Exp
-implicit def num2exp(n: Int): Exp = Num(n)
-implicit def id2exp(s: Symbol): Exp = Id(s)
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-case class Shift(param: Symbol, body: Exp) extends Exp
-case class Reset(body: Exp) extends Exp
+enum Exp:
+  case Num(n: Int)
+  case Id(name: Symbol)
+  case Add(lhs: Exp, rhs: Exp)
+  case Fun(param: Symbol, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
+  case Shift(param: Symbol, body: Exp)
+  case Reset(body: Exp)
+
+object Exp:
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: Symbol): Exp = Id(s)
+
+import Exp._
 
 sealed abstract class Value
 type Env = Map[Symbol, Value]

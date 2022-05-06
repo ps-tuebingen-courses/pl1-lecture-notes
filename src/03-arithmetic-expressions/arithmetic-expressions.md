@@ -23,12 +23,12 @@ object AEId {
 ```
 
 ```scala mdoc
-sealed abstract class Exp
-
-case class Num(n: Int) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Mul(lhs: Exp, rhs: Exp) extends Exp
-case class Id(x: String) extends Exp
+enum Exp:
+  case Num(n: Int) extends Exp
+  case Add(lhs: Exp, rhs: Exp) extends Exp
+  case Mul(lhs: Exp, rhs: Exp) extends Exp
+  case Id(x: String) extends Exp
+import Exp._
 ```
 
 Here is a sample program written in this language, directly written down using case class constructors:
@@ -127,10 +127,10 @@ Compositional specifications are particularly nice because they enable "equation
 subexpressions with the same semantics without changing the semantics of the whole.
 
 ```scala mdoc
-sealed abstract class ExpAE
-
-case class NumAE(n: Int) extends ExpAE
-case class AddAE(lhs: ExpAE, rhs: ExpAE) extends ExpAE
+enum ExpAE:
+  case NumAE(n: Int) extends ExpAE
+  case AddAE(lhs: ExpAE, rhs: ExpAE) extends ExpAE
+import ExpAE._
 
 def foldExp[T](v: VisitorAE[T], e: ExpAE): T = {
   e match {
