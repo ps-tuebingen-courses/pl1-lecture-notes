@@ -279,7 +279,7 @@ extend <code>env</code> instead, like so:</p>
   case Id(x) =&gt; env(x)
   case Add(l,r) =&gt; evalDynScope(funs,env,l) + evalDynScope(funs,env,r)
   case Mul(l,r) =&gt; evalDynScope(funs,env,l) * evalDynScope(funs,env,r)
-  case With(x, xdef, body) =&gt; evalDynScope(funs,env+ ((x,evalDynScope(funs,env,xdef))),body)
+  case With(x, xdef, body) =&gt; evalDynScope(funs,env + ((x,evalDynScope(funs,env,xdef))),body)
   case Call(f,args) =&gt; {
      val fd = funs(f)
      val vargs = args.map(evalDynScope(funs,env,_))

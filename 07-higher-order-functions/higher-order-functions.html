@@ -172,7 +172,7 @@ been highly influential in the design and theory of programming languages.</p>
 
   // Both function definitions and applications are expressions.
   case class Fun(param: String, body: Exp) extends Exp
-  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+  case class Ap(funExpr: Exp, argExpr: Exp) extends Exp
 
   // &quot;with&quot; would be a better name for this function, but it is reserved in Scala
   def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
@@ -189,7 +189,7 @@ latter.</p>
 <p>The <code>with</code> construct is not needed anymore since it can be encoded using <code>Ap</code> and
 <code>Fun</code>. For instance, <code>with x = 7 in x+3</code> can be encoded (using Scala syntax) as
 <code>((x) =&gt; x+3)(7)</code>. We have made this idea explicit above by giving a constructive
-translation. Such translations are also often called &quot;desugaring&quot;.</p>
+translation. Remember that such translations are often called &quot;desugaring&quot;.</p>
 <p>Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
 <pre><code class="language-scala">def subst0(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
   case Num(n) =&gt; e1
@@ -205,7 +205,7 @@ translation. Such translations are also often called &quot;desugaring&quot;.</p>
 assert( subst0(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
 assert( subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
 </code></pre>
-<p>However, what happens if <code>e2</code> contains free variables? The danger here is that they may be accidentially &quot;captured&quot; by the substitution.
+<p>Looks good. However, what happens if <code>e2</code> contains free variables? The danger here is that they may be accidentially &quot;captured&quot; by the substitution.
 For instance, consider</p>
 <pre><code class="language-scala">val subst0Test = subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))
 // subst0Test: Exp = Fun(
@@ -217,14 +217,14 @@ For instance, consider</p>
 // )
 </code></pre>
 <p>The result is <code>Fun(&quot;x&quot;,Add(&quot;x&quot;,Add(&quot;x&quot;,5)))</code>
-This is not desirable, since it violates again static scoping.</p>
+This is not desirable, since it again violates static scoping.</p>
 <p>Note that this problem did not show up in earlier languages, because there we only substituted variables by numbers, but not by
 expressions that may contain free variables: The type of <code>e2</code> was <code>Num</code> and not <code>Exp</code>.</p>
 <p>Hence we are still not done with defining substitution. But what is the desired result of the substitution above?
 The answer is that we must avoid the name clash by renaming the variable bound by the &quot;lambda&quot; if the variable name occurs free in <code>e2</code>.
 This new variable name should be &quot;fresh&quot;, i.e., not occur free in <code>e2</code>.</p>
 <p>For instance, in the example above, we could first rename <code>&quot;x&quot;</code> to the fresh name <code>&quot;x0&quot;</code> and only then substitute, i.e.</p>
-<p><code>subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x0&quot;,Add(Id(&quot;x0&quot;),Add(Id(&quot;x&quot;),Num(5))))</code></p>
+<p><code>subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x0&quot;,Add(&quot;x0&quot;,Add(&quot;x&quot;,Num(5))))</code></p>
 <p>Let's do this step by step.</p>
 <pre><code class="language-scala">def freshName(names: Set[String], default: String) : String = {
   var last : Int = 0
@@ -319,7 +319,7 @@ called Omega:</p>
 <pre><code class="language-scala">val omega = Ap(Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)), Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)))
 // try eval(omega) to crash the interpreter ;-)
 </code></pre>
-<p>Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We come back to
+<p>Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
 this topic later.</p>
 <p>Let's now discuss what an environment-based version of this interpreter looks like.
 Here is a first attempt:</p>

@@ -640,7 +640,7 @@ class OptionTMonad[M[_]](val m : Monad[M]) extends Monad[OptionT[M]#x] {
 }		
 
 val ListOptionM = new OptionTMonad(ListMonad)
-// ListOptionM: OptionTMonad[[A &gt;: Nothing &lt;: Any] =&gt; List[A]] = repl.MdocSession$App$OptionTMonad@a7e77bd
+// ListOptionM: OptionTMonad[[A &gt;: Nothing &lt;: Any] =&gt; List[A]] = repl.MdocSession$App$OptionTMonad@58c1a0f
 
 // in this case, for-comprehension syntax doesn't work because it clashes with the built-in support for
 // for-comprehensions for lists :-(

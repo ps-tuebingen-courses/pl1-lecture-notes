@@ -8,7 +8,7 @@ object Syntax {
 
   // Both function definitions and applications are expressions.
   case class Fun(param: String, body: Exp) extends Exp
-  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+  case class Ap(funExpr: Exp, argExpr: Exp) extends Exp
 
   // "with" would be a better name for this function, but it is reserved in Scala
   def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
