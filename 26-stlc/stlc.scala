@@ -20,26 +20,29 @@ function definitions with the expected argument type.
 
 sealed abstract class Type
 
-sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Id(name: String) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-implicit def num2exp(n: Int): Exp = Num(n)
-implicit def id2exp(s: String): Exp = Id(s)
-case class Fun(param: String, t: Type, body: Exp) extends Exp
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-case class Junit() extends Exp
-case class Let(x: String, xdef: Exp, body: Exp) extends Exp
-case class TypeAscription(e: Exp, t: Type) extends Exp
+enum Exp:
+  case Num(n: Int)
+  case Id(name: String)
+  case Add(lhs: Exp, rhs: Exp)
+  case Fun(param: String, t: Type, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
+  case Junit()
+  case Let(x: String, xdef: Exp, body: Exp)
+  case TypeAscription(e: Exp, t: Type)
 
-case class Product(e1: Exp, e2: Exp) extends Exp
-case class Fst(e: Exp) extends Exp
-case class Snd(e: Exp) extends Exp
+  case Product(e1: Exp, e2: Exp)
+  case Fst(e: Exp)
+  case Snd(e: Exp)
 
-case class SumLeft(left: Exp, right: Type) extends Exp
-case class SumRight(left: Type, right: Exp) extends Exp
-case class EliminateSum(e: Exp, fl: Exp, fr: Exp) extends Exp
+  case SumLeft(left: Exp, right: Type)
+  case SumRight(left: Type, right: Exp)
+  case EliminateSum(e: Exp, fl: Exp, fr: Exp)
 
+object Exp:
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
+
+import Exp._
 
 def freshName(names: Set[String], default: String) : String = {
   var last : Int = 0
@@ -133,7 +136,6 @@ case class NumType() extends Type
 case class FunType(from: Type, to: Type) extends Type
 case class JunitType() extends Type
 case class ProductType(fst: Type, snd: Type) extends Type
-
 case class SumType(left: Type, right: Type) extends Type
 
 /**

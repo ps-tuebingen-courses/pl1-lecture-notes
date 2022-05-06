@@ -1,11 +1,14 @@
 object HOAS {
-    sealed abstract class Exp
-    case class Num(n: Int) extends Exp
-    case class Id(name: String) extends Exp
-    case class Add(lhs: Exp, rhs: Exp) extends Exp
-    case class Fun(f: Exp => Exp) extends Exp
-    case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-    def eval(e: Exp) : Exp = e match {
+  enum Exp:
+    case Num(n: Int)
+    case Id(name: String)
+    case Add(lhs: Exp, rhs: Exp)
+    case Fun(f: Exp => Exp)
+    case Ap (funExpr: Exp, argExpr: Exp)
+
+  import Exp._
+
+  def eval(e: Exp) : Exp = e match {
       case Id(v) => sys.error("unbound identifier: "+v)
       case Add(l,r) => (eval(l), eval(r)) match {
                          case (Num(x),Num(y)) => Num(x+y)
@@ -16,15 +19,17 @@ object HOAS {
          case _ => sys.error("can only apply functions")
       }
       case _ => e // numbers and functions evaluate to themselves
-    }      
+    }
 }
 
-sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Id(name: String) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Fun(param: String, body: Exp) extends Exp
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+enum Exp:
+  case Num(n: Int)
+  case Id(name: String)
+  case Add(lhs: Exp, rhs: Exp)
+  case Fun(param: String, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
+
+import Exp._
 
 object Compositional {
     sealed abstract class Value

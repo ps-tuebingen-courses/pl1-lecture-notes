@@ -1,20 +1,22 @@
 object Syntax {
-  sealed abstract class Exp
-  case class Num(n: Int) extends Exp
-  case class Id(name: String) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
-  implicit def num2exp(n: Int): Exp = Num(n)
-  implicit def id2exp(s: String): Exp = Id(s)
+  enum Exp:
+    case Num(n: Int)
+    case Id(name: String)
+    case Add(lhs: Exp, rhs: Exp)
 
-  // Both function definitions and applications are expressions.
-  case class Fun(param: String, body: Exp) extends Exp
-  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+    // Both function definitions and applications are expressions.
+    case Fun(param: String, body: Exp)
+    case Ap(funExpr: Exp, argExpr: Exp)
 
-  // "with" would be a better name for this function, but it is reserved in Scala
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+  object Exp:
+    implicit def num2exp(n: Int): Exp = Num(n)
+    implicit def id2exp(s: String): Exp = Id(s)
+    // "with" would be a better name for this function, but it is reserved in Scala
+    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 }
 
 import Syntax._
+import Exp._
 
 def freshName(names: Set[String], default: String) : String = {
   var last : Int = 0

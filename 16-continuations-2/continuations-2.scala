@@ -63,14 +63,18 @@ import scala.language.implicitConversions
      result, most importantly the fact that all function applications are tail calls.
   For this reason, we define a special new syntax for CPS-transformed terms. Here is our original syntax: */
 
-sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Id(name: String) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Fun(param: String, body: Exp) extends Exp
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-implicit def num2exp(n: Int): Exp = Num(n)
-implicit def id2exp(s: String): Exp = Id(s)
+enum Exp:
+  case Num(n: Int)
+  case Id(name: String)
+  case Add(lhs: Exp, rhs: Exp)
+  case Fun(param: String, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
+
+object Exp:
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
+
+import Exp._
 
 /* For CPS transformed terms, we define two different syntactic categories: Values (CPSVal) and Expressions (CPSExp).
    By "values", we mean terms that "return", that is, terms that are different from applications of functions
@@ -81,6 +85,7 @@ implicit def id2exp(s: String): Exp = Id(s)
    gets an additional continuation parameter, and Continuation Functions (CPSCont), which are the result of the CPS
    transformation. Correspondingly, we have two different forms of applications, CPSContApp and CPSFunApp.
    Here is the formal definition: */
+
 sealed abstract class CPSExp
 abstract class CPSVal extends CPSExp
 case class CPSNum(n: Int) extends CPSVal
@@ -98,6 +103,7 @@ case class CPSAdd(l: CPSVar, r: CPSVar) extends CPSVal
  * We need to make sure that we do not accidentially capture existing names in the program. For this
  * reason we need our freshName machinery we introduced in 5-fae.scala.
  */
+
 def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) => Set(x)
    case Add(l,r) => freeVars(l) ++ freeVars(r)

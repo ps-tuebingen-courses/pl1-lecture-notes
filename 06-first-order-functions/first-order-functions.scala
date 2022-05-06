@@ -1,24 +1,27 @@
 import scala.language.implicitConversions
 
 object Syntax {
-  sealed abstract class Exp
-  case class Num(n: Int) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
-  case class Mul(lhs: Exp, rhs: Exp) extends Exp
-  case class Id(x: String) extends Exp
-  case class With(x: String, xdef: Exp, body: Exp) extends Exp
-  /** We use implicits again to make example programs less verbose. */
-  implicit def num2exp(n: Int): Exp = Num(n)
-  implicit def string2exp(x: String): Exp = Id(x)
+  enum Exp:
+    case Num(n: Int) extends Exp
+    case Add(lhs: Exp, rhs: Exp) extends Exp
+    case Mul(lhs: Exp, rhs: Exp) extends Exp
+    case Id(x: String) extends Exp
+    case With(x: String, xdef: Exp, body: Exp) extends Exp
 
+    /** The new language constructs for first-order functions: */
+    case Call(f: String, args: List[Exp]) extends Exp // functions are called by name
 
-  /** The new language constructs for first-order functions: */
-  case class Call(f: String, args: List[Exp]) extends Exp // functions are called by name
+  object Exp:
+    /** The new language constructs for first-order functions: */
+    case class FunDef(args: List[String], body: Exp)
+    type Funs = Map[String,FunDef]
 
-  case class FunDef(args: List[String], body: Exp)
-  type Funs = Map[String,FunDef]
+    /** We use implicits again to make example programs less verbose. */
+    implicit def num2exp(n: Int): Exp = Num(n)
+    implicit def string2exp(x: String): Exp = Id(x)
 }
 import Syntax._
+import Exp._
 
 def subst(e: Exp,i: String,v: Num) : Exp =  e match {
     case Num(n) => e
@@ -51,8 +54,8 @@ def eval(funs: Funs, e: Exp) : Int = e match {
   }
 }
 
-val someFuns = Map( "adder" -> FunDef(List("a","b"), Add("a","b")),
-                 "doubleadder" -> FunDef(List("a","x"), Add(Call("adder", List("a",5)),Call("adder", List("x",7)))))
+val someFuns: Funs = Map( "adder" -> FunDef(List("a","b"), Add("a","b")),
+                     "doubleadder" -> FunDef(List("a","x"), Add(Call("adder", List("a",5)),Call("adder", List("x",7)))))
 
 val callSomeFuns = eval(someFuns,Call("doubleadder",List(2,3)))
 assert( callSomeFuns == 17)
@@ -102,7 +105,7 @@ def evalDynScope(funs: Funs, env: Env, e: Exp) : Int = e match {
 val evalDynSomeFuns = evalDynScope(someFuns,Map.empty, Call("doubleadder",List(2,3)))
 assert( evalDynSomeFuns == 17)
 
-val funnyFun = Map( "funny" -> FunDef(List("a"), Add("a","b")))
+val funnyFun: Funs = Map( "funny" -> FunDef(List("a"), Add("a","b")))
 
 val evalDynFunnyFun = evalDynScope(funnyFun, Map.empty, With("b", 3, Call("funny",List(4))))
 assert(evalDynFunnyFun == 7)

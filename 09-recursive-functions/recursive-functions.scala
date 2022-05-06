@@ -1,25 +1,25 @@
 import scala.language.implicitConversions
 
+val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
+
 object Syntax {
+  enum Exp:
+    case Num(n: Int)
+    case Id(name: String)
+    case Add(lhs: Exp, rhs: Exp)
+    case If0(cond: Exp, thenExp: Exp, elseExp: Exp)
+    case Fun(param: String, body: Exp)
+    case Ap (funExpr: Exp, argExpr: Exp)
+    case Letrec(x: String, e: Exp, body: Exp)
 
-  sealed abstract class Exp
-  case class Num(n: Int) extends Exp
-  case class Id(name: String) extends Exp
-  case class Add(lhs: Exp, rhs: Exp) extends Exp
-  case class If0(cond: Exp, thenExp: Exp, elseExp: Exp) extends Exp
-  implicit def num2exp(n: Int): Exp = Num(n)
-  implicit def id2exp(s: String): Exp = Id(s)
-  case class Fun(param: String, body: Exp) extends Exp
-  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
-
-  val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
-
-  case class Letrec(x: String, e: Exp, body: Exp) extends Exp
-
+  object Exp:
+    implicit def num2exp(n: Int): Exp = Num(n)
+    implicit def id2exp(s: String): Exp = Id(s)
+    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
 }
 
 import Syntax._
+import Exp._
 
 val sum = Letrec("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
 

@@ -2,12 +2,12 @@ import scala.language.implicitConversions
 
 object AEId {
 
-sealed abstract class Exp
-
-case class Num(n: Int) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Mul(lhs: Exp, rhs: Exp) extends Exp
-case class Id(x: String) extends Exp
+enum Exp:
+  case Num(n: Int) extends Exp
+  case Add(lhs: Exp, rhs: Exp) extends Exp
+  case Mul(lhs: Exp, rhs: Exp) extends Exp
+  case Id(x: String) extends Exp
+import Exp._
 
 val test0 = Add(Mul(Id("x"),Num(2)),Add(Id("y"),Id("y")))
 
@@ -38,10 +38,10 @@ case class VisitorAE[T](num: Int => T, add: (T, T) => T)
 // an alternative to this design is to define num and add as abstract methods
 // and then create concrete visitors by subclassing or trait composition.
 
-sealed abstract class ExpAE
-
-case class NumAE(n: Int) extends ExpAE
-case class AddAE(lhs: ExpAE, rhs: ExpAE) extends ExpAE
+enum ExpAE:
+  case NumAE(n: Int) extends ExpAE
+  case AddAE(lhs: ExpAE, rhs: ExpAE) extends ExpAE
+import ExpAE._
 
 def foldExp[T](v: VisitorAE[T], e: ExpAE): T = {
   e match {

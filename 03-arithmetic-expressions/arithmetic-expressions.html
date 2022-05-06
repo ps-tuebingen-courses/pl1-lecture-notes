@@ -156,12 +156,12 @@ e &amp; := &amp; n &amp; \textit{Numeric Literals} \\
 \]</p>
 <pre><code class="language-scala">object AEId {
 </code></pre>
-<pre><code class="language-scala">sealed abstract class Exp
-
-case class Num(n: Int) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Mul(lhs: Exp, rhs: Exp) extends Exp
-case class Id(x: String) extends Exp
+<pre><code class="language-scala">enum Exp:
+  case Num(n: Int) extends Exp
+  case Add(lhs: Exp, rhs: Exp) extends Exp
+  case Mul(lhs: Exp, rhs: Exp) extends Exp
+  case Id(x: String) extends Exp
+import Exp._
 </code></pre>
 <p>Here is a sample program written in this language, directly written down using case class constructors:</p>
 <pre><code class="language-scala">val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
@@ -223,10 +223,10 @@ semantics (in terms of the meta-language) of a composite expression is determine
 the subexpressions is irrelevant.</p>
 <p>Compositional specifications are particularly nice because they enable &quot;equational reasoning&quot;: Subexpressions can be replaced by other
 subexpressions with the same semantics without changing the semantics of the whole.</p>
-<pre><code class="language-scala">sealed abstract class ExpAE
-
-case class NumAE(n: Int) extends ExpAE
-case class AddAE(lhs: ExpAE, rhs: ExpAE) extends ExpAE
+<pre><code class="language-scala">enum ExpAE:
+  case NumAE(n: Int) extends ExpAE
+  case AddAE(lhs: ExpAE, rhs: ExpAE) extends ExpAE
+import ExpAE._
 
 def foldExp[T](v: VisitorAE[T], e: ExpAE): T = {
   e match {

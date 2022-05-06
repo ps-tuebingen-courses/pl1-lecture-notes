@@ -63,10 +63,11 @@ to propagate a mapping from identifiers to boolean values
 in an interpreter for boolean formulas. */
 
 object ReaderExample2 extends ReaderMonadImp {
-    trait Exp
-    case class Id(x: String) extends Exp
-    case class And(l: Exp, r: Exp) extends Exp
-    case class Or(l: Exp, r: Exp) extends Exp
+    enum Exp:
+      case Id(x: String)
+      case And(l: Exp, r: Exp)
+      case Or(l: Exp, r: Exp)
+    import Exp._
     type R = Map[String,Boolean]
 
     // note that the signature of eval is identical to

@@ -277,6 +277,7 @@ object eval extends eval
 </code></pre>
 <p>We evaluate the program by folding the eval visitor over it.</p>
 <pre><code class="language-scala">val testres = test(eval)(Map.empty)
+// testres: Value = NumV(n = 8)
 </code></pre>
 <p>The object algebra encoding of expressions is quite extensible. For instance, we can
 add another case to the expression datatype by extending the interface.</p>
@@ -299,6 +300,7 @@ def testMult[T](semantics : ExpWithMult[T]) = {
 }
 </code></pre>
 <pre><code class="language-scala">val testresMult = testMult(evalWithMult)(Map.empty)
+// testresMult: Value = NumV(n = 15)
 </code></pre>
 <p>Note that there is no danger of confusing the language variants. For instance,
 an attempt to pass testMult to eval will be a static type error.</p>
@@ -343,7 +345,9 @@ def test2(semantics: ExpT) = {
 }
 </code></pre>
 <pre><code class="language-scala">val testres2 = test2(evalT)
+// testres2: Int = 8
 val testres3 = test2(prettyprintT)
+// testres3: String = &quot;(x0 =&gt; (x1 =&gt; (x1+x2)))(5)(3)&quot;
 </code></pre>
 <p>An attempt to construct an ill-formed object program will be detected by
 the Scala type checker. For instance, the following program which adds

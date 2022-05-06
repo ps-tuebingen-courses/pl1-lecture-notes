@@ -220,7 +220,7 @@ assert(eval(test5) == eval(test5res))
 We can also construct infinite lists. To this end, we need some form of recursion. We choose the standard fixed-point operator Y.
 This operator only works under call-by-name or other so-called &quot;non-strict&quot; evaluation strategies.</p>
 <pre><code class="language-scala">val y = Fun(&quot;f&quot;, Ap(Fun(&quot;x&quot;,Ap(&quot;f&quot;, Ap(&quot;x&quot;,&quot;x&quot;))), Fun(&quot;x&quot;,Ap(&quot;f&quot;,Ap(&quot;x&quot;,&quot;x&quot;)))))
-// y: Fun = Fun(
+// y: Exp = Fun(
 //   param = &quot;f&quot;,
 //   body = Ap(
 //     funExpr = Fun(
@@ -242,7 +242,7 @@ This operator only works under call-by-name or other so-called &quot;non-strict&
 </code></pre>
 <p>Using Y, we can construct infinite lists, such as the list of all natural numbers.</p>
 <pre><code class="language-scala">val allnats = Ap(Ap(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, Ap(Ap(&quot;cons&quot;,&quot;n&quot;), Ap(&quot;nats&quot;, Add(&quot;n&quot;,1)))))),1)
-// allnats: Ap = Ap(
+// allnats: Exp = Ap(
 //   funExpr = Ap(
 //     funExpr = Id(name = &quot;y&quot;),
 //     argExpr = Fun(

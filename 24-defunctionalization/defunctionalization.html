@@ -157,15 +157,16 @@ with which we can take control over the call stack management: CPS transformatio
 rely on the order of evaluation and call stack management of the meta language anymore.  We replicate its definition here:
 */
 
-sealed abstract class Exp
-case class Num(n : Int) extends Exp
-case class Id(name : Symbol) extends Exp
-case class Add(lhs : Exp, rhs : Exp) extends Exp
-case class Fun(param : Symbol, body : Exp) extends Exp
-case class Ap (funExpr : Exp, argExpr : Exp) extends Exp
+enum Exp:
+  case Num(n : Int)
+  case Id(name : String)
+  case Add(lhs : Exp, rhs : Exp)
+  case Fun(param : String, body : Exp)
+  case Ap (funExpr : Exp, argExpr : Exp)
+import Exp._
 
 sealed abstract class Value
-type Env = Map[Symbol, Value]
+type Env = Map[String, Value]
 case class NumV(n : Int) extends Value
 case class ClosureV(f : Fun, env : Env) extends Value
 
@@ -201,24 +202,24 @@ Lambda Lifting
 The first of these techniques is _lambda lifting_. The goal of lambda lifting is to turn local functions into top-level functions.
 That is, all &quot;lambdas&quot; only occur at the top-level. Variables in the local environment that are normally stored in the function's
 closure are instead passed as parameters to the top-level function. Lambda lifting is accomplished by the following steps:
- 
- 1. Invent a new and unique name for each function that is not a top-level function.  
+
+ 1. Invent a new and unique name for each function that is not a top-level function.
  2. Create a function with this name. Its body is the body of the former local function. Such a function will contain free variables.
- 3. Add a parameter to so-obtained top-level function for each free variable in its body. 
-    Thus it becomes a higher-order function that returns a function when passed these arguments. 
+ 3. Add a parameter to so-obtained top-level function for each free variable in its body.
+    Thus it becomes a higher-order function that returns a function when passed these arguments.
  4. Replace the local function by a call to the new top-level function and pass the corresponding local context via the arguments
     created in step 3.
 Example: Let's lambda-lift the functions ``y =&gt; y + n`` and ``y =&gt; y*n`` in
-*/ 
- 
+*/
+
 def map(f : Int =&gt; Int, xs : List[Int]) : List[Int] = xs match {
   case Nil =&gt; Nil
   case (x :: xs) =&gt; f(x) :: map(f, xs)
 }
 
-def addAndMultNToList(n : Int, xs : List[Int]) = map(y =&gt; y * n, map(y =&gt; y + n, xs))  
+def addAndMultNToList(n : Int, xs : List[Int]) = map(y =&gt; y * n, map(y =&gt; y + n, xs))
 
-/** 
+/**
 We create two new top-level functions. Let's call them ``f`` and ``g`` Their bodies are respectively ``y =&gt; y + n`` and ``y =&gt; y * n``.
 We add a parameter for each free variable. In the example, the free variable is ``n`` in both cases:
 */
@@ -226,8 +227,8 @@ We add a parameter for each free variable. In the example, the free variable is 
 def fLam(n : Int) = (y : Int) =&gt; y + n
 def gLam(n : Int) = (y : Int) =&gt; y * n
 
-/** 
-or shorter: 
+/**
+or shorter:
 */
 
 def f(n : Int)(y : Int) = y + n
@@ -237,7 +238,7 @@ def g(n : Int)(y : Int) = y * n
 The local function can now be replaced by a call to the new global function.
 */
 
-def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_), xs))  
+def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_), xs))
 
 /**
 Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:
@@ -253,7 +254,7 @@ object LambdaLifted {
 
   def addc2[T](lv : Value, k : Value =&gt; T)(rv : Value) = (lv, rv) match {
     case (NumV(v1), NumV(v2)) =&gt; k(NumV(v1 + v2))
-    case _ =&gt; sys.error(&quot;can only add numbers&quot;) 
+    case _ =&gt; sys.error(&quot;can only add numbers&quot;)
   }
 
   def appc1[T](a : Exp, env : Env, k : Value =&gt; T)(cl : Value) = cl match {
@@ -304,11 +305,11 @@ def map(f : FunctionValue, xs : List[Int]) : List[Int] = xs match {
 }
 
 def addAndMultNToListDefun(n : Int, xs : List[Int]) = map(G(n), map(F(n), xs))
- 
-/** 
-Let's now apply defunctionalization to our CPS-transformed interpreter: 
+
+/**
+Let's now apply defunctionalization to our CPS-transformed interpreter:
 */
- 
+
 object Defunctionalized {
 
   sealed abstract class FunctionValue[T]
@@ -321,7 +322,7 @@ object Defunctionalized {
     case AddC1(r, env, k) =&gt; eval(r, env, AddC2(v, k))
     case AddC2(lv, k) =&gt; (lv, v) match {
       case (NumV(v1), NumV(v2)) =&gt; apply(k, NumV(v1 + v2))
-      case _ =&gt; sys.error(&quot;can only add numbers&quot;) 
+      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
     }
     case ApC1(a, env, k) =&gt; v match {
       case ClosureV(f, closureEnv) =&gt; eval(a, env, ApC2(f, closureEnv, k))

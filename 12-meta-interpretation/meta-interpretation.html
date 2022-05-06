@@ -167,13 +167,16 @@ For instance, the function <code>Fun('x, Add('x,5))</code> is now represented as
 The interpreter becomes rather short, because substitution and lexical scoping are now being dealt with by the
 corresponding meta-level construct.</p>
 <pre><code class="language-scala">object HOAS {
-    sealed abstract class Exp
-    case class Num(n: Int) extends Exp
-    case class Id(name: String) extends Exp
-    case class Add(lhs: Exp, rhs: Exp) extends Exp
-    case class Fun(f: Exp =&gt; Exp) extends Exp
-    case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-    def eval(e: Exp) : Exp = e match {
+  enum Exp:
+    case Num(n: Int)
+    case Id(name: String)
+    case Add(lhs: Exp, rhs: Exp)
+    case Fun(f: Exp =&gt; Exp)
+    case Ap (funExpr: Exp, argExpr: Exp)
+
+  import Exp._
+
+  def eval(e: Exp) : Exp = e match {
       case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot;+v)
       case Add(l,r) =&gt; (eval(l), eval(r)) match {
                          case (Num(x),Num(y)) =&gt; Num(x+y)
@@ -184,7 +187,7 @@ corresponding meta-level construct.</p>
          case _ =&gt; sys.error(&quot;can only apply functions&quot;)
       }
       case _ =&gt; e // numbers and functions evaluate to themselves
-    }      
+    }
 }
 </code></pre>
 <p>A different way to use meta-level functions in the interpreter is to represent object-level closures by meta-level closures.
@@ -198,12 +201,14 @@ compositional interpreter in which the meta-language is mathematics.
 Compositionality also has a rather practical side-effect: It means that we can implement the interpreter in the internal visitor style
 that  we learned about in the first lecture (recall that the internal visitor  style enforces compositionality)
 Recommended exercise: Re-implement the interpreter as an internal visitor.</p>
-<pre><code class="language-scala">sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Id(name: String) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-case class Fun(param: String, body: Exp) extends Exp
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+<pre><code class="language-scala">enum Exp:
+  case Num(n: Int)
+  case Id(name: String)
+  case Add(lhs: Exp, rhs: Exp)
+  case Fun(param: String, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
+
+import Exp._
 
 object Compositional {
     sealed abstract class Value

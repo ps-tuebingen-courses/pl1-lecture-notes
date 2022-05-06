@@ -148,10 +148,11 @@
 
 // Hindley-Milner type inference with let-polymorphism
 
-sealed abstract class Type
-case class FunType(from: Type, to: Type) extends Type
-case class NumType() extends Type
-case class TypeVar(x: String) extends Type
+enum Type:
+  case FunType(from: Type, to: Type)
+  case NumType()
+  case TypeVar(x: String)
+import Type._
 
 def freeTypeVars(t: Type) : Set[String] = t match {
   case FunType(f,t) =&gt; freeTypeVars(f) ++ freeTypeVars(t)
@@ -165,7 +166,7 @@ def substitution(x: String, s: Type) = new Function[Type,Type] {
     case NumType() =&gt; NumType()
     case TypeVar(y) =&gt; if (x==y) s else TypeVar(y)
   }
-}    
+}
 
 // Robinson unification algorithm
 
@@ -184,15 +185,19 @@ def unify(eq: List[(Type,Type)]) : Type =&gt; Type = eq match {
 }
 
 
-sealed abstract class Exp
-case class Num(n: Int) extends Exp
-case class Id(name: String) extends Exp
-case class Add(lhs: Exp, rhs: Exp) extends Exp
-implicit def num2exp(n: Int): Exp = Num(n)
-implicit def id2exp(s: String): Exp = Id(s)
-case class Fun(param: String, body: Exp) extends Exp // No type annotation! // No type annotation!
-case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
-case class Let(x: String, xdef: Exp, body: Exp) extends Exp
+enum Exp:
+  case Num(n: Int)
+  case Id(name: String)
+  case Add(lhs: Exp, rhs: Exp)
+  case Fun(param: String, body: Exp) // No type annotation!
+  case Ap (funExpr: Exp, argExpr: Exp)
+  case Let(x: String, xdef: Exp, body: Exp)
+
+object Exp:
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
+
+import Exp._
 
 def freshName(names: Set[String], default: String) : String = {
   var last : Int = 0
