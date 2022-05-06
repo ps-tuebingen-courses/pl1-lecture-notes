@@ -3,7 +3,7 @@
 ```racket
 #lang racket
 
-; Racket is a language with so-called _first-class continuations_. It can reify the 
+; Racket is a language with so-called _first-class continuations_. It can reify the
 ; current continuation automatically and on the fly. As you may imagine, creating a
 ; continuation involves copying the stack, but there are less and more efficient ways of
 ; obtaining the same effect.
@@ -47,7 +47,7 @@
       (displayln (g 1))
       (displayln (g 0))
       (displayln (g 2)))))
-      
+
 
 
 ; Here we encode a simple debugger with support for breakpoints
@@ -78,8 +78,8 @@
   (display "3"))
 
 ; nothing to do after this, hence k is the REPL continuation
-(let/cc k 
-  (set! repl k)) 
+(let/cc k
+  (set! repl k))
 
 
 ; Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
@@ -101,14 +101,14 @@
     (set! queue (rest queue))
     x))
 
-(define (fork) 
+(define (fork)
   (let/cc k
     (begin
       (enqueue (lambda () (k 1))) ; enqueue thunk
       0)))
 
 (define (join)
-  (if (not (empty-queue?)) 
+  (if (not (empty-queue?))
       ((dequeue))
       'alljoined))
 
@@ -140,11 +140,11 @@
 
 
 (define (test-forkjoin)
-  (if (= (fork) 0) 
+  (if (= (fork) 0)
       (printfibs 8)
       (printfacts 12))
   (join)
-  (if (= (fork) 0) 
+  (if (= (fork) 0)
     (printfibs 10)
     (printfacts 8))
   (join))

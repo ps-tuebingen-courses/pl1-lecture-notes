@@ -45,11 +45,11 @@ def eval(e: Exp) : Exp = e match {
       case Bool(true) => eval(thenExp)
       case Bool(false) => eval(els)
       case _ => sys.error("Condition must be boolean")
-    }                    
-  case _ => e  
-}                
+    }
+  case _ => e
+}
 
-/** 
+/**
 In this language, we can see that two different types of runtime errors can occur:
 An addition where one of the operands is not a number, or an if-expression where the condition
 does not evaluate to a boolean.

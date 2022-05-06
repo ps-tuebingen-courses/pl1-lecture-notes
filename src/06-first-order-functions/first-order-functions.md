@@ -35,7 +35,7 @@ object Syntax {
     /** The new language constructs for first-order functions: */
     case class FunDef(args: List[String], body: Exp)
     type Funs = Map[String,FunDef]
- 
+
     /** We use implicits again to make example programs less verbose. */
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def string2exp(x: String): Exp = Id(x)
@@ -220,4 +220,4 @@ source text of `f`, it would be impossible to determine one of the most rudiment
 identifier was bound. You can only imagine the mayhem this would cause in a large software system, especially with multiple developers
 and complex ﬂows of control. We will therefore regard dynamic scope as an error. That said, there are facets of dynamic binding
 that are quite useful. For instance, exception handlers are typically dynamically scoped: A thrown exception is dispatched to the
-most recently encountered active exception handler for that exception type. 
+most recently encountered active exception handler for that exception type.

@@ -60,7 +60,7 @@ The idea is the following: The interpreter transforms the term
   with (x = 5) {
     x + x
   }
-```     
+```
 into
 ```
   5 + 5

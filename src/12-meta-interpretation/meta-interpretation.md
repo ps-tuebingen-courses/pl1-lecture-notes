@@ -51,7 +51,7 @@ object HOAS {
          case _ => sys.error("can only apply functions")
       }
       case _ => e // numbers and functions evaluate to themselves
-    }      
+    }
 }
 ```
 

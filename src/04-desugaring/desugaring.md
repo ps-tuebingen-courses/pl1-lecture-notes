@@ -29,15 +29,15 @@ object AE {
 
 In this lecture we want to study the technique of desugaring as a means to structure programming languages and decompose a language into
 a core language and syntactic sugar.
- 
+
 For illustration, consider the following proposed extensions to the language:
   1. `Mult`
   2. `Sub`
-  3. Unary Negation 
+  3. Unary Negation
 
 Extension number 1 is a good example for a core language extension. We have no way of expressing `Mult` in terms of the existing constructs
 (if we had some looping construct we could express `Mult` as repeated `Add` but we do not have loops).
- 
+
 Hence we add this language construct to the (core) language:
 
 ```scala mdoc
@@ -87,20 +87,20 @@ object SMAE {
 ```
 
 However, another way of adding sub is to treat it as syntactic sugar using the fact that ``a - b = a + (-1 * b)``
-One way of expressing the desugaring is as a syntax transformation: 
+One way of expressing the desugaring is as a syntax transformation:
 
 ```scala mdoc
 def desugarSMAE2MAE(e: SMAE.Exp) : MAE.Exp = e match {
   case SMAE.Exp.Num(n) => MAE.Exp.Num(n)
   case SMAE.Exp.Add(lhs, rhs) => MAE.Exp.Add(desugarSMAE2MAE(lhs), desugarSMAE2MAE(rhs))
-  case SMAE.Exp.Mult(lhs, rhs) => MAE.Exp.Mult(desugarSMAE2MAE(lhs), desugarSMAE2MAE(rhs)) 
-  case SMAE.Exp.Sub(lhs, rhs) => 
-    MAE.Exp.Add(desugarSMAE2MAE(lhs), 
+  case SMAE.Exp.Mult(lhs, rhs) => MAE.Exp.Mult(desugarSMAE2MAE(lhs), desugarSMAE2MAE(rhs))
+  case SMAE.Exp.Sub(lhs, rhs) =>
+    MAE.Exp.Add(desugarSMAE2MAE(lhs),
                  MAE.Exp.Mult(MAE.Exp.Num(-1),desugarSMAE2MAE(rhs)))
 }
 ```
 
-With this desugaring in place, we do not need an interpreter for SMAE anymore; rather we can reuse the MAE interpreter: 
+With this desugaring in place, we do not need an interpreter for SMAE anymore; rather we can reuse the MAE interpreter:
 
 ```scala mdoc
 val res = MAE.eval(desugarSMAE2MAE(SMAE.ex))

@@ -34,11 +34,11 @@ enum Exp:
   case Junit()
   case Let(x: String, xdef: Exp, body: Exp)
   case TypeAscription(e: Exp, t: Type)
-  
+
   case Product(e1: Exp, e2: Exp)
   case Fst(e: Exp)
   case Snd(e: Exp)
-  
+
   case SumLeft(left: Exp, right: Type)
   case SumRight(left: Type, right: Exp)
   case EliminateSum(e: Exp, fl: Exp, fr: Exp)

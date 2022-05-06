@@ -25,7 +25,7 @@ def substitution(x: String, s: Type) = new Function[Type,Type] {
     case NumType() => NumType()
     case TypeVar(y) => if (x==y) s else TypeVar(y)
   }
-}  
+}
 
 // Robinson unification algorithm
 
@@ -163,6 +163,6 @@ assert(doTypeCheck(Let("id", Fun("x","x"), Ap(Ap("id",Fun("x",Add("x",1))),Ap("i
 
 // Due to let-polymorphism, this program also type-checks some programs that would be ill-formed in STLC
 
-// The type system is still sound: 
+// The type system is still sound:
 // If doTypeCheck(e,Map.empty) == t, then eval(e) == v and doTypeCheck(v) == t (modulo alpha-renaming of type variables)
 ```

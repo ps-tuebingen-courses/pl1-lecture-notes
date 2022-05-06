@@ -36,7 +36,7 @@ object Syntax {
     case Fun(param: String, body: Exp)
     case Ap (funExpr: Exp, argExpr: Exp)
     case Letrec(x: String, e: Exp, body: Exp)
-  
+
   object Exp:
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def id2exp(s: String): Exp = Id(s)

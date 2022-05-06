@@ -61,24 +61,24 @@ Lambda Lifting
 The first of these techniques is _lambda lifting_. The goal of lambda lifting is to turn local functions into top-level functions.
 That is, all "lambdas" only occur at the top-level. Variables in the local environment that are normally stored in the function's
 closure are instead passed as parameters to the top-level function. Lambda lifting is accomplished by the following steps:
- 
- 1. Invent a new and unique name for each function that is not a top-level function.  
+
+ 1. Invent a new and unique name for each function that is not a top-level function.
  2. Create a function with this name. Its body is the body of the former local function. Such a function will contain free variables.
- 3. Add a parameter to so-obtained top-level function for each free variable in its body. 
-    Thus it becomes a higher-order function that returns a function when passed these arguments. 
+ 3. Add a parameter to so-obtained top-level function for each free variable in its body.
+    Thus it becomes a higher-order function that returns a function when passed these arguments.
  4. Replace the local function by a call to the new top-level function and pass the corresponding local context via the arguments
     created in step 3.
 Example: Let's lambda-lift the functions ``y => y + n`` and ``y => y*n`` in
-*/ 
- 
+*/
+
 def map(f : Int => Int, xs : List[Int]) : List[Int] = xs match {
   case Nil => Nil
   case (x :: xs) => f(x) :: map(f, xs)
 }
 
-def addAndMultNToList(n : Int, xs : List[Int]) = map(y => y * n, map(y => y + n, xs)) 
+def addAndMultNToList(n : Int, xs : List[Int]) = map(y => y * n, map(y => y + n, xs))
 
-/** 
+/**
 We create two new top-level functions. Let's call them ``f`` and ``g`` Their bodies are respectively ``y => y + n`` and ``y => y * n``.
 We add a parameter for each free variable. In the example, the free variable is ``n`` in both cases:
 */
@@ -86,8 +86,8 @@ We add a parameter for each free variable. In the example, the free variable is 
 def fLam(n : Int) = (y : Int) => y + n
 def gLam(n : Int) = (y : Int) => y * n
 
-/** 
-or shorter: 
+/**
+or shorter:
 */
 
 def f(n : Int)(y : Int) = y + n
@@ -97,7 +97,7 @@ def g(n : Int)(y : Int) = y * n
 The local function can now be replaced by a call to the new global function.
 */
 
-def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_), xs)) 
+def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_), xs))
 
 /**
 Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:
@@ -113,7 +113,7 @@ object LambdaLifted {
 
   def addc2[T](lv : Value, k : Value => T)(rv : Value) = (lv, rv) match {
     case (NumV(v1), NumV(v2)) => k(NumV(v1 + v2))
-    case _ => sys.error("can only add numbers") 
+    case _ => sys.error("can only add numbers")
   }
 
   def appc1[T](a : Exp, env : Env, k : Value => T)(cl : Value) = cl match {
@@ -164,11 +164,11 @@ def map(f : FunctionValue, xs : List[Int]) : List[Int] = xs match {
 }
 
 def addAndMultNToListDefun(n : Int, xs : List[Int]) = map(G(n), map(F(n), xs))
- 
-/** 
-Let's now apply defunctionalization to our CPS-transformed interpreter: 
+
+/**
+Let's now apply defunctionalization to our CPS-transformed interpreter:
 */
- 
+
 object Defunctionalized {
 
   sealed abstract class FunctionValue[T]
@@ -181,7 +181,7 @@ object Defunctionalized {
     case AddC1(r, env, k) => eval(r, env, AddC2(v, k))
     case AddC2(lv, k) => (lv, v) match {
       case (NumV(v1), NumV(v2)) => apply(k, NumV(v1 + v2))
-      case _ => sys.error("can only add numbers") 
+      case _ => sys.error("can only add numbers")
     }
     case ApC1(a, env, k) => v match {
       case ClosureV(f, closureEnv) => eval(a, env, ApC2(f, closureEnv, k))
