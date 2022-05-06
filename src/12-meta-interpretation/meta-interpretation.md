@@ -32,11 +32,11 @@ corresponding meta-level construct.
 ```scala mdoc
 object HOAS {
   enum Exp:
-    case class Num(n: Int)
-    case class Id(name: String)
-    case class Add(lhs: Exp, rhs: Exp)
-    case class Fun(f: Exp => Exp)
-    case class Ap (funExpr: Exp, argExpr: Exp)
+    case Num(n: Int)
+    case Id(name: String)
+    case Add(lhs: Exp, rhs: Exp)
+    case Fun(f: Exp => Exp)
+    case Ap (funExpr: Exp, argExpr: Exp)
 
   import Exp._
 
@@ -71,11 +71,11 @@ Recommended exercise: Re-implement the interpreter as an internal visitor.
 
 ```scala mdoc
 enum Exp:
-  case class Num(n: Int)
-  case class Id(name: String)
-  case class Add(lhs: Exp, rhs: Exp)
-  case class Fun(param: String, body: Exp)
-  case class Ap (funExpr: Exp, argExpr: Exp)
+  case Num(n: Int)
+  case Id(name: String)
+  case Add(lhs: Exp, rhs: Exp)
+  case Fun(param: String, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
 
 import Exp._
 
