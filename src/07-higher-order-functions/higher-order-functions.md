@@ -39,7 +39,7 @@ object Syntax {
 
   // Both function definitions and applications are expressions.
   case class Fun(param: String, body: Exp) extends Exp
-  case class Ap (funExpr: Exp, argExpr: Exp) extends Exp
+  case class Ap(funExpr: Exp, argExpr: Exp) extends Exp
 
   // "with" would be a better name for this function, but it is reserved in Scala
   def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
@@ -59,7 +59,7 @@ latter.
 The ``with`` construct is not needed anymore since it can be encoded using ``Ap`` and
 ``Fun``. For instance, ``with x = 7 in x+3`` can be encoded (using Scala syntax) as
 ``((x) => x+3)(7)``. We have made this idea explicit above by giving a constructive
-translation. Such translations are also often called "desugaring".
+translation. Remember that such translations are often called "desugaring".
 
 
 Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.
@@ -83,7 +83,7 @@ assert( subst0(Add(5,"x"), "y", 7) == Add(5,"x"))
 assert( subst0(Fun("x", Add("x","y")), "x", 7) == Fun("x", Add("x","y")))
 ```
 
-However, what happens if ``e2`` contains free variables? The danger here is that they may be accidentially "captured" by the substitution.
+Looks good. However, what happens if ``e2`` contains free variables? The danger here is that they may be accidentially "captured" by the substitution.
 For instance, consider
 
 ```scala mdoc
@@ -91,7 +91,7 @@ val subst0Test = subst0(Fun("x", Add("x","y")), "y", Add("x",5))
 ```
 
 The result is ``Fun("x",Add("x",Add("x",5)))``
-This is not desirable, since it violates again static scoping.
+This is not desirable, since it again violates static scoping.
 
 Note that this problem did not show up in earlier languages, because there we only substituted variables by numbers, but not by
 expressions that may contain free variables: The type of ``e2`` was ``Num`` and not ``Exp``.
@@ -102,7 +102,7 @@ This new variable name should be "fresh", i.e., not occur free in ``e2``.
 
 For instance, in the example above, we could first rename ``"x"`` to the fresh name ``"x0"`` and only then substitute, i.e.
 
-``subst(Fun("x", Add("x","y")), "y", Add("x",5)) == Fun("x0",Add(Id("x0"),Add(Id("x"),Num(5))))``
+``subst(Fun("x", Add("x","y")), "y", Add("x",5)) == Fun("x0",Add("x0",Add("x",Num(5))))``
 
 Let's do this step by step.
 
@@ -215,7 +215,7 @@ val omega = Ap(Fun("x",Ap("x","x")), Fun("x",Ap("x","x")))
 // try eval(omega) to crash the interpreter ;-)
 ```
 
-Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We come back to
+Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
 this topic later.
 
 Let's now discuss what an environment-based version of this interpreter looks like.
