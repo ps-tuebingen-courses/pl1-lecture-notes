@@ -229,11 +229,6 @@ Let's try to formalize this definition:</p>
                                     subst1(xdef,i,v),
                                     subst1(body,i,v))
   }
-// error:
-// Found:    (v : repl.MdocSession.App.Syntax.Exp.Num)
-// Required: String
-//     case Id(x) =&gt; if (x == i) v else e
-//                               ^
 </code></pre>
 <p>Unfortunately this does not even type-check! And rightly so, because it might otherwise turn reasonable programs into programs that are
 not even syntactically legal anymore.
