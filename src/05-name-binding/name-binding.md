@@ -105,7 +105,7 @@ def makeEval(subst: (Exp,String,Num)=>Exp) : Exp=>Int = {
 To substitute identifier `i` in `e` with expression `v`, replace all identifiers in `e` that have the name `i` with the expression `v`.
 Let's try to formalize this definition:
 
-```scala mdoc:fail
+```scala
 val subst1 : (Exp,String,Num) => Exp = (e,i,v) => e match {
   case Num(n) => e
   case Id(x) => if (x == i) v else e
