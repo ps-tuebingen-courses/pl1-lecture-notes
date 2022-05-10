@@ -155,7 +155,7 @@ val list2toinfty = wth("cons",cons,
                    wth("y", y,
                    wth("maplist", maplist,
                       Ap(Ap("maplist", Fun("x", Add("x",1))), allnats)))))
-Of course, ``list2toinfty`` diverges when we use ``eval``, but it works fine with ``evalcbn``. It is hard to verify the result due to
+
 trait CBN {
     type Thunk
 
