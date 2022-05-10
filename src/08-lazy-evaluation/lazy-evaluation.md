@@ -156,19 +156,19 @@ assert(eval(test3) == Fun("x",Ap(Num(3),Id("x"))))
 assert(evalcbn(test3) == Fun("x",Ap(Add(Num(1),Num(2)),Id("x"))))
 ```
 
-However, if both produce a function, then the functions "behave" the same. More specifically, the function bodies produced by evalcbn
-may be  "more evaluated" than those produced by eval. If we would evaluate within function bodies (also called evaluation "under a lambda")
-- which our interpreters do not do - we could produce the expression returned from eval from the expression returned by evalcbn.
+However, if both produce a function, then the functions "behave" the same. More specifically, the function bodies produced by `evalcbn`
+may be  "more evaluated" than those produced by `eval`. If we evaluated within function bodies (also called evaluation "under a
+lambda") - which our interpreters do not do - we could produce the expression returned from `eval` from the expression returned by `evalcbn`.
 This kind of equivalence is also called "beta-equivalence".
 
-Most importantly, however, eval and evalcbn differ with regard to their termination behavior. We have seen that omega is a diverging
-expression. In eval, the term
+Most importantly, however, `eval` and `evalcbn` differ with regard to their termination behavior. We have seen that `omega` is a diverging
+expression. In `eval`, the term
 
 ```scala mdoc:silent
  val test4 = Ap(Fun("x",5),omega)
 ```
 
- is hence also diverging. In contrast:
+is hence also diverging. In contrast:
 
 ```scala mdoc
 assert(evalcbn(test4) == Num(5))
@@ -215,35 +215,36 @@ val test5res = wth("cons",cons,
 assert(eval(test5) == eval(test5res))
 ```
 
-Using evalcbn instead of eval the assertion does not hold (why?), but the results are beta-equivalent.
+Using `evalcbn` instead of `eval` the assertion does not hold (why?), but the results are beta-equivalent.
 We can also construct infinite lists. To this end, we need some form of recursion. We choose the standard fixed-point operator Y.
 This operator only works under call-by-name or other so-called "non-strict" evaluation strategies.
 
-```scala mdoc
+```scala mdoc:silent
 val y = Fun("f", Ap(Fun("x",Ap("f", Ap("x","x"))), Fun("x",Ap("f",Ap("x","x")))))
 ```
 
 Using Y, we can construct infinite lists, such as the list of all natural numbers.
 
-```scala mdoc
+```scala mdoc:silent
 val allnats = Ap(Ap("y", Fun("nats", Fun("n", Ap(Ap("cons","n"), Ap("nats", Add("n",1)))))),1)
 ```
 
 We can also perform standard computations on infinite lists, such as mapping the successor function over it.
 
-```scala mdoc
+```scala mdoc:silent
 val list2toinfty = wth("cons",cons,
                    wth("nil", nil,
                    wth("y", y,
                    wth("maplist", maplist,
                       Ap(Ap("maplist", Fun("x", Add("x",1))), allnats)))))
 ```
+
 Of course, ``list2toinfty`` diverges when we use ``eval``, but it works fine with ``evalcbn``. It is hard to verify the result due to
 an almost unreadable output. Hence we propose the following
 
 Exercise: Extend the language such that you can implement the "take" function as known from Haskell within the language
 (if0-expressions or something like it are needed for that). Now add a "print" function that prints a number on the console.
-Use it to display the first 3 list elements of test2toinfty are 2,3,4.
+Use it to display that the first 3 list elements of `list2toinfty` are 2,3,4.
 
 _end of extra material_
 
@@ -269,10 +270,10 @@ not use type definitions of the form
 Instead, we use a Scala class Env to express this recursion.
 Since we want to experiment with different variants of how to generate and evaluate thunks we first create a parameterizable variant
 of the evaluator that leaves open how to
-  1. represent thunks (type Thunk)
-  2. create thunks (method delay)
-  3. evaluate thunks (method force).
-__Hint__: Research on the internet what abstract type members in Scala are.  For instance, here: http://www.scala-lang.org/node/105
+  1. represent thunks (type `Thunk`)
+  2. create thunks (method `delay`)
+  3. evaluate thunks (method `force`).
+__Hint__: Research on the internet what abstract type members in Scala are. For instance, here: http://www.scala-lang.org/node/105
 
 ```scala mdoc
 trait CBN {
@@ -372,11 +373,11 @@ object CallByNeed extends CBN {
 }
 ```
 
-For instance, compare call-by-need and call-by-name in cbntest or blowup.
+For instance, compare call-by-need and call-by-name in `cbntest` or `blowup`.
 However, the meta-language (i.e., the subset of Scala features) used in the interpreter has become more complicated:
 
 Since we are using mutation, the order of evaluation and aliasing of object references becomes important.
-Luckily,  call-by-need agrees with call-by-name with regard to produced values and termination behavior, hence it is usually not
+Luckily, call-by-need agrees with call-by-name with regard to produced values and termination behavior, hence it is usually not
 necessary to reason about programs with the call-by-need semantics. If, however, one wants to reason about the performance of a
 program in a call-by-need setting, one has to take these additional complications into account.
 In practice, it is even worse, since languages like Haskell perform additional optimizations that, for instance, switch to call-by-value if an analysis can
