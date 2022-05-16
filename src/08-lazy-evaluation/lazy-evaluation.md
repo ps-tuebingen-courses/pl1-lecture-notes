@@ -113,14 +113,15 @@ def evalWithEnv(e: Exp, env: Env) : Value = e match {
 ## Motivation for Lazy Evaluation
 
 Read "Why Functional Programming Matters" by John Hughes available at http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html
+
 What lazy evaluation means:
 
 The choice of evaluation strategy is a purely semantic change that requires no change to the syntax.
 For this reason we reuse the syntactic definitions of FAE, hence ``:load 07-fae.scala`` before executing this script.
 Before we discuss lazy evaluation, we will first discuss a related evaluation strategy, _call-by-name_.
 
-_Call-by-name_ can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument "a" in the
-"Ap" case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.
+_Call-by-name_ can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument `a` in the
+`Ap` case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.
 
 ```scala mdoc
 def evalcbn(e: Exp) : Exp = e match {
@@ -145,7 +146,7 @@ assert(evalcbn(test) == eval(test))
 assert(evalcbn(test2) == eval(test2))
 ```
 
-One can formally prove that if eval and evalcbn both produce a number then the numbers are equal. Do they also agree if they produce
+One can formally prove that if `eval` and `evalcbn` both produce a number then the numbers are equal. Do they also agree if they produce
 a function?
 Not necessarily. Consider:
 
