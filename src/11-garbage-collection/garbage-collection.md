@@ -290,7 +290,7 @@ There are various algorithms and heuristics (best-fit, worst-fit, first-fit, ...
 There are also various alternative gc designs. Mark-and-sweep is a non-moving algorithm, where reachable heap objects are never moved.
 In contrast to that, copying gc algorithms move the reachable objects to a different portion of the heap. One of the oldest algorithms
 is the semi-space garbage collector, in particular with the implementation purpose.
-     http://www.cs.umd.edu/class/fall2002/cmsc631/cheney/cheney.html
+
 Topic for class discussion: What are the pros and cons of moving vs. non-moving gc?
 
 It can be shown empirically that most unreachable objects become unreachable while they are still young. Generational gc algorithms
