@@ -78,7 +78,7 @@ def clientCodeOpBind =
 Now suppose that our original client code was not ``h(!g(f(27)+"z"))``
 but instead ``!g(f(27)+"z")``. How can we express this with bind? This
 thing does not type check:
-```scala mdoc
+```scala
     def clientCode =
       f(27) bind ((x: String) =>
       g(x+"z") bind  ((y: Boolean) =>
@@ -161,16 +161,16 @@ monadic code look simpler. Monad comprehensions are directly supported in Haskel
 piggy-back on the "For comprehension" syntax instead.
 A "for comprehension"  is usually used for lists and other collections. For instance:
 
-```mdoc:silent
-    val l = List(List(1,2), List(3,4))
-    assert( (for { x <- l; y <- x } yield y+1) == List(2,3,4,5))
+```scala mdoc:silent
+  val l = List(List(1,2), List(3,4))
+  assert( (for { x <- l; y <- x } yield y+1) == List(2,3,4,5))
 ```
 
 The Scala compiler desugars the for-comprehension above into calls of the standard map and flatMap functions. That is, the above
 for comprehension is equivalent to:
 
 ```scala mdoc:silent
-    assert(l.flatMap(x => x.map(y => y+1)) == List(2,3,4,5))
+  assert(l.flatMap(x => x.map(y => y+1)) == List(2,3,4,5))
 ```
 
 We will make use of for-comprehension syntax by supporting both ``flatMap`` (which is like ``bind``) and ``map`` (which is like ``fmap``).
@@ -184,19 +184,21 @@ extension [A, M[_]](m: M[A])(using mm: Monad[M])
 
 Using the new support for for-comprehension syntax, we can rewrite our client code as follows: Given the API from above,
 
-```scala mdoc
+```scala
 def fOp(n: Int) : Option[String] = if (n < 100) Some("x") else None
 def gOp(x: String) : Option[Boolean] = Some(x == "x")
 def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
 ```
 
 We can now rewrite this
-```scala mdoc
+
+```scala
 def clientCode2Op(m: Monad[Option]) =
   m.bind(fOp(27), (x: String) =>
   m.bind(gOp(x+"z"), (y: Boolean) =>
   m.unit(!y)))
 ```
+
 to this:
 
 ```scala mdoc
@@ -239,10 +241,12 @@ enough to be useful for many different monads. Here are some of these functions:
 ```scala mdoc
 def fmap[M[_],A,B](f: A => B)(using m: Monad[M]): M[A] => M[B] = a => m.bind(a,(x:A) => m.unit(f(x)))
 ```
+
 In fancy category theory terms, we can say that every monad is a functor.
 
 
 ``sequence`` composes a list of monadic values into a single monadic value which is a list.
+
 ```scala mdoc
 def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]) : M[List[A]] = l match {
   case x :: xs => m.bind(x, (y: A) =>
@@ -253,6 +257,7 @@ def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]) : M[List[A]] = l match {
 ```
 
 ``mapM`` composes ``sequence`` and the standard ``map`` function:
+
 ```scala mdoc
 def mapM[M[_],A,B](f : A => M[B], l: List[A])(using m: Monad[M]) : M[List[B]] =
   sequence(l.map(f))
@@ -284,7 +289,6 @@ object IdentityMonad extends Monad[Id] {
 ```
 
 
-
 The Reader Monad
 ----------------
 This is the _reader monad_, a.k.a. _environment monad_. It captures the essence of "environment passing style".
@@ -313,8 +317,8 @@ def hRead(b: Boolean) : Int => Int = sys.error("not implemented")
 ```
 
 Our original code,
-```scala mdoc
-    def clientCode = h(!g(f(27)+"z"))
+```scala
+  def clientCode = h(!g(f(27)+"z"))
 ```
 becomes :
 
