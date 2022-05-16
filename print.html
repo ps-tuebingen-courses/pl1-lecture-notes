@@ -3107,6 +3107,9 @@ value we store it temporarily in a variable, catch the exception, and return the
 assert(starteval(testprog) == NumV(4))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="letcc"><a class="header" href="#letcc">LetCC</a></h1>
+<p>The content of this chapter is available as a Racket file <a href="18-letcc/./letcc.rkt">here.</a></p>
+<pre><code class="language-racket">#lang racket
+</code></pre>
 <p>Racket is a language with so-called <em>first-class continuations</em>. It can reify the
 current continuation automatically and on the fly. As you may imagine, creating a
 continuation involves copying the stack, but there are less and more efficient ways of
@@ -3120,15 +3123,12 @@ immense power in numerous contexts.</p>
 <p><code>(let/cc k (k 3))</code> What is the continuation k here?</p>
 <p><code>(+ 1 (let/cc k (k 3)))</code> What is the continuation k here?</p>
 <p>Using <code>let/cc</code> for exception handling: <code>let/cc</code> acts as the &quot;try&quot;, invoking <code>k</code> as the &quot;throw&quot;.</p>
-<pre><code class="language-racket">#lang racket
-(define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
+<pre><code class="language-racket">(define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
 </code></pre>
 <p>Here we simulate a very simple kind of exception handling mechanism
 with first-class continuations.
 Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
-<pre><code class="language-racket">#lang racket
-
-(define exceptionhandler (lambda (msg) (display &quot;unhandled exception&quot;)))
+<pre><code class="language-racket">(define exceptionhandler (lambda (msg) (display &quot;unhandled exception&quot;)))
 
 (define (f n)
   (+ 5
@@ -3150,27 +3150,23 @@ Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
 </code></pre>
 <p>Here we encode a simple debugger with support for breakpoints.</p>
 <p>The breakpoint variable stores the continuation at the current breakpoint</p>
-<pre><code class="language-racket">#lang racket
-(define breakpoint false) ; initalized with a dummy value
+<pre><code class="language-racket">(define breakpoint false) ; initalized with a dummy value
 
 ; the repl variable stores the continuation that jumps to the read-eval-print loop
 (define repl false)       ; initialized with a dummy value
 </code></pre>
 <p>The <code>break</code> function captures the current continuation, stores it, and jumps to the REPL:</p>
-<pre><code class="language-racket">#lang racket
-(define (break) (let/cc k
+<pre><code class="language-racket">(define (break) (let/cc k
                   (begin
                     (set! breakpoint k)
                     (repl))))
 </code></pre>
 <p>To continue, we jump to the previously stored continuation:</p>
-<pre><code class="language-racket">#lang racket
-(define (continue)
+<pre><code class="language-racket">(define (continue)
   (breakpoint))
 </code></pre>
 <p>Here is a simple test program of our &quot;debugger&quot;:</p>
-<pre><code class="language-racket">#lang racket
-(define (main)
+<pre><code class="language-racket">(define (main)
   (display &quot;1&quot;)
   (break)
   (display &quot;2&quot;)
@@ -3186,8 +3182,7 @@ of cooperative multi-threading, often called <em>co-routines</em>. A co-routine 
 in the routine where a switch to another routine should occur - a so-called yield point.</p>
 <p>With let/cc we can program co-routines within the language, without having any dedicated
 built-in support for it:</p>
-<pre><code class="language-racket">#lang racket
-(define queue empty)
+<pre><code class="language-racket">(define queue empty)
 
 (define (empty-queue?)
   (empty? queue))
@@ -3722,7 +3717,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }
-// iomonad: IOMonad = repl.MdocSession$$anon$1@6f4ae251
+// iomonad: IOMonad = repl.MdocSession$$anon$1@e45ac3a
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;
@@ -4151,6 +4146,7 @@ object FAEwLetcc extends Arithmetic with Functions with If0 with Letcc with Read
 assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="monadic-reflection"><a class="header" href="#monadic-reflection">Monadic Reflection</a></h1>
+<p>The content of this chapter is available as a Racket file <a href="23-monadic-reflection/./monadic-reflection.rkt">here.</a></p>
 <pre><code class="language-racket">#lang racket
 
 (require racket/control)
