@@ -46,18 +46,18 @@ Hence we are faced with two tasks:
 
 Let's start with the standard infrastructure of values and environments.
 
-```scala:mdoc
+```scala mdoc
 sealed abstract class Value
 type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
+```
 
-/**
 How do we represent values that represent continuations? Since we want to represent an object language continuation by a meta language
 continuation, we need to be able to wrap a meta language continuation as an object language value. This continuation will always accept
 some other object language value:
-*/
 
+```scala mdoc
 case class ContV(f: Value => Nothing) extends Value
 ```
 
