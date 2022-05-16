@@ -1,32 +1,34 @@
 # LetCC
 
+Racket is a language with so-called _first-class continuations_. It can reify the
+current continuation automatically and on the fly. As you may imagine, creating a
+continuation involves copying the stack, but there are less and more efficient ways of
+obtaining the same effect.
+
+Adding continuations to a language makes it easy to create a better web programming protocol,
+as we shall see. But first-class continuations are much more general and give programmers
+immense power in numerous contexts.
+
+In Racket (and the related programming language Scheme), a continuation is created with
+``let/cc``. It can be used to give the current continuation a name: ``(let/cc k ... k ...)``
+
+Let's write some programs using continuations (try this in the Racket read-eval-print loop).
+
+``(let/cc k (k 3))`` What is the continuation k here?
+
+``(+ 1 (let/cc k (k 3)))`` What is the continuation k here?
+
+Using ``let/cc`` for exception handling: ``let/cc`` acts as the "try", invoking ``k`` as the "throw".
 ```racket
 #lang racket
+(define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
+```
+Here we simulate a very simple kind of exception handling mechanism
+with first-class continuations.
+Try evaluating ``(h)`` in the read-eval-print-loop.
 
-; Racket is a language with so-called _first-class continuations_. It can reify the
-; current continuation automatically and on the fly. As you may imagine, creating a
-; continuation involves copying the stack, but there are less and more efficient ways of
-; obtaining the same effect.
-
-; Adding continuations to a language makes it easy to create a better web programming protocol,
-; as we shall see. But first-class continuations are much more general and give programmers
-; immense power in numerous contexts.
-
-; In Racket (and the related programming language Scheme), a continuation is created with
-; let/cc. It can be used to give the current continuation a name: (let/cc k ... k ...)
-
-; Let's write some programs using continuations (try this in the Racket read-eval-print loop).
-
-; (let/cc k (k 3))  ; what is the continuation k here?
-
-; (+ 1 (let/cc k (k 3))) ; what is the continuation k here?
-
-; using let/cc for exception handling: let/cc acts as the "try", invoking k as the "throw".
-;  (define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
-
-; Here we simulate a very simple kind of exception handling mechanism
-; with first-class continuations.
-; try evaluating "(h)" in the read-eval-print-loop
+```racket
+#lang racket
 
 (define exceptionhandler (lambda (msg) (display "unhandled exception")))
 
@@ -47,29 +49,42 @@
       (displayln (g 1))
       (displayln (g 0))
       (displayln (g 2)))))
+```      
 
+Here we encode a simple debugger with support for breakpoints.
 
+The breakpoint variable stores the continuation at the current breakpoint
 
-; Here we encode a simple debugger with support for breakpoints
-
-; the breakpoint variable stores the continuation at the current breakpoint
+```racket
+#lang racket
 (define breakpoint false) ; initalized with a dummy value
 
 ; the repl variable stores the continuation that jumps to the read-eval-print loop
 (define repl false)       ; initialized with a dummy value
+```
 
-; the break function captures the current continuation, stores it, and jumps to the REPL
+The ``break`` function captures the current continuation, stores it, and jumps to the REPL:
+
+```racket
+#lang racket
 (define (break) (let/cc k
                   (begin
                     (set! breakpoint k)
                     (repl))))
+```
 
-; to continue, we jump to the previously stored continuation
+To continue, we jump to the previously stored continuation:
+
+```racket
+#lang racket
 (define (continue)
   (breakpoint))
+```
 
-; a simple test program of our "debugger"
+Here is a simple test program of our "debugger":
 
+```racket
+#lang racket
 (define (main)
   (display "1")
   (break)
@@ -80,14 +95,17 @@
 ; nothing to do after this, hence k is the REPL continuation
 (let/cc k
   (set! repl k))
+```
 
+Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
+of cooperative multi-threading, often called _co-routines_. A co-routine designates points
+in the routine where a switch to another routine should occur - a so-called yield point.
 
-; Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
-; of cooperative multi-threading, often called _co-routines_. A co-routine designates points
-; in the routine where a switch to another routine should occur - a so-called yield point.
-; With let/cc we can program co-routines within the language, without having any dedicated
-; built-in support for it:
+With let/cc we can program co-routines within the language, without having any dedicated
+built-in support for it:
 
+```racket
+#lang racket
 (define queue empty)
 
 (define (empty-queue?)
