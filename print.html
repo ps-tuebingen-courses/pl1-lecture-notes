@@ -1274,13 +1274,13 @@ assert( evalWithEnv(test2,Map.empty) == NumV(8))
 <div style="break-before: page; page-break-before: always;"></div><h1 id="lazy-evaluation"><a class="header" href="#lazy-evaluation">Lazy Evaluation</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="08-lazy-evaluation/./lazy-evaluation.scala">here.</a></p>
 <h2 id="motivation-for-lazy-evaluation"><a class="header" href="#motivation-for-lazy-evaluation">Motivation for Lazy Evaluation</a></h2>
-<p>Read &quot;Why Functional Programming Matters&quot; by John Hughes available at http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html
-What lazy evaluation means:</p>
+<p>Read &quot;Why Functional Programming Matters&quot; by John Hughes available at http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html</p>
+<p>What lazy evaluation means:</p>
 <p>The choice of evaluation strategy is a purely semantic change that requires no change to the syntax.
 For this reason we reuse the syntactic definitions of FAE, hence <code>:load 07-fae.scala</code> before executing this script.
 Before we discuss lazy evaluation, we will first discuss a related evaluation strategy, <em>call-by-name</em>.</p>
-<p><em>Call-by-name</em> can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument &quot;a&quot; in the
-&quot;Ap&quot; case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.</p>
+<p><em>Call-by-name</em> can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument <code>a</code> in the
+<code>Ap</code> case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.</p>
 <pre><code class="language-scala">def evalcbn(e: Exp) : Exp = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
   case Add(l,r) =&gt; (evalcbn(l), evalcbn(r)) match {
@@ -1299,7 +1299,7 @@ Let's try two former test cases.</p>
 <pre><code class="language-scala">assert(evalcbn(test) == eval(test))
 assert(evalcbn(test2) == eval(test2))
 </code></pre>
-<p>One can formally prove that if eval and evalcbn both produce a number then the numbers are equal. Do they also agree if they produce
+<p>One can formally prove that if <code>eval</code> and <code>evalcbn</code> both produce a number then the numbers are equal. Do they also agree if they produce
 a function?
 Not necessarily. Consider:</p>
 <pre><code class="language-scala">val test3 = Ap(Fun(&quot;f&quot;,Fun(&quot;x&quot;,Ap(&quot;f&quot;,&quot;x&quot;))),Add(1,2))
