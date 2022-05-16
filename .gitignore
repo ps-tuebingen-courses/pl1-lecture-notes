@@ -1,5 +1,6 @@
 book
 cs
 out/
+*.rkt
 *.scala
 questionnaire.js

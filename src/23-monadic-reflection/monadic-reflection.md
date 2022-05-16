@@ -1,5 +1,7 @@
 # Monadic Reflection
 
+The content of this chapter is available as a Racket file [here.](./monadic-reflection.rkt)
+
 ```racket
 #lang racket
 

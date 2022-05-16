@@ -1,5 +1,11 @@
 # LetCC
 
+The content of this chapter is available as a Racket file [here.](./letcc.rkt)
+
+```racket
+#lang racket
+```
+
 Racket is a language with so-called _first-class continuations_. It can reify the
 current continuation automatically and on the fly. As you may imagine, creating a
 continuation involves copying the stack, but there are less and more efficient ways of
@@ -19,17 +25,16 @@ Let's write some programs using continuations (try this in the Racket read-eval-
 ``(+ 1 (let/cc k (k 3)))`` What is the continuation k here?
 
 Using ``let/cc`` for exception handling: ``let/cc`` acts as the "try", invoking ``k`` as the "throw".
+
 ```racket
-#lang racket
 (define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
 ```
+
 Here we simulate a very simple kind of exception handling mechanism
 with first-class continuations.
 Try evaluating ``(h)`` in the read-eval-print-loop.
 
 ```racket
-#lang racket
-
 (define exceptionhandler (lambda (msg) (display "unhandled exception")))
 
 (define (f n)
@@ -56,7 +61,6 @@ Here we encode a simple debugger with support for breakpoints.
 The breakpoint variable stores the continuation at the current breakpoint
 
 ```racket
-#lang racket
 (define breakpoint false) ; initalized with a dummy value
 
 ; the repl variable stores the continuation that jumps to the read-eval-print loop
@@ -66,7 +70,6 @@ The breakpoint variable stores the continuation at the current breakpoint
 The ``break`` function captures the current continuation, stores it, and jumps to the REPL:
 
 ```racket
-#lang racket
 (define (break) (let/cc k
                   (begin
                     (set! breakpoint k)
@@ -76,7 +79,6 @@ The ``break`` function captures the current continuation, stores it, and jumps t
 To continue, we jump to the previously stored continuation:
 
 ```racket
-#lang racket
 (define (continue)
   (breakpoint))
 ```
@@ -84,7 +86,6 @@ To continue, we jump to the previously stored continuation:
 Here is a simple test program of our "debugger":
 
 ```racket
-#lang racket
 (define (main)
   (display "1")
   (break)
@@ -105,7 +106,6 @@ With let/cc we can program co-routines within the language, without having any d
 built-in support for it:
 
 ```racket
-#lang racket
 (define queue empty)
 
 (define (empty-queue?)

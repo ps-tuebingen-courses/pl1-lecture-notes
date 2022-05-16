@@ -8,5 +8,4 @@ for d in $(find ./src -name "*.scala" -type f)
 do
   echo "Copy .scala file $d..."
   cp $d $(echo $d | sed -r 's;^\./src;./out;')
-
 done

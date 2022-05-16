@@ -25,6 +25,12 @@ jobs:
     - name: Run mdoc
       run: ./generateMarkdown.sh
 
+    - name: Create Downloadable Racket Files.
+      run: ./create_rkt_files.sh
+
+    - name: Copy Racket files from src to out
+      run: ./copy_rkt_files.sh
+
     - name: Create Downloadable Scala Files.
       run: ./create_scala_files.sh
 
