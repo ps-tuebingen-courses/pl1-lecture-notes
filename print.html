@@ -2612,48 +2612,40 @@ a number and a function is rejected by the Scala type checker:</p>
 B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with Object Algebras. Proc. ECOOP 2012.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-1"><a class="header" href="#continuations-1">Continuations 1</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="15-continuations-1/./continuations-1.scala">here.</a></p>
-<pre><code class="language-scala">import scala.io.StdIn.readLine
-/*
-Continuations
-=============
-*/
-
-
-/* Consider the following very simple program. */
-def inputNumber(prompt: String): Int = {
+<p>Consider the following very simple program:</p>
+<pre><code class="language-scala">def inputNumber(prompt: String): Int = {
   println(prompt)
   Integer.parseInt(readLine())
 }
 def progSimple = {
   println(inputNumber(&quot;First number:&quot; ) + inputNumber(&quot;Second number&quot;))
 }
-/* Now consider a web version of the program:
- * - the first number is entered on the first page
- * - then the first number is submitted, a form to enter the second number is shown
- * - when the second number is submitted, a form with the result is generated and shown.
- *
- * Even this &quot;addition server&quot; is difficult to implement. Because http is a stateless protocol (for good reasons),
- * every web program is basically forced to terminate after every request. This means that
- * the Web developer must turn this application into three programs:
- * (a) The first program displays the first form.
- * (b) The second program consumes the form values from the first form, and generates the second form.
- * (c) The third program consumes the form values from the second form, computes the output, and
- * generates the result.
- *
- * Because the value entered in the first form is needed by the third program to compute its output, this
- * value must somehow be transmitted between from the first program to the third. This is typically done
- * by using the hidden field mechanism of HTML.
- *
- * Suppose, instead of using a hidden field, the application developer used a Java Servlet session object,
- * or a database field, to store the first number. (Application developers are often pushed to do this
- * because that is the feature most conveniently supported by the language and API they are employing.)
- * Then, if the developer were to exploratorily open multiple windows
- * the application can compute the wrong answer.
- * Hence, the actual program in a web developer's mind has the structure of the following program.
- * An actual web program is of course more complicated, but this primitive model of web
- * programming is sufficient to explain the problem. */
-
-def webdisplay(s: String) : Nothing = { // we use the return type &quot;Nothing&quot; for functions that will never return (normally)
+</code></pre>
+<p>Now consider a web version of the program:</p>
+<ul>
+<li>the first number is entered on the first page</li>
+<li>then the first number is submitted, a form to enter the second number is shown</li>
+<li>when the second number is submitted, a form with the result is generated and shown.</li>
+</ul>
+<p>Even this &quot;addition server&quot; is difficult to implement. Because http is a stateless protocol (for good reasons),
+every web program is basically forced to terminate after every request. This means that
+the Web developer must turn this application into three programs:</p>
+<p>(a) The first program displays the first form.
+(b) The second program consumes the form values from the first form, and generates the second form.
+(c) The third program consumes the form values from the second form, computes the output, and</p>
+<p>generates the result.</p>
+<p>Because the value entered in the first form is needed by the third program to compute its output, this
+value must somehow be transmitted between from the first program to the third. This is typically done
+by using the hidden field mechanism of HTML.</p>
+<p>Suppose, instead of using a hidden field, the application developer used a Java Servlet session object,
+or a database field, to store the first number. (Application developers are often pushed to do this
+because that is the feature most conveniently supported by the language and API they are employing.)
+Then, if the developer were to exploratorily open multiple windows
+the application can compute the wrong answer.
+Hence, the actual program in a web developer's mind has the structure of the following program.
+An actual web program is of course more complicated, but this primitive model of web
+programming is sufficient to explain the problem.</p>
+<pre><code class="language-scala">def webdisplay(s: String) : Nothing = { // we use the return type &quot;Nothing&quot; for functions that will never return (normally)
   println(s)
   sys.error(&quot;program terminated&quot;)
 }
@@ -2667,44 +2659,34 @@ def webread(prompt: String, continue: String) : Nothing = {
 def program1 = webread(&quot;enter first number&quot;, &quot;s2&quot;)
 def program2(n1: Int) = webread(&quot;enter second number and remind me of previoulsy entered number &quot;+n1, &quot;s3&quot;)
 def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot;+ n1 + &quot; and &quot;+n2+ &quot; is &quot;+(n1+n2))
-
-/* We could write a better webread and webdisplay procedure if we could somehow get hold of the
- * pending computation at the time when the procedure was invoked. Such a pending computation is
- * called _continuation_.
- *
- * Let's consider the continuation at the point of the first interaction in the original program,
- *
-  def prog = {
+</code></pre>
+<p>We could write a better webread and webdisplay procedure if we could somehow get hold of the
+pending computation at the time when the procedure was invoked. Such a pending computation is
+called <em>continuation</em>.</p>
+<p>Let's consider the continuation at the point of the first interaction in the original program,</p>
+<pre><code>  def prog = {
     println(inputNumber() + inputNumber())
   }
- *
- * The pending computation (or, continuation in the following) is to take the result of the first
- * inputNumber invocation, add to it the result of the second invocation, and display it.
- * We can express the continuation as a function: */
-
-val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
-// cont1: Function1[Int, Unit] = repl.MdocSession$App$$Lambda$2942/0x0000000100d23840@2d69bedc
-
-/* Similarly, the continuation at the second point of interaction is:
- * val cont2 = (m: Int) =&gt; println(n+m)
- * where n is the result of the first input, which is stored in the closure of cont2
- *
- * Assuming an explicit representation of the continuation, it is obvious that we can now
- * write a version of webread, called webread_k, which takes the continuation as second parameter and invokes
- * the continuation once the answer to the result is received by the server.
- * This can be implemented, say, by associating to a continatuion a unique ID, store the continuation
- * in a hashmap on the server using this ID, and storing the ID in the form such that it gets
- * submitted back to the server once the client presses the submit button.
- *
- * Here is code illustrating the idea. For simplicity we assume that all web forms return
- * a single integer value.
- */
-
-
-val continuations = new scala.collection.mutable.HashMap[Symbol, Int=&gt;Nothing]()
-// continuations: HashMap[Symbol, Function1[Int, Nothing]] = HashMap()
+</code></pre>
+<p>The pending computation (or, continuation in the following) is to take the result of the first
+inputNumber invocation, add to it the result of the second invocation, and display it.</p>
+<p>We can express the continuation as a function:</p>
+<pre><code class="language-scala">val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
+</code></pre>
+<p>Similarly, the continuation at the second point of interaction is:</p>
+<pre><code> val cont2 = (m: Int) =&gt; println(n+m)
+</code></pre>
+<p>where n is the result of the first input, which is stored in the closure of cont2</p>
+<p>Assuming an explicit representation of the continuation, it is obvious that we can now
+write a version of webread, called webread_k, which takes the continuation as second parameter and invokes
+the continuation once the answer to the result is received by the server.
+This can be implemented, say, by associating to a continatuion a unique ID, store the continuation
+in a hashmap on the server using this ID, and storing the ID in the form such that it gets
+submitted back to the server once the client presses the submit button.</p>
+<p>Here is code illustrating the idea. For simplicity we assume that all web forms return
+a single integer value.</p>
+<pre><code class="language-scala mdoc">val continuations = new scala.collection.mutable.HashMap[Symbol, Int=&gt;Nothing]()
 var nextIndex : Int = 0
-// nextIndex: Int = 0
 def getNextID = {
   nextIndex += 1
   Symbol(&quot;c&quot; + nextIndex.toString)
@@ -2719,189 +2701,221 @@ def webread_k(prompt: String, k: Int=&gt;Nothing) : Nothing = {
 }
 
 def continue(kid: Symbol, result: Int) = continuations(kid)(result)
-
-/* Using webread_k, we can now define our addition server as follows.
- * If you try prog, ignore the stack traces.
- */
-
-def webprog = webread_k(&quot;enter first number&quot;, (n) =&gt;
+</code></pre>
+<p>Using webread_k, we can now define our addition server as follows.
+If you try prog, ignore the stack traces.</p>
+<pre><code>def webprog = webread_k(&quot;enter first number&quot;, (n) =&gt;
              webread_k(&quot;enter second number&quot;, (m) =&gt; webdisplay(&quot;The sum of &quot;+n+ &quot; and &quot;+m+ &quot; is &quot;+(n+m))))
+</code></pre>
+<p>For instance, try:</p>
+<pre><code>   scala&gt; webprog          -- yields some continuation id 'c1
+   scala&gt; continue('c1,5)   -- yields some continuation id 'c2
+  scala&gt; continue('c2,7)
 
-/* For instance, try:
- * scala&gt; webprog          -- yields some continuation id 'c1
- * scala&gt; continue('c1,5)   -- yields some continuation id 'c2
- * scala&gt; continue('c2,7)
- *
- * This should yield the result 12 as expected. But also try:
- * scala&gt; webprog          -- yields some continuation id 'c1
- * scala&gt; contine('c1,5)    -- yields some continuation id 'c2
- * scala&gt; contine('c1,6)    -- yields some continuation id 'c3
- * scala&gt; continue('c2,3)   -- should yield 8
- * scala&gt; continue('c3,3)   -- should yield 9
- *
- * The style of programming in webprog, which is obviously more complicated than the logical
- * structure of progSimple, shows up in many practical programming scenarios - server-side web programming
- * is just one of them. For instance, in JavaScript many API functions for asynchronous communication
- * such as httprequest in AJAX require to pass a callback function, which leads to similar code
- * as the one in webprog above.
- *
- * Let's consider this &quot;web transformation&quot; - the transformation from progSimple to webprog - in more detail.
- * To this purpose, let's make our application a bit more sophisticated. Instead of entering only two
- * numbers, the user enters n numbers, e.g., the prices of a list of n items.
- *
- * Here is the &quot;non-web&quot; version of the application:
- */
-
-def allCosts(itemList: List[String]) : Int = itemList match {
+  This should yield the result 12 as expected. But also try:
+  scala&gt; webprog          -- yields some continuation id 'c1
+  scala&gt; contine('c1,5)    -- yields some continuation id 'c2
+  scala&gt; contine('c1,6)    -- yields some continuation id 'c3
+  scala&gt; continue('c2,3)   -- should yield 8
+  scala&gt; continue('c3,3)   -- should yield 9
+</code></pre>
+<p>The style of programming in webprog, which is obviously more complicated than the logical
+structure of progSimple, shows up in many practical programming scenarios - server-side web programming
+is just one of them. For instance, in JavaScript many API functions for asynchronous communication
+such as httprequest in AJAX require to pass a callback function, which leads to similar code
+as the one in webprog above.</p>
+<p>Let's consider this &quot;web transformation&quot; - the transformation from progSimple to webprog - in more detail.
+To this purpose, let's make our application a bit more sophisticated. Instead of entering only two
+numbers, the user enters n numbers, e.g., the prices of a list of n items.</p>
+<p>Here is the &quot;non-web&quot; version of the application:</p>
+<pre><code class="language-scala">def allCosts(itemList: List[String]) : Int = itemList match {
    case Nil =&gt; 0
    case x :: rest =&gt; inputNumber(&quot;Cost of item &quot;+x+ &quot;:&quot;) + allCosts(rest)
 }
-val testData : List[String] = List(&quot;banana&quot;, &quot;apple&quot;, &quot;orange&quot;)
-// testData: List[String] = List(&quot;banana&quot;, &quot;apple&quot;, &quot;orange&quot;)
+</code></pre>
+<pre><code class="language-scala">val testData : List[String] = List(&quot;banana&quot;, &quot;apple&quot;, &quot;orange&quot;)
 
 def test = println(&quot;Total sum: &quot;+allCosts(testData))
-
-/* This version of allCosts is clearly not web-friendly, because it uses inputNumber,
- * which we do not know how to implement for the web.
- *
- * The first thing to observe is that on its own, allCosts is not a complete program: it doesn't do anything unless
- * it is called with actual parameters!
- * Instead, it is a library procedure that may be used in many different contexts. Because it has a Web interaction,
- * however, there is the danger that at the point of interaction, the rest of the computation --- that is, the
- * computation that invoked allCosts --- will be lost. To prevent this, allCosts must consume an extra argument,
- * a continuation, that represents the rest of the pending computation. To signify this change in contract, we will use
- * the convention of appending _k to the name of the procedure and k to name the continuation parameter.
- */
-
-/* Here is a first attempt to define allCosts_k.
- *
- def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
+</code></pre>
+<p>This version of allCosts is clearly not web-friendly, because it uses inputNumber,
+which we do not know how to implement for the web.</p>
+<p>The first thing to observe is that on its own, allCosts is not a complete program: it doesn't do anything unless
+it is called with actual parameters!
+Instead, it is a library procedure that may be used in many different contexts. Because it has a Web interaction,
+however, there is the danger that at the point of interaction, the rest of the computation --- that is, the
+computation that invoked allCosts --- will be lost. To prevent this, allCosts must consume an extra argument,
+a continuation, that represents the rest of the pending computation. To signify this change in contract, we will use
+the convention of appending _k to the name of the procedure and k to name the continuation parameter.</p>
+<p>Here is a first attempt to define <code>allCosts_k</code>.</p>
+<pre><code class="language-scala"> def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
    case Nil =&gt; 0
    case x :: rest =&gt; webread_k(&quot;Cost of item &quot;+x+&quot;:&quot;, n =&gt; n+allCosts_k(rest,k))
 }
- * This may look reasonable, but it suffers from an immediate problem. When the recursive call occurs, if
- * the list had two or more elements, then there will immediately be another Web interaction. Because this will
- * terminate the program, the pending addition will be lost! Therefore, the addition of n has to move into the
- * continuation fed to allCosts_k. In code:
-def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
-   case Nil =&gt; 0
-   case x :: rest =&gt; webread_k(&quot;Cost of item &quot;+x+&quot;:&quot;, n =&gt; allCosts_k(rest,m =&gt; k(m+n)))
+</code></pre>
+<p>This may look reasonable, but it suffers from an immediate problem. When the recursive call occurs, if
+the list had two or more elements, then there will immediately be another Web interaction. Because this will
+terminate the program, the pending addition will be lost! Therefore, the addition of n has to move into the
+continuation fed to <code>allCosts_k</code>. In code:</p>
+<pre><code class="language-scala mdoc">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
+  case Nil =&gt; 0
+  case x :: rest =&gt; webread_k(&quot;Cost of item &quot;+x+&quot;:&quot;, n =&gt; allCosts_k(rest,m =&gt; k(m+n)))
 }
- * That is, the receiver of the Web interaction is invoked with the cost of the first item. When allCosts_k is invoked
- * recursively, it is applied to the rest of the list. Its receiver must therefore receive the tally of costs of the
- * remaining items. That explains the pattern in the receiver.
- *
- * The only problem is, where does a continuation ever get a value? We create larger-and-larger continuation on
- * each recursive invocation, but what ever invokes them?
- *
- * Here is the same problem from a different angle (that also answers the question above). Notice that each
- * recursive invocation of allCosts_k takes place in the aftermath of a Web interaction. We have already seen how
- * the act of Web interaction terminates the pending computation. Therefore, when the list empties, where
- * is the value 0 going? Presumably to the pending computation, but there is none. Any computation that
- * would have been pending has now been recorded in k, which is expecting a value. Therefore, the correct
- * transformation of this procedure is:
- */
-
-def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
+</code></pre>
+<p>That is, the receiver of the Web interaction is invoked with the cost of the first item. When allCosts_k is invoked
+recursively, it is applied to the rest of the list. Its receiver must therefore receive the tally of costs of the
+remaining items. That explains the pattern in the receiver.</p>
+<p>The only problem is, where does a continuation ever get a value? We create larger-and-larger continuation on
+each recursive invocation, but what ever invokes them?</p>
+<p>Here is the same problem from a different angle (that also answers the question above). Notice that each
+recursive invocation of allCosts_k takes place in the aftermath of a Web interaction. We have already seen how
+the act of Web interaction terminates the pending computation. Therefore, when the list empties, where
+is the value 0 going? Presumably to the pending computation, but there is none. Any computation that
+would have been pending has now been recorded in k, which is expecting a value. Therefore, the correct
+transformation of this procedure is:</p>
+<pre><code class="language-scala mdoc">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
    case Nil =&gt; k(0)
    case x :: rest =&gt; webread_k(&quot;Cost of item &quot;+x+ &quot;:&quot;, n =&gt; allCosts_k(rest,m =&gt; k(m+n)))
 }
 
 def testweb = allCosts_k(testData, m =&gt; webdisplay(&quot;Total sum: &quot;+m))
-
-/* Let's now consider the case that we have used a library function for the iteration in allCosts, namely
- * the map function, which we replicate here. */
- def map[S,T](c: List[S], f: S=&gt;T) : List[T] = c match {
-   case Nil =&gt; Nil
-   case x :: rest =&gt; f(x) :: map(rest,f)
+</code></pre>
+<p>Let's now consider the case that we have used a library function for the iteration in allCosts, namely
+the map function, which we replicate here.</p>
+<pre><code class="language-scala mdoc">def map[S,T](c: List[S], f: S=&gt;T) : List[T] = c match {
+  case Nil =&gt; Nil
+  case x :: rest =&gt; f(x) :: map(rest,f)
 }
 /* Using map, we can rephrase allCosts as follows. */
 def allCosts2(itemList: List[String]) : Int = map(itemList, (x:String) =&gt; inputNumber(&quot;Cost of item &quot;+x+ &quot;:&quot;)).sum
-
-/* What if we we want to use map in allCosts_k?
- *
- * Just using webread_k in place of inputNumber will not work, since webread_k expects an additional parameter.
- * Obviously we must somehow modify the definition of map. But what can we pass as second parameter in the call
- * to f?
- *
- * Insight: We must perform the &quot;web transformation&quot; to map as well. We call the reslt map_k. Here is the code: */
-
-def map_k[S,T](c: List[S], f: (S,T=&gt;Nothing) =&gt; Nothing, k: List[T] =&gt; Nothing) : Nothing = c match {
+</code></pre>
+<p>What if we we want to use map in allCosts_k?</p>
+<p>Just using <code>webread_k</code> in place of <code>inputNumber</code> will not work, since <code>webread_k</code> expects an additional parameter.
+Obviously we must somehow modify the definition of map. But what can we pass as second parameter in the call
+to f?</p>
+<p><strong>Insight</strong>: We must perform the &quot;web transformation&quot; to map as well. We call the result <code>map_k</code>. Here is the code:</p>
+<pre><code class="language-scala mdoc">def map_k[S,T](c: List[S], f: (S,T=&gt;Nothing) =&gt; Nothing, k: List[T] =&gt; Nothing) : Nothing = c match {
    case Nil =&gt; k(Nil)
    case x :: rest =&gt; f(x, t =&gt; map_k(rest, f, (tr:List[T]) =&gt; k(t::tr)))
 }
 
 def allCosts2_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing =
    map_k(itemList, (x:String,k2:Int=&gt;Nothing) =&gt; webread_k(&quot;Cost of item &quot;+x+ &quot;:&quot;, k2),(l:List[Int]) =&gt; k(l.sum))
+
 </code></pre>
+<h2 id="implications-of-the-web-transformation"><a class="header" href="#implications-of-the-web-transformation">Implications of the &quot;web transformation&quot;:</a></h2>
+<ol>
+<li>
+<p>We have had to make decisions about the order of evaluation. That is, we had to choose whether
+to evaluate the left or the right argument of addition first. This was an issue we had specified only
+implicitly earlier; if our evaluator had chosen to evaluate arguments right-to-left, the Web program at
+the beginning of this document would have asked for the second argument before the first! We have
+made this left-to-right order of evaluation explicit in our transformation.</p>
+</li>
+<li>
+<p>The transformation we use is global, namely it (potentially) affects all the procedures in the program
+by forcing them all to consume an extra continuation as an argument. We usually don't have a choice as
+to whether or not to transform a procedure. Suppose f invokes g and g invokes h, and we transform
+f to f_k but don't transform g or h. Now when f_k invokes g and g invokes h, suppose h consumes
+input from the Web. At this point the program terminates, but the last continuation procedure (necessary
+to resume the computation when the user supplies an input) is the one given to f_k, with all record of
+g and h lost.</p>
+</li>
+<li>
+<p>This transformation sequentializes the program. Given a nested expression, it forces the programmer
+to choose which sub-expression to evaluate first (a consequence of the first point above); further, every
+subsequent operation lies in the continuation, which in turn picks the first expression to evaluate, pushing
+all other operations into its continuation; and so forth. The net result is a program that looks an awful lot
+like a traditional procedural program. This suggests that this series of transformations can be used to
+compile a program in a language like Scheme into one in a language like C!</p>
+</li>
+</ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-2"><a class="header" href="#continuations-2">Continuations 2</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="16-continuations-2/./continuations-2.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-/* Today's goal is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
-  in the previous lecture formal.
-  In the previous lecture we have seen that we had to translate the following program:
-  println(&quot;The sum is: &quot;+ (inputNumber(&quot;First number:&quot; ) + inputNumber(&quot;Second number&quot;)))
-  into this program:
-  webread_k(&quot;First number&quot;, (n) =&gt;
+<p>Today's goal is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
+in the previous lecture formal.</p>
+<p>In the previous lecture we have seen that we had to translate the following program:</p>
+<pre><code>println(&quot;The sum is: &quot;+ (inputNumber(&quot;First number:&quot; ) + inputNumber(&quot;Second number&quot;)))
+</code></pre>
+<p>into this program:</p>
+<pre><code>  webread_k(&quot;First number&quot;, (n) =&gt;
              webread_k(&quot;Second number:&quot;, (m) =&gt; webdisplay(&quot;The sum is: &quot;+(n+m))))
-  This hand-translation is sufficient if this expression is the entire program.
-  If we wish to use it as a sub-expression in a larger program, this does not suffice,
-  because there may be a pending computation outside its own evaluation. For that
-  reason, the program has to send its result to a continuation instead of returning it:
-  k =&gt; webread_k(&quot;First number&quot;, (n) =&gt;
+</code></pre>
+<p>This hand-translation is sufficient if this expression is the entire program.
+If we wish to use it as a sub-expression in a larger program, this does not suffice,
+because there may be a pending computation outside its own evaluation. For that
+reason, the program has to send its result to a continuation instead of returning it:</p>
+<pre><code>  k =&gt; webread_k(&quot;First number&quot;, (n) =&gt;
              webread_k(&quot;Second number:&quot;, (m) =&gt; webdisplay(&quot;The sum is: &quot;+k(n+m))))
-  This version can be employed in the transformation of a larger program. In the special
-  case where this is the entire program we can apply the transformed term to the identity
-  function to get the same result as the previous manual transformation.
-  In general, every term, when converted to CPS, will be have the following properties
-  (see O. Danvy, Three Steps for the CPS Transformation, 1991):
-  1) The values of all intermediate applications are given a name
-  2) The evaluation of these applications is sequentialized based on a traversal of their
-     abstract syntax tree.
-  3) The results of the transformation are procedures that expect a continuation parameter -
-     a lambda abstraction whose application to intermediate values yields the final result
-     of the whole evaluation.
-  Let us now look at the transformation of a function application. For instance, let us
-  consider the term
-    f(a)(g(b))
-  The transformation of the function argument, f(a), should be
-    f_k(a, fval =&gt; ...)
-  Similarly, the transformation of the argument position would be:
-    g_k(b, aval =&gt; ...)
-  Given these two values, fval and aval, we can now perform the application, like so:
-    k(fval(aval))
-  However, this will not work, because if fval makes a web interaction itself it will not return.
-  Instead, k must be given as an argument to the function, like so:
-    k =&gt; f_k(a, fval =&gt; g_k(b, aval =&gt; fval(aval,k)))
-  Reading this sequentially, it says to evaluate the function expression, store its value in fval,
-  then evaluate the argument, store its value in aval, and finally invoke the function on the argument.
-  This function's continuation is the same as that of the function application itself.
-  What about variables and constants? Since every term in CPS must be a function that consumes a continuation,
-  the constant is simply send to the continuation. For instance, the CPS transformation of
-  the number 3 is k =&gt; k(3)
-  What about function definitions, such as x =&gt; x ? Since every lambda expression is also a constant,
-  we might be tempted to use the same rule as above, i.e.,
-    k =&gt; k(x =&gt; x)
-  However, the transformation is more subtle. A function application invokes the function on two arguments, whereas
-  the original function x=&gt;x consumes only one. What is the second argument?
-  Answer: It is the _dynamic_ continuation, i.e., the continuation at the time of the function _application_
-  (as opposed to its definition). We cannot ignore this continuation: It is the stack active at the point
-  of function invocation, so we want to preserve it. This is in contrast to what we did with environments,
-  and more in line with our treatment of the store. The transformed version hence reads:
-  k =&gt; k( (x,dynk) =&gt; (k =&gt; k(x))(dynk))
-  which is equivalent (when the inner application finally happens) to:
-  k =&gt; k( (x,dynk) =&gt; dynk(x))
-  This is a function that accepts a value and a dynamic continuation and sends the value to that continuation.
-  We are now ready to write this transformation formally, as a source-to-source transformation. This transformation
-  could have the type cps(e: Exp): Exp, but we choose a different type for two reasons:
-  1) In CPS we need function definitions and applications with two arguments instead of one. This could be addressed
-     by adding new syntax.
-  2) More importantly, we want the invariants of the CPS format to be clearly visible in the syntax definition of the
-     result, most importantly the fact that all function applications are tail calls.
-  For this reason, we define a special new syntax for CPS-transformed terms. Here is our original syntax: */
-
-enum Exp:
+</code></pre>
+<p>This version can be employed in the transformation of a larger program. In the special
+case where this is the entire program we can apply the transformed term to the identity
+function to get the same result as the previous manual transformation.</p>
+<p>In general, every term, when converted to CPS, will be have the following properties
+(see O. Danvy, Three Steps for the CPS Transformation, 1991):</p>
+<ol>
+<li>
+<p>The values of all intermediate applications are given a name</p>
+</li>
+<li>
+<p>The evaluation of these applications is sequentialized based on a traversal of their
+abstract syntax tree.</p>
+</li>
+<li>
+<p>The results of the transformation are procedures that expect a continuation parameter -
+a lambda abstraction whose application to intermediate values yields the final result
+of the whole evaluation.</p>
+</li>
+</ol>
+<p>Let us now look at the transformation of a function application. For instance, let us
+consider the term</p>
+<pre><code>  f(a)(g(b))
+</code></pre>
+<p>The transformation of the function argument, <code>f(a)</code>, should be</p>
+<pre><code>``f_k(a, fval =&gt; ...)``
+</code></pre>
+<p>Similarly, the transformation of the argument position would be:</p>
+<pre><code>``g_k(b, aval =&gt; ...)``
+</code></pre>
+<p>Given these two values, fval and aval, we can now perform the application, like so:</p>
+<pre><code>``k(fval(aval))``
+</code></pre>
+<p>However, this will not work, because if <code>fval</code> makes a web interaction itself it will not return.
+Instead, k must be given as an argument to the function, like so:</p>
+<p><code>  k =&gt; f_k(a, fval =&gt; g_k(b, aval =&gt; fval(aval,k)))</code></p>
+<p>Reading this sequentially, it says to evaluate the function expression, store its value in fval,
+then evaluate the argument, store its value in aval, and finally invoke the function on the argument.
+This function's continuation is the same as that of the function application itself.
+What about variables and constants? Since every term in CPS must be a function that consumes a continuation,
+the constant is simply send to the continuation.</p>
+<p>For instance, the CPS transformation of
+the number 3 is <code>k =&gt; k(3)</code></p>
+<p>What about function definitions, such as <code>x =&gt; x</code> ? Since every lambda expression is also a constant,
+we might be tempted to use the same rule as above, i.e.,</p>
+<p><code>  k =&gt; k(x =&gt; x)</code></p>
+<p>However, the transformation is more subtle. A function application invokes the function on two arguments, whereas
+the original function x=&gt;x consumes only one. What is the second argument?</p>
+<p><strong>Answer</strong>: It is the <em>dynamic</em> continuation, i.e., the continuation at the time of the function <em>application</em>
+(as opposed to its definition). We cannot ignore this continuation: It is the stack active at the point
+of function invocation, so we want to preserve it. This is in contrast to what we did with environments,
+and more in line with our treatment of the store.</p>
+<p>The transformed version hence reads:
+<code>k =&gt; k( (x,dynk) =&gt; (k =&gt; k(x))(dynk))</code>
+which is equivalent (when the inner application finally happens) to:
+<code>k =&gt; k( (x,dynk) =&gt; dynk(x))</code></p>
+<p>This is a function that accepts a value and a dynamic continuation and sends the value to that continuation.
+We are now ready to write this transformation formally, as a source-to-source transformation. This transformation
+could have the type cps(e: Exp): Exp, but we choose a different type for two reasons:</p>
+<ol>
+<li>
+<p>In CPS we need function definitions and applications with two arguments instead of one. This could be addressed
+by adding new syntax.</p>
+</li>
+<li>
+<p>More importantly, we want the invariants of the CPS format to be clearly visible in the syntax definition of the
+result, most importantly the fact that all function applications are tail calls.</p>
+</li>
+</ol>
+<pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
@@ -2911,20 +2925,17 @@ enum Exp:
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
-
-import Exp._
-
-/* For CPS transformed terms, we define two different syntactic categories: Values (CPSVal) and Expressions (CPSExp).
-   By &quot;values&quot;, we mean terms that &quot;return&quot;, that is, terms that are different from applications of functions
-   or continuations (neither of which returns). Additions (CPSAdd) are also values in this regard: We assume addition
-   to be built-in and not requiring CPS-transformations.
-   The syntax makes clear that all arguments of a function application are values - hence no nesting of applications
-   can occur. Furthermore, the syntax differentiates between defining an ordinary function (CPSFun) which, when translated,
-   gets an additional continuation parameter, and Continuation Functions (CPSCont), which are the result of the CPS
-   transformation. Correspondingly, we have two different forms of applications, CPSContApp and CPSFunApp.
-   Here is the formal definition: */
-
-sealed abstract class CPSExp
+</code></pre>
+<p>For CPS transformed terms, we define two different syntactic categories: Values (CPSVal) and Expressions (CPSExp).
+By &quot;values&quot;, we mean terms that &quot;return&quot;, that is, terms that are different from applications of functions
+or continuations (neither of which returns). Additions (CPSAdd) are also values in this regard: We assume addition
+to be built-in and not requiring CPS-transformations.</p>
+<p>The syntax makes clear that all arguments of a function application are values - hence no nesting of applications
+can occur. Furthermore, the syntax differentiates between defining an ordinary function (CPSFun) which, when translated,
+gets an additional continuation parameter, and Continuation Functions (CPSCont), which are the result of the CPS
+transformation. Correspondingly, we have two different forms of applications, CPSContApp and CPSFunApp.</p>
+<p>Here is the formal definition:</p>
+<pre><code class="language-scala">sealed abstract class CPSExp
 abstract class CPSVal extends CPSExp
 case class CPSNum(n: Int) extends CPSVal
 case class CPSCont(v: String, body: CPSExp) extends CPSVal
@@ -2935,14 +2946,12 @@ implicit def id2cpsexp(x: String): CPSVar = CPSVar(x)
 case class CPSContAp(k: CPSVal, a: CPSVal) extends CPSExp
 case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp // the arguments are even CPSVar and not only CPSVal! // the arguments are even CPSVar and not only CPSVal!
 case class CPSAdd(l: CPSVar, r: CPSVar) extends CPSVal
-
-/* With these definitions, we are now ready to formalize the transformation described above.
- * There is one technical issues: We need to introduce new names for binders into our program, such as &quot;k&quot;.
- * We need to make sure that we do not accidentially capture existing names in the program. For this
- * reason we need our freshName machinery we introduced in 5-fae.scala.
- */
-
-def freeVars(e: Exp) : Set[String] =  e match {
+</code></pre>
+<p>With these definitions, we are now ready to formalize the transformation described above.
+There is one technical issues: We need to introduce new names for binders into our program, such as &quot;k&quot;.
+We need to make sure that we do not accidentially capture existing names in the program.
+For this reason we need our <code>freshName</code> machinery we introduced in 5-fae.scala.</p>
+<pre><code class="language-scala">def freeVars(e: Exp) : Set[String] =  e match {
    case Id(x) =&gt; Set(x)
    case Add(l,r) =&gt; freeVars(l) ++ freeVars(r)
    case Fun(x,body) =&gt; freeVars(body) - x
@@ -2982,19 +2991,35 @@ def cps(e: Exp) : CPSCont = e match {
    }
 }
 </code></pre>
+<p>This transformation is the so-called Fischer CPS transformation. There are many other CPS transformation algorithms.
+The Fischer CPS transformation is nice because it is so simple and because it is defined as one simple structural
+recursion over the AST. Its main disadvantage is the existence of so-called &quot;administrative redexes&quot;.</p>
+<p>An administrative redex is a function application whose operator is a &quot;continuation lambda&quot; - a lambda produced during
+CPS transformation that was not in the original program. Such function applications can be computed immediately because
+the function which is called is known.</p>
+<p>For instance, <code>cps(Add(2,3))</code> yields</p>
+<pre><code>   CPSCont(&quot;k&quot;,
+           CPSContAp(
+             CPSCont(&quot;k&quot;,
+                     CPSContAp(&quot;k&quot;,2)),
+             CPSCont(&quot;lv&quot;,
+                     CPSContAp(
+                       CPSCont(&quot;k&quot;,
+                               CPSContAp(&quot;k&quot;,3)),
+                       CPSCont(&quot;rv&quot;,
+                               CPSAdd(&quot;rv&quot;,&quot;lv&quot;))))))
+</code></pre>
+<pre><code>instead of
+``CPSCont(&quot;k&quot;, CPSContAp(&quot;k&quot;, CPSAdd(2,3)))``
+
+Many more advanced CPS transformation algorithms try to avoid as many administrative redexes as possible.
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="first-class-continuations"><a class="header" href="#first-class-continuations">First Class Continuations</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="17-first-class-continuations/./first-class-continuations.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-/**
-First-Class Continuations
-=========================
-Today's goal is to formalize first-class continuations as illustrated by Scheme's let/cc construct. In the previous lecture we have
+<p>Today's goal is to formalize first-class continuations as illustrated by Scheme's let/cc construct. In the previous lecture we have
 learned why first class continuations are a powerful language construct. Today we learn the semantics of first-class continuations by
-extending our interpreter to support letcc. Here is the abstract syntax of the language extended with letcc:
-*/
-
-enum Exp:
+extending our interpreter to support letcc. Here is the abstract syntax of the language extended with letcc:</p>
+<pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
@@ -3006,46 +3031,37 @@ enum Exp:
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
-
-import Exp._
-
-/**
-But how do we implement letcc? How do we get hold of the rest of the computation of the object (=interpreted) program?
+</code></pre>
+<p>But how do we implement letcc? How do we get hold of the rest of the computation of the object (=interpreted) program?
 One idea would be to CPS-transform the object program. Then we have the current continuation available and could store it in environments
 etc.
-However, we want to give a direct semantics to first-class continuations, without first  transforming the object program.
-Insight: If we would CPS-transform the interpreter, the continuation of the interpreter also represents, in some way, the continuation
+However, we want to give a direct semantics to first-class continuations, without first  transforming the object program.</p>
+<p><strong>Insight</strong>: If we would CPS-transform the interpreter, the continuation of the interpreter also represents, in some way, the continuation
 of the object program. The difference is that it represents what's left to do in the interpreter and not in the object program.
-However, what is left in the interpreter _is_ what is left in the object program.
-Hence we are faced with two tasks:
-  1. CPS-transform the interpreter
-  2. add a branch for Letcc to the interpreter.
-Let's start with the standard infrastructure of values and environments.
-*/
-
-sealed abstract class Value
+However, what is left in the interpreter <em>is</em> what is left in the object program.</p>
+<p>Hence we are faced with two tasks:</p>
+<ol>
+<li>CPS-transform the interpreter</li>
+<li>add a branch for <code>Letcc</code> to the interpreter.</li>
+</ol>
+<p>Let's start with the standard infrastructure of values and environments.</p>
+<pre><code class="language-scala">sealed abstract class Value
 type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
-
-/**
-How do we represent values that represent continuations? Since we want to represent an object language continuation by a meta language
+</code></pre>
+<p>How do we represent values that represent continuations? Since we want to represent an object language continuation by a meta language
 continuation, we need to be able to wrap a meta language continuation as an object language value. This continuation will always accept
-some other object language value:
-*/
-
-case class ContV(f: Value =&gt; Nothing) extends Value
-
-/**
-We also need a syntactic construct to apply continuations. One way to provide such a construct would be to add a new syntactic category
+some other object language value:</p>
+<pre><code class="language-scala">case class ContV(f: Value =&gt; Nothing) extends Value
+</code></pre>
+<p>We also need a syntactic construct to apply continuations. One way to provide such a construct would be to add a new syntactic category
 of continuation application. We will instead do what Scheme and other languages also do: We overload the normal function applicaton
-construct and also use it for application of continuations.
-This means that we will need a case distinction in our interpreter whether the function argument is a closure or a continuation.
+construct and also use it for application of continuations.</p>
+<p>This means that we will need a case distinction in our interpreter whether the function argument is a closure or a continuation.
 Let's now study the interpreter for our new language. The branches for Num, Id, Add, and Fun are straightforward applications of the
-CPS transformation technique we already know.
-*/
-
-def eval(e: Exp, env: Env, k: Value =&gt; Nothing) : Nothing = e match {
+CPS transformation technique we already know.</p>
+<pre><code class="language-scala">def eval(e: Exp, env: Env, k: Value =&gt; Nothing) : Nothing = e match {
   case Num(n: Int) =&gt; k(NumV(n))
   case Id(x) =&gt; k(env(x))
   case Add(l,r) =&gt; {
@@ -3072,66 +3088,45 @@ def eval(e: Exp, env: Env, k: Value =&gt; Nothing) : Nothing = e match {
    * wrapped as a value using ContV. */
   case Letcc(param,body) =&gt; eval(body, env+(param -&gt; ContV(k)), k)
 }
-
-/**
-To make it easier to experiment with the interpreter this code provides the right initialization to eval. We have to give eval a
+</code></pre>
+<p>To make it easier to experiment with the interpreter this code provides the right initialization to eval. We have to give eval a
 continuation which represents the rest of the computation after eval is done. A small technical problem arises due to our usage of
 the return type &quot;Nothing&quot; for continuations, to emphasize that they do not return: The only way to implement a value that has this
 type is a function that does indeed not return. We do so by letting this function throw an exception. To keep track of the returned
-value we store it temporarily in a variable, catch the exception, and return the stored value.
-*/
-
-def starteval(e: Exp) : Value = {
+value we store it temporarily in a variable, catch the exception, and return the stored value.</p>
+<pre><code class="language-scala">def starteval(e: Exp) : Value = {
   var res : Value = null
   val s : Value =&gt; Nothing = (v) =&gt; { res = v; sys.error(&quot;program terminated&quot;) }
   try { eval(e, Map.empty, s) } catch { case e:Throwable =&gt; () }
   res
 }
-
-/**
-Finally a small test of Letcc.
-*/
-val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, Ap(&quot;k&quot;, 3))))
-// testprog: Exp = Add(
-//   lhs = Num(n = 1),
-//   rhs = Letcc(
-//     param = &quot;k&quot;,
-//     body = Add(
-//       lhs = Num(n = 2),
-//       rhs = Ap(funExpr = Id(name = &quot;k&quot;), argExpr = Num(n = 3))
-//     )
-//   )
-// )
+</code></pre>
+<p>Finally a small test of Letcc.</p>
+<pre><code class="language-scala">val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, Ap(&quot;k&quot;, 3))))
 
 assert(starteval(testprog) == NumV(4))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="letcc"><a class="header" href="#letcc">LetCC</a></h1>
+<p>Racket is a language with so-called <em>first-class continuations</em>. It can reify the
+current continuation automatically and on the fly. As you may imagine, creating a
+continuation involves copying the stack, but there are less and more efficient ways of
+obtaining the same effect.</p>
+<p>Adding continuations to a language makes it easy to create a better web programming protocol,
+as we shall see. But first-class continuations are much more general and give programmers
+immense power in numerous contexts.</p>
+<p>In Racket (and the related programming language Scheme), a continuation is created with
+<code>let/cc</code>. It can be used to give the current continuation a name: <code>(let/cc k ... k ...)</code></p>
+<p>Let's write some programs using continuations (try this in the Racket read-eval-print loop).</p>
+<p><code>(let/cc k (k 3))</code> What is the continuation k here?</p>
+<p><code>(+ 1 (let/cc k (k 3)))</code> What is the continuation k here?</p>
+<p>Using <code>let/cc</code> for exception handling: <code>let/cc</code> acts as the &quot;try&quot;, invoking <code>k</code> as the &quot;throw&quot;.</p>
 <pre><code class="language-racket">#lang racket
-
-; Racket is a language with so-called _first-class continuations_. It can reify the
-; current continuation automatically and on the fly. As you may imagine, creating a
-; continuation involves copying the stack, but there are less and more efficient ways of
-; obtaining the same effect.
-
-; Adding continuations to a language makes it easy to create a better web programming protocol,
-; as we shall see. But first-class continuations are much more general and give programmers
-; immense power in numerous contexts.
-
-; In Racket (and the related programming language Scheme), a continuation is created with
-; let/cc. It can be used to give the current continuation a name: (let/cc k ... k ...)
-
-; Let's write some programs using continuations (try this in the Racket read-eval-print loop).
-
-; (let/cc k (k 3))  ; what is the continuation k here?
-
-; (+ 1 (let/cc k (k 3))) ; what is the continuation k here?
-
-; using let/cc for exception handling: let/cc acts as the &quot;try&quot;, invoking k as the &quot;throw&quot;.
-;  (define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
-
-; Here we simulate a very simple kind of exception handling mechanism
-; with first-class continuations.
-; try evaluating &quot;(h)&quot; in the read-eval-print-loop
+(define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
+</code></pre>
+<p>Here we simulate a very simple kind of exception handling mechanism
+with first-class continuations.
+Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
+<pre><code class="language-racket">#lang racket
 
 (define exceptionhandler (lambda (msg) (display &quot;unhandled exception&quot;)))
 
@@ -3152,29 +3147,29 @@ assert(starteval(testprog) == NumV(4))
       (displayln (g 1))
       (displayln (g 0))
       (displayln (g 2)))))
-
-
-
-; Here we encode a simple debugger with support for breakpoints
-
-; the breakpoint variable stores the continuation at the current breakpoint
+</code></pre>
+<p>Here we encode a simple debugger with support for breakpoints.</p>
+<p>The breakpoint variable stores the continuation at the current breakpoint</p>
+<pre><code class="language-racket">#lang racket
 (define breakpoint false) ; initalized with a dummy value
 
 ; the repl variable stores the continuation that jumps to the read-eval-print loop
 (define repl false)       ; initialized with a dummy value
-
-; the break function captures the current continuation, stores it, and jumps to the REPL
+</code></pre>
+<p>The <code>break</code> function captures the current continuation, stores it, and jumps to the REPL:</p>
+<pre><code class="language-racket">#lang racket
 (define (break) (let/cc k
                   (begin
                     (set! breakpoint k)
                     (repl))))
-
-; to continue, we jump to the previously stored continuation
+</code></pre>
+<p>To continue, we jump to the previously stored continuation:</p>
+<pre><code class="language-racket">#lang racket
 (define (continue)
   (breakpoint))
-
-; a simple test program of our &quot;debugger&quot;
-
+</code></pre>
+<p>Here is a simple test program of our &quot;debugger&quot;:</p>
+<pre><code class="language-racket">#lang racket
 (define (main)
   (display &quot;1&quot;)
   (break)
@@ -3185,14 +3180,13 @@ assert(starteval(testprog) == NumV(4))
 ; nothing to do after this, hence k is the REPL continuation
 (let/cc k
   (set! repl k))
-
-
-; Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
-; of cooperative multi-threading, often called _co-routines_. A co-routine designates points
-; in the routine where a switch to another routine should occur - a so-called yield point.
-; With let/cc we can program co-routines within the language, without having any dedicated
-; built-in support for it:
-
+</code></pre>
+<p>Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
+of cooperative multi-threading, often called <em>co-routines</em>. A co-routine designates points
+in the routine where a switch to another routine should occur - a so-called yield point.</p>
+<p>With let/cc we can program co-routines within the language, without having any dedicated
+built-in support for it:</p>
+<pre><code class="language-racket">#lang racket
 (define queue empty)
 
 (define (empty-queue?)
@@ -3257,27 +3251,22 @@ assert(starteval(testprog) == NumV(4))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="shift-reset"><a class="header" href="#shift-reset">Shift Reset</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="19-shift-reset/./shift-reset.scala">here.</a></p>
-<pre><code class="language-scala">/**
-Delimited Continuations
-=======================
-The continuations we have seen so far represent the whole call-stack. Invoking a continuation
+<p>The continuations we have seen so far represent the whole call-stack. Invoking a continuation
 was not like a function call because continuations never return a result. Invoking
-a continuation is more similar to a disciplined version of GOTO.
-However, the fact that continuations never return and represent the full call-stack often
+a continuation is more similar to a disciplined version of GOTO.</p>
+<p>However, the fact that continuations never return and represent the full call-stack often
 makes their use cumbersome. In particular, such continuations cannot be composed. The
 non-composability of continuations is visible in the fact that applications using
-first-class continuations often need to make use of mutable state.
-This is different with _delimited continuations_. Delimited continuations only represent
-a part of the call-stack, namely the part up to the next invocation of ``reset``. Delimited continuations
-behave like functions, that is, they return a value and are hence composable.
-Delimited continuations have many quite powerful applications, ranging from advanced exception handling
-to backtracking algorithms and probabilistc programming as well as so-called algebraic effects.
+first-class continuations often need to make use of mutable state.</p>
+<p>This is different with <em>delimited continuations</em>. Delimited continuations only represent
+a part of the call-stack, namely the part up to the next invocation of <code>reset</code>. Delimited continuations
+behave like functions, that is, they return a value and are hence composable.</p>
+<p>Delimited continuations have many quite powerful applications, ranging from advanced exception handling
+to backtracking algorithms and probabilistic programming as well as so-called algebraic effects.
 Delimited continuations are available in Racket and many variants of Scheme, OCaML, Haskell and,
-thanks to work in our research group, in Java.
-Fortunately, a definitional interpreter for delimited continuations is pretty simple.
-*/
-
-enum Exp:
+thanks to work in our research group, in Java.</p>
+<p>Fortunately, a definitional interpreter for delimited continuations is pretty simple.</p>
+<pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: Symbol)
   case Add(lhs: Exp, rhs: Exp)
@@ -3289,10 +3278,8 @@ enum Exp:
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: Symbol): Exp = Id(s)
-
-import Exp._
-
-sealed abstract class Value
+</code></pre>
+<pre><code class="language-scala">sealed abstract class Value
 type Env = Map[Symbol, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
@@ -3320,47 +3307,37 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value) : Value = e match {
   case Shift(param,body) =&gt; eval(body, env+(param -&gt; ContV(k)), x=&gt;x)  // wrap current continuation and reset continuation
 }
 </code></pre>
+<p>References:</p>
+<p>Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.
+O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html
+O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="introduction-to-monads"><a class="header" href="#introduction-to-monads">Introduction to Monads</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="20-monads-intro/./monads-intro.scala">here.</a></p>
-<pre><code class="language-scala">/**
-Monads
-======
-*/
-import scala.language.higherKinds
-import scala.language.reflectiveCalls
-
-/**
-We have seen various patterns of function composition:
-- The environment passing style, in which an environment is passed down in recursive calls
-- The store passing style, in which a store is threaded in and out of every computation
-- The continuation passing style, in which every function call is a tail call.
-Monads are way to abstract over such patterns of function composition.
-Motivation
-----------
-Using monads, we can write code which can be parameterized to be in
+<p>We have seen various patterns of function composition:</p>
+<ul>
+<li>The environment passing style, in which an environment is passed down in recursive calls</li>
+<li>The store passing style, in which a store is threaded in and out of every computation</li>
+<li>The continuation passing style, in which every function call is a tail call.#</li>
+</ul>
+<p>Monads are way to abstract over such patterns of function composition.</p>
+<h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
+<p>Using monads, we can write code which can be parameterized to be in
 one of the styles above (or many others).
-Here is another common pattern of function composition. Suppose we have the following API of (nonsensical) functions:
-*/
-def f(n: Int) : String = &quot;x&quot;
+Here is another common pattern of function composition. Suppose we have the following API of (nonsensical) functions:</p>
+<pre><code class="language-scala">def f(n: Int) : String = &quot;x&quot;
 def g(x: String) : Boolean = x == &quot;x&quot;
 def h(b: Boolean) : Int = if (b) 27 else sys.error(&quot;error&quot;)
 
 def clientCode = h(!g(f(27)+&quot;z&quot;))
-
-/**
-Now suppose that these functions can possibly fail (say, because they involve remote communication). A common way to deal with such
-failures is to use the Option datatype:
-*/
-
-def fOp(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
+</code></pre>
+<p>Now suppose that these functions can possibly fail (say, because they involve remote communication). A common way to deal with such
+failures is to use the Option datatype:</p>
+<pre><code class="language-scala">def fOp(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
 def gOp(x: String) : Option[Boolean] = Some(x == &quot;x&quot;)
 def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
-
-/**
-However, now the clientCode must be changed rather dramatically:
-*/
-
-def clientCodeOp =
+</code></pre>
+<p>However, now the clientCode must be changed rather dramatically:</p>
+<pre><code class="language-scala">def clientCodeOp =
   fOp(27) match {
     case Some(x) =&gt; gOp(x+&quot;z&quot;) match {
             case Some(y) =&gt; hOp(!y)
@@ -3368,69 +3345,53 @@ def clientCodeOp =
       }
     case None =&gt; None
   }
-
-/**
-We see a kind of pattern in this code. We have a value of type ``Option[A]``, but the next function we need to call requires an A and
-produces an ``Option[B]``. If the ``Option[A]`` value is ``None``, then the whole computation produces ``None``. If it is ``Some(x)``
-instead, we pass ``x`` to the function.
-We can capture this pattern in the form of a function:
-*/
-
-def bindOption[A,B](a: Option[A], f: A =&gt; Option[B]) : Option[B] = a match {
+</code></pre>
+<p>We see a kind of pattern in this code. We have a value of type <code>Option[A]</code>, but the next function we need to call requires an A and
+produces an <code>Option[B]</code>. If the <code>Option[A]</code> value is <code>None</code>, then the whole computation produces <code>None</code>. If it is <code>Some(x)</code>
+instead, we pass <code>x</code> to the function.</p>
+<p>We can capture this pattern in the form of a function:</p>
+<pre><code class="language-scala">def bindOption[A,B](a: Option[A], f: A =&gt; Option[B]) : Option[B] = a match {
   case Some(x) =&gt; f(x)
   case None =&gt; None
 }
-
-/**
-Using bindOption, we can rewrite the code above as follows:
-*/
-
-def clientCodeOpBind =
+</code></pre>
+<p>Using <code>bindOption</code>, we can rewrite the code above as follows:</p>
+<pre><code class="language-scala">def clientCodeOpBind =
   bindOption(fOp(27), (x:String) =&gt;
     bindOption(gOp(x+&quot;z&quot;), (y:Boolean) =&gt;
       hOp(!y)))
-
-/**
-Now suppose that our original client code was not ``h(!g(f(27)+&quot;z&quot;))``
-but instead ``!g(f(27)+&quot;z&quot;)``. How can we express this with bind? This
-thing does not type check:
-    def clientCode =
+</code></pre>
+<p>Now suppose that our original client code was not <code>h(!g(f(27)+&quot;z&quot;))</code>
+but instead <code>!g(f(27)+&quot;z&quot;)</code>. How can we express this with bind? This
+thing does not type check:</p>
+<pre><code class="language-scala">    def clientCode =
       f(27) bind ((x: String) =&gt;
       g(x+&quot;z&quot;) bind  ((y: Boolean) =&gt;
       !y))
-One way to fix the situation is to insert a call to ``Some``, like so:
-*/
-
-def clientCode2Op =
+</code></pre>
+<p>One way to fix the situation is to insert a call to <code>Some</code>, like so:</p>
+<pre><code class="language-scala">def clientCode2Op =
   bindOption(fOp(27), ((x: String) =&gt;
   bindOption(gOp(x+&quot;z&quot;), ((y: Boolean) =&gt;
   Some(!y)))))
-
-/**
-While this works, it is incompatible with our original goal of abstracting over the function composition pattern, because the
+</code></pre>
+<p>While this works, it is incompatible with our original goal of abstracting over the function composition pattern, because the
 Some constructor exposes what kind of pattern we are currently dealing with. Hence let's abstract over it by adding a second
-function &quot;unit&quot; to our function composition interface:
-*/
-
-def unit[A](x: A) : Option[A] = Some(x)
+function <code>unit</code> to our function composition interface:</p>
+<pre><code class="language-scala">def unit[A](x: A) : Option[A] = Some(x)
 
 def clientCode2OpUnit =
   bindOption(fOp(27), ((x: String) =&gt;
   bindOption(gOp(x+&quot;z&quot;), ((y: Boolean) =&gt;
   unit(!y)))))
-
-/**
-This looks better, but the types of unit and bind still reveal that we are dealing with the &quot;Option&quot; function composition pattern.
+</code></pre>
+<p>This looks better, but the types of unit and bind still reveal that we are dealing with the <code>Option</code> function composition pattern.
 Let's abstract over the Option type constructor by turning the type constructor into a parameter. The resulting triple
-(type constructor, unit function, bind function) is called a _monad_. Certain conditions (the &quot;monad laws&quot;) on unit and bind also
-need to hold to make it a true monad, but we'll defer a discussion of these conditions until later.
-The Monad Interface
--------------------
-
-So here it is: The Monad interface.
-*/
-
-trait Monad[M[_]] {
+(type constructor, unit function, bind function) is called a <em>monad</em>. Certain conditions (the &quot;monad laws&quot;) on <code>unit</code> and <code>bind</code> also
+need to hold to make it a true monad, but we'll defer a discussion of these conditions until later.</p>
+<h2 id="the-monad-interface"><a class="header" href="#the-monad-interface">The Monad Interface</a></h2>
+<p>So here it is: The Monad interface.</p>
+<pre><code class="language-scala">trait Monad[M[_]] {
   def unit[A](a: A): M[A]
   def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B]
   // The &quot;monad laws&quot;:
@@ -3440,22 +3401,16 @@ trait Monad[M[_]] {
   // 2) Bind enjoys an associative property
   //     bind(bind(x,f),g) == bind(x, y =&gt; bind(f(y),g))
 }
-
-/**
-Using this interface, we can now make clientCode depend only on this interface, but no longer on the Option type:
-*/
-
-def clientCode2Op(m: Monad[Option]) =
+</code></pre>
+<p>Using this interface, we can now make clientCode depend only on this interface, but no longer on the Option type:</p>
+<pre><code class="language-scala">def clientCode2Op(m: Monad[Option]) =
   m.bind(fOp(27), (x: String) =&gt;
   m.bind(gOp(x+&quot;z&quot;), (y: Boolean) =&gt;
   m.unit(!y)))
-
-/**
-If the API is parametric in the monad, we can make the client code fully parametric, too. We model the monad object as an
-implicit parameter to save the work of passing on the monad in every call.
-*/
-
-def fM[M[_]](n: Int)(using m: Monad[M]) : M[String] = sys.error(&quot;not implemented&quot;)
+</code></pre>
+<p>If the API is parametric in the monad, we can make the client code fully parametric, too. We model the monad object as an
+implicit parameter to save the work of passing on the monad in every call.</p>
+<pre><code class="language-scala">def fM[M[_]](n: Int)(using m: Monad[M]) : M[String] = sys.error(&quot;not implemented&quot;)
 def gM[M[_]](x: String)(using m: Monad[M]) : M[Boolean] = sys.error(&quot;not implemented&quot;)
 def hM[M[_]](b: Boolean)(using m: Monad[M]) : M[Int] = sys.error(&quot;not implemented&quot;)
 
@@ -3463,60 +3418,47 @@ def clientCode2[M[_]](using m: Monad[M]) =
   m.bind(fM(27), (x: String) =&gt;
   m.bind(gM(x+&quot;z&quot;), (y: Boolean) =&gt;
   m.unit(!y)))
-
-/**
-For-Comprehension Syntax
-------------------------
-All these nested calls to bind can make the code hard to read. Luckily, there is a notation called &quot;monad comprehension&quot; to make
+</code></pre>
+<h2 id="for-comprehension-syntax"><a class="header" href="#for-comprehension-syntax">For-Comprehension Syntax</a></h2>
+<p>All these nested calls to bind can make the code hard to read. Luckily, there is a notation called &quot;monad comprehension&quot; to make
 monadic code look simpler. Monad comprehensions are directly supported in Haskell and some other languages. In Scala, we can
 piggy-back on the &quot;For comprehension&quot; syntax instead.
-A &quot;for comprehension&quot;  is usually used for lists and other collections. For instance:
-    val l = List(List(1,2), List(3,4))
-    assert( (for { x &lt;- l; y &lt;- x } yield y+1) == List(2,3,4,5))
-The Scala compiler desugars the for-comprehension above into calls of the standard map and flatMap functions. That is, the above
-for comprehension is equivalent to:
-    assert(l.flatMap(x =&gt; x.map(y =&gt; y+1)) == List(2,3,4,5))
-We will make use of for-comprehension syntax by supporting both ``flatMap`` (which is like ``bind``) and ``map`` (which is like ``fmap``).
-We support these functions by an implicit conversion to an object that supports these functions as follows:
-*/
-
-extension [A, M[_]](m: M[A])(using mm: Monad[M])
+A &quot;for comprehension&quot;  is usually used for lists and other collections. For instance:</p>
+<pre><code class="language-scala">  val l = List(List(1,2), List(3,4))
+  assert( (for { x &lt;- l; y &lt;- x } yield y+1) == List(2,3,4,5))
+</code></pre>
+<p>The Scala compiler desugars the for-comprehension above into calls of the standard map and flatMap functions. That is, the above
+for comprehension is equivalent to:</p>
+<pre><code class="language-scala">  assert(l.flatMap(x =&gt; x.map(y =&gt; y+1)) == List(2,3,4,5))
+</code></pre>
+<p>We will make use of for-comprehension syntax by supporting both <code>flatMap</code> (which is like <code>bind</code>) and <code>map</code> (which is like <code>fmap</code>).
+We support these functions by an implicit conversion to an object that supports these functions as follows:</p>
+<pre><code class="language-scala">extension [A, M[_]](m: M[A])(using mm: Monad[M])
   def map[B](f: A =&gt; B): M[B] = mm.bind(m, (x: A) =&gt; mm.unit(f(x)))
   def flatMap[B](f: A =&gt; M[B]): M[B] = mm.bind(m, f)
-
-/**
-Using the new support for for-comprehension syntax, we can rewrite our client code as follows: Given the API from above,
-
-def fOp(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
+</code></pre>
+<p>Using the new support for for-comprehension syntax, we can rewrite our client code as follows: Given the API from above,</p>
+<pre><code class="language-scala">def fOp(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
 def gOp(x: String) : Option[Boolean] = Some(x == &quot;x&quot;)
 def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
-
-
-we can now rewrite this:
-
-def clientCode2Op(m: Monad[Option]) =
+</code></pre>
+<p>We can now rewrite this</p>
+<pre><code class="language-scala">def clientCode2Op(m: Monad[Option]) =
   m.bind(fOp(27), (x: String) =&gt;
   m.bind(gOp(x+&quot;z&quot;), (y: Boolean) =&gt;
   m.unit(!y)))
-
-to this:
-*/
-
-def clientCode2OpFor(using m: Monad[Option]) =
+</code></pre>
+<p>to this:</p>
+<pre><code class="language-scala">def clientCode2OpFor(using m: Monad[Option]) =
   for {
     x &lt;- fOp(27)
     y &lt;- gOp(x+&quot;z&quot;)
   } yield !y
-
-
-/**
-The Option Monad
-----------------
-Let's look at some concrete monads now. We have of course already seen one particular Monad: The Option monad. This monad is also
-sometimes called the Maybe monad.
-*/
-
-object OptionMonad extends Monad[Option] {
+</code></pre>
+<h2 id="the-option-monad"><a class="header" href="#the-option-monad">The Option Monad</a></h2>
+<p>Let's look at some concrete monads now. We have of course already seen one particular Monad: The Option monad. This monad is also
+sometimes called the Maybe monad.</p>
+<pre><code class="language-scala">object OptionMonad extends Monad[Option] {
   override def bind[A,B](a: Option[A], f: A =&gt; Option[B]) : Option[B] =
     a match {
       case Some(x) =&gt; f(x)
@@ -3524,93 +3466,69 @@ object OptionMonad extends Monad[Option] {
     }
   override def unit[A](a: A) = Some(a)
 }
-
-/**
-We can now parameterize clientCode with OptionMonad.
-*/
-
-def v : Option[Boolean] = clientCode2Op(OptionMonad)
-
-/**
-There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
-enough to be useful for many different monads. Here are some of these functions:
-*/
-
-// fmap turns every function between A and B into a function between M[A] and M[B]
-def fmap[M[_],A,B](f: A =&gt; B)(using m: Monad[M]): M[A] =&gt; M[B] = a =&gt; m.bind(a,(x:A) =&gt; m.unit(f(x)))
-// In fancy category theory terms, we can say that every monad is a functor.
-
-// sequence composes a list of monadic values into a single monadic value which is a list.
-def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]) : M[List[A]] = l match {
+</code></pre>
+<p>We can now parameterize clientCode with OptionMonad.</p>
+<pre><code class="language-scala">def v : Option[Boolean] = clientCode2Op(OptionMonad)
+</code></pre>
+<p>There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
+enough to be useful for many different monads. Here are some of these functions:</p>
+<p><code>fmap</code> turns every function between <code>A</code> and <code>B</code> into a function between <code>M[A]</code> and <code>M[B]</code>:</p>
+<pre><code class="language-scala">def fmap[M[_],A,B](f: A =&gt; B)(using m: Monad[M]): M[A] =&gt; M[B] = a =&gt; m.bind(a,(x:A) =&gt; m.unit(f(x)))
+</code></pre>
+<p>In fancy category theory terms, we can say that every monad is a functor.</p>
+<p><code>sequence</code> composes a list of monadic values into a single monadic value which is a list.</p>
+<pre><code class="language-scala">def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]) : M[List[A]] = l match {
   case x :: xs =&gt; m.bind(x, (y: A) =&gt;
     m.bind(sequence(xs), (ys : List[A]) =&gt;
       m.unit(y :: ys)))
   case Nil =&gt; m.unit(List.empty)
 }
-
-// mapM composes sequence and the standard map function.
-def mapM[M[_],A,B](f : A =&gt; M[B], l: List[A])(using m: Monad[M]) : M[List[B]] =
+</code></pre>
+<p><code>mapM</code> composes <code>sequence</code> and the standard <code>map</code> function:</p>
+<pre><code class="language-scala">def mapM[M[_],A,B](f : A =&gt; M[B], l: List[A])(using m: Monad[M]) : M[List[B]] =
   sequence(l.map(f))
-
-// join is another useful function to unwrap a layer of monads
-// in category theory, monads are defined via unit (denoted by the greek letter &quot;eta&quot;)
-// and join (&quot;mu&quot;) instead of unit and bind. There are additional &quot;naturality&quot; and
-// &quot;coherence conditions&quot; that make the category theory definition equivalent to ours.
-def join[M[_],A](x : M[M[A]])(using m: Monad[M]) : M[A] = m.bind(x, (y : M[A]) =&gt; y)
-
-/** Here are some other common monads:
-The Identity Monad
-------------------
-
-The _identity monad_ is the simplest monad which corresponds to ordinary function application. If we parameterize monadic code
-with the Identity monad, we get the behavior of the original non-monadic code.
-*/
-
-type Id[X] = X
+</code></pre>
+<p><code>join</code> is another useful function to unwrap a layer of monads.
+In category theory, monads are defined via <code>unit</code> (denoted by the greek letter <code>η</code>)
+and <code>join (μ)</code> instead of <code>unit</code> and <code>bind</code>. There are additional &quot;naturality&quot; and
+&quot;coherence conditions&quot; that make the category theory definition equivalent to ours.</p>
+<pre><code class="language-scala">def join[M[_],A](x : M[M[A]])(using m: Monad[M]) : M[A] = m.bind(x, (y : M[A]) =&gt; y)
+</code></pre>
+<p>Here are some other common monads:</p>
+<h2 id="the-identity-monad"><a class="header" href="#the-identity-monad">The Identity Monad</a></h2>
+<p>The <em>identity monad</em> is the simplest monad which corresponds to ordinary function application. If we parameterize monadic code
+with the Identity monad, we get the behavior of the original non-monadic code.</p>
+<pre><code class="language-scala">type Id[X] = X      
 object IdentityMonad extends Monad[Id] {
   def bind[A,B](x: A, f: A =&gt; B) : B = f(x)
   def unit[A](a: A) : A = a
 }
-
-
-
-/**
-The Reader Monad
-----------------
-This is the _reader monad_, a.k.a. _environment monad_. It captures the essence of &quot;environment passing style&quot;.
-*/
-
-// The type parameter ({type M[A] = R =&gt; A})#M looks complicated, but
-// it is merely &quot;currying&quot; the function arrow type constructor.
-// The type constructor which is created here is M[A] = R =&gt; A
-trait ReaderMonad[R] extends Monad[[A] =&gt;&gt; R =&gt; A] {
+</code></pre>
+<h2 id="the-reader-monad"><a class="header" href="#the-reader-monad">The Reader Monad</a></h2>
+<p>This is the <em>reader monad</em>, a.k.a. <em>environment monad</em>. It captures the essence of &quot;environment passing style&quot;.</p>
+<p>The type parameter <code>({type M[A] = R =&gt; A})#M</code> looks complicated, but
+it is merely &quot;currying&quot; the function arrow type constructor.</p>
+<p>The type constructor which is created here is <code>M[A] = R =&gt; A</code></p>
+<pre><code class="language-scala">trait ReaderMonad[R] extends Monad[[A] =&gt;&gt; R =&gt; A] {
   override def bind[A,B](x: R =&gt; A, f: A =&gt; R =&gt; B) : R =&gt; B = r =&gt; f(x(r))(r) // pass the &quot;environment&quot; r into both computations
   override def unit[A](a: A) : R =&gt; A = (_) =&gt; a
 }
-
-/**
-Example: Suppose that all functions in our API above depend on some kind of environment, say, the current configuration.
-For simplicitly, let's assume  that the current configuration is just an ``Int```, hence all functions have a return type of
-the form ``Int =&gt; A```:
-*/
-
-def fRead(n: Int) : Int =&gt; String  = sys.error(&quot;not implemented&quot;)
+</code></pre>
+<p><strong>Example</strong>: Suppose that all functions in our API above depend on some kind of environment, say, the current configuration.
+For simplicitly, let's assume  that the current configuration is just an <code>Int</code>, hence all functions have a return type of
+the form <code>Int =&gt; A</code>:</p>
+<pre><code class="language-scala">def fRead(n: Int) : Int =&gt; String  = sys.error(&quot;not implemented&quot;)
 def gRead(x: String) : Int =&gt; Boolean  = sys.error(&quot;not implemented&quot;)
 def hRead(b: Boolean) : Int =&gt; Int = sys.error(&quot;not implemented&quot;)
-
-/**
-Our original code,
-    def clientCode = h(!g(f(27)+&quot;z&quot;))
-becomes :
-*/
-
-def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env)+&quot;z&quot;)(env))(env)
-
-/**
-In monadic form, the explicit handling of the environment disappears again.
-*/
-
-def clientCode2Read(using m: ReaderMonad[Int]) =
+</code></pre>
+<p>Our original code,</p>
+<pre><code class="language-scala">  def clientCode = h(!g(f(27)+&quot;z&quot;))
+</code></pre>
+<p>becomes :</p>
+<pre><code class="language-scala">def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env)+&quot;z&quot;)(env))(env)
+</code></pre>
+<p>In monadic form, the explicit handling of the environment disappears again:</p>
+<pre><code class="language-scala">def clientCode2Read(using m: ReaderMonad[Int]) =
   m.bind(fRead(27), ((x: String) =&gt;
   m.bind(gRead(x+&quot;z&quot;), ((y: Boolean) =&gt;
   m.unit(!y)))))
@@ -3621,153 +3539,95 @@ def clientCode2ReadFor(using m: ReaderMonad[Int]) =
       x &lt;- fRead(27)
       y &lt;- gRead(x+&quot;z&quot;)
     } yield !y
-
-/**
-
-The State Monad
----------------
-
-The _state monad_, in which computations depend on a state ``S``
-which is threaded through the computations, is defind as follows:
-*/
-
-trait StateMonad[S] extends Monad[[A] =&gt;&gt; S =&gt; (A,S)] {
+</code></pre>
+<h2 id="the-state-monad"><a class="header" href="#the-state-monad">The State Monad</a></h2>
+<p>The <em>state monad</em>, in which computations depend on a state <code>S</code>
+which is threaded through the computations, is defind as follows:</p>
+<pre><code class="language-scala">trait StateMonad[S] extends Monad[[A] =&gt;&gt; S =&gt; (A,S)] {
   override def bind[A,B](x: S =&gt; (A,S), f: A =&gt; S =&gt; (B,S)) : S =&gt; (B,S) =
     s =&gt; x(s) match { case (y,s2) =&gt; f(y)(s2) } // thread the state through the computations
   override def unit[A](a: A) : S =&gt; (A,S) = s =&gt; (a,s)
 }
-
-/**
-Example: Assume that our API maintains a state which (for simplicity) we assume to be a single integer. That is, it would look like this:
-*/
-
-def fState(n: Int) : Int =&gt; (String,Int)  = sys.error(&quot;not implemented&quot;)
+</code></pre>
+<p>Example: Assume that our API maintains a state which (for simplicity) we assume to be a single integer. That is, it would look like this:</p>
+<pre><code class="language-scala">def fState(n: Int) : Int =&gt; (String,Int)  = sys.error(&quot;not implemented&quot;)
 def gState(x: String) : Int =&gt; (Boolean,Int)  = sys.error(&quot;not implemented&quot;)
 def hState(b: Boolean) : Int =&gt; (Int,Int) = sys.error(&quot;not implemented&quot;)
-
-/**
-The original code,
-   def clientCode = h(!g(f(27)+&quot;z&quot;))
-becomes :
-*/
-
-def clientCodeState(s: Int) =
+</code></pre>
+<p>The original code,
+<code>def clientCode = h(!g(f(27)+&quot;z&quot;))</code>
+becomes :</p>
+<pre><code class="language-scala">def clientCodeState(s: Int) =
   fState(27)(s) match {
     case (x,s2) =&gt; gState(x+&quot;z&quot;)(s2) match {
       case (y,s3) =&gt; hState(!y)(s3) }}
-
-/**
-In monadic style, however, the state handling disappears once more.
-*/
-
-def clientCode2State(using m: StateMonad[Int]) =
+</code></pre>
+<p>In monadic style, however, the state handling disappears once more:</p>
+<pre><code class="language-scala">def clientCode2State(using m: StateMonad[Int]) =
   m.bind(fState(27), ((x: String) =&gt;
   m.bind(gState(x+&quot;z&quot;), ((y: Boolean) =&gt;
   m.unit(!y)))))
-
-// This still does not work in Scala 3.
-//def clientCode2StateFor(using m: StateMonad[Int]) =
-//  for {
-//    x &lt;- fState(27)
-//    y &lt;- gState(x+&quot;z&quot;)
-//  } yield !y
-
-/**
-The List Monad
---------------
-In the _list monad_, computations produce lists of results. The bind operator combines all those results in a single list.
-*/
-object ListMonad extends Monad[List] {
+</code></pre>
+<h2 id="the-list-monad"><a class="header" href="#the-list-monad">The List Monad</a></h2>
+<p>In the <em>list monad</em>, computations produce lists of results. The <code>bind</code> operator combines all those results in a single list.</p>
+<pre><code class="language-scala">object ListMonad extends Monad[List] {
   override def bind[A,B](x: List[A], f: A =&gt; List[B]) : List[B] = x.flatMap(f) // apply f to each element, concatenate the resulting lists
   override def unit[A](a: A) = List(a)
 }
-
-/**
-Example: Assume that our API functions return lists of results, and our client code must exercise the combination of all possible answers.
-*/
-
-def fList(n: Int) : List[String] = sys.error(&quot;not implemented&quot;)
+</code></pre>
+<p><strong>Example</strong>: Assume that our API functions return lists of results, and our client code must exercise the combination of all possible answers.</p>
+<pre><code class="language-scala">def fList(n: Int) : List[String] = sys.error(&quot;not implemented&quot;)
 def gList(x: String) : List[Boolean] = sys.error(&quot;not implemented&quot;)
 def hList(b: Boolean) : List[Int] = sys.error(&quot;not implemented&quot;)
-
-/**
-The original code,
-    def clientCode = h(!g(f(27)+&quot;z&quot;))
-becomes :
-*/
-
-def clientCodeList =
+</code></pre>
+<p>The original code,
+<code>def clientCode = h(!g(f(27)+&quot;z&quot;))</code>
+becomes :</p>
+<pre><code class="language-scala">def clientCodeList =
   fList(27).map(x =&gt; gList(x+&quot;z&quot;)).flatten.map(y =&gt; hList(!y)).flatten
-
-/**
-The monadic version of the client code stays the same, as expected:
-*/
-
-def clientCode2List = {
+</code></pre>
+<p>The monadic version of the client code stays the same, as expected:</p>
+<pre><code class="language-scala">def clientCode2List = {
   given Monad[List] = ListMonad
   for {
     x &lt;- fList(27)
     y &lt;- gList(x+&quot;z&quot;)
   } yield !y
 }
-
-/**
-The Continuation Monad
-----------------------
-The last monad we are going to present is the continuation monad,  which stands for computations that are continuations.
-*/
-
-
-trait ContinuationMonad[R] extends Monad[[A] =&gt;&gt; (A =&gt; R) =&gt; R] {
+</code></pre>
+<h2 id="the-continuation-monad"><a class="header" href="#the-continuation-monad">The Continuation Monad</a></h2>
+<p>The last monad we are going to present is the continuation monad,  which stands for computations that are continuations.</p>
+<pre><code class="language-scala">trait ContinuationMonad[R] extends Monad[[A] =&gt;&gt; (A =&gt; R) =&gt; R] {
   type Cont[X] = (X =&gt; R) =&gt; R
 
   override def bind[A,B](x: Cont[A], f: A =&gt; Cont[B]) : Cont[B] =
-     k =&gt; x( a =&gt; f(a)(k)) // construct continuation for x that calls f with the result of x
+     k =&gt; x( a =&gt; f(a)(k)) // construct continuation for x that calls f with the result of x               
   override def unit[A](a: A) : Cont[A] = k =&gt; k(a)
 
   // callcc is like letcc; the difference is that letcc binds a name, whereas callcc expects a function as argument
   // That means that letcc(k,...) is expressed as callcc( k =&gt; ...).
   def callcc[A,B](f: (A =&gt; Cont[B]) =&gt; Cont[A]   ) : Cont[A] = k =&gt; f( (a:A) =&gt; (_:B=&gt;R) =&gt; k(a))(k)
 }
-
-/**
-Example: Suppose our API was CPS-transformed:
-*/
-
-def fCPS[R](n: Int) : (String =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
+</code></pre>
+<p><strong>Example</strong>: Suppose our API was CPS-transformed:</p>
+<pre><code class="language-scala">def fCPS[R](n: Int) : (String =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
 def gCPS[R](x: String) : (Boolean =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
 def hCPS[R](b: Boolean) : (Int =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
-
-/**
-The original code,
-    def clientCode = h(!g(f(27)+&quot;z&quot;))
-becomes :
-*/
-
-def clientCodeCPS[R]: (Int =&gt; R) =&gt; R =
+</code></pre>
+<p>The original code,
+<code>def clientCode = h(!g(f(27)+&quot;z&quot;))</code>
+becomes :</p>
+<pre><code class="language-scala">def clientCodeCPS[R]: (Int =&gt; R) =&gt; R =
   k =&gt; fCPS(27)( (x: String) =&gt; gCPS(x+&quot;z&quot;)( (y: Boolean) =&gt;  hCPS(!y)(k)))
-
-/**
-The monadic version hides the CPS transformation in the operations of the Monad.
-*/
-
-
-def clientCode2CPS[R](using m: ContinuationMonad[R]) =
+</code></pre>
+<p>The monadic version hides the CPS transformation in the operations of the Monad.</p>
+<pre><code class="language-scala">def clientCode2CPS[R](using m: ContinuationMonad[R]) =
   m.bind(fCPS(27), ((x: String) =&gt;
   m.bind(gCPS(x+&quot;z&quot;), ((y: Boolean) =&gt;
   m.unit(!y)))))
-
-/** this still does not work in Scala 3 */
-//def clientCode2CPSFor[R](using m: ContinuationMonad[R]) =
-//  for {
-//    x &lt;- fCPS(27)
-//    y &lt;- gCPS(x+&quot;z&quot;)
-//  } yield !y
-
-
-// let's implement 1 + (2 + 3) in monadic style and implicitly CPS-transform using the continuation monad
-
-// unfortunately we can, again, not use for-comprehension syntax
+</code></pre>
+<p>Let's implement <code>1 + (2 + 3)</code> in monadic style and implicitly CPS-transform using the continuation monad:</p>
+<pre><code class="language-scala">// unfortunately we can, again, not use for-comprehension syntax
 def ex123[R](using m: ContinuationMonad[R])  = {
   m.bind(
     m.bind(m.unit(2), (two:Int) =&gt;
@@ -3776,34 +3636,27 @@ def ex123[R](using m: ContinuationMonad[R])  = {
 }
 
 def runEx123 = ex123(using new ContinuationMonad[Int]{})(x=&gt;x)
-
-// let's implement the (+ 1 (let/cc k (+ 2 (k 3)))) example using callcc
-
-def excallcc[R](using m: ContinuationMonad[R])  = {
+</code></pre>
+<p>Let's implement the <code>(+ 1 (let/cc k (+ 2 (k 3))))</code> example using <code>callcc</code></p>
+<pre><code class="language-scala">def excallcc[R](using m: ContinuationMonad[R])  = {
   m.bind(
     m.bind(m.unit(2),
            (two:Int) =&gt; m.callcc[Int,Int]( k =&gt; m.bind(k(3), (three:Int) =&gt; m.unit(two+three)))),
     (five:Int) =&gt; m.unit(1+five))
 }
 def runExcallcc = excallcc(using new ContinuationMonad[Int]{})(x=&gt;x)
-
-// Remember how we had to CPS-transform the &quot;map&quot; function in the &quot;allCosts&quot; example when we talked about continuations?
-// Now we can define a monadic version of &quot;map&quot; that works for any monad, including the continuation monad
-
-def mapM[M[_],A,B](x: List[A], f: A =&gt; M[B])(using m: Monad[M]) : M[List[B]] = sequence(x.map(f))
-
-
-/**
-Monad Transformers
-------------------
-The purpose of monad transformers is to compose monads.
+</code></pre>
+<p>Remember how we had to CPS-transform the &quot;map&quot; function in the &quot;allCosts&quot; example when we talked about continuations?
+Now we can define a monadic version of &quot;map&quot; that works for any monad, including the continuation monad:</p>
+<pre><code class="language-scala">def mapM[M[_],A,B](x: List[A], f: A =&gt; M[B])(using m: Monad[M]) : M[List[B]] = sequence(x.map(f))
+</code></pre>
+<h2 id="monad-transformers"><a class="header" href="#monad-transformers">Monad Transformers</a></h2>
+<p>The purpose of monad transformers is to compose monads.
 For instance, what if we want to have both the list monad and the option monad
-at the same time? Such situations arise very often in practical code.
-One solution is to have a monad transformer version of each monad, which is
-parameterized with another monad. We show this for the Option monad case.
-*/
-
-type OptionT[M[_]] = { type x[A] = M[Option[A]] }
+at the same time? Such situations arise very often in practical code.</p>
+<p>One solution is to have a monad transformer version of each monad, which is
+parameterized with another monad. We show this for the Option monad case.</p>
+<pre><code class="language-scala">type OptionT[M[_]] = { type x[A] = M[Option[A]] }
 
 
 class OptionTMonad[M[_]](val m : Monad[M]) extends Monad[OptionT[M]#x] {
@@ -3814,13 +3667,12 @@ class OptionTMonad[M[_]](val m : Monad[M]) extends Monad[OptionT[M]#x] {
 
   override def unit[A](a: A) = m.unit(Some(a))
 
-  def lift[A](x: M[A]) : M[Option[A]] = m.bind(x, (a: A) =&gt; m.unit(Some(a)))
+  def lift[A](x: M[A]) : M[Option[A]] = m.bind(x, (a: A) =&gt; m.unit(Some(a)))                                   
 }
-
-val ListOptionM = new OptionTMonad(ListMonad)
-// ListOptionM: OptionTMonad[[A &gt;: Nothing &lt;: Any] =&gt; List[A]] = repl.MdocSession$App$OptionTMonad@2e8b3def
-
-// in this case, for-comprehension syntax doesn't work because it clashes with the built-in support for
+</code></pre>
+<pre><code class="language-scala">val ListOptionM = new OptionTMonad(ListMonad)
+</code></pre>
+<pre><code class="language-scala">// in this case, for-comprehension syntax doesn't work because it clashes with the built-in support for
 // for-comprehensions for lists :-(
 def example = {
   val m = ListOptionM
@@ -3842,6 +3694,11 @@ def example4 = {
   m.bind(List(Some(3),Some(4)), (x: Int) =&gt; if (x &gt; 3) m.m.unit(None) else m.unit(x*2))
 }
 </code></pre>
+<p>Monad transformers are a standard way to compose monads, e.g., in Haskell and in Scala.
+They have a number of well-known disadvantages. For instance, one needs additional transformer
+versions of monads and the required lifting sometimes destroys modularity.
+There are a number of alternative proposals to monad transformers, such as &quot;extensible effects&quot;.
+https://hackage.haskell.org/package/extensible-effects</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="io-monad"><a class="header" href="#io-monad">IO Monad</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="21-io-monad/./io-monad.scala">here.</a></p>
 <pre><code class="language-scala">trait IOMonad {
@@ -3865,7 +3722,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }
-// iomonad: IOMonad = repl.MdocSession$$anon$1@78fd90f0
+// iomonad: IOMonad = repl.MdocSession$$anon$1@6f4ae251
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;

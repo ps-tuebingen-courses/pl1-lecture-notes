@@ -143,32 +143,26 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="letcc"><a class="header" href="#letcc">LetCC</a></h1>
+<p>Racket is a language with so-called <em>first-class continuations</em>. It can reify the
+current continuation automatically and on the fly. As you may imagine, creating a
+continuation involves copying the stack, but there are less and more efficient ways of
+obtaining the same effect.</p>
+<p>Adding continuations to a language makes it easy to create a better web programming protocol,
+as we shall see. But first-class continuations are much more general and give programmers
+immense power in numerous contexts.</p>
+<p>In Racket (and the related programming language Scheme), a continuation is created with
+<code>let/cc</code>. It can be used to give the current continuation a name: <code>(let/cc k ... k ...)</code></p>
+<p>Let's write some programs using continuations (try this in the Racket read-eval-print loop).</p>
+<p><code>(let/cc k (k 3))</code> What is the continuation k here?</p>
+<p><code>(+ 1 (let/cc k (k 3)))</code> What is the continuation k here?</p>
+<p>Using <code>let/cc</code> for exception handling: <code>let/cc</code> acts as the &quot;try&quot;, invoking <code>k</code> as the &quot;throw&quot;.</p>
 <pre><code class="language-racket">#lang racket
-
-; Racket is a language with so-called _first-class continuations_. It can reify the
-; current continuation automatically and on the fly. As you may imagine, creating a
-; continuation involves copying the stack, but there are less and more efficient ways of
-; obtaining the same effect.
-
-; Adding continuations to a language makes it easy to create a better web programming protocol,
-; as we shall see. But first-class continuations are much more general and give programmers
-; immense power in numerous contexts.
-
-; In Racket (and the related programming language Scheme), a continuation is created with
-; let/cc. It can be used to give the current continuation a name: (let/cc k ... k ...)
-
-; Let's write some programs using continuations (try this in the Racket read-eval-print loop).
-
-; (let/cc k (k 3))  ; what is the continuation k here?
-
-; (+ 1 (let/cc k (k 3))) ; what is the continuation k here?
-
-; using let/cc for exception handling: let/cc acts as the &quot;try&quot;, invoking k as the &quot;throw&quot;.
-;  (define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
-
-; Here we simulate a very simple kind of exception handling mechanism
-; with first-class continuations.
-; try evaluating &quot;(h)&quot; in the read-eval-print-loop
+(define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
+</code></pre>
+<p>Here we simulate a very simple kind of exception handling mechanism
+with first-class continuations.
+Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
+<pre><code class="language-racket">#lang racket
 
 (define exceptionhandler (lambda (msg) (display &quot;unhandled exception&quot;)))
 
@@ -189,29 +183,29 @@
       (displayln (g 1))
       (displayln (g 0))
       (displayln (g 2)))))
-
-
-
-; Here we encode a simple debugger with support for breakpoints
-
-; the breakpoint variable stores the continuation at the current breakpoint
+</code></pre>
+<p>Here we encode a simple debugger with support for breakpoints.</p>
+<p>The breakpoint variable stores the continuation at the current breakpoint</p>
+<pre><code class="language-racket">#lang racket
 (define breakpoint false) ; initalized with a dummy value
 
 ; the repl variable stores the continuation that jumps to the read-eval-print loop
 (define repl false)       ; initialized with a dummy value
-
-; the break function captures the current continuation, stores it, and jumps to the REPL
+</code></pre>
+<p>The <code>break</code> function captures the current continuation, stores it, and jumps to the REPL:</p>
+<pre><code class="language-racket">#lang racket
 (define (break) (let/cc k
                   (begin
                     (set! breakpoint k)
                     (repl))))
-
-; to continue, we jump to the previously stored continuation
+</code></pre>
+<p>To continue, we jump to the previously stored continuation:</p>
+<pre><code class="language-racket">#lang racket
 (define (continue)
   (breakpoint))
-
-; a simple test program of our &quot;debugger&quot;
-
+</code></pre>
+<p>Here is a simple test program of our &quot;debugger&quot;:</p>
+<pre><code class="language-racket">#lang racket
 (define (main)
   (display &quot;1&quot;)
   (break)
@@ -222,14 +216,13 @@
 ; nothing to do after this, hence k is the REPL continuation
 (let/cc k
   (set! repl k))
-
-
-; Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
-; of cooperative multi-threading, often called _co-routines_. A co-routine designates points
-; in the routine where a switch to another routine should occur - a so-called yield point.
-; With let/cc we can program co-routines within the language, without having any dedicated
-; built-in support for it:
-
+</code></pre>
+<p>Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
+of cooperative multi-threading, often called <em>co-routines</em>. A co-routine designates points
+in the routine where a switch to another routine should occur - a so-called yield point.</p>
+<p>With let/cc we can program co-routines within the language, without having any dedicated
+built-in support for it:</p>
+<pre><code class="language-racket">#lang racket
 (define queue empty)
 
 (define (empty-queue?)

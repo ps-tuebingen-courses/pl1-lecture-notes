@@ -144,27 +144,22 @@
                     <main>
                         <h1 id="shift-reset"><a class="header" href="#shift-reset">Shift Reset</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="./shift-reset.scala">here.</a></p>
-<pre><code class="language-scala">/**
-Delimited Continuations
-=======================
-The continuations we have seen so far represent the whole call-stack. Invoking a continuation
+<p>The continuations we have seen so far represent the whole call-stack. Invoking a continuation
 was not like a function call because continuations never return a result. Invoking
-a continuation is more similar to a disciplined version of GOTO.
-However, the fact that continuations never return and represent the full call-stack often
+a continuation is more similar to a disciplined version of GOTO.</p>
+<p>However, the fact that continuations never return and represent the full call-stack often
 makes their use cumbersome. In particular, such continuations cannot be composed. The
 non-composability of continuations is visible in the fact that applications using
-first-class continuations often need to make use of mutable state.
-This is different with _delimited continuations_. Delimited continuations only represent
-a part of the call-stack, namely the part up to the next invocation of ``reset``. Delimited continuations
-behave like functions, that is, they return a value and are hence composable.
-Delimited continuations have many quite powerful applications, ranging from advanced exception handling
-to backtracking algorithms and probabilistc programming as well as so-called algebraic effects.
+first-class continuations often need to make use of mutable state.</p>
+<p>This is different with <em>delimited continuations</em>. Delimited continuations only represent
+a part of the call-stack, namely the part up to the next invocation of <code>reset</code>. Delimited continuations
+behave like functions, that is, they return a value and are hence composable.</p>
+<p>Delimited continuations have many quite powerful applications, ranging from advanced exception handling
+to backtracking algorithms and probabilistic programming as well as so-called algebraic effects.
 Delimited continuations are available in Racket and many variants of Scheme, OCaML, Haskell and,
-thanks to work in our research group, in Java.
-Fortunately, a definitional interpreter for delimited continuations is pretty simple.
-*/
-
-enum Exp:
+thanks to work in our research group, in Java.</p>
+<p>Fortunately, a definitional interpreter for delimited continuations is pretty simple.</p>
+<pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: Symbol)
   case Add(lhs: Exp, rhs: Exp)
@@ -176,10 +171,8 @@ enum Exp:
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: Symbol): Exp = Id(s)
-
-import Exp._
-
-sealed abstract class Value
+</code></pre>
+<pre><code class="language-scala">sealed abstract class Value
 type Env = Map[Symbol, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
@@ -207,6 +200,10 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value) : Value = e match {
   case Shift(param,body) =&gt; eval(body, env+(param -&gt; ContV(k)), x=&gt;x)  // wrap current continuation and reset continuation
 }
 </code></pre>
+<p>References:</p>
+<p>Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.
+O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html
+O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial</p>
 
                     </main>
 
