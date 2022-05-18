@@ -7,7 +7,7 @@
 - [Introduction](./01-intro/intro.md)
 - [Scala Basics](./02-scala-basics/scala-basics.md)
 
-# Arithmetic Expressions
+# Basic Topics
 
 - [Arithmetic Expressions (AE)](./03-arithmetic-expressions/arithmetic-expressions.md)
 - [Desugaring](./04-desugaring/desugaring.md)
