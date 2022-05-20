@@ -178,8 +178,9 @@ Not necessarily. Consider:</p>
 assert(eval(test3) == Fun(&quot;x&quot;,Ap(Num(3),Id(&quot;x&quot;))))
 assert(evalcbn(test3) == Fun(&quot;x&quot;,Ap(Add(Num(1),Num(2)),Id(&quot;x&quot;))))
 </code></pre>
-<p>However, if both produce a function, then the functions &quot;behave&quot; the same. More specifically, the function bodies produced by <code>evalcbn</code>
-may be  &quot;more evaluated&quot; than those produced by <code>eval</code>. If we evaluated within function bodies (also called evaluation &quot;under a
+<p>However, if both produce a function, then the functions &quot;behave&quot; the same. More specifically, the function bodies produced by <code>eval</code>
+may be &quot;more evaluated&quot; than those produced by <code>evalcbn</code> since for the latter the evaluation of the arguments substituted for the parameters
+in the body is deferred. If we evaluated within function bodies (also called evaluation &quot;under a
 lambda&quot;) - which our interpreters do not do - we could produce the expression returned from <code>eval</code> from the expression returned by <code>evalcbn</code>.
 This kind of equivalence is also called &quot;beta-equivalence&quot;.</p>
 <p>Most importantly, however, <code>eval</code> and <code>evalcbn</code> differ with regard to their termination behavior. We have seen that <code>omega</code> is a diverging
