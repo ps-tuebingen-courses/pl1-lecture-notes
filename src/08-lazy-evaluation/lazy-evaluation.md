@@ -157,8 +157,9 @@ assert(eval(test3) == Fun("x",Ap(Num(3),Id("x"))))
 assert(evalcbn(test3) == Fun("x",Ap(Add(Num(1),Num(2)),Id("x"))))
 ```
 
-However, if both produce a function, then the functions "behave" the same. More specifically, the function bodies produced by `evalcbn`
-may be  "more evaluated" than those produced by `eval`. If we evaluated within function bodies (also called evaluation "under a
+However, if both produce a function, then the functions "behave" the same. More specifically, the function bodies produced by `eval`
+may be "more evaluated" than those produced by `evalcbn` since for the latter the evaluation of the arguments substituted for the parameters
+in the body is deferred. If we evaluated within function bodies (also called evaluation "under a
 lambda") - which our interpreters do not do - we could produce the expression returned from `eval` from the expression returned by `evalcbn`.
 This kind of equivalence is also called "beta-equivalence".
 
