@@ -2575,11 +2575,17 @@ Don't panic if you don't understand what is going on here.</p>
   def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
 }
 </code></pre>
+<p>Instead of having the semantic domain as a type parameter <code>T</code> as above, 
+we encoding it as a higher-kinded abstract type member <code>Rep[_]</code>. This leads
+to significantly shorter type signatures and more fine-grained typing 
+via Scala's support for &quot;path-dependent types&quot;.</p>
 <p>Note that, in contrast to eval, no dynamic checks (match ...) are needed
 in the interpreter. Also, the result type of the evaluator is just <code>X</code>. In
 contrast to <code>Value</code>, this is a &quot;tagless&quot; type, that is, it does not maintain
 information at runtime about which variant it is. This is because the ExpT datatype guarantees well-typedness
-of expressions.</p>
+of expressions. This interpreter will, in general, run much faster and can
+in fact be formulated in such a way that interpreting a program is just as
+fast as writing the program directly in the meta language.</p>
 <pre><code class="language-scala">object evalT extends ExpT {
   type Rep[X] = X
   def fun[S,T](f: S=&gt;T) =f
@@ -3736,7 +3742,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }
-// iomonad: IOMonad = repl.MdocSession$$anon$1@7451e5d3
+// iomonad: IOMonad = repl.MdocSession$$anon$1@4c2bd155
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;

@@ -130,7 +130,7 @@ trait ExpT {
   implicit def num(n: Int) : Rep[Int]
   def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
 }
-
+Instead of having the semantic domain as a type parameter `T` as above, 
 object evalT extends ExpT {
   type Rep[X] = X
   def fun[S,T](f: S=>T) =f
