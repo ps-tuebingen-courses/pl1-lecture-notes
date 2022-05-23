@@ -2392,6 +2392,14 @@ val head = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;
 <div style="break-before: page; page-break-before: always;"></div><h1 id="object-algebras"><a class="header" href="#object-algebras">Object Algebras</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="14-object-algebras/./object-algebras.scala">here.</a></p>
 <p>Object algebras: A practical way of using Church Encodings</p>
+<p>In previous lectures, we have talked about the &quot;expression problem&quot;: The problem of
+encoding  data structure (like expressions) and functions on that data structure 
+(like evaluators, or pretty-printers) in such a way that both the data structure
+and the functions thereon can be extended without modifying code, while at the same
+time maintaining static type safety.</p>
+<p>Church encodings look like an obscure theoretical idea at first, but we will see
+that their incarnation as &quot;object algebras&quot; leads to a quite attractive and practical
+solution to the expression problem.</p>
 <p>Let's look at a Scala version of the Church encodings we saw for the lambda
 calculus. We use objects instead of functions, but otherwise
 it is the same. Let's start with booleans.</p>
@@ -2551,6 +2559,11 @@ def testMult[T](semantics : ExpWithMult[T]) = {
 </code></pre>
 <p>Note that there is no danger of confusing the language variants. For instance,
 an attempt to pass testMult to eval will be a static type error.</p>
+<p>At the same time, we can add another function on expressions (such as a pretty-printer)
+without changing existing code, too: Just add a 
+<code>trait prettyPrint extends Exp[String]</code> and, if pretty-printing of <code>ExpWithMult</code>
+is required, extend with <code>trait prettyPrintMult extends prettyPrint with ExpWithMult[String]</code>.
+This is the object algebra way of solving the expression problem.</p>
 <p>We can also go one step further and combine object algebras with
 typed higher-order abstract syntax, using higher-kinded type members.
 Don't panic if you don't understand what is going on here.</p>
@@ -2563,7 +2576,9 @@ Don't panic if you don't understand what is going on here.</p>
 }
 </code></pre>
 <p>Note that, in contrast to eval, no dynamic checks (match ...) are needed
-in the interpreter. This is because the ExpT datatype guarantees well-typedness
+in the interpreter. Also, the result type of the evaluator is just <code>X</code>. In
+contrast to <code>Value</code>, this is a &quot;tagless&quot; type, that is, it does not maintain
+information at runtime about which variant it is. This is because the ExpT datatype guarantees well-typedness
 of expressions.</p>
 <pre><code class="language-scala">object evalT extends ExpT {
   type Rep[X] = X
@@ -2609,6 +2624,9 @@ a number and a function is rejected by the Scala type checker:</p>
 //   add(5,fun((x: Rep[Int]) =&gt; x))
 //         ^^^^^^^^^^^^^^^^^^^^^^^
 </code></pre>
+<p>The type system encoded in the <code>ExpT</code> type is the so-called &quot;simply-typed lambda calculus&quot;. 
+Encoding more expressive type system in a similar style (including, e.g., type parameters) 
+is an active area of research. </p>
 <p>References:
 B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with Object Algebras. Proc. ECOOP 2012.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-1"><a class="header" href="#continuations-1">Continuations 1</a></h1>
@@ -3718,7 +3736,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }
-// iomonad: IOMonad = repl.MdocSession$$anon$1@2044e93
+// iomonad: IOMonad = repl.MdocSession$$anon$1@7451e5d3
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;
