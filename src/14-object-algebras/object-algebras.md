@@ -241,12 +241,18 @@ trait ExpT {
   def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
 }
 ```
+Instead of having the semantic domain as a type parameter `T` as above, 
+we encoding it as a higher-kinded abstract type member `Rep[_]`. This leads
+to significantly shorter type signatures and more fine-grained typing 
+via Scala's support for "path-dependent types".
 
 Note that, in contrast to eval, no dynamic checks (match ...) are needed
 in the interpreter. Also, the result type of the evaluator is just `X`. In
 contrast to `Value`, this is a "tagless" type, that is, it does not maintain
 information at runtime about which variant it is. This is because the ExpT datatype guarantees well-typedness
-of expressions.
+of expressions. This interpreter will, in general, run much faster and can
+in fact be formulated in such a way that interpreting a program is just as
+fast as writing the program directly in the meta language.
 
 ```scala mdoc
 object evalT extends ExpT {
