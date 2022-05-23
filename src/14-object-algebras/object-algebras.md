@@ -6,6 +6,15 @@ import scala.language.implicitConversions
 ```
 Object algebras: A practical way of using Church Encodings
 
+In previous lectures, we have talked about the "expression problem": The problem of
+encoding  data structure (like expressions) and functions on that data structure 
+(like evaluators, or pretty-printers) in such a way that both the data structure
+and the functions thereon can be extended without modifying code, while at the same
+time maintaining static type safety.
+
+Church encodings look like an obscure theoretical idea at first, but we will see
+that their incarnation as "object algebras" leads to a quite attractive and practical
+solution to the expression problem.
 
 Let's look at a Scala version of the Church encodings we saw for the lambda
 calculus. We use objects instead of functions, but otherwise
@@ -213,6 +222,12 @@ val testresMult = testMult(evalWithMult)(Map.empty)
 Note that there is no danger of confusing the language variants. For instance,
 an attempt to pass testMult to eval will be a static type error.
 
+At the same time, we can add another function on expressions (such as a pretty-printer)
+without changing existing code, too: Just add a 
+`trait prettyPrint extends Exp[String]` and, if pretty-printing of `ExpWithMult`
+is required, extend with `trait prettyPrintMult extends prettyPrint with ExpWithMult[String]`.
+This is the object algebra way of solving the expression problem.
+
 We can also go one step further and combine object algebras with
 typed higher-order abstract syntax, using higher-kinded type members.
 Don't panic if you don't understand what is going on here.
@@ -228,7 +243,9 @@ trait ExpT {
 ```
 
 Note that, in contrast to eval, no dynamic checks (match ...) are needed
-in the interpreter. This is because the ExpT datatype guarantees well-typedness
+in the interpreter. Also, the result type of the evaluator is just `X`. In
+contrast to `Value`, this is a "tagless" type, that is, it does not maintain
+information at runtime about which variant it is. This is because the ExpT datatype guarantees well-typedness
 of expressions.
 
 ```scala mdoc
@@ -274,6 +291,10 @@ def testilltyped(semantics: ExpT) = {
   add(5,fun((x: Rep[Int]) => x))
 }
 ```
+
+The type system encoded in the `ExpT` type is the so-called "simply-typed lambda calculus". 
+Encoding more expressive type system in a similar style (including, e.g., type parameters) 
+is an active area of research. 
 
 References:
 B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with Object Algebras. Proc. ECOOP 2012.
