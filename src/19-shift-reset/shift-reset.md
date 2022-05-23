@@ -1,4 +1,4 @@
-# Shift Reset
+# Delimited Continuations
 
 The content of this chapter is available as a Scala file [here.](./shift-reset.scala)
 
@@ -13,7 +13,7 @@ non-composability of continuations is visible in the fact that applications usin
 first-class continuations often need to make use of mutable state.
 
 This is different with _delimited continuations_. Delimited continuations only represent
-a part of the call-stack, namely the part up to the next invocation of ``reset``. Delimited continuations
+a segement of the call-stack. Delimited continuations
 behave like functions, that is, they return a value and are hence composable.
 
 Delimited continuations have many quite powerful applications, ranging from advanced exception handling
@@ -21,7 +21,31 @@ to backtracking algorithms and probabilistic programming as well as so-called al
 Delimited continuations are available in Racket and many variants of Scheme, OCaML, Haskell and,
 thanks to work in our research group, in Java.
 
-Fortunately, a definitional interpreter for delimited continuations is pretty simple.
+There are many different variants of delimited continuations, many of them dating back to the late 1980s and
+early 1990s. One of the most common forms of delimited continuations is in the form of `reset` and `shift`,
+proposed by Olivier Danvy and Andrzej Filinski in 1990. The first of these primitives, `reset e`, marks the
+current stack frame and continues with `e`. An invocation of the second primitive, `shift k e`, reifies the
+stack segment between the current stack frame and the closest stack frame marked by a `reset` as a function,
+binds this function to `k`, and evaluates `e` (which can then call `k` zero or more times). 
+
+Their meaning can be understood via a code transformation.
+
+```
+reset (...A... shift k e ...B...) 
+ ; --> 
+with k = lambda x. reset (...A... x ...B...) : 
+  reset e 
+  
+reset e  ; no invocation of shift inside e 
+ ; --> 
+e 
+```
+
+In class, we will look at a couple of examples of using shift and reset. Shift and reset are available
+in some variants of Scheme, including Racket, as an extension of Scala, as a library in OcaML, as well
+as various usually partial, incomplete or buggy simulations in other languages.
+
+A definitional interpreter for delimited continuations is pretty simple.
 
 ```scala mdoc
 enum Exp:
