@@ -142,7 +142,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="shift-reset"><a class="header" href="#shift-reset">Shift Reset</a></h1>
+                        <h1 id="delimited-continuations"><a class="header" href="#delimited-continuations">Delimited Continuations</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="./shift-reset.scala">here.</a></p>
 <p>The continuations we have seen so far represent the whole call-stack. Invoking a continuation
 was not like a function call because continuations never return a result. Invoking
@@ -152,13 +152,32 @@ makes their use cumbersome. In particular, such continuations cannot be composed
 non-composability of continuations is visible in the fact that applications using
 first-class continuations often need to make use of mutable state.</p>
 <p>This is different with <em>delimited continuations</em>. Delimited continuations only represent
-a part of the call-stack, namely the part up to the next invocation of <code>reset</code>. Delimited continuations
+a segement of the call-stack. Delimited continuations
 behave like functions, that is, they return a value and are hence composable.</p>
 <p>Delimited continuations have many quite powerful applications, ranging from advanced exception handling
 to backtracking algorithms and probabilistic programming as well as so-called algebraic effects.
 Delimited continuations are available in Racket and many variants of Scheme, OCaML, Haskell and,
 thanks to work in our research group, in Java.</p>
-<p>Fortunately, a definitional interpreter for delimited continuations is pretty simple.</p>
+<p>There are many different variants of delimited continuations, many of them dating back to the late 1980s and
+early 1990s. One of the most common forms of delimited continuations is in the form of <code>reset</code> and <code>shift</code>,
+proposed by Olivier Danvy and Andrzej Filinski in 1990. The first of these primitives, <code>reset e</code>, marks the
+current stack frame and continues with <code>e</code>. An invocation of the second primitive, <code>shift k e</code>, reifies the
+stack segment between the current stack frame and the closest stack frame marked by a <code>reset</code> as a function,
+binds this function to <code>k</code>, and evaluates <code>e</code> (which can then call <code>k</code> zero or more times). </p>
+<p>Their meaning can be understood via a code transformation.</p>
+<pre><code>reset (...A... shift k e ...B...) 
+ ; --&gt; 
+with k = lambda x. reset (...A... x ...B...) : 
+  reset e 
+  
+reset e  ; no invocation of shift inside e 
+ ; --&gt; 
+e 
+</code></pre>
+<p>In class, we will look at a couple of examples of using shift and reset. Shift and reset are available
+in some variants of Scheme, including Racket, as an extension of Scala, as a library in OcaML, as well
+as various usually partial, incomplete or buggy simulations in other languages.</p>
+<p>A definitional interpreter for delimited continuations is pretty simple.</p>
 <pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: Symbol)

@@ -165,7 +165,7 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }
-// iomonad: IOMonad = repl.MdocSession$$anon$1@4c2bd155
+// iomonad: IOMonad = repl.MdocSession$$anon$1@233a7dad
 
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;
