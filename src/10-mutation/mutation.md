@@ -57,18 +57,18 @@ Let's consider how our interpreter could handle sequencing.
 
 Here is an attempt:
 
-```
-     case Seq(e1, e2) => {
-       eval(e1, env)
-       eval(e2, env)
-     }
+```scala
+  case Seq(e1, e2) => {
+    eval(e1, env)
+    eval(e2, env)
+  }
 ```
 
 This cannot be correct. As long as our interpreter does not use mutation, evaluation could not make any changes to the environment,
-hence there is* no way the evaluation of e1 could have any effect on the evaluation of e2.
+hence there is no way the evaluation of `e1` could have any effect on the evaluation of `e2`.
 
 In order to demostrate the actual nature of mutation, we will not use mutation in our meta-language to implement mutation
-in our object language. That said, we will not use a mutable data structure to implement environment in our interpreter.
+in our object language. Thus, we will not use a mutable data structure to implement the environment in our interpreter.
 Instead, one may turn to the so-called environment-passing style, in which the interpreter returns also a possibly updated environment
 together with the computed value when it evaluates an expression.  However, this solution does not always work.  Consider the following
 example:
@@ -81,20 +81,20 @@ val test2 = wth("a", NewBox(1),
 ```
 
 The mutation should affect the box stored in the closure bound to ``f``.  But with the implementation strategy described above it would not.
-Note that changing the value of a in the example is not a vialation of static scope.  Scoping only says where an identifier is bound;
+Note that changing the value of `a` in the example is not a vialation of static scope. Scoping only says where an identifier is bound;
 it does not say to what an identifier is bound, in particular, whether whatever bound to the identifier is fixed.
 
-Indeed, the variable a is bound to the same box in both the static environment where the function f is created and the dynamic environment
-where the function f is applied.
+Indeed, the variable `a` is bound to the same box in both the static environment where the function `f` is created and the dynamic environment
+where the function `f` is applied.
 
-As before, when applying the function f to the argument 5, we can choose either#
+As before, when applying the function `f` to the argument 5, we can choose either
 
-   1) To use the static environment (where the variable a is bound to a boxed 1) stored in the closure created for f.
+   1) To use the static environment (where the variable `a` is bound to a boxed 1) stored in the closure created for `f`.
 
-   2) Or to use the dynamic environment (where the variable a is bound to a  boxed 2) present at the time of applying f.
+   2) Or to use the dynamic environment (where the variable `a` is bound to a boxed 2) present at the time of applying `f`.
 
-The first choice leads the program to evaluate to 6 rather than the expected 7.  The second will record the change to the box,
-but it reintroduces dynamic scoping.  So both choices do not work.
+The first choice leads the program to evaluate to 6 rather than the expected 7. The second will record the change to the box,
+but it reintroduces dynamic scoping. So both choices do not work.
 Insight: We need _two_ repositories of information.
 One, the environment, guards static scope.
 
@@ -105,7 +105,7 @@ case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 ```
 
-The other, which we call _store_, is trackis dynamic changes.
+The other, which we call _store_, is tracking dynamic changes.
 Determining the value inside a box will become a two-step process: We first evaluate the box expression to an _address_,
 and then use the store to lookup the value stored at that address. We choose to represent addresses by integers.
 
@@ -118,7 +118,7 @@ type Store = Map[Address, Value]
 
 We will often need a fresh address in the store. We do so using a counter variable.
 
-```scala mdoc
+```scala mdoc:silent
 var _nextAddress = 0
 
 def nextAddress : Address = {
@@ -250,14 +250,14 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
 
 From an implementation point of view, our interpreter has the problem that nothing is ever removed from the store.
 One possibility would be to add an operation "removeBox" or the like to the language, but this would lead to dangling pointers
-and all the* problems associated with manual memory management.
+and all the problems associated with manual memory management.
 
 Our model of stores is sufficient to illustrate how modern languages deal with memory management: by garbage collection.
 Garbage collectors automatically reclaim memory that is no longer referenced from within the active part of the computation.
-We can* model a (naive) mark-and-sweep garbage collector as follows:
+We can model a (naive) mark-and-sweep garbage collector as follows:
 
 ```scala mdoc
-def gc(env: Env, store:Store) : Store = {
+def gc(env: Env, store: Store) : Store = {
 
   def allAddrInVal(v: Value) : Set[Address] = v match {
     case AddressV(a)      => Set(a)
@@ -275,11 +275,11 @@ def gc(env: Env, store:Store) : Store = {
   }
 
   val marked = mark(allAddrInEnv(env)) // mark ...
-  store.view.filterKeys(marked(_)).toMap           // and sweep!
+  store.view.filterKeys(marked(_)).toMap // and sweep!
 }
 ```
 
-```scala mdoc
+```scala mdoc:silent
 val teststore = Map(
   6  -> NumV(42),
   7  -> NumV(6),

@@ -56,7 +56,7 @@ case class AddressV(a: Int) extends Value
 ```
 
 To be able to experiment with different store and gc designs, we create an interface for stores.
-The stack parameter in malloc is needed during gc to determine the root nodes from which the algorithms can start.
+The stack parameter in `malloc` is needed during gc to determine the root nodes from which the algorithms can start.
 
 ```scala mdoc
 trait Store {
@@ -89,7 +89,7 @@ def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
          case _       => eval(elseExp, stack, store)
        }
 
-  /* The mutable store allows us to take advantage of Scala"s"
+  /* The mutable store allows us to take advantage of Scala's
    * evaluation order and perform two pattern matchings
    * simultaneously.
    */
@@ -196,7 +196,7 @@ class MarkAndSweepStore(size: Int) extends Store {
     /* Here we find the next available location in memory via a while-
      * loop. In order to avoid maintaining a list of available spaces
      * (because we are lazy), let us assume that no box created in
-     * BCFAE can has an address pointing to a null memory cell (which
+     * BCFAE can have an address pointing to a null memory cell (which
      * also is the case).
      *
      * If we ensure the invariant that the variable `free` has always
@@ -238,7 +238,7 @@ class MarkAndSweepStore(size: Int) extends Store {
   }
 
   /* What graph algorithm underlies the mark step as implemented here?
-   * What potential problem it could cause in a "real" interpreter? */
+   * What potential problem could it cause in a "real" interpreter? */
 
   def sweep() : Unit = {
     memory.indices.foreach(
@@ -298,12 +298,12 @@ take this empirical fact into account and divide the objects into generations, w
 is garbage-collected more frequently.
 
 A typical problem of the simple gc algorithms we discussed is the stop-the-world phenomenon: All execution has to be stopped during
-a gc cycle. This issue is addressed by incremental or concurrent garbage collectors. Incremental garbage collectors typically reduce*
+a gc cycle. This issue is addressed by incremental or concurrent garbage collectors. Incremental garbage collectors typically reduce
 the total throughput but increase responsiveness and real-time behavior.
 
 A completely different approach to memory management is _reference counting_. In reference counting, each object on the heap
 (in our case, each box) maintains a counter which says how many pointers currently point to that object. The counter is adjusted
-whenever a pointer variable is assigned to this object (incremented), or from this object to another object (decremented).
+whenever a pointer variable is assigned to this object (incremented), or moved from this object to another object (decremented).
 When the counter is 0, the object can be reclaimed.
 
 The obvious disadvantage of reference counting is that it cannot detect cycles on the heap. Hence reference counting algorithm
