@@ -54,7 +54,7 @@ def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
          case _       => eval(elseExp, stack, store)
        }
 
-  /* The mutable store allows us to take advantage of Scala"s"
+  /* The mutable store allows us to take advantage of Scala's
    * evaluation order and perform two pattern matchings
    * simultaneously.
    */
@@ -151,7 +151,7 @@ class MarkAndSweepStore(size: Int) extends Store {
     /* Here we find the next available location in memory via a while-
      * loop. In order to avoid maintaining a list of available spaces
      * (because we are lazy), let us assume that no box created in
-     * BCFAE can has an address pointing to a null memory cell (which
+     * BCFAE can have an address pointing to a null memory cell (which
      * also is the case).
      *
      * If we ensure the invariant that the variable `free` has always
@@ -193,7 +193,7 @@ class MarkAndSweepStore(size: Int) extends Store {
   }
 
   /* What graph algorithm underlies the mark step as implemented here?
-   * What potential problem it could cause in a "real" interpreter? */
+   * What potential problem could it cause in a "real" interpreter? */
 
   def sweep() : Unit = {
     memory.indices.foreach(

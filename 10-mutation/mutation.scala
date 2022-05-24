@@ -29,6 +29,11 @@ val test1 = wth("b", NewBox(0),
                 SetBox("b", Add(1, OpenBox("b"))),
                 OpenBox("b")))
 
+  case Seq(e1, e2) => {
+    eval(e1, env)
+    eval(e2, env)
+  }
+
 val test2 = wth("a", NewBox(1),
               wth("f", Fun("x", Add("x", OpenBox("a"))),
                 Seq(SetBox("a",2),
@@ -147,7 +152,7 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
        }
 }
 
-def gc(env: Env, store:Store) : Store = {
+def gc(env: Env, store: Store) : Store = {
 
   def allAddrInVal(v: Value) : Set[Address] = v match {
     case AddressV(a)      => Set(a)
@@ -165,7 +170,7 @@ def gc(env: Env, store:Store) : Store = {
   }
 
   val marked = mark(allAddrInEnv(env)) // mark ...
-  store.view.filterKeys(marked(_)).toMap           // and sweep!
+  store.view.filterKeys(marked(_)).toMap // and sweep!
 }
 
 val teststore = Map(
