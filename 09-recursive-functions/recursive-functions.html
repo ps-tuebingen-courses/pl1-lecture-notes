@@ -145,15 +145,15 @@
                         <h1 id="recursive-functions"><a class="header" href="#recursive-functions">Recursive Functions</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="./recursive-functions.scala">here.</a></p>
 <h2 id="recursion"><a class="header" href="#recursion">Recursion</a></h2>
-<p>Let's try to write a function that computes the sum of the first n integers. Let's pretend we do not know that the sum of the
-first n integers is $n*(n+1)/2$ and instead compute the sum in a loop. Let's try to do this in FAE (with if0):</p>
+<p>Let's try to write a function that computes the sum of the first \( n \) integers. Let's pretend we do not know that the sum of the
+first \( n \) integers is \( n*(n+1)/2 \) and instead compute the sum in a loop. Let's try to do this in FAE (with <code>If0</code>):</p>
 <pre><code class="language-scala">val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
 </code></pre>
-<p>Sumattempt won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
+<p><code>sumattempt</code> won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
 <em>y</em> combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
-we want a language construct &quot;letrec&quot; that is similar to &quot;with&quot;, except that the bound String can be used in the expression
+we want a language construct <code>Letrec</code> that is similar to <code>with</code>, except that the bound String can be used in the expression
 the String is bound to:</p>
-<pre><code>Letrec(x: String, e: Exp, body: Exp)
+<pre><code class="language-scala">Letrec(x: String, e: Exp, body: Exp)
 </code></pre>
 <p>With this new construct our language looks like this:</p>
 <pre><code class="language-scala">object Syntax {
@@ -163,7 +163,7 @@ the String is bound to:</p>
     case Add(lhs: Exp, rhs: Exp)
     case If0(cond: Exp, thenExp: Exp, elseExp: Exp)
     case Fun(param: String, body: Exp)
-    case Ap (funExpr: Exp, argExpr: Exp)
+    case Ap(funExpr: Exp, argExpr: Exp)
     case Letrec(x: String, e: Exp, body: Exp)
 
   object Exp:
@@ -175,11 +175,11 @@ the String is bound to:</p>
 import Syntax._
 import Exp._
 </code></pre>
-<p>Using letrec, our example can be expressed as follows.</p>
+<p>Using <code>Letrec</code>, our example can be expressed as follows.</p>
 <pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
 </code></pre>
-<p>Let's now consider the semantics of letrec. Consider the evaluation of <code>Letrec(x,e,body)</code> in an environment <code>env</code>.
-What environment should we use to evaluate e and body, respectively? Using env for e will produce a <code>ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;'...),env)</code>,
+<p>Let's now consider the semantics of <code>Letrec</code>. Consider the evaluation of <code>Letrec(x,e,body)</code> in an environment <code>env</code>.
+What environment should we use to evaluate <code>e</code> and <code>body</code>, respectively? Using <code>env</code> for <code>e</code> will produce a <code>ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;'...),env)</code>,
 and hence the environment when evaluating body will be <code>envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env))</code>.</p>
 <p>This is bad, because the <code>env</code> in the closure does not contain a binding for <code>&quot;sum&quot;</code> and hence the recursive invocation will fail.
 The environment in the closure must contain a mapping for <code>&quot;sum&quot;</code>. Hence envbody should look like</p>
@@ -190,13 +190,13 @@ The environment in the closure must contain a mapping for <code>&quot;sum&quot;<
 that satisfies the equation:</p>
 <pre><code>  envbody == env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;..), envbody))
 </code></pre>
-<p>Obviously envbody must be circular. There are different ways to create such a circular environment. We will choose mutation to create
+<p>Obviously envbody must be <code>circular</code>. There are different ways to create such a circular environment. We will choose mutation to create
 a circle. More specifically, we introduce a mutable pointer to a value <code>class ValuePointer</code> which will be initialized with a null pointer.</p>
-<p>In the Letrec case, we put such a ValuePointer in the environment and evaluate the (recursive) expression in that environment.
+<p>In the <code>Letrec</code> case, we put such a <code>ValuePointer</code> in the environment and evaluate the (recursive) expression in that environment.
 Then we update the pointer with the result of evaluating that expression.</p>
-<p>The only other change we need to make is to dereference a potential value pointer in the Id case. We deal with the necessary case
-distinction by a polymorphic &quot;value&quot; method.
-Due to the mutual recursion between ValueHolder and Value the definitions are put into an object.</p>
+<p>The only other change we need to make is to dereference a potential value pointer in the <code>Id</code> case. We deal with the necessary case
+distinction by a polymorphic <code>value</code> method.
+Due to the mutual recursion between <code>ValueHolder</code> and <code>Value</code> the definitions are put into an object.</p>
 <pre><code class="language-scala">object Values {
   trait ValueHolder {
     def value : Value
@@ -210,7 +210,7 @@ Due to the mutual recursion between ValueHolder and Value the definitions are pu
 
 import Values._  // such that we do not have to write Values.ValueHolder etc.
 </code></pre>
-<p>The interpreter is unchanged except for the additional Letrec case and the modified Id case.</p>
+<p>The interpreter is unchanged except for the additional <code>Letrec</code> case and the modified <code>Id</code> case.</p>
 <pre><code class="language-scala">def eval(e: Exp, env: Env) : Value = e match {
   case Num(n: Int) =&gt; NumV(n)
   case Id(x) =&gt; env(x).value  // dereference potential ValuePointer
@@ -242,55 +242,8 @@ import Values._  // such that we do not have to write Values.ValueHolder etc.
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
 var func = Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Ap(&quot;func&quot;, Add(&quot;n&quot;, -1))))
-// func: Exp = Fun(
-//   param = &quot;n&quot;,
-//   body = If0(
-//     cond = Id(name = &quot;n&quot;),
-//     thenExp = Num(n = 0),
-//     elseExp = Ap(
-//       funExpr = Id(name = &quot;func&quot;),
-//       argExpr = Add(lhs = Id(name = &quot;n&quot;), rhs = Num(n = -1))
-//     )
-//   )
-// )
 var test1 = Letrec(&quot;func&quot;, func, Ap(&quot;func&quot;, 1))
-// test1: Exp = Letrec(
-//   x = &quot;func&quot;,
-//   e = Fun(
-//     param = &quot;n&quot;,
-//     body = If0(
-//       cond = Id(name = &quot;n&quot;),
-//       thenExp = Num(n = 0),
-//       elseExp = Ap(
-//         funExpr = Id(name = &quot;func&quot;),
-//         argExpr = Add(lhs = Id(name = &quot;n&quot;), rhs = Num(n = -1))
-//       )
-//     )
-//   ),
-//   body = Ap(funExpr = Id(name = &quot;func&quot;), argExpr = Num(n = 1))
-// )
 var test2 = Letrec(&quot;func&quot;, Ap(Fun(&quot;notUsed&quot;, func), 0), Ap(&quot;func&quot;, 1))
-// test2: Exp = Letrec(
-//   x = &quot;func&quot;,
-//   e = Ap(
-//     funExpr = Fun(
-//       param = &quot;notUsed&quot;,
-//       body = Fun(
-//         param = &quot;n&quot;,
-//         body = If0(
-//           cond = Id(name = &quot;n&quot;),
-//           thenExp = Num(n = 0),
-//           elseExp = Ap(
-//             funExpr = Id(name = &quot;func&quot;),
-//             argExpr = Add(lhs = Id(name = &quot;n&quot;), rhs = Num(n = -1))
-//           )
-//         )
-//       )
-//     ),
-//     argExpr = Num(n = 0)
-//   ),
-//   body = Ap(funExpr = Id(name = &quot;func&quot;), argExpr = Num(n = 1))
-// )
 assert(eval(test1, Map()) == NumV(0))
 assert(eval(test2, Map()) == NumV(0))
 </code></pre>

@@ -2,6 +2,8 @@ import scala.language.implicitConversions
 
 val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n",-1))))), Ap("sum", 10))
 
+Letrec(x: String, e: Exp, body: Exp)
+
 object Syntax {
   enum Exp:
     case Num(n: Int)
@@ -9,7 +11,7 @@ object Syntax {
     case Add(lhs: Exp, rhs: Exp)
     case If0(cond: Exp, thenExp: Exp, elseExp: Exp)
     case Fun(param: String, body: Exp)
-    case Ap (funExpr: Exp, argExpr: Exp)
+    case Ap(funExpr: Exp, argExpr: Exp)
     case Letrec(x: String, e: Exp, body: Exp)
 
   object Exp:
