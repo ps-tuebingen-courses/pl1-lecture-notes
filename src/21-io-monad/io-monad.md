@@ -12,7 +12,9 @@ trait IOMonad {
 
   def performIO[A](action: IO[A]) : A
 }
+```
 
+```scala mdoc:silent
 val iomonad : IOMonad = new IOMonad {
   type World = String
   type IO[A] = World => (A,World)
@@ -24,7 +26,9 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action("The world in which nothing has happened yet, but then ...\n") match {
     case (a,w) => println("Peformed all actions. The world in which all this happened is: \n"+w); a }
 }
+```
 
+```scala mdoc
 def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
   m.bind(m.printString("Enter your first name:"), (_:Unit) =>
   m.bind(m.inputString, (firstName : String) =>
