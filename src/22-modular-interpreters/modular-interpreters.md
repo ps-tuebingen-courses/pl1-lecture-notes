@@ -65,6 +65,7 @@ trait ReaderMonadImp extends ReaderMonad {
     def local[A](f: R => R, a: M[A]) : M[A] = r => a(f(r))
 }
 
+
 /** An example of using the reader monad to propagate an environment
 of type ``Int`` through a computation. **/
 
@@ -98,7 +99,6 @@ That is, we curry ``eval`` to make it applicable to the reader monad.
 
 
 ```scala mdoc
-import Monad._
     def eval(e: Exp): M[Boolean] = e match {
         case Id(x) => for {env <- ask } yield env(x)
         case And(l,r) => for {
