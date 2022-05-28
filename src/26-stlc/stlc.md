@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a Scala file [here.](./stlc.scala)
 
-```scala mdoc:invisbible
+```scala mdoc:invisible
 import scala.language.implicitConversions
 ```
 
