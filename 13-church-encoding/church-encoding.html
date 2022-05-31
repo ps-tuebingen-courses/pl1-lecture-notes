@@ -150,7 +150,7 @@ we introduce a new expression <code>PrintDot</code> whose semantics is to print 
 <pre><code class="language-scala">enum Exp:
   case Id(name: String)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
   case PrintDot()
 
 object Exp:
@@ -158,8 +158,9 @@ object Exp:
 
 import Exp._
 
-abstract class Value // the only values are closures // the only values are closures
+abstract class Value
 type Env = Map[String, Value]
+// the only values are closures
 case class ClosureV(f:Fun, env:Env) extends Value
 </code></pre>
 <p>Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,
@@ -175,9 +176,9 @@ say, a number but get in fact a closure. Hence, this language has the fascinatin
 }
 </code></pre>
 <p>Now we want to illustrate that we can, in principle, bootstrap a full programming language from this small core.
-To do so, we use the technique of Church encoding. This means that each datum is represented by its own fold function.
-Church Encoding of Booleans</p>
-<p>Let&quot;s&quot; start with booleans and boolean arithmetic.</p>
+To do so, we use the technique of Church encoding. This means that each datum is represented by its own fold function.</p>
+<h2 id="church-encoding-of-booleans"><a class="header" href="#church-encoding-of-booleans">Church Encoding of Booleans</a></h2>
+<p>Let's start with booleans and boolean arithmetic.</p>
 <pre><code class="language-scala">val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
 val t = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;t&quot;))  // true
 val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
@@ -188,13 +189,13 @@ val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;a
 <pre><code class="language-scala">val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
 </code></pre>
 <h2 id="church-encoding-of-numbers"><a class="header" href="#church-encoding-of-numbers">Church Encoding of Numbers</a></h2>
-<p>Let&quot;s&quot; now consider Numbers. We encode them as Peano numbers.  These encodings of numbers are often called <em>Church numbers</em>.</p>
+<p>Let's now consider Numbers. We encode them as Peano numbers. These encodings of numbers are often called <em>Church numbers</em>.</p>
 <pre><code class="language-scala">val zero = Fun(&quot;s&quot;, Fun(&quot;z&quot;, &quot;z&quot;))
-val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(&quot;s&quot;, Ap(Ap(&quot;n&quot;, &quot;s&quot;),&quot;z&quot;)))))
+val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(&quot;s&quot;, Ap(Ap(&quot;n&quot;, &quot;s&quot;), &quot;z&quot;)))))
 val one = Ap(succ, zero)
 val two = Ap(succ, one)
 val three = Ap(succ, two)
-val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;,&quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;),&quot;z&quot;))))))
+val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;,&quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;), &quot;z&quot;))))))
 val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, Ap(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
 val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;b&quot;, Ap(mult, &quot;a&quot;)), one)))
 val iszero = Fun(&quot;a&quot;, Ap(Ap(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
@@ -207,19 +208,19 @@ For testing, here is a function that prints a unary representation of a number.<
 <p>Again straightforward, except &quot;tail&quot;, which we do not show here. It needs the same kind of trick (called &quot;pairing trick&quot;)
 as the predecessor function.</p>
 <pre><code class="language-scala">val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;,&quot;c&quot;),&quot;e&quot;))))))
+val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;,&quot;c&quot;), &quot;e&quot;))))))
 val head = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
 </code></pre>
 <p>For instance, we can multiply all numbers in a list</p>
 <pre><code class="language-scala">val multlist = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, mult), one))
 </code></pre>
 <p>Here is the list 3,2,3:</p>
-<pre><code class="language-scala">val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three),emptylist)))
+<pre><code class="language-scala">val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three), emptylist)))
 
 </code></pre>
 <pre><code class="language-scala">val test = Ap(printnum, Ap(multlist, list323))
 </code></pre>
-<p>Calling exec should yield 18 dots before the dummy result</p>
+<p>Calling <code>exec</code> should yield 18 dots before the dummy result</p>
 <pre><code class="language-scala">val exec = eval(test, Map.empty)
 // ..................
 // exec: Value = ClosureV(
@@ -228,8 +229,6 @@ val head = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;
 // )
 </code></pre>
 <p>Topic for class discussion: Can we do these encodings directly in Scala or Haskell?</p>
-<pre><code>
-</code></pre>
 
                     </main>
 

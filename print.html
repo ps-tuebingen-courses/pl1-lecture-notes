@@ -2126,10 +2126,10 @@ to encode this semantics.</p>
 language feature of the meta-language, or whether it is implemented using more primitive language constructs.
 The first case is called meta-interpretation, the second case syntactic interpretation.</p>
 <p>Meta-interpretation can be convenient if we are not interested in having control over the exact meaning of the construct,
-or if the way the meta-language handles this construct is just what we want for our object language.</p>
+or if the way the meta-language handles this construct is just what we want for our object-language.</p>
 <p>Syntactic interpretation is required if we want to understand what the language feature really means in terms
-of more primitive constructs, or if we want to implement the language feature differently than the meta language.
-Of course, if the meta language has no corresponding feature, then we have no choice but to make a syntactic interpretation.</p>
+of more primitive constructs, or if we want to implement the language feature differently than the meta-language.
+Of course, if the meta-language has no corresponding feature, then we have no choice but to make a syntactic interpretation.</p>
 <p>Our FAE interpreter is a meta-interpreter with respect to many features. For instance, it does not tell us</p>
 <ul>
 <li>the precision of numbers, or the algorithm for addition</li>
@@ -2137,9 +2137,9 @@ Of course, if the meta language has no corresponding feature, then we have no ch
 <li>whether/how memory management for closures works (they are objects on the heap!)</li>
 </ul>
 <p>That said, it is possible to make the FAE interpreters still more &quot;meta&quot;. Here are two examples.
-Here is a version of FAE that uses a different representation of the program syntax, namely one using meta-language functions
-to represent object-language functions. This technique is called higher-order abstract syntax, or HOAS.
-For instance, the function <code>Fun('x, Add('x,5))</code> is now represented as <code>Fun( x =&gt; Add(x,5))</code>.
+The first one is a version of FAE that uses a different representation of the program syntax, namely one using
+meta-language functions to represent object-language functions. This technique is called higher-order abstract syntax, or HOAS.
+For instance, the function <code>Fun(&quot;x&quot;, Add(&quot;x&quot;,5))</code> is now represented as <code>Fun(x =&gt; Add(x,5))</code>.
 The interpreter becomes rather short, because substitution and lexical scoping are now being dealt with by the
 corresponding meta-level construct.</p>
 <pre><code class="language-scala">object HOAS {
@@ -2148,7 +2148,7 @@ corresponding meta-level construct.</p>
     case Id(name: String)
     case Add(lhs: Exp, rhs: Exp)
     case Fun(f: Exp =&gt; Exp)
-    case Ap (funExpr: Exp, argExpr: Exp)
+    case Ap(funExpr: Exp, argExpr: Exp)
 
   import Exp._
 
@@ -2167,22 +2167,22 @@ corresponding meta-level construct.</p>
 }
 </code></pre>
 <p>A different way to use meta-level functions in the interpreter is to represent object-level closures by meta-level closures.
-Notice that this interpreter has no control anymore about scoping;  rather, it is completely inherited from the meta language.</p>
-<p>A particularly pleasing and important property of this interpreter is that it is <em>compositional</em>, meaning that all recursive calls
-of eval are only on subparts of the original expression. This means that it becomes particularly easy to reason about program equivalence
-in the object language in terms of program equivalence in the meta language: Two object language expressions are equivalent if their
+Notice that this interpreter then has no control anymore about scoping; rather, it is completely inherited from the meta-language.</p>
+<p>A particularly pleasing and important property of this interpreter below is that it is <em>compositional</em>, meaning that all recursive calls
+of <code>eval</code> are only on subparts of the original expression. This means that it becomes particularly easy to reason about program equivalence
+in the object-language in terms of program equivalence in the meta-language: Two object-language expressions are equivalent if their
 &quot;denotations&quot; as meta-level expressions are equivalent in the meta-level.</p>
 <p>Compositionality is the cornerstone of denotational semantics.  A denotational semantics can be thought of as a
 compositional interpreter in which the meta-language is mathematics.
 Compositionality also has a rather practical side-effect: It means that we can implement the interpreter in the internal visitor style
-that  we learned about in the first lecture (recall that the internal visitor  style enforces compositionality)
+that  we learned about in the first lecture (recall that the internal visitor  style enforces compositionality).
 Recommended exercise: Re-implement the interpreter as an internal visitor.</p>
 <pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
 
 import Exp._
 
@@ -2201,9 +2201,9 @@ object Compositional {
           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
         }
       }
-      case Fun(param,body) =&gt; (env) =&gt; FunV( (v) =&gt; eval(body)(env + (param -&gt; v)))
+      case Fun(param,body) =&gt; (env) =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
       case Ap(f,a) =&gt; (env) =&gt; (eval(f)(env), eval(a)(env)) match {
-        // Use environment stored in closure to realize proper lexical scoping!
+        // Use environment stored in (meta-level) closure to realize proper lexical scoping!
         case (FunV(g),arg) =&gt; g(arg)
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
       }
@@ -2251,7 +2251,7 @@ we introduce a new expression <code>PrintDot</code> whose semantics is to print 
 <pre><code class="language-scala">enum Exp:
   case Id(name: String)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
   case PrintDot()
 
 object Exp:
@@ -2259,8 +2259,9 @@ object Exp:
 
 import Exp._
 
-abstract class Value // the only values are closures // the only values are closures
+abstract class Value
 type Env = Map[String, Value]
+// the only values are closures
 case class ClosureV(f:Fun, env:Env) extends Value
 </code></pre>
 <p>Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,
@@ -2276,9 +2277,9 @@ say, a number but get in fact a closure. Hence, this language has the fascinatin
 }
 </code></pre>
 <p>Now we want to illustrate that we can, in principle, bootstrap a full programming language from this small core.
-To do so, we use the technique of Church encoding. This means that each datum is represented by its own fold function.
-Church Encoding of Booleans</p>
-<p>Let&quot;s&quot; start with booleans and boolean arithmetic.</p>
+To do so, we use the technique of Church encoding. This means that each datum is represented by its own fold function.</p>
+<h2 id="church-encoding-of-booleans"><a class="header" href="#church-encoding-of-booleans">Church Encoding of Booleans</a></h2>
+<p>Let's start with booleans and boolean arithmetic.</p>
 <pre><code class="language-scala">val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
 val t = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;t&quot;))  // true
 val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
@@ -2289,13 +2290,13 @@ val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;a
 <pre><code class="language-scala">val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
 </code></pre>
 <h2 id="church-encoding-of-numbers"><a class="header" href="#church-encoding-of-numbers">Church Encoding of Numbers</a></h2>
-<p>Let&quot;s&quot; now consider Numbers. We encode them as Peano numbers.  These encodings of numbers are often called <em>Church numbers</em>.</p>
+<p>Let's now consider Numbers. We encode them as Peano numbers. These encodings of numbers are often called <em>Church numbers</em>.</p>
 <pre><code class="language-scala">val zero = Fun(&quot;s&quot;, Fun(&quot;z&quot;, &quot;z&quot;))
-val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(&quot;s&quot;, Ap(Ap(&quot;n&quot;, &quot;s&quot;),&quot;z&quot;)))))
+val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(&quot;s&quot;, Ap(Ap(&quot;n&quot;, &quot;s&quot;), &quot;z&quot;)))))
 val one = Ap(succ, zero)
 val two = Ap(succ, one)
 val three = Ap(succ, two)
-val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;,&quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;),&quot;z&quot;))))))
+val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;,&quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;), &quot;z&quot;))))))
 val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, Ap(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
 val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;b&quot;, Ap(mult, &quot;a&quot;)), one)))
 val iszero = Fun(&quot;a&quot;, Ap(Ap(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
@@ -2308,19 +2309,19 @@ For testing, here is a function that prints a unary representation of a number.<
 <p>Again straightforward, except &quot;tail&quot;, which we do not show here. It needs the same kind of trick (called &quot;pairing trick&quot;)
 as the predecessor function.</p>
 <pre><code class="language-scala">val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;,&quot;c&quot;),&quot;e&quot;))))))
+val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;,&quot;c&quot;), &quot;e&quot;))))))
 val head = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
 </code></pre>
 <p>For instance, we can multiply all numbers in a list</p>
 <pre><code class="language-scala">val multlist = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, mult), one))
 </code></pre>
 <p>Here is the list 3,2,3:</p>
-<pre><code class="language-scala">val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three),emptylist)))
+<pre><code class="language-scala">val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three), emptylist)))
 
 </code></pre>
 <pre><code class="language-scala">val test = Ap(printnum, Ap(multlist, list323))
 </code></pre>
-<p>Calling exec should yield 18 dots before the dummy result</p>
+<p>Calling <code>exec</code> should yield 18 dots before the dummy result</p>
 <pre><code class="language-scala">val exec = eval(test, Map.empty)
 // ..................
 // exec: Value = ClosureV(
@@ -2329,13 +2330,11 @@ val head = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;
 // )
 </code></pre>
 <p>Topic for class discussion: Can we do these encodings directly in Scala or Haskell?</p>
-<pre><code>
-</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="object-algebras"><a class="header" href="#object-algebras">Object Algebras</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="14-object-algebras/./object-algebras.scala">here.</a></p>
 <p>Object algebras: A practical way of using Church Encodings</p>
 <p>In previous lectures, we have talked about the &quot;expression problem&quot;: The problem of
-encoding  data structure (like expressions) and functions on that data structure 
+encoding a data structure (like expressions) and functions on that data structure
 (like evaluators, or pretty-printers) in such a way that both the data structure
 and the functions thereon can be extended without modifying code, while at the same
 time maintaining static type safety.</p>
@@ -2361,7 +2360,7 @@ def and(a: Bool, b: Bool) : Bool = a.ifthenelse(b,a)
 like that (at least conceptually).</p>
 <p>In the same way, we can encode Church numerals.</p>
 <pre><code class="language-scala">trait NumC {
-  def fold[T](z : T, s: T =&gt; T) : T
+  def fold[T](z: T, s: T =&gt; T) : T
 }
 case object Zero extends NumC {
   def fold[T](z: T, s: T =&gt; T) = z
@@ -2373,7 +2372,7 @@ case class Succ(n: NumC) extends NumC {
 
 def plus(a: NumC, b: NumC) = {
   new NumC {
-    def fold[T](z : T, s : T =&gt; T) : T = {
+    def fold[T](z: T, s: T =&gt; T) : T = {
       a.fold(b.fold(z,s), s)
     }
   }
@@ -2397,21 +2396,22 @@ trait Num {
   def apply[T](x: NumSig[T]) : T
 }
 </code></pre>
-<p>In other words, every constructor of data type is turned into
-a function of the NumSig type, whereby recursive occurences are replaced
-by the type constructor T.
-Actual numbers have the type Num, i.e., they are basically functions of type NumSig[T] =&gt; T.</p>
-<p>In the terminology of universal algebra, NumSig is an algebraic
-signature, and NumSig[T] =&gt; T is the type of algebras for that signature.
+<p>In other words, every constructor of the data type is turned into
+a function of the <code>NumSig</code> type, with recursive occurences being replaced
+by the type constructor <code>T</code>.
+Actual numbers have the type <code>Num</code>, i.e., they are basically functions of type
+<code>NumSig[T] =&gt; T</code>.</p>
+<p>In the terminology of universal algebra, <code>NumSig</code> is an algebraic
+signature, and <code>NumSig[T] =&gt; T</code> is the type of algebras for that signature.
 Compared to the Church encoding above, we bundle the arguments of the
-fold function into a trait NumSig and pass them as a single object.
+<code>fold</code>-function into a trait <code>NumSig</code> and pass them as a single object.
 The advantage of this encoding is that we can extend the set of parameters
-of the fold by using inheritance.</p>
-<p>In this encoding, the plus function looks like this:</p>
+of the <code>fold</code> by using inheritance.</p>
+<p>In this encoding, the <code>plus</code>-function looks like this:</p>
 <pre><code class="language-scala">def plus(a: Num, b: Num) = new Num {
   def apply[T](x: NumSig[T]) : T = a( new NumSig[T] {
     def z = b(x)
-    def s(p:T) = x.s(p)
+    def s(p: T) = x.s(p)
   })
 }
 </code></pre>
@@ -2421,13 +2421,14 @@ val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
 val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
 val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
 </code></pre>
-<p>This is an interpretation of the Num &quot;language&quot; as Scala integers:</p>
+<p>This is an interpretation of the <code>Num</code>-&quot;language&quot; as Scala integers:</p>
 <pre><code class="language-scala">object NumAlg extends NumSig[Int] {
   def z = 0
-  def s(x : Int ) = x+1
+  def s(x : Int) = x + 1
 }
 </code></pre>
-<pre><code class="language-scala">val testplus = plus(two, three)(NumAlg) // yields 5
+<pre><code class="language-scala">val testplus = plus(two, three)(NumAlg)
+// testplus: Int = 5
 </code></pre>
 <p>Let's look at a more useful application of object algebras. We encode
 expression trees as object algebras.</p>
@@ -2437,10 +2438,10 @@ expression trees as object algebras.</p>
   def ap(funExpr: T, argExpr: T) :T
   implicit def num(n: Int) : T
   def add(e1: T, e2: T) : T
-  def wth(x: String, xdef: T, body: T) : T = ap(fun(x,body),xdef)
+  def wth(x: String, xdef: T, body: T) : T = ap(fun(x,body), xdef)
 }
 </code></pre>
-<p>The structure of expression forces compositional interpretations. Hence
+<p>The structure of expressions forces compositional interpretations. Hence
 we use the compositional interpretation using meta-level closures to represent
 closures.</p>
 <pre><code class="language-scala">sealed abstract class Value
@@ -2448,7 +2449,7 @@ type Env = Map[String, Value]
 case class ClosureV(f: Value =&gt; Value) extends Value
 case class NumV(n: Int) extends Value
 </code></pre>
-<p>An interpretation of expressions is now an implementation of the Exp interface</p>
+<p>An interpretation of expressions is now an implementation of the <code>Exp</code> interface</p>
 <pre><code class="language-scala">trait eval extends Exp[Env =&gt; Value] {
   def id(name: String) = env =&gt; env(name)
   def fun(param: String, body: Env =&gt; Value) = env =&gt; ClosureV(v =&gt; body(env + (param -&gt; v)))
@@ -2457,8 +2458,8 @@ case class NumV(n: Int) extends Value
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   def num(n: Int) = env =&gt; NumV(n)
-  def add(e1: Env =&gt; Value, e2: Env =&gt; Value) = env =&gt; (e1(env),e2(env)) match {
-    case (NumV(n1), NumV(n2)) =&gt; NumV(n1+n2)
+  def add(e1: Env =&gt; Value, e2: Env =&gt; Value) = env =&gt; (e1(env), e2(env)) match {
+    case (NumV(n1), NumV(n2)) =&gt; NumV(n1 + n2)
     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
   }
 }
@@ -2469,22 +2470,22 @@ object eval extends eval
 <pre><code class="language-scala">def test[T](semantics : Exp[T]) = {
   import semantics._
 
-  ap(ap(fun(&quot;x&quot;,fun(&quot;y&quot;,add(&quot;x&quot;,&quot;y&quot;))),5),3)
+  ap(ap(fun(&quot;x&quot;, fun(&quot;y&quot;, add(&quot;x&quot;, &quot;y&quot;))), 5), 3)
 }
 </code></pre>
-<p>We evaluate the program by folding the eval visitor over it.</p>
+<p>We evaluate the program by folding the <code>eval</code>-visitor over it.</p>
 <pre><code class="language-scala">val testres = test(eval)(Map.empty)
 // testres: Value = NumV(n = 8)
 </code></pre>
 <p>The object algebra encoding of expressions is quite extensible. For instance, we can
-add another case to the expression datatype by extending the interface.</p>
+add another case to the expression data type by extending the interface.</p>
 <pre><code class="language-scala">trait ExpWithMult[T] extends Exp[T] {
-  def mult(e1 : T, e2: T) : T
+  def mult(e1: T, e2: T) : T
 }
 
-trait evalWithMult extends eval with ExpWithMult[Env=&gt;Value] {
-  def mult(e1: Env =&gt; Value, e2: Env =&gt; Value) = env =&gt; (e1(env),e2(env)) match {
-    case (NumV(n1), NumV(n2)) =&gt; NumV(n1*n2)
+trait evalWithMult extends eval with ExpWithMult[Env =&gt; Value] {
+  def mult(e1: Env =&gt; Value, e2: Env =&gt; Value) = env =&gt; (e1(env), e2(env)) match {
+    case (NumV(n1), NumV(n2)) =&gt; NumV(n1 * n2)
     case _ =&gt; sys.error(&quot;can only multiply numbers&quot;)
   }
 }
@@ -2493,14 +2494,14 @@ object evalWithMult extends evalWithMult
 def testMult[T](semantics : ExpWithMult[T]) = {
   import semantics._
 
-  ap(ap(fun(&quot;x&quot;,fun(&quot;y&quot;,mult(&quot;x&quot;,&quot;y&quot;))),5),3)
+  ap(ap(fun(&quot;x&quot;, fun(&quot;y&quot;, mult(&quot;x&quot;, &quot;y&quot;))), 5), 3)
 }
 </code></pre>
 <pre><code class="language-scala">val testresMult = testMult(evalWithMult)(Map.empty)
 // testresMult: Value = NumV(n = 15)
 </code></pre>
 <p>Note that there is no danger of confusing the language variants. For instance,
-an attempt to pass testMult to eval will be a static type error.</p>
+an attempt to pass <code>testMult</code> to <code>eval</code> will be a static type error.</p>
 <p>At the same time, we can add another function on expressions (such as a pretty-printer)
 without changing existing code, too: Just add a 
 <code>trait prettyPrint extends Exp[String]</code> and, if pretty-printing of <code>ExpWithMult</code>
@@ -2511,66 +2512,67 @@ typed higher-order abstract syntax, using higher-kinded type members.
 Don't panic if you don't understand what is going on here.</p>
 <pre><code class="language-scala">trait ExpT {
   type Rep[_]
-  def fun[S,T](f : Rep[S] =&gt; Rep[T]): Rep[S=&gt;T]
-  def ap[S,T](funExpr: Rep[S=&gt;T], argExpr: Rep[S]) :Rep[T]
+  def fun[S,T](f: Rep[S] =&gt; Rep[T]): Rep[S =&gt; T]
+  def ap[S,T](funExpr: Rep[S =&gt; T], argExpr: Rep[S]) : Rep[T]
   implicit def num(n: Int) : Rep[Int]
   def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
 }
 </code></pre>
 <p>Instead of having the semantic domain as a type parameter <code>T</code> as above, 
-we encoding it as a higher-kinded abstract type member <code>Rep[_]</code>. This leads
+we encode it as a higher-kinded abstract type member <code>Rep[_]</code>. This leads
 to significantly shorter type signatures and more fine-grained typing 
 via Scala's support for &quot;path-dependent types&quot;.</p>
-<p>Note that, in contrast to eval, no dynamic checks (match ...) are needed
+<p>Note that, in contrast to <code>eval</code>, no dynamic checks (<code>match</code> ...) are needed
 in the interpreter. Also, the result type of the evaluator is just <code>X</code>. In
 contrast to <code>Value</code>, this is a &quot;tagless&quot; type, that is, it does not maintain
-information at runtime about which variant it is. This is because the ExpT datatype guarantees well-typedness
-of expressions. This interpreter will, in general, run much faster and can
-in fact be formulated in such a way that interpreting a program is just as
-fast as writing the program directly in the meta language.</p>
+information at runtime about which variant it is. This is because the <code>ExpT</code>
+datatype guarantees well-typedness of expressions. This interpreter will, in
+general, run much faster and can in fact be formulated in such a way that
+interpreting a program is just as fast as writing the program directly in
+the meta language.</p>
 <pre><code class="language-scala">object evalT extends ExpT {
   type Rep[X] = X
-  def fun[S,T](f: S=&gt;T) =f
-  def ap[S,T](f: S=&gt;T, a: S) = f(a)
+  def fun[S,T](f: S =&gt; T) = f
+  def ap[S,T](f: S =&gt; T, a: S) = f(a)
   def num(n: Int) = n
-  def add(e1: Int, e2: Int) = e1+e2
+  def add(e1: Int, e2: Int) = e1 + e2
 }
 
 object prettyprintT extends ExpT {
   var counter = 0
   type Rep[X] = String
-  def fun[S,T](f: String=&gt;String) = {
+  def fun[S,T](f: String =&gt; String) = {
     val varname = &quot;x&quot; + counter.toString
     counter += 1
-    &quot;(&quot; + varname + &quot; =&gt; &quot; +  f(&quot;x&quot;+counter.toString) + &quot;)&quot;
+    &quot;(&quot; + varname + &quot; =&gt; &quot; +  f(&quot;x&quot; + varname) + &quot;)&quot;
   }
   def ap[S,T](f: String, a: String) = f + &quot;(&quot; + a + &quot;)&quot;
   def num(n: Int) = n.toString
-  def add(e1: String, e2: String) = &quot;(&quot;+e1+&quot;+&quot;+e2+&quot;)&quot;
-
+  def add(e1: String, e2: String) = &quot;(&quot; + e1 + &quot;+&quot; + e2 + &quot;)&quot;
 }
+
 def test2(semantics: ExpT) = {
   import semantics._
-  ap(ap(fun((x:Rep[Int])=&gt;fun((y:Rep[Int])=&gt;add(x,y))),5),3)
+  ap(ap(fun((x: Rep[Int]) =&gt; fun((y: Rep[Int]) =&gt; add(x, y))), 5), 3)
 }
 </code></pre>
 <pre><code class="language-scala">val testres2 = test2(evalT)
 // testres2: Int = 8
 val testres3 = test2(prettyprintT)
-// testres3: String = &quot;(x0 =&gt; (x1 =&gt; (x1+x2)))(5)(3)&quot;
+// testres3: String = &quot;(x0 =&gt; (x1 =&gt; (xx0+xx1)))(5)(3)&quot;
 </code></pre>
 <p>An attempt to construct an ill-formed object program will be detected by
 the Scala type checker. For instance, the following program which adds
 a number and a function is rejected by the Scala type checker:</p>
 <pre><code class="language-scala">def testilltyped(semantics: ExpT) = {
   import semantics._
-  add(5,fun((x: Rep[Int]) =&gt; x))
+  add(5, fun((x: Rep[Int]) =&gt; x))
 }
 // error:
 // Found:    semantics.Rep[Int =&gt; Int]
 // Required: semantics.Rep[Int]
-//   add(5,fun((x: Rep[Int]) =&gt; x))
-//         ^^^^^^^^^^^^^^^^^^^^^^^
+//   add(5, fun((x: Rep[Int]) =&gt; x))
+//          ^^^^^^^^^^^^^^^^^^^^^^^
 </code></pre>
 <p>The type system encoded in the <code>ExpT</code> type is the so-called &quot;simply-typed lambda calculus&quot;. 
 Encoding more expressive type system in a similar style (including, e.g., type parameters) 

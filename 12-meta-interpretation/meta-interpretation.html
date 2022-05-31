@@ -150,10 +150,10 @@ to encode this semantics.</p>
 language feature of the meta-language, or whether it is implemented using more primitive language constructs.
 The first case is called meta-interpretation, the second case syntactic interpretation.</p>
 <p>Meta-interpretation can be convenient if we are not interested in having control over the exact meaning of the construct,
-or if the way the meta-language handles this construct is just what we want for our object language.</p>
+or if the way the meta-language handles this construct is just what we want for our object-language.</p>
 <p>Syntactic interpretation is required if we want to understand what the language feature really means in terms
-of more primitive constructs, or if we want to implement the language feature differently than the meta language.
-Of course, if the meta language has no corresponding feature, then we have no choice but to make a syntactic interpretation.</p>
+of more primitive constructs, or if we want to implement the language feature differently than the meta-language.
+Of course, if the meta-language has no corresponding feature, then we have no choice but to make a syntactic interpretation.</p>
 <p>Our FAE interpreter is a meta-interpreter with respect to many features. For instance, it does not tell us</p>
 <ul>
 <li>the precision of numbers, or the algorithm for addition</li>
@@ -161,9 +161,9 @@ Of course, if the meta language has no corresponding feature, then we have no ch
 <li>whether/how memory management for closures works (they are objects on the heap!)</li>
 </ul>
 <p>That said, it is possible to make the FAE interpreters still more &quot;meta&quot;. Here are two examples.
-Here is a version of FAE that uses a different representation of the program syntax, namely one using meta-language functions
-to represent object-language functions. This technique is called higher-order abstract syntax, or HOAS.
-For instance, the function <code>Fun('x, Add('x,5))</code> is now represented as <code>Fun( x =&gt; Add(x,5))</code>.
+The first one is a version of FAE that uses a different representation of the program syntax, namely one using
+meta-language functions to represent object-language functions. This technique is called higher-order abstract syntax, or HOAS.
+For instance, the function <code>Fun(&quot;x&quot;, Add(&quot;x&quot;,5))</code> is now represented as <code>Fun(x =&gt; Add(x,5))</code>.
 The interpreter becomes rather short, because substitution and lexical scoping are now being dealt with by the
 corresponding meta-level construct.</p>
 <pre><code class="language-scala">object HOAS {
@@ -172,7 +172,7 @@ corresponding meta-level construct.</p>
     case Id(name: String)
     case Add(lhs: Exp, rhs: Exp)
     case Fun(f: Exp =&gt; Exp)
-    case Ap (funExpr: Exp, argExpr: Exp)
+    case Ap(funExpr: Exp, argExpr: Exp)
 
   import Exp._
 
@@ -191,22 +191,22 @@ corresponding meta-level construct.</p>
 }
 </code></pre>
 <p>A different way to use meta-level functions in the interpreter is to represent object-level closures by meta-level closures.
-Notice that this interpreter has no control anymore about scoping;  rather, it is completely inherited from the meta language.</p>
-<p>A particularly pleasing and important property of this interpreter is that it is <em>compositional</em>, meaning that all recursive calls
-of eval are only on subparts of the original expression. This means that it becomes particularly easy to reason about program equivalence
-in the object language in terms of program equivalence in the meta language: Two object language expressions are equivalent if their
+Notice that this interpreter then has no control anymore about scoping; rather, it is completely inherited from the meta-language.</p>
+<p>A particularly pleasing and important property of this interpreter below is that it is <em>compositional</em>, meaning that all recursive calls
+of <code>eval</code> are only on subparts of the original expression. This means that it becomes particularly easy to reason about program equivalence
+in the object-language in terms of program equivalence in the meta-language: Two object-language expressions are equivalent if their
 &quot;denotations&quot; as meta-level expressions are equivalent in the meta-level.</p>
 <p>Compositionality is the cornerstone of denotational semantics.  A denotational semantics can be thought of as a
 compositional interpreter in which the meta-language is mathematics.
 Compositionality also has a rather practical side-effect: It means that we can implement the interpreter in the internal visitor style
-that  we learned about in the first lecture (recall that the internal visitor  style enforces compositionality)
+that  we learned about in the first lecture (recall that the internal visitor  style enforces compositionality).
 Recommended exercise: Re-implement the interpreter as an internal visitor.</p>
 <pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
 
 import Exp._
 
@@ -225,9 +225,9 @@ object Compositional {
           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
         }
       }
-      case Fun(param,body) =&gt; (env) =&gt; FunV( (v) =&gt; eval(body)(env + (param -&gt; v)))
+      case Fun(param,body) =&gt; (env) =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
       case Ap(f,a) =&gt; (env) =&gt; (eval(f)(env), eval(a)(env)) match {
-        // Use environment stored in closure to realize proper lexical scoping!
+        // Use environment stored in (meta-level) closure to realize proper lexical scoping!
         case (FunV(g),arg) =&gt; g(arg)
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
       }

@@ -4,7 +4,7 @@ object HOAS {
     case Id(name: String)
     case Add(lhs: Exp, rhs: Exp)
     case Fun(f: Exp => Exp)
-    case Ap (funExpr: Exp, argExpr: Exp)
+    case Ap(funExpr: Exp, argExpr: Exp)
 
   import Exp._
 
@@ -27,7 +27,7 @@ enum Exp:
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
 
 import Exp._
 
@@ -46,9 +46,9 @@ object Compositional {
           case _ => sys.error("can only add numbers")
         }
       }
-      case Fun(param,body) => (env) => FunV( (v) => eval(body)(env + (param -> v)))
+      case Fun(param,body) => (env) => FunV((v) => eval(body)(env + (param -> v)))
       case Ap(f,a) => (env) => (eval(f)(env), eval(a)(env)) match {
-        // Use environment stored in closure to realize proper lexical scoping!
+        // Use environment stored in (meta-level) closure to realize proper lexical scoping!
         case (FunV(g),arg) => g(arg)
         case _ => sys.error("can only apply functions")
       }
