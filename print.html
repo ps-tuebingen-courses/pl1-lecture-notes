@@ -2544,7 +2544,7 @@ object prettyprintT extends ExpT {
   def fun[S,T](f: String =&gt; String) = {
     val varname = &quot;x&quot; + counter.toString
     counter += 1
-    &quot;(&quot; + varname + &quot; =&gt; &quot; +  f(&quot;x&quot; + varname) + &quot;)&quot;
+    &quot;(&quot; + varname + &quot; =&gt; &quot; +  f(varname) + &quot;)&quot;
   }
   def ap[S,T](f: String, a: String) = f + &quot;(&quot; + a + &quot;)&quot;
   def num(n: Int) = n.toString
@@ -2559,7 +2559,7 @@ def test2(semantics: ExpT) = {
 <pre><code class="language-scala">val testres2 = test2(evalT)
 // testres2: Int = 8
 val testres3 = test2(prettyprintT)
-// testres3: String = &quot;(x0 =&gt; (x1 =&gt; (xx0+xx1)))(5)(3)&quot;
+// testres3: String = &quot;(x0 =&gt; (x1 =&gt; (x0+x1)))(5)(3)&quot;
 </code></pre>
 <p>An attempt to construct an ill-formed object program will be detected by
 the Scala type checker. For instance, the following program which adds
