@@ -153,8 +153,8 @@
 
   def performIO[A](action: IO[A]) : A
 }
-
-val iomonad : IOMonad = new IOMonad {
+</code></pre>
+<pre><code class="language-scala">val iomonad : IOMonad = new IOMonad {
   type World = String
   type IO[A] = World =&gt; (A,World)
   def unit[A](a: A): IO[A] = w =&gt; (a,w)
@@ -165,9 +165,8 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }
-// iomonad: IOMonad = repl.MdocSession$$anon$1@24407538
-
-def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
+</code></pre>
+<pre><code class="language-scala">def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;
   m.bind(m.inputString, (firstName : String) =&gt;
   m.bind(m.printString(&quot;Enter your last name:&quot;), (_:Unit) =&gt;

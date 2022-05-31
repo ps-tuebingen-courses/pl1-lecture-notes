@@ -144,11 +144,8 @@
                     <main>
                         <h1 id="type-inference"><a class="header" href="#type-inference">Type Inference</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="./type-inference.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-// Hindley-Milner type inference with let-polymorphism
-
-enum Type:
+<p>Hindley-Milner type inference with let-polymorphism:</p>
+<pre><code class="language-scala">enum Type:
   case FunType(from: Type, to: Type)
   case NumType()
   case TypeVar(x: String)
@@ -167,10 +164,9 @@ def substitution(x: String, s: Type) = new Function[Type,Type] {
     case TypeVar(y) =&gt; if (x==y) s else TypeVar(y)
   }
 }
-
-// Robinson unification algorithm
-
-def unify(eq: List[(Type,Type)]) : Type =&gt; Type = eq match {
+</code></pre>
+<p>Robinson unification algorithm:</p>
+<pre><code class="language-scala">def unify(eq: List[(Type,Type)]) : Type =&gt; Type = eq match {
   case Nil =&gt; identity _
   case (NumType(),NumType()) :: rest =&gt; unify(rest)
   case (FunType(f1,t1),FunType(f2,t2)) :: rest =&gt; unify((f1,f2) :: (t1,t2) :: rest)
@@ -291,10 +287,19 @@ def eval(e: Exp) : Exp = e match {
 
 assert(doTypeCheck(42,Map.empty) == NumType())
 assert(doTypeCheck(Fun(&quot;x&quot;,Add(&quot;x&quot;,1)),Map.empty) == FunType(NumType(),NumType()))
-
-// test let-polymorphism: The identity function is once applied to a function and once to a number
-assert(doTypeCheck(Let(&quot;id&quot;, Fun(&quot;x&quot;,&quot;x&quot;), Ap(Ap(&quot;id&quot;,Fun(&quot;x&quot;,Add(&quot;x&quot;,1))),Ap(&quot;id&quot;,42))),Map.empty) == NumType())
 </code></pre>
+<p>Test <code>let-polymorphism</code>: The identity function is once applied to a function and once to a number:</p>
+<pre><code class="language-scala">assert(doTypeCheck(Let(&quot;id&quot;, Fun(&quot;x&quot;,&quot;x&quot;), Ap(Ap(&quot;id&quot;,Fun(&quot;x&quot;,Add(&quot;x&quot;,1))),Ap(&quot;id&quot;,42))),Map.empty) == NumType())
+</code></pre>
+<p>This should trigger an occurs check error:
+<code>doTypeCheck(Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)),Map.empty)</code>
+Hence omega cannot be type-checked in STLC.</p>
+<p>Completeness of type inference:
+If there exist type annotations that make a program type-check in the STLC type checker,
+then the type inference will also be able to type-check the non-annotated version of the program.</p>
+<p>Due to <code>let-polymorphism</code>, this program also type-checks some programs that would be ill-formed in STLC</p>
+<p>The type system is still sound:
+<code>If doTypeCheck(e,Map.empty) == t, then eval(e) == v and doTypeCheck(v) == t (modulo alpha-renaming of type variables)</code></p>
 
                     </main>
 

@@ -1,7 +1,5 @@
 import scala.language.implicitConversions
 
-// Hindley-Milner type inference with let-polymorphism
-
 enum Type:
   case FunType(from: Type, to: Type)
   case NumType()
@@ -21,8 +19,6 @@ def substitution(x: String, s: Type) = new Function[Type,Type] {
     case TypeVar(y) => if (x==y) s else TypeVar(y)
   }
 }
-
-// Robinson unification algorithm
 
 def unify(eq: List[(Type,Type)]) : Type => Type = eq match {
   case Nil => identity _
@@ -145,18 +141,5 @@ def eval(e: Exp) : Exp = e match {
 assert(doTypeCheck(42,Map.empty) == NumType())
 assert(doTypeCheck(Fun("x",Add("x",1)),Map.empty) == FunType(NumType(),NumType()))
 
-// test let-polymorphism: The identity function is once applied to a function and once to a number
 assert(doTypeCheck(Let("id", Fun("x","x"), Ap(Ap("id",Fun("x",Add("x",1))),Ap("id",42))),Map.empty) == NumType())
 
-// this should trigger an occurs check error:
-// doTypeCheck(Fun("x",Ap("x","x")),Map.empty)
-// Hence omega cannot be type-checked in STLC
-
-// Completeness of type inference:
-// If there exist type annotations that make a program type-check in the STLC type checker,
-// then the type inference will also be able to type-check the non-annotated version of the program.
-
-// Due to let-polymorphism, this program also type-checks some programs that would be ill-formed in STLC
-
-// The type system is still sound:
-// If doTypeCheck(e,Map.empty) == t, then eval(e) == v and doTypeCheck(v) == t (modulo alpha-renaming of type variables)

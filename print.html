@@ -3691,8 +3691,8 @@ https://hackage.haskell.org/package/extensible-effects</p>
 
   def performIO[A](action: IO[A]) : A
 }
-
-val iomonad : IOMonad = new IOMonad {
+</code></pre>
+<pre><code class="language-scala">val iomonad : IOMonad = new IOMonad {
   type World = String
   type IO[A] = World =&gt; (A,World)
   def unit[A](a: A): IO[A] = w =&gt; (a,w)
@@ -3703,9 +3703,8 @@ val iomonad : IOMonad = new IOMonad {
   def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a,w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot;+w); a }
 }
-// iomonad: IOMonad = repl.MdocSession$$anon$1@24407538
-
-def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
+</code></pre>
+<pre><code class="language-scala">def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_:Unit) =&gt;
   m.bind(m.inputString, (firstName : String) =&gt;
   m.bind(m.printString(&quot;Enter your last name:&quot;), (_:Unit) =&gt;
@@ -3716,18 +3715,11 @@ def test = iomonad.performIO(someIOActions(iomonad))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="modular-interpreters"><a class="header" href="#modular-interpreters">Modular Interpreters</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="22-modular-interpreters/./modular-interpreters.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.higherKinds
-import scala.language.implicitConversions
-import scala.language.reflectiveCalls
-
-/**
-A Monad Library
-================
- A Monad library in Scala. Monad libraries like
+<h1 id="a-monad-library"><a class="header" href="#a-monad-library">A Monad Library</a></h1>
+<p>A Monad library in Scala. Monad libraries like
 in scalaz and cats (for Scala) or the Haskell
-standard library look similar. */
-
-trait Monad {
+standard library look similar.</p>
+<pre><code class="language-scala">trait Monad {
     type M[_] // this time we treat M as a type member and not as type parameter
               // because it leads to shorter type signatures
     def unit[A](a: A) : M[A]
@@ -3737,50 +3729,48 @@ trait Monad {
       def map[B](f: A =&gt; B): M[B] = bind(m, (x:A) =&gt; unit(f(x)))
       def flatMap[B](f: A =&gt; M[B]): M[B] = bind(m,f)
 }
-
-/**
-  We formulate concrete monads in the form of abstract interfaces first.
-  The idea of those interfaces is that it should be possible to use
-  the monad only in terms of that interface, without knowing anything
-  about M. The advantage of this approach is that it enables us to
-  compose monads. M changes in every composition of monads. For instance,
-  when composing the list monad and the option monad, then
-  M[X] = Option[List[X]] or M[X]=List[Option[X]].
-  By keeping M abstract and using it only via the interfaces, &quot;client code&quot;
-  does not need to depend on the particular composition of monads.
-  The Reader (or Environment) monad captures computations that depend
-  on an environment of type R.
-  The ask function yields the current environment, the local function
-  is used to transform the environment in a subcomputation a by an
-  environment transformer f. */
-trait ReaderMonad extends Monad {
+</code></pre>
+<p>We formulate concrete monads in the form of abstract interfaces first.
+The idea of those interfaces is that it should be possible to use
+the monad only in terms of that interface, without knowing anything
+about <code>M</code>. The advantage of this approach is that it enables us to
+compose monads. <code>M</code> changes in every composition of monads. For instance,
+when composing the list monad and the option monad, then
+<code>M[X] = Option[List[X]]</code> or <code>M[X]=List[Option[X]]</code>.</p>
+<p>By keeping M abstract and using it only via the interfaces, &quot;client code&quot;
+does not need to depend on the particular composition of monads.
+The Reader (or Environment) monad captures computations that depend
+on an environment of type R.</p>
+<p>The ask function yields the current environment, the local function
+is used to transform the environment in a subcomputation a by an
+environment transformer f.</p>
+<pre><code class="language-scala">trait ReaderMonad extends Monad {
     type R
     def ask: M[R]
     def local[A](f: R =&gt; R, a: M[A]) : M[A]
 }
-
-/** The standard implementation of the Reader monad: */
-trait ReaderMonadImp extends ReaderMonad {
+</code></pre>
+<p>The standard implementation of the Reader monad:</p>
+<pre><code class="language-scala">trait ReaderMonadImp extends ReaderMonad {
     type M[X] = R =&gt; X
     def unit[A](a: A) : M[A] = r =&gt; a
     def bind[A,B](m: M[A], f: A =&gt; M[B]) : M[B] = r =&gt; f(m(r))(r)
     def ask : M[R] = identity
     def local[A](f: R =&gt; R, a: M[A]) : M[A] = r =&gt; a(f(r))
 }
-
-/** An example of using the reader monad to propagate an environment
-of type Int through a computation. */
-object ReaderExample extends ReaderMonadImp {
+</code></pre>
+<p>An example of using the reader monad to propagate an environment
+of type Int through a computation.</p>
+<pre><code class="language-scala">object ReaderExample extends ReaderMonadImp {
     type R = Int
     def example : M[Int] = for { x &lt;- ask } yield (x+1)
     def example2 : M[Int] = local( r =&gt; 99, example)
 }
-
-/** A more useful example where we use the reader monad
+</code></pre>
+<p>A more useful example where we use the reader monad
 to propagate a mapping from identifiers to boolean values
-in an interpreter for boolean formulas. */
-
-object ReaderExample2 extends ReaderMonadImp {
+in an interpreter for boolean formulas.</p>
+<pre><code class="language-scala">object ReaderExample2 extends ReaderMonadImp {
     enum Exp:
       case Id(x: String)
       case And(l: Exp, r: Exp)
@@ -3815,8 +3805,8 @@ object ReaderExample2 extends ReaderMonadImp {
         } yield (x || y)
     }
 }
-
-trait StateMonad extends Monad {
+</code></pre>
+<pre><code class="language-scala">trait StateMonad extends Monad {
     type S
     def getState : M[S]
     def putState(s: S) : M[Unit]
@@ -3832,43 +3822,38 @@ trait StateMonadImp extends StateMonad {
     def getState : M[S] = s =&gt; (s,s)
     def putState(s: S) : M[Unit] = _ =&gt; ((),s)
 }
-
-// The continuation monad provides a method callcc,
-// which reifies the current continuation k : A =&gt; M[B]
-trait ContinuationMonad extends Monad {
+</code></pre>
+<p>The continuation monad provides a method <code>callcc</code>,
+which reifies the current continuation <code>k : A =&gt; M[B]</code></p>
+<pre><code class="language-scala">trait ContinuationMonad extends Monad {
   def callcc[A,B](f : (A =&gt; M[B]) =&gt; M[A]) : M[A]
 }
-
-// End of Monad Interfaces
-
-// Now we provide implementations of the monad interfaces.
-
-// The identity monad, which is the end of each transformer chain
-trait IdentityMonad extends Monad {
+</code></pre>
+<p><em>End of Monad Interfaces</em></p>
+<p>Now we provide implementations of the monad interfaces.</p>
+<p>The identity monad, which is the end of each transformer chain</p>
+<pre><code class="language-scala">trait IdentityMonad extends Monad {
   type M[A] = A
   def unit[A](a: A) : M[A] = a
   def bind[A,B](m: M[A], f: A =&gt; M[B]) = f(m)
 }
 
 object IdentityMonad extends IdentityMonad
-
-// We organize most other monads as monad _transformers_.
-// A monad transformer is parameterized with another monad.
-// The monads are organized in a chain. Operations of
-// &quot;inner&quot; monads must be lifted to top-level operations.
-
-trait MonadTransformer extends Monad {
+</code></pre>
+<p>We organize most other monads as monad <em>transformers</em>.
+A monad transformer is parameterized with another monad.
+The monads are organized in a chain. Operations of &quot;inner&quot; monads must be lifted to top-level operations.</p>
+<pre><code class="language-scala">trait MonadTransformer extends Monad {
   val m : Monad
 }
-
-// The Reader monad transformer. We provide some convenient
-// functions lift, lift2 etc. to lift functions from the inner monad.
-// Note that M[X] = R =&gt; m.M[X] instead of M[X] = R =&gt; X (as for
-// the non-transformer version of the reader monad).
-// The correct implementation of the interface methods follows from
-// this type equation.
-
-trait ReaderT extends MonadTransformer with ReaderMonad {
+</code></pre>
+<p>The Reader monad transformer. We provide some convenient
+functions <code>lift</code>, <code>lift2</code> etc. to lift functions from the inner monad.
+Note that <code>M[X] = R =&gt; m.M[X]</code> instead of <code>M[X] = R =&gt; X</code> (as for
+the non-transformer version of the reader monad).
+The correct implementation of the interface methods follows from
+this type equation.</p>
+<pre><code class="language-scala">trait ReaderT extends MonadTransformer with ReaderMonad {
   type R
   override type M[X] = R =&gt; m.M[X]
   override def unit[A](a: A) : M[A] = r =&gt; m.unit(a)
@@ -3886,19 +3871,18 @@ trait ReaderT extends MonadTransformer with ReaderMonad {
 trait ReaderMonadImpl extends ReaderT {
   val m: IdentityMonad = IdentityMonad
 }
-
-/* We do not need this because we have just synthesized it.
-trait ReaderMonadImpl extends ReaderMonad {
+</code></pre>
+<p>We do not need this because we have just synthesized it:</p>
+<pre><code>trait ReaderMonadImpl extends ReaderMonad {
   type M[X] = R =&gt; X
   def unit[A](a: A) : M[A] = r =&gt; a
   def bind[A,B](m: M[A], f: A =&gt; M[B]) : M[B] = r =&gt; f(m(r))(r)
   def ask : M[R] = identity
   def local[A](f: R =&gt; R, a: M[A]) : M[A] = (r) =&gt; a(f(r))
 }
-*/
-
-// The design of StateT is similar to that of ReaderT
-trait StateT extends MonadTransformer with StateMonad {
+</code></pre>
+<p>The design of <code>StateT</code> is similar to that of <code>ReaderT</code></p>
+<pre><code class="language-scala">trait StateT extends MonadTransformer with StateMonad {
   type M[A] = S =&gt; m.M[(A,S)]
   override def unit[A](a: A) : M[A] = (s: S) =&gt; m.unit(a,s)
   override def bind[A,B](x: M[A], f: A =&gt; M[B]) : M[B] = (s: S) =&gt; {
@@ -3913,9 +3897,9 @@ trait StateT extends MonadTransformer with StateMonad {
 trait StateMonadImpl extends StateT {
   val m: IdentityMonad = IdentityMonad
 }
-
-/* We do not need this because we have just synthesized it.
-trait StateMonadImpl extends StateMonad {
+</code></pre>
+<p>We do not need this because we have just synthesized it:</p>
+<pre><code>trait StateMonadImpl extends StateMonad {
   type M[A] = S =&gt; (A,S)
   def unit[A](a: A) : M[A] = (s: S) =&gt; (a,s)
   def bind[A,B](m: M[A], f: A =&gt; M[B]) : M[B] = (s: S) =&gt; {
@@ -3924,15 +3908,12 @@ trait StateMonadImpl extends StateMonad {
   }
   def getState : M[S] = s =&gt; (s,s)
   def putState(s: S) : M[Unit] = _ =&gt; ((),s)
-}*/
-
-
-// We could also synthesize ContinuationMonadImpl from a ContT
-// just as we did for ReaderMonadImpl and StateMonadImpl
-// But for simplicity we only present the ordinary
-// continuation monad here.
-
-trait ContinuationMonadImpl extends ContinuationMonad {
+}
+</code></pre>
+<p>We could also synthesize <code>ContinuationMonadImpl</code> from a <code>ContT</code>
+just as we did for <code>ReaderMonadImpl</code> and <code>StateMonadImpl</code>,
+but for simplicity we only present the ordinary continuation monad here.</p>
+<pre><code class="language-scala">trait ContinuationMonadImpl extends ContinuationMonad {
   type T
   type M[A] = (A =&gt; T) =&gt; T
   override def unit[A](a: A) : M[A] = k =&gt; k(a)
@@ -3965,12 +3946,10 @@ trait ReaderStateMonadImpl extends ReaderStateMonadForwarder {
   val m: StateMonadImpl { type S = ReaderStateMonadImpl.this.S } =
     new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
 }
-
-/**
-Now we use the monad library to modularize the interpreters of
-the various language variants we have seen so far. */
-
-trait Expressions extends Monad {
+</code></pre>
+<p>Now we use the monad library to modularize the interpreters of
+the various language variants we have seen so far.</p>
+<pre><code class="language-scala">trait Expressions extends Monad {
   abstract class Value
   abstract class Exp {
     def eval : M[Value]
@@ -4101,11 +4080,9 @@ trait Letcc extends Expressions with ContinuationMonad with ReaderMonad{
   }
   case class ContV(f: Value =&gt; M[Value]) extends Value
 }
-
-
-// Let's compose together some languages!
-
-object AE extends Arithmetic with IdentityMonad {
+</code></pre>
+<p>Let's compose together some languages!</p>
+<pre><code class="language-scala">object AE extends Arithmetic with IdentityMonad {
   val aetest = Add(1,Add(2,3))
 }
 assert(AE.aetest.eval == AE.NumV(6))
@@ -4136,25 +4113,22 @@ assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
 <pre><code class="language-racket">#lang racket
 
 (require racket/control)
-
-; Monadic style can encode continuation-passing style:
-; just use the continuation monad
-
-; but the converse is also true in a certain sense that was
-; discovered by A. Filinski, whoh invented the notion of
-; &quot;monadic reflection&quot;. Here, we exemplify monadic reflection
-; in terms of the list monad, but it is straightforward
-; to abstract over the concrete monad and make this work
-; for every monad.
-
-; The list monad operations
-(define (return x) (list x))
+</code></pre>
+<p>Monadic style can encode continuation-passing style:</p>
+<p>Just use the continuation monad</p>
+<p>But the converse is also true in a certain sense that was
+discovered by A. Filinski, who invented the notion of
+&quot;monadic reflection&quot;. Here, we exemplify monadic reflection
+in terms of the list monad, but it is straightforward
+to abstract over the concrete monad and make this work
+for every monad.</p>
+<p>The list monad operations</p>
+<pre><code class="language-racket">(define (return x) (list x))
 (define (bind m f)
   (apply append (map f m)))
-
-; Monadic reflection (Filinski)
-
-; List[A] -&gt; A (quasi-type)
+</code></pre>
+<h2 id="monadic-reflection-filinski"><a class="header" href="#monadic-reflection-filinski">Monadic reflection (Filinski)</a></h2>
+<pre><code class="language-racket">; List[A] -&gt; A (quasi-type)
 (define (reflect m)
   (shift k (bind m k)))
 
@@ -4168,21 +4142,17 @@ assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
 
 (define (reify-thunk t)
   (reset (return (t))))
-
-; Now we can write direct-style programs (in this case: a direct-style + function), yet use monadic features.
-(reify (+ (reflect (list 1 2)) (reflect (list 3 4))))
-
-; more information in &quot;Representing Monads&quot; by A. Filinski:
-;https://doi.org/10.1145/174675.178047
-
-
-
-; Example: Backtracking using monadic reflection
-; The n-queens problem
-; If partial results are desired, lists should be
-; replaced by streams
-
-(define (fail) (reflect empty))
+</code></pre>
+<p>Now we can write direct-style programs (in this case: a direct-style + function), yet use monadic features.</p>
+<pre><code class="language-racket">(reify (+ (reflect (list 1 2)) (reflect (list 3 4))))
+</code></pre>
+<p>More information in &quot;Representing Monads&quot; by A. Filinski:
+https://doi.org/10.1145/174675.178047</p>
+<p><strong>Example</strong>: Backtracking using monadic reflection
+The <code>n</code>-queens problem
+If partial results are desired, lists should be
+replaced by streams</p>
+<pre><code class="language-racket">(define (fail) (reflect empty))
 
 ; Nat List[Nat] Nat -&gt; Bool
 (define (safe x l n)
@@ -4207,20 +4177,15 @@ assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="defunctionalization"><a class="header" href="#defunctionalization">Defunctionalization</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="24-defunctionalization/./defunctionalization.scala">here.</a></p>
-<pre><code class="language-scala">/**
-Defunctionalization
-===================
-The material in these notes is based on: John C. Reynolds: Definitional Interpreters for Higher-Order Programming Languages.
-Higher-Order and Symbolic Computation 11(4): 363-397 (1998)
-In the discussion of syntactic interpretation vs meta interpretation we have learned that we only learn something about (and control)
-a language feature if we choose syntactic interpretation.
-Today we want to discuss techniques with which we can make our interpreter so syntactic that it corresponds to an abstract machine:
+<p>The material in these notes is based on: John C. Reynolds: Definitional Interpreters for Higher-Order Programming Languages.
+Higher-Order and Symbolic Computation 11(4): 363-397 (1998)</p>
+<p>In the discussion of syntactic interpretation vs. meta interpretation we have learned that we only learn something about (and control)
+a language feature if we choose syntactic interpretation.</p>
+<p>Today we want to discuss techniques with which we can make our interpreter so syntactic that it corresponds to an abstract machine:
 A machine with a (possibly infinite) set of states and a simple transition relation between the states. We already know the technique
-with which we can take control over the call stack management: CPS transformation. After CPS-transforming the interpreter, we do not
-rely on the order of evaluation and call stack management of the meta language anymore.  We replicate its definition here:
-*/
-
-enum Exp:
+with which we can take control over the call stack management: <em>CPS transformation</em>. After CPS-transforming the interpreter, we do not
+rely on the order of evaluation and call stack management of the meta language anymore.  We replicate its definition here:</p>
+<pre><code class="language-scala">enum Exp:
   case Num(n : Int)
   case Id(name : String)
   case Add(lhs : Exp, rhs : Exp)
@@ -4255,64 +4220,49 @@ object CPSTransformed {
             } )
   }
 }
-
-/**
-However, the CPS-transformed interpreter still uses high-level features of the meta-language, most notably first-class functions.
+</code></pre>
+<p>However, the CPS-transformed interpreter still uses high-level features of the meta-language, most notably first-class functions.
 We will now introduce one transformation that can be used to transform a function using higher-order functions into one using only
-first-order functions.  It is general program transformation technique, not restricted only to interpreters.
-Lambda Lifting
---------------
-The first of these techniques is _lambda lifting_. The goal of lambda lifting is to turn local functions into top-level functions.
+first-order functions.  It is general program transformation technique, not restricted only to interpreters.</p>
+<h2 id="lambda-lifting"><a class="header" href="#lambda-lifting">Lambda Lifting</a></h2>
+<p>The first of these techniques is <em>lambda lifting</em>. The goal of lambda lifting is to turn local functions into top-level functions.
 That is, all &quot;lambdas&quot; only occur at the top-level. Variables in the local environment that are normally stored in the function's
-closure are instead passed as parameters to the top-level function. Lambda lifting is accomplished by the following steps:
-
- 1. Invent a new and unique name for each function that is not a top-level function.
- 2. Create a function with this name. Its body is the body of the former local function. Such a function will contain free variables.
- 3. Add a parameter to so-obtained top-level function for each free variable in its body.
-    Thus it becomes a higher-order function that returns a function when passed these arguments.
- 4. Replace the local function by a call to the new top-level function and pass the corresponding local context via the arguments
-    created in step 3.
-Example: Let's lambda-lift the functions ``y =&gt; y + n`` and ``y =&gt; y*n`` in
-*/
-
-def map(f : Int =&gt; Int, xs : List[Int]) : List[Int] = xs match {
+closure are instead passed as parameters to the top-level function. Lambda lifting is accomplished by the following steps:</p>
+<ol>
+<li>Invent a new and unique name for each function that is not a top-level function.</li>
+<li>Create a function with this name. Its body is the body of the former local function. Such a function will contain free variables.</li>
+<li>Add a parameter to so-obtained top-level function for each free variable in its body.
+Thus it becomes a higher-order function that returns a function when passed these arguments.</li>
+<li>Replace the local function by a call to the new top-level function and pass the corresponding local context via the arguments
+created in step 3.</li>
+</ol>
+<p><strong>Example</strong>: Let's lambda-lift the functions <code>y =&gt; y + n</code> and <code>y =&gt; y*n</code> in</p>
+<pre><code class="language-scala">def map(f : Int =&gt; Int, xs : List[Int]) : List[Int] = xs match {
   case Nil =&gt; Nil
   case (x :: xs) =&gt; f(x) :: map(f, xs)
 }
 
 def addAndMultNToList(n : Int, xs : List[Int]) = map(y =&gt; y * n, map(y =&gt; y + n, xs))
-
-/**
-We create two new top-level functions. Let's call them ``f`` and ``g`` Their bodies are respectively ``y =&gt; y + n`` and ``y =&gt; y * n``.
-We add a parameter for each free variable. In the example, the free variable is ``n`` in both cases:
-*/
-
-def fLam(n : Int) = (y : Int) =&gt; y + n
+</code></pre>
+<p>We create two new top-level functions. Let's call them <code>f</code> and <code>g</code> Their bodies are respectively <code>y =&gt; y + n</code> and <code>y =&gt; y * n</code>.
+We add a parameter for each free variable. In the example, the free variable is <code>n</code> in both cases:</p>
+<pre><code class="language-scala">def fLam(n : Int) = (y : Int) =&gt; y + n
 def gLam(n : Int) = (y : Int) =&gt; y * n
-
-/**
-or shorter:
-*/
-
-def f(n : Int)(y : Int) = y + n
+</code></pre>
+<p>or shorter:</p>
+<pre><code class="language-scala">def f(n : Int)(y : Int) = y + n
 def g(n : Int)(y : Int) = y * n
-
-/**
-The local function can now be replaced by a call to the new global function.
-*/
-
-def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_), xs))
-
-/**
-Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:
-two in the ``Add`` branch and two in the ``Ap`` branch. We call the corresponding top-level functions, from left to right,
-``addc1``, ``addc2``, ``appc1`` and ``appc2``.
-An interesting novelty in the interpreter is that some local functions (corresponding to ``addc1`` and ``appc1``) create local
-functions themselves. This means that ``addc1`` must call ``addc2`` and ``appc1`` must call ``appc2``. The rest of the transformation
-is a straightforward application of the transformation steps described above:
-*/
-
-object LambdaLifted {
+</code></pre>
+<p>The local function can now be replaced by a call to the new global function.</p>
+<pre><code class="language-scala">def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_), xs))
+</code></pre>
+<p>Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:
+two in the <code>Add</code> branch and two in the <code>Ap</code> branch. We call the corresponding top-level functions, from left to right,
+<code>addc1</code>, <code>addc2</code>, <code>appc1</code> and <code>appc2</code>.</p>
+<p>An interesting novelty in the interpreter is that some local functions (corresponding to <code>addc1</code> and <code>appc1</code>) create local
+functions themselves. This means that <code>addc1</code> must call <code>addc2</code> and <code>appc1</code> must call <code>appc2</code>. The rest of the transformation
+is a straightforward application of the transformation steps described above:</p>
+<pre><code class="language-scala">object LambdaLifted {
   def addc1[T](r : Exp, env : Env, k : Value =&gt; T)(lv : Value) = eval(r, env, addc2(lv, k))
 
   def addc2[T](lv : Value, k : Value =&gt; T)(rv : Value) = (lv, rv) match {
@@ -4335,25 +4285,21 @@ object LambdaLifted {
     case Ap(f, a) =&gt; eval(f, env, appc1(a, env, k))
   }
 }
-
-/**
-The lambda-lifted interpreter contains no local functions anymore, but it still contains higher-order functions, since `addc1' etc.
-return functions that are passed as parameters to other functions.
-Defunctionalization
--------------------
-_Defunctionalization_ is a program transformation technique that turns higher-order programs that have already been lambda-lifted
+</code></pre>
+<p>The lambda-lifted interpreter contains no local functions anymore, but it still contains higher-order functions, since <code>addc1</code> etc.
+return functions that are passed as parameters to other functions.</p>
+<h2 id="defunctionalization-1"><a class="header" href="#defunctionalization-1">Defunctionalization</a></h2>
+<p><em>Defunctionalization</em> is a program transformation technique that turns higher-order programs that have already been lambda-lifted
 into first-order programs that contain no higher-order functions anymore.  Any program contains only finitely many function definitions.
-The idea of defunctionalization is to assign a unique identifier to each of these function definitions. The function &quot;dispatch&quot; then
-happens in a function ``apply``, which receives the identifier corresponding to a function definition and dispatches the identifier
-to the right function body. Every function application within the program is then replaced by a call to the ``apply`` function with
-the function identifier as the first argument.
-In addition to the unique identifier, the ``apply`` function also needs bindings for the free variables in the function body.
-Hence we need to store the values for these free variables along with the unique identifier. Finally, the ``apply`` function needs
-to know about the argument to the function. These become additional parameters of the ``apply`` function.
-Let's illustrate defunctionalization in the ``addAndMultNToList`` example from above.
-*/
-
-sealed abstract class FunctionValue
+The idea of defunctionalization is to assign a unique identifier to each of these function definitions. The function <code>dispatch</code> then
+happens in a function <code>apply</code>, which receives the identifier corresponding to a function definition and dispatches the identifier
+to the right function body. Every function application within the program is then replaced by a call to the <code>apply</code> function with
+the function identifier as the first argument.</p>
+<p>In addition to the unique identifier, the <code>apply</code> function also needs bindings for the free variables in the function body.
+Hence we need to store the values for these free variables along with the unique identifier. Finally, the <code>apply</code> function needs
+to know about the argument to the function. These become additional parameters of the <code>apply</code> function.
+Let's illustrate defunctionalization in the <code>addAndMultNToList</code> example from above.</p>
+<pre><code class="language-scala">sealed abstract class FunctionValue
 case class F(n : Int) extends FunctionValue
 case class G(n : Int) extends FunctionValue
 
@@ -4368,12 +4314,9 @@ def map(f : FunctionValue, xs : List[Int]) : List[Int] = xs match {
 }
 
 def addAndMultNToListDefun(n : Int, xs : List[Int]) = map(G(n), map(F(n), xs))
-
-/**
-Let's now apply defunctionalization to our CPS-transformed interpreter:
-*/
-
-object Defunctionalized {
+</code></pre>
+<p>Let's now apply defunctionalization to our CPS-transformed interpreter:</p>
+<pre><code class="language-scala">object Defunctionalized {
 
   sealed abstract class FunctionValue[T]
   case class AddC1[T](r : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
@@ -4403,29 +4346,27 @@ object Defunctionalized {
   }
 }
 </code></pre>
+<p>This interpreter can be seen as an abstract machine. The state space of the abstract machine is
+(<code>Exp</code> x <code>Env</code> x <code>FunctionValue</code>) U (<code>FunctionValue</code> x <code>Value</code>), where &quot;x&quot; stands for cross product and &quot;U&quot; stands for set union.
+Every case in the pattern matches in <code>apply</code> and <code>eval</code> can be read as a transition in this state space.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-systems"><a class="header" href="#type-systems">Type Systems</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="25-type-systems/./type-systems.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-/**
-Type Systems
-============
-The aim of type systems is to prevent certain classes of errors to occur at runtime. Examples of such errors include the addition of
+<h1 id="type-systems-1"><a class="header" href="#type-systems-1">Type Systems</a></h1>
+<p>The aim of type systems is to prevent certain classes of errors to occur at runtime. Examples of such errors include the addition of
 a number to a function, or the usage of a free variable. There can be many different type systems for the same programming language.
-A sound type systems guarantees that the errors that the type system aims to prevent will not occur in _any_ run of the program.
-This is different from testing, in which only a single program run on some particular input data is considered.
-Since - by Rice's theorem - all interesting properties of the runtime behavior of a program (in a Turing complete language) are undecidable,
-type systems are necessarily imperfect. But they are usually designed in such a way that the errors are directed:
-Each type system unfairly rejects some programs that could be executed without runtime errors. But programs that are accepted by the
-type system will never produce one of the precluded runtime errors. The latter property is usually called _soundness_,
-the former property _completeness_. Hence we can say that most type systems are sound but not complete. One also often says that
-type systems are _conservative_. A conservative approximation of the behavior of a program is one that considers all possible program
-runs but also some impossible program runs - an overapproximation.
-Well-typedness is usually a context-sensitive property, hence it cannot be expressed in the (context-free) grammar of the language
+A sound type systems guarantees that the errors that the type system aims to prevent will not occur in <em>any</em> run of the program.
+This is different from testing, in which only a single program run on some particular input data is considered.</p>
+<p>Since - by Rice's theorem - all interesting properties of the runtime behavior of a program (in a Turing complete language) are undecidable,
+type systems are necessarily imperfect. But they are usually designed in such a way that the errors are directed:</p>
+<p>Each type system unfairly rejects some programs that could be executed without runtime errors. But programs that are accepted by the
+type system will never produce one of the precluded runtime errors. The latter property is usually called <em>soundness</em>,
+the former property <em>completeness</em>. Hence we can say that most type systems are sound but not complete. One also often says that
+type systems are <em>conservative</em>. A conservative approximation of the behavior of a program is one that considers all possible program
+runs but also some impossible program runs - an overapproximation.</p>
+<p>Well-typedness is usually a context-sensitive property, hence it cannot be expressed in the (context-free) grammar of the language
 but is defined as an additional filter which rules out some syntactically correct programs.
-Let's look at a small toy language to illustrate type systems:
-*/
-
-enum Exp:
+Let's look at a small toy language to illustrate type systems:</p>
+<pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Add(lhs: Exp, rhs: Exp)
   case Bool(x: Boolean)
@@ -4450,52 +4391,29 @@ def eval(e: Exp) : Exp = e match {
     }
   case _ =&gt; e
 }
-
-/**
-In this language, we can see that two different types of runtime errors can occur:
-An addition where one of the operands is not a number, or an if-expression where the condition
-does not evaluate to a boolean.
-Here are a few syntactically correct programs. Only the first three execute correctly. The
-other ones yield runtime errors.
-*/
-
-val ex1 = Add(3,5)
-// ex1: Exp = Add(lhs = Num(n = 3), rhs = Num(n = 5))
+</code></pre>
+<p>In this language, we can see that two different types of runtime errors can occur:
+An addition where one of the operands is not a number, or an <code>if</code>-expression where the condition
+does not evaluate to a boolean.</p>
+<p>Here are a few syntactically correct programs. Only the first three execute correctly. The
+other ones yield runtime errors.</p>
+<pre><code class="language-scala">val ex1 = Add(3,5)
 val ex2 = If(true, 7, 5)
-// ex2: Exp = If(cond = Bool(x = true), thenExp = Num(n = 7), els = Num(n = 5))
 val ex2b = If(true, 7, true)
-// ex2b: Exp = If(
-//   cond = Bool(x = true),
-//   thenExp = Num(n = 7),
-//   els = Bool(x = true)
-// )
 val ex3 = If(Add(3,4), 7, true)
-// ex3: Exp = If(
-//   cond = Add(lhs = Num(n = 3), rhs = Num(n = 4)),
-//   thenExp = Num(n = 7),
-//   els = Bool(x = true)
-// )
 val ex4 = Add(true,3)
-// ex4: Exp = Add(lhs = Bool(x = true), rhs = Num(n = 3))
-
-/**
-Let's now design a type system for this language. Most type systems entail a classification of the values into different types.
-In this type system, we choose to define two types, one called BoolType and one called IntType.
-*/
-
-
-enum Type:
+</code></pre>
+<p>Let's now design a type system for this language. Most type systems entail a classification of the values into different types.
+In this type system, we choose to define two types, one called BoolType and one called IntType.</p>
+<pre><code class="language-scala">enum Type:
   case BoolType()
   case IntType()
 import Type._
-
-/**
-A type checker is a compositional assignment of types (or type errors) to expressions. Compositionality means that the type of a
+</code></pre>
+<p>A type checker is a compositional assignment of types (or type errors) to expressions. Compositionality means that the type of a
 composite expression is computed from the type of its subexpressions. Compositionality is quite important for reasoning about types.
-In this case, the type checker is a rather straightforward structural recursion ( = compositionality) over expressions.
-*/
-
-def typeCheck(e: Exp) : Type = e match {
+In this case, the type checker is a rather straightforward structural recursion ( = compositionality) over expressions.</p>
+<pre><code class="language-scala">def typeCheck(e: Exp) : Type = e match {
   case Num(n) =&gt; IntType()
   case Bool(x) =&gt; BoolType()
   case Add(a,b) =&gt; (typeCheck(a),typeCheck(b)) match {
@@ -4508,29 +4426,37 @@ def typeCheck(e: Exp) : Type = e match {
   }
 }
 </code></pre>
+<h2 id="type-soundness"><a class="header" href="#type-soundness">Type Soundness</a></h2>
+<p>If we typecheck the examples from above with the algorithm, we can see that it rejects all programs that lead to runtime errors,
+and it also (unfairly) rejects one program that can be executed without error. Hence the type system is conservative, as expected.
+We can now say more precisely what we mean by soundness of the type checker, namely that it correctly predicts the kind of value that
+the interpreter will produce:</p>
+<p>If <code>e</code> is an expression and <code>typeCheck(e)</code> yields a type <code>t</code>, thenExp <code>eval(e)</code> yields a value <code>v</code> such that <code>typeCheck(v) == t</code>.
+This statement of type soundness has to be changed a bit when we have a programming language with non-terminating programs.
+Then it will have the following form:</p>
+<p>If <code>e</code> is an expression and <code>typeCheck(e)</code> yields a type <code>t</code>, thenExp <code>eval(e)</code> either diverges, or it yields a value <code>v</code>
+such that <code>typeCheck(v) == t</code>, but it does not terminate with a runtime error.
+In the most general case, we also have runtime errors that are not captured by the type system. In this case we have to restrict
+the last part of the sentence to those runtime errors that are captured by the type system.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="simply-typed-lambda-calculus"><a class="header" href="#simply-typed-lambda-calculus">Simply Typed Lambda Calculus</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="26-stlc/./stlc.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-/**
-The Simply-Typed Lambda Calculus
-================================
-We start with the untyped substitution-based lambda calculus augmented by the possibility to add type annotations to function definitions.
+<h1 id="the-simply-typed-lambda-calculus"><a class="header" href="#the-simply-typed-lambda-calculus">The Simply-Typed Lambda Calculus</a></h1>
+<p>We start with the untyped substitution-based lambda calculus augmented by the possibility to add type annotations to function definitions.
 The type annotation is ignored by the interpreter.
 Why are we using the substitution-based interpreter? Because it is simpler to state the type soundness
 theorem. If we had values that are separate from expressions, we would need to define a type system for
-these values. This is particularly tricky for closures with their embedded environments.
-We also show a couple of standard extensions to the simply-typed lambda calculus:
-1. A unit type JunitType() with associated term JUnit()
-2. Let-bindings (which don't need type annotations)
-3. Type Ascription (corresponding to &quot;::&quot; in Scala, like &quot;5 + 3 :: Int&quot;)
-4. Products (or Pairs, more specifically)
-5. Sums (binary sums, more specifically)
+these values. This is particularly tricky for closures with their embedded environments.</p>
+<p>We also show a couple of standard extensions to the simply-typed lambda calculus:</p>
+<ol>
+<li>A unit type JunitType() with associated term JUnit()</li>
+<li>Let-bindings (which don't need type annotations)</li>
+<li>Type Ascription (corresponding to &quot;::&quot; in Scala, like &quot;5 + 3 :: Int&quot;)</li>
+<li>Products (or Pairs, more specifically)</li>
+<li>Sums (binary sums, more specifically)
 To avoid the problem of &quot;guessing&quot; the &quot;from&quot; type in a function definition, we annotate
-function definitions with the expected argument type.
-*/
-
-sealed abstract class Type
+function definitions with the expected argument type.</li>
+</ol>
+<pre><code class="language-scala">sealed abstract class Type
 
 enum Exp:
   case Num(n: Int)
@@ -4637,27 +4563,20 @@ def eval(e: Exp) : Exp = e match {
   }
   case _ =&gt; e // numbers and functions evaluate to themselves
 }
-
-/**
-We classify values into three types: Booleans, integers, and function types. For function types, we need some abstraction for its input
+</code></pre>
+<p>We classify values into three types: Booleans, integers, and function types. For function types, we need some abstraction for its input
 and output; otherwise the type checker cannot be compositional. Luckily we do already have such an abstraction, namely types.
-Hence ``Funtype`` becomes a recursive data type.
-*/
-
-case class NumType() extends Type
+Hence <code>Funtype</code> becomes a recursive data type.</p>
+<pre><code class="language-scala">case class NumType() extends Type
 case class FunType(from: Type, to: Type) extends Type
 case class JunitType() extends Type
 case class ProductType(fst: Type, snd: Type) extends Type
 case class SumType(left: Type, right: Type) extends Type
-
-/**
-The type checker for the so-called _Simply-Typed Lambda Calculus_  (STLC). To deal with identifiers, we need an abstraction of environments.
-A type environment has the form ``Map[String,Type]``.
-The type checker for the STLC is as follows:
-*/
-
-
-def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
+</code></pre>
+<p>The type checker for the so-called <em>Simply-Typed Lambda Calculus</em>  (STLC). To deal with identifiers, we need an abstraction of environments.
+A type environment has the form <code>Map[String,Type]</code>.</p>
+<p>The type checker for the STLC is as follows:</p>
+<pre><code class="language-scala">def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
   case Num(n) =&gt; NumType()
   case Junit() =&gt; JunitType()
   case Id(x) =&gt; gamma.get(x) match {
@@ -4699,13 +4618,12 @@ def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
 
 }
 </code></pre>
+<p>Soundness of Simply-Typed Lambda Calculus (STLC) :
+<code>If e : Exp und typeCheck(e,Map.empty) == t, then typeCheck(eval(e),Map.empty) == t</code></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-inference"><a class="header" href="#type-inference">Type Inference</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="27-type-inference/./type-inference.scala">here.</a></p>
-<pre><code class="language-scala">import scala.language.implicitConversions
-
-// Hindley-Milner type inference with let-polymorphism
-
-enum Type:
+<p>Hindley-Milner type inference with let-polymorphism:</p>
+<pre><code class="language-scala">enum Type:
   case FunType(from: Type, to: Type)
   case NumType()
   case TypeVar(x: String)
@@ -4724,10 +4642,9 @@ def substitution(x: String, s: Type) = new Function[Type,Type] {
     case TypeVar(y) =&gt; if (x==y) s else TypeVar(y)
   }
 }
-
-// Robinson unification algorithm
-
-def unify(eq: List[(Type,Type)]) : Type =&gt; Type = eq match {
+</code></pre>
+<p>Robinson unification algorithm:</p>
+<pre><code class="language-scala">def unify(eq: List[(Type,Type)]) : Type =&gt; Type = eq match {
   case Nil =&gt; identity _
   case (NumType(),NumType()) :: rest =&gt; unify(rest)
   case (FunType(f1,t1),FunType(f2,t2)) :: rest =&gt; unify((f1,f2) :: (t1,t2) :: rest)
@@ -4848,10 +4765,19 @@ def eval(e: Exp) : Exp = e match {
 
 assert(doTypeCheck(42,Map.empty) == NumType())
 assert(doTypeCheck(Fun(&quot;x&quot;,Add(&quot;x&quot;,1)),Map.empty) == FunType(NumType(),NumType()))
-
-// test let-polymorphism: The identity function is once applied to a function and once to a number
-assert(doTypeCheck(Let(&quot;id&quot;, Fun(&quot;x&quot;,&quot;x&quot;), Ap(Ap(&quot;id&quot;,Fun(&quot;x&quot;,Add(&quot;x&quot;,1))),Ap(&quot;id&quot;,42))),Map.empty) == NumType())
 </code></pre>
+<p>Test <code>let-polymorphism</code>: The identity function is once applied to a function and once to a number:</p>
+<pre><code class="language-scala">assert(doTypeCheck(Let(&quot;id&quot;, Fun(&quot;x&quot;,&quot;x&quot;), Ap(Ap(&quot;id&quot;,Fun(&quot;x&quot;,Add(&quot;x&quot;,1))),Ap(&quot;id&quot;,42))),Map.empty) == NumType())
+</code></pre>
+<p>This should trigger an occurs check error:
+<code>doTypeCheck(Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)),Map.empty)</code>
+Hence omega cannot be type-checked in STLC.</p>
+<p>Completeness of type inference:
+If there exist type annotations that make a program type-check in the STLC type checker,
+then the type inference will also be able to type-check the non-annotated version of the program.</p>
+<p>Due to <code>let-polymorphism</code>, this program also type-checks some programs that would be ill-formed in STLC</p>
+<p>The type system is still sound:
+<code>If doTypeCheck(e,Map.empty) == t, then eval(e) == v and doTypeCheck(v) == t (modulo alpha-renaming of type variables)</code></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="further-reading"><a class="header" href="#further-reading">Further Reading</a></h1>
 
                     </main>

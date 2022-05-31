@@ -1,23 +1,5 @@
 import scala.language.implicitConversions
 
-/**
-The Simply-Typed Lambda Calculus
-================================
-We start with the untyped substitution-based lambda calculus augmented by the possibility to add type annotations to function definitions.
-The type annotation is ignored by the interpreter.
-Why are we using the substitution-based interpreter? Because it is simpler to state the type soundness
-theorem. If we had values that are separate from expressions, we would need to define a type system for
-these values. This is particularly tricky for closures with their embedded environments.
-We also show a couple of standard extensions to the simply-typed lambda calculus:
-1. A unit type JunitType() with associated term JUnit()
-2. Let-bindings (which don't need type annotations)
-3. Type Ascription (corresponding to "::" in Scala, like "5 + 3 :: Int")
-4. Products (or Pairs, more specifically)
-5. Sums (binary sums, more specifically)
-To avoid the problem of "guessing" the "from" type in a function definition, we annotate
-function definitions with the expected argument type.
-*/
-
 sealed abstract class Type
 
 enum Exp:
@@ -126,24 +108,11 @@ def eval(e: Exp) : Exp = e match {
   case _ => e // numbers and functions evaluate to themselves
 }
 
-/**
-We classify values into three types: Booleans, integers, and function types. For function types, we need some abstraction for its input
-and output; otherwise the type checker cannot be compositional. Luckily we do already have such an abstraction, namely types.
-Hence ``Funtype`` becomes a recursive data type.
-*/
-
 case class NumType() extends Type
 case class FunType(from: Type, to: Type) extends Type
 case class JunitType() extends Type
 case class ProductType(fst: Type, snd: Type) extends Type
 case class SumType(left: Type, right: Type) extends Type
-
-/**
-The type checker for the so-called _Simply-Typed Lambda Calculus_  (STLC). To deal with identifiers, we need an abstraction of environments.
-A type environment has the form ``Map[String,Type]``.
-The type checker for the STLC is as follows:
-*/
-
 
 def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
   case Num(n) => NumType()
@@ -186,7 +155,4 @@ def typeCheck(e: Exp, gamma: Map[String,Type]) : Type = e match {
   }
 
 }
-
-/* Soundness of Simply-Typed Lambda Calculus (STLC) :
-If e : Exp und typeCheck(e,Map.empty) == t, then typeCheck(eval(e),Map.empty) == t
-*/
+Soundness of Simply-Typed Lambda Calculus (STLC) :

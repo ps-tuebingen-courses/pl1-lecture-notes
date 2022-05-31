@@ -2,13 +2,6 @@ import scala.language.higherKinds
 import scala.language.implicitConversions
 import scala.language.reflectiveCalls
 
-/**
-A Monad Library
-================
- A Monad library in Scala. Monad libraries like
-in scalaz and cats (for Scala) or the Haskell
-standard library look similar. */
-
 trait Monad {
     type M[_] // this time we treat M as a type member and not as type parameter
               // because it leads to shorter type signatures
@@ -19,29 +12,13 @@ trait Monad {
       def map[B](f: A => B): M[B] = bind(m, (x:A) => unit(f(x)))
       def flatMap[B](f: A => M[B]): M[B] = bind(m,f)
 }
-
-/**
   We formulate concrete monads in the form of abstract interfaces first.
-  The idea of those interfaces is that it should be possible to use
-  the monad only in terms of that interface, without knowing anything
-  about M. The advantage of this approach is that it enables us to
-  compose monads. M changes in every composition of monads. For instance,
-  when composing the list monad and the option monad, then
-  M[X] = Option[List[X]] or M[X]=List[Option[X]].
-  By keeping M abstract and using it only via the interfaces, "client code"
-  does not need to depend on the particular composition of monads.
-  The Reader (or Environment) monad captures computations that depend
-  on an environment of type R.
-  The ask function yields the current environment, the local function
-  is used to transform the environment in a subcomputation a by an
-  environment transformer f. */
 trait ReaderMonad extends Monad {
     type R
     def ask: M[R]
     def local[A](f: R => R, a: M[A]) : M[A]
 }
 
-/** The standard implementation of the Reader monad: */
 trait ReaderMonadImp extends ReaderMonad {
     type M[X] = R => X
     def unit[A](a: A) : M[A] = r => a
@@ -50,18 +27,12 @@ trait ReaderMonadImp extends ReaderMonad {
     def local[A](f: R => R, a: M[A]) : M[A] = r => a(f(r))
 }
 
-/** An example of using the reader monad to propagate an environment
-of type Int through a computation. */
 object ReaderExample extends ReaderMonadImp {
     type R = Int
     def example : M[Int] = for { x <- ask } yield (x+1)
     def example2 : M[Int] = local( r => 99, example)
 }
-
-/** A more useful example where we use the reader monad
-to propagate a mapping from identifiers to boolean values
-in an interpreter for boolean formulas. */
-
+A more useful example where we use the reader monad
 object ReaderExample2 extends ReaderMonadImp {
     enum Exp:
       case Id(x: String)
@@ -115,17 +86,10 @@ trait StateMonadImp extends StateMonad {
     def putState(s: S) : M[Unit] = _ => ((),s)
 }
 
-// The continuation monad provides a method callcc,
-// which reifies the current continuation k : A => M[B]
 trait ContinuationMonad extends Monad {
   def callcc[A,B](f : (A => M[B]) => M[A]) : M[A]
 }
-
-// End of Monad Interfaces
-
-// Now we provide implementations of the monad interfaces.
-
-// The identity monad, which is the end of each transformer chain
+_End of Monad Interfaces_
 trait IdentityMonad extends Monad {
   type M[A] = A
   def unit[A](a: A) : M[A] = a
@@ -134,21 +98,9 @@ trait IdentityMonad extends Monad {
 
 object IdentityMonad extends IdentityMonad
 
-// We organize most other monads as monad _transformers_.
-// A monad transformer is parameterized with another monad.
-// The monads are organized in a chain. Operations of
-// "inner" monads must be lifted to top-level operations.
-
 trait MonadTransformer extends Monad {
   val m : Monad
 }
-
-// The Reader monad transformer. We provide some convenient
-// functions lift, lift2 etc. to lift functions from the inner monad.
-// Note that M[X] = R => m.M[X] instead of M[X] = R => X (as for
-// the non-transformer version of the reader monad).
-// The correct implementation of the interface methods follows from
-// this type equation.
 
 trait ReaderT extends MonadTransformer with ReaderMonad {
   type R
@@ -168,18 +120,7 @@ trait ReaderT extends MonadTransformer with ReaderMonad {
 trait ReaderMonadImpl extends ReaderT {
   val m: IdentityMonad = IdentityMonad
 }
-
-/* We do not need this because we have just synthesized it.
-trait ReaderMonadImpl extends ReaderMonad {
-  type M[X] = R => X
-  def unit[A](a: A) : M[A] = r => a
-  def bind[A,B](m: M[A], f: A => M[B]) : M[B] = r => f(m(r))(r)
-  def ask : M[R] = identity
-  def local[A](f: R => R, a: M[A]) : M[A] = (r) => a(f(r))
-}
-*/
-
-// The design of StateT is similar to that of ReaderT
+We do not need this because we have just synthesized it:
 trait StateT extends MonadTransformer with StateMonad {
   type M[A] = S => m.M[(A,S)]
   override def unit[A](a: A) : M[A] = (s: S) => m.unit(a,s)
@@ -195,24 +136,6 @@ trait StateT extends MonadTransformer with StateMonad {
 trait StateMonadImpl extends StateT {
   val m: IdentityMonad = IdentityMonad
 }
-
-/* We do not need this because we have just synthesized it.
-trait StateMonadImpl extends StateMonad {
-  type M[A] = S => (A,S)
-  def unit[A](a: A) : M[A] = (s: S) => (a,s)
-  def bind[A,B](m: M[A], f: A => M[B]) : M[B] = (s: S) => {
-     val (a,s2) = m(s)
-     f(a)(s2)
-  }
-  def getState : M[S] = s => (s,s)
-  def putState(s: S) : M[Unit] = _ => ((),s)
-}*/
-
-
-// We could also synthesize ContinuationMonadImpl from a ContT
-// just as we did for ReaderMonadImpl and StateMonadImpl
-// But for simplicity we only present the ordinary
-// continuation monad here.
 
 trait ContinuationMonadImpl extends ContinuationMonad {
   type T
@@ -247,10 +170,6 @@ trait ReaderStateMonadImpl extends ReaderStateMonadForwarder {
   val m: StateMonadImpl { type S = ReaderStateMonadImpl.this.S } =
     new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
 }
-
-/**
-Now we use the monad library to modularize the interpreters of
-the various language variants we have seen so far. */
 
 trait Expressions extends Monad {
   abstract class Value
@@ -383,9 +302,6 @@ trait Letcc extends Expressions with ContinuationMonad with ReaderMonad{
   }
   case class ContV(f: Value => M[Value]) extends Value
 }
-
-
-// Let's compose together some languages!
 
 object AE extends Arithmetic with IdentityMonad {
   val aetest = Add(1,Add(2,3))
