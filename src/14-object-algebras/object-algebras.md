@@ -273,7 +273,7 @@ object prettyprintT extends ExpT {
   def fun[S,T](f: String => String) = {
     val varname = "x" + counter.toString
     counter += 1
-    "(" + varname + " => " +  f("x" + varname) + ")"
+    "(" + varname + " => " +  f(varname) + ")"
   }
   def ap[S,T](f: String, a: String) = f + "(" + a + ")"
   def num(n: Int) = n.toString
