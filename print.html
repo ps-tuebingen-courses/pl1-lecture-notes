@@ -2599,9 +2599,11 @@ def progSimple = {
 <p>Even this &quot;addition server&quot; is difficult to implement. Because http is a stateless protocol (for good reasons),
 every web program is basically forced to terminate after every request. This means that
 the Web developer must turn this application into three programs:</p>
-<p>(a) The first program displays the first form.
-(b) The second program consumes the form values from the first form, and generates the second form.
-(c) The third program consumes the form values from the second form, computes the output, and generates the result.</p>
+<ol>
+<li>The first program displays the first form.</li>
+<li>The second program consumes the form values from the first form, and generates the second form.</li>
+<li>The third program consumes the form values from the second form, computes the output, and generates the result.</li>
+</ol>
 <p>Because the value entered in the first form is needed by the third program to compute its output, this
 value must somehow be transmitted between from the first program to the third. This is typically done
 by using the hidden field mechanism of HTML.</p>
@@ -2655,9 +2657,7 @@ submitted back to the server once the client presses the submit button.</p>
 <p>Here is code illustrating the idea. For simplicity we assume that all web forms return
 a single integer value.</p>
 <pre><code class="language-scala">val continuations = new scala.collection.mutable.HashMap[Symbol, Int =&gt; Nothing]()
-// continuations: HashMap[Symbol, Function1[Int, Nothing]] = HashMap()
 var nextIndex : Int = 0
-// nextIndex: Int = 0
 def getNextID = {
   nextIndex += 1
   Symbol(&quot;c&quot; + nextIndex.toString)
