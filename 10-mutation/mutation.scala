@@ -29,11 +29,6 @@ val test1 = wth("b", NewBox(0),
                 SetBox("b", Add(1, OpenBox("b"))),
                 OpenBox("b")))
 
-  case Seq(e1, e2) => {
-    eval(e1, env)
-    eval(e2, env)
-  }
-
 val test2 = wth("a", NewBox(1),
               wth("f", Fun("x", Add("x", OpenBox("a"))),
                 Seq(SetBox("a",2),

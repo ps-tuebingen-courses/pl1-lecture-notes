@@ -2601,8 +2601,7 @@ every web program is basically forced to terminate after every request. This mea
 the Web developer must turn this application into three programs:</p>
 <p>(a) The first program displays the first form.
 (b) The second program consumes the form values from the first form, and generates the second form.
-(c) The third program consumes the form values from the second form, computes the output, and</p>
-<p>generates the result.</p>
+(c) The third program consumes the form values from the second form, computes the output, and generates the result.</p>
 <p>Because the value entered in the first form is needed by the third program to compute its output, this
 value must somehow be transmitted between from the first program to the third. This is typically done
 by using the hidden field mechanism of HTML.</p>
@@ -2614,180 +2613,184 @@ the application can compute the wrong answer.
 Hence, the actual program in a web developer's mind has the structure of the following program.
 An actual web program is of course more complicated, but this primitive model of web
 programming is sufficient to explain the problem.</p>
-<pre><code class="language-scala">def webdisplay(s: String) : Nothing = { // we use the return type &quot;Nothing&quot; for functions that will never return (normally)
+<pre><code class="language-scala">// we use the return type &quot;Nothing&quot; for functions that will never return (normally)
+def webdisplay(s: String) : Nothing = {
   println(s)
   sys.error(&quot;program terminated&quot;)
 }
 
 def webread(prompt: String, continue: String) : Nothing = {
   println(prompt)
-  println(&quot;send input to: &quot;+continue)
+  println(&quot;send input to: &quot; + continue)
   sys.error(&quot;program terminated&quot;)
 }
 
 def program1 = webread(&quot;enter first number&quot;, &quot;s2&quot;)
-def program2(n1: Int) = webread(&quot;enter second number and remind me of previoulsy entered number &quot;+n1, &quot;s3&quot;)
-def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot;+ n1 + &quot; and &quot;+n2+ &quot; is &quot;+(n1+n2))
+def program2(n1: Int) = webread(&quot;enter second number and remind me of previoulsy entered number &quot; + n1, &quot;s3&quot;)
+def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot; + n1 + &quot; and &quot;+ n2 + &quot; is &quot; + (n1 + n2))
 </code></pre>
-<p>We could write a better webread and webdisplay procedure if we could somehow get hold of the
+<p>We could write a better <code>webread</code> and <code>webdisplay</code> procedure if we could somehow get hold of the
 pending computation at the time when the procedure was invoked. Such a pending computation is
 called <em>continuation</em>.</p>
 <p>Let's consider the continuation at the point of the first interaction in the original program,</p>
-<pre><code>  def prog = {
-    println(inputNumber() + inputNumber())
-  }
+<pre><code class="language-scala">def prog = {
+  println(inputNumber() + inputNumber())
+}
 </code></pre>
 <p>The pending computation (or, continuation in the following) is to take the result of the first
-inputNumber invocation, add to it the result of the second invocation, and display it.</p>
+<code>inputNumber</code> invocation, add to it the result of the second invocation, and display it.</p>
 <p>We can express the continuation as a function:</p>
 <pre><code class="language-scala">val cont1 = (n: Int) =&gt; println(n + inputNumber(&quot;Second number&quot;))
 </code></pre>
 <p>Similarly, the continuation at the second point of interaction is:</p>
-<pre><code> val cont2 = (m: Int) =&gt; println(n+m)
+<pre><code class="language-scala">val cont2 = (m: Int) =&gt; println(n + m)
 </code></pre>
-<p>where n is the result of the first input, which is stored in the closure of cont2</p>
+<p>where <code>n</code> is the result of the first input, which is stored in the closure of <code>cont2</code>.</p>
 <p>Assuming an explicit representation of the continuation, it is obvious that we can now
-write a version of webread, called webread_k, which takes the continuation as second parameter and invokes
+write a version of <code>webread</code>, called <code>webread_k</code>, which takes the continuation as second parameter and invokes
 the continuation once the answer to the result is received by the server.
-This can be implemented, say, by associating to a continatuion a unique ID, store the continuation
+This can be implemented, say, by associating to a continuation a unique ID, store the continuation
 in a hashmap on the server using this ID, and storing the ID in the form such that it gets
 submitted back to the server once the client presses the submit button.</p>
 <p>Here is code illustrating the idea. For simplicity we assume that all web forms return
 a single integer value.</p>
-<pre><code class="language-scala mdoc">val continuations = new scala.collection.mutable.HashMap[Symbol, Int=&gt;Nothing]()
+<pre><code class="language-scala">val continuations = new scala.collection.mutable.HashMap[Symbol, Int =&gt; Nothing]()
+// continuations: HashMap[Symbol, Function1[Int, Nothing]] = HashMap()
 var nextIndex : Int = 0
+// nextIndex: Int = 0
 def getNextID = {
   nextIndex += 1
   Symbol(&quot;c&quot; + nextIndex.toString)
 }
 
-def webread_k(prompt: String, k: Int=&gt;Nothing) : Nothing = {
+def webread_k(prompt: String, k: Int =&gt; Nothing) : Nothing = {
   val id = getNextID
   continuations += (id -&gt; k)
   println(prompt)
-  println(&quot;to continue, invoke continuation: &quot;+id.toString)
+  println(&quot;to continue, invoke continuation: &quot; + id.toString)
   sys.error(&quot;program terminated&quot;)
 }
 
 def continue(kid: Symbol, result: Int) = continuations(kid)(result)
 </code></pre>
-<p>Using webread_k, we can now define our addition server as follows.
-If you try prog, ignore the stack traces.</p>
-<pre><code>def webprog = webread_k(&quot;enter first number&quot;, (n) =&gt;
-             webread_k(&quot;enter second number&quot;, (m) =&gt; webdisplay(&quot;The sum of &quot;+n+ &quot; and &quot;+m+ &quot; is &quot;+(n+m))))
+<p>Using <code>webread_k</code>, we can now define our addition server as follows.
+If you try <code>webprog</code>, ignore the stack traces.</p>
+<pre><code class="language-scala">def webprog = webread_k(&quot;enter first number&quot;, (n) =&gt;
+              webread_k(&quot;enter second number&quot;, (m) =&gt; webdisplay(&quot;The sum of &quot; + n + &quot; and &quot; + m + &quot; is &quot; + (n + m))))
 </code></pre>
 <p>For instance, try:</p>
-<pre><code>   scala&gt; webprog          -- yields some continuation id 'c1
-   scala&gt; continue('c1,5)   -- yields some continuation id 'c2
-  scala&gt; continue('c2,7)
+<pre><code>scala&gt; webprog           -- yields some continuation id 'c1
+scala&gt; continue('c1,5)   -- yields some continuation id 'c2
+scala&gt; continue('c2,7)
 
-  This should yield the result 12 as expected. But also try:
-  scala&gt; webprog          -- yields some continuation id 'c1
-  scala&gt; contine('c1,5)    -- yields some continuation id 'c2
-  scala&gt; contine('c1,6)    -- yields some continuation id 'c3
-  scala&gt; continue('c2,3)   -- should yield 8
-  scala&gt; continue('c3,3)   -- should yield 9
+This should yield the result 12 as expected. But also try:
+scala&gt; webprog           -- yields some continuation id 'c1
+scala&gt; contine('c1,5)    -- yields some continuation id 'c2
+scala&gt; contine('c1,6)    -- yields some continuation id 'c3
+scala&gt; continue('c2,3)   -- should yield 8
+scala&gt; continue('c3,3)   -- should yield 9
 </code></pre>
-<p>The style of programming in webprog, which is obviously more complicated than the logical
-structure of progSimple, shows up in many practical programming scenarios - server-side web programming
+<p>The style of programming in <code>webprog</code>, which is obviously more complicated than the logical
+structure of <code>progSimple</code>, shows up in many practical programming scenarios - server-side web programming
 is just one of them. For instance, in JavaScript many API functions for asynchronous communication
 such as httprequest in AJAX require to pass a callback function, which leads to similar code
-as the one in webprog above.</p>
-<p>Let's consider this &quot;web transformation&quot; - the transformation from progSimple to webprog - in more detail.
+as the one in <code>webprog</code> above.</p>
+<p>Let's consider this &quot;web transformation&quot; - the transformation from <code>progSimple</code> to <code>webprog</code> - in more detail.
 To this purpose, let's make our application a bit more sophisticated. Instead of entering only two
 numbers, the user enters n numbers, e.g., the prices of a list of n items.</p>
 <p>Here is the &quot;non-web&quot; version of the application:</p>
 <pre><code class="language-scala">def allCosts(itemList: List[String]) : Int = itemList match {
    case Nil =&gt; 0
-   case x :: rest =&gt; inputNumber(&quot;Cost of item &quot;+x+ &quot;:&quot;) + allCosts(rest)
+   case x :: rest =&gt; inputNumber(&quot;Cost of item &quot; + x + &quot;:&quot;) + allCosts(rest)
 }
 </code></pre>
 <pre><code class="language-scala">val testData : List[String] = List(&quot;banana&quot;, &quot;apple&quot;, &quot;orange&quot;)
 
-def test = println(&quot;Total sum: &quot;+allCosts(testData))
+def test = println(&quot;Total sum: &quot; + allCosts(testData))
 </code></pre>
-<p>This version of allCosts is clearly not web-friendly, because it uses inputNumber,
+<p>This version of <code>allCosts</code> is clearly not web-friendly, because it uses <code>inputNumber</code>,
 which we do not know how to implement for the web.</p>
-<p>The first thing to observe is that on its own, allCosts is not a complete program: it doesn't do anything unless
+<p>The first thing to observe is that on its own, <code>allCosts</code> is not a complete program: it doesn't do anything unless
 it is called with actual parameters!
-Instead, it is a library procedure that may be used in many different contexts. Because it has a Web interaction,
-however, there is the danger that at the point of interaction, the rest of the computation --- that is, the
-computation that invoked allCosts --- will be lost. To prevent this, allCosts must consume an extra argument,
+Instead, it is a library procedure that may be used in many different contexts. Because it has a web interaction,
+however, there is the danger that at the point of interaction, the rest of the computation -- that is, the
+computation that invoked <code>allCosts</code> -- will be lost. To prevent this, <code>allCosts</code> must consume an extra argument,
 a continuation, that represents the rest of the pending computation. To signify this change in contract, we will use
-the convention of appending _k to the name of the procedure and k to name the continuation parameter.</p>
+the convention of appending <code>_k</code> to the name of the procedure and <code>k</code> to name the continuation parameter.</p>
 <p>Here is a first attempt to define <code>allCosts_k</code>.</p>
 <pre><code class="language-scala"> def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
    case Nil =&gt; 0
-   case x :: rest =&gt; webread_k(&quot;Cost of item &quot;+x+&quot;:&quot;, n =&gt; n+allCosts_k(rest,k))
+   case x :: rest =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, n =&gt; n + allCosts_k(rest,k))
 }
 </code></pre>
 <p>This may look reasonable, but it suffers from an immediate problem. When the recursive call occurs, if
-the list had two or more elements, then there will immediately be another Web interaction. Because this will
-terminate the program, the pending addition will be lost! Therefore, the addition of n has to move into the
+the list had two or more elements, then there will immediately be another web interaction. Because this will
+terminate the program, the pending addition will be lost! Therefore, the addition of <code>n</code> has to move into the
 continuation fed to <code>allCosts_k</code>. In code:</p>
-<pre><code class="language-scala mdoc">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
-  case Nil =&gt; 0
-  case x :: rest =&gt; webread_k(&quot;Cost of item &quot;+x+&quot;:&quot;, n =&gt; allCosts_k(rest,m =&gt; k(m+n)))
+<pre><code class="language-scala">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
+   case Nil =&gt; 0
+   case x :: rest =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, n =&gt; allCosts_k(rest, m =&gt; k(m + n)))
 }
 </code></pre>
-<p>That is, the receiver of the Web interaction is invoked with the cost of the first item. When allCosts_k is invoked
+<p>That is, the receiver of the web interaction is invoked with the cost of the first item. When <code>allCosts_k</code> is invoked
 recursively, it is applied to the rest of the list. Its receiver must therefore receive the tally of costs of the
 remaining items. That explains the pattern in the receiver.</p>
 <p>The only problem is, where does a continuation ever get a value? We create larger-and-larger continuation on
 each recursive invocation, but what ever invokes them?</p>
 <p>Here is the same problem from a different angle (that also answers the question above). Notice that each
-recursive invocation of allCosts_k takes place in the aftermath of a Web interaction. We have already seen how
-the act of Web interaction terminates the pending computation. Therefore, when the list empties, where
+recursive invocation of <code>allCosts_k</code> takes place in the aftermath of a web interaction. We have already seen how
+the act of web interaction terminates the pending computation. Therefore, when the list empties, where
 is the value 0 going? Presumably to the pending computation, but there is none. Any computation that
-would have been pending has now been recorded in k, which is expecting a value. Therefore, the correct
+would have been pending has now been recorded in <code>k</code>, which is expecting a value. Therefore, the correct
 transformation of this procedure is:</p>
-<pre><code class="language-scala mdoc">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
+<pre><code class="language-scala">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
    case Nil =&gt; k(0)
-   case x :: rest =&gt; webread_k(&quot;Cost of item &quot;+x+ &quot;:&quot;, n =&gt; allCosts_k(rest,m =&gt; k(m+n)))
+   case x :: rest =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, n =&gt; allCosts_k(rest, m =&gt; k(m + n)))
 }
 
-def testweb = allCosts_k(testData, m =&gt; webdisplay(&quot;Total sum: &quot;+m))
+def testweb = allCosts_k(testData, m =&gt; webdisplay(&quot;Total sum: &quot; + m))
 </code></pre>
-<p>Let's now consider the case that we have used a library function for the iteration in allCosts, namely
-the map function, which we replicate here.</p>
-<pre><code class="language-scala mdoc">def map[S,T](c: List[S], f: S=&gt;T) : List[T] = c match {
+<p>Let's now consider the case that we have used a library function for the iteration in <code>allCosts</code>, namely
+the <code>map</code> function, which we replicate here.</p>
+<pre><code class="language-scala">def map[S,T](c: List[S], f: S =&gt; T) : List[T] = c match {
   case Nil =&gt; Nil
-  case x :: rest =&gt; f(x) :: map(rest,f)
+  case x :: rest =&gt; f(x) :: map(rest, f)
 }
-/* Using map, we can rephrase allCosts as follows. */
-def allCosts2(itemList: List[String]) : Int = map(itemList, (x:String) =&gt; inputNumber(&quot;Cost of item &quot;+x+ &quot;:&quot;)).sum
 </code></pre>
-<p>What if we we want to use map in allCosts_k?</p>
+<p>Using <code>map</code>, we can rephrase <code>allCosts</code> as follows. </p>
+<pre><code class="language-scala">def allCosts2(itemList: List[String]) : Int =
+  map(itemList, (x: String) =&gt; inputNumber(&quot;Cost of item &quot; + x + &quot;:&quot;)).sum
+</code></pre>
+<p>What if we we want to use <code>map</code> in <code>allCosts_k</code>?</p>
 <p>Just using <code>webread_k</code> in place of <code>inputNumber</code> will not work, since <code>webread_k</code> expects an additional parameter.
-Obviously we must somehow modify the definition of map. But what can we pass as second parameter in the call
-to f?</p>
-<p><strong>Insight</strong>: We must perform the &quot;web transformation&quot; to map as well. We call the result <code>map_k</code>. Here is the code:</p>
-<pre><code class="language-scala mdoc">def map_k[S,T](c: List[S], f: (S,T=&gt;Nothing) =&gt; Nothing, k: List[T] =&gt; Nothing) : Nothing = c match {
+Obviously we must somehow modify the definition of <code>map</code>. But what can we pass as second parameter in the call
+to <code>f</code>?</p>
+<p><strong>Insight</strong>: We must perform the &quot;web transformation&quot; to <code>map</code> as well. We call the result <code>map_k</code>. Here is the code:</p>
+<pre><code class="language-scala">def map_k[S,T](c: List[S], f: (S,T =&gt; Nothing) =&gt; Nothing, k: List[T] =&gt; Nothing) : Nothing = c match {
    case Nil =&gt; k(Nil)
-   case x :: rest =&gt; f(x, t =&gt; map_k(rest, f, (tr:List[T]) =&gt; k(t::tr)))
+   case x :: rest =&gt; f(x, t =&gt; map_k(rest, f, (tr: List[T]) =&gt; k(t :: tr)))
 }
 
 def allCosts2_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing =
-   map_k(itemList, (x:String,k2:Int=&gt;Nothing) =&gt; webread_k(&quot;Cost of item &quot;+x+ &quot;:&quot;, k2),(l:List[Int]) =&gt; k(l.sum))
-
+   map_k(itemList, (x: String, k2: Int =&gt; Nothing) =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, k2), (l: List[Int]) =&gt; k(l.sum))
 </code></pre>
 <h2 id="implications-of-the-web-transformation"><a class="header" href="#implications-of-the-web-transformation">Implications of the &quot;web transformation&quot;:</a></h2>
 <ol>
 <li>
-<p>We have had to make decisions about the order of evaluation. That is, we had to choose whether
+<p>We had to make decisions about the order of evaluation. That is, we had to choose whether
 to evaluate the left or the right argument of addition first. This was an issue we had specified only
-implicitly earlier; if our evaluator had chosen to evaluate arguments right-to-left, the Web program at
+implicitly earlier; if our evaluator had chosen to evaluate arguments right-to-left, the web program at
 the beginning of this document would have asked for the second argument before the first! We have
 made this left-to-right order of evaluation explicit in our transformation.</p>
 </li>
 <li>
 <p>The transformation we use is global, namely it (potentially) affects all the procedures in the program
 by forcing them all to consume an extra continuation as an argument. We usually don't have a choice as
-to whether or not to transform a procedure. Suppose f invokes g and g invokes h, and we transform
-f to f_k but don't transform g or h. Now when f_k invokes g and g invokes h, suppose h consumes
-input from the Web. At this point the program terminates, but the last continuation procedure (necessary
-to resume the computation when the user supplies an input) is the one given to f_k, with all record of
-g and h lost.</p>
+to whether or not to transform a procedure. Suppose <code>f</code> invokes <code>g</code> and <code>g</code> invokes <code>h</code>, and we transform
+<code>f</code> to <code>f_k</code> but don't transform <code>g</code> or <code>h</code>. Now when <code>f_k</code> invokes <code>g</code> and <code>g</code> invokes <code>h</code>, suppose <code>h</code> consumes
+input from the web. At this point the program terminates, but the last continuation procedure (necessary
+to resume the computation when the user supplies an input) is the one given to <code>f_k</code>, with all record of
+<code>g</code> and <code>h</code> lost.</p>
 </li>
 <li>
 <p>This transformation sequentializes the program. Given a nested expression, it forces the programmer

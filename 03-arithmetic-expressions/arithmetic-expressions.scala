@@ -1,7 +1,5 @@
 import scala.language.implicitConversions
 
-object AEId {
-
 enum Exp:
   case Num(n: Int) extends Exp
   case Add(lhs: Exp, rhs: Exp) extends Exp
@@ -30,10 +28,6 @@ val testEnv = Map("x" -> 3, "y" -> 4)
 val exa = eval(test, testEnv)
 assert(eval(test, testEnv) == 14)
 
-}
-
-object Visitors {
-
 case class VisitorAE[T](num: Int => T, add: (T, T) => T)
 // an alternative to this design is to define num and add as abstract methods
 // and then create concrete visitors by subclassing or trait composition.
@@ -59,11 +53,6 @@ assert(exaVisitorAE == 6)
 
 val countVisitorAE = VisitorAE[Int]( _=>1, _+_)
 val printVisitorAE = VisitorAE[String](_.toString, "("+_+"+"+_+")")
-
-}
-
-object AEIdVisitor {
-import AEId._
 
 case class Visitor[T](num: Int => T, add: (T, T) => T, mul: (T, T) => T, id: String => T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
@@ -93,4 +82,3 @@ val evalVisitor = Visitor[Env=>Int](
    x => env =>
      env(x))
 
-}

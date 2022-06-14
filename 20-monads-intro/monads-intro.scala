@@ -30,11 +30,6 @@ def clientCodeOpBind =
     bindOption(gOp(x+"z"), (y:Boolean) =>
       hOp(!y)))
 
-    def clientCode =
-      f(27) bind ((x: String) =>
-      g(x+"z") bind  ((y: Boolean) =>
-      !y))
-
 def clientCode2Op =
   bindOption(fOp(27), ((x: String) =>
   bindOption(gOp(x+"z"), ((y: Boolean) =>
@@ -80,15 +75,6 @@ def clientCode2[M[_]](using m: Monad[M]) =
 extension [A, M[_]](m: M[A])(using mm: Monad[M])
   def map[B](f: A => B): M[B] = mm.bind(m, (x: A) => mm.unit(f(x)))
   def flatMap[B](f: A => M[B]): M[B] = mm.bind(m, f)
-
-def fOp(n: Int) : Option[String] = if (n < 100) Some("x") else None
-def gOp(x: String) : Option[Boolean] = Some(x == "x")
-def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
-
-def clientCode2Op(m: Monad[Option]) =
-  m.bind(fOp(27), (x: String) =>
-  m.bind(gOp(x+"z"), (y: Boolean) =>
-  m.unit(!y)))
 
 def clientCode2OpFor(using m: Monad[Option]) =
   for {
@@ -136,8 +122,6 @@ def fRead(n: Int) : Int => String  = sys.error("not implemented")
 def gRead(x: String) : Int => Boolean  = sys.error("not implemented")
 def hRead(b: Boolean) : Int => Int = sys.error("not implemented")
 
-  def clientCode = h(!g(f(27)+"z"))
-becomes :
 def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env)+"z")(env))(env)
 
 def clientCode2Read(using m: ReaderMonad[Int]) =

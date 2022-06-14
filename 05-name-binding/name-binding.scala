@@ -27,16 +27,6 @@ def makeEval(subst: (Exp,String,Num)=>Exp) : Exp=>Int = {
   eval
 }
 
-val subst1 : (Exp,String,Num) => Exp = (e,i,v) => e match {
-  case Num(n) => e
-  case Id(x) => if (x == i) v else e
-  case Add(l,r) => Add( subst1(l,i,v), subst1(r,i,v))
-  case Mul(l,r) => Mul( subst1(l,i,v), subst1(r,i,v))
-  case With(x,xdef,body) => With( if (x == i) v else x,
-                                    subst1(xdef,i,v),
-                                    subst1(body,i,v))
-  }
-
 val subst2 : (Exp,String,Num) => Exp = (e,i,v) => e match {
   case Num(n) => e
 
