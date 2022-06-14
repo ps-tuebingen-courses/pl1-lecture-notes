@@ -28,9 +28,9 @@ Even this "addition server" is difficult to implement. Because http is a statele
 every web program is basically forced to terminate after every request. This means that
 the Web developer must turn this application into three programs:
 
-  (a) The first program displays the first form.
-  (b) The second program consumes the form values from the first form, and generates the second form.
-  (c) The third program consumes the form values from the second form, computes the output, and generates the result.
+  1) The first program displays the first form.
+  2) The second program consumes the form values from the first form, and generates the second form.
+  3) The third program consumes the form values from the second form, computes the output, and generates the result.
 
 Because the value entered in the first form is needed by the third program to compute its output, this
 value must somehow be transmitted between from the first program to the third. This is typically done
@@ -102,7 +102,7 @@ submitted back to the server once the client presses the submit button.
 Here is code illustrating the idea. For simplicity we assume that all web forms return
 a single integer value.
 
-```scala mdoc
+```scala mdoc:silent
 val continuations = new scala.collection.mutable.HashMap[Symbol, Int => Nothing]()
 var nextIndex : Int = 0
 def getNextID = {
