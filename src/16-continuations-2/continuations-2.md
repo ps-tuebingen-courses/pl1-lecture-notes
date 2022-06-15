@@ -92,8 +92,8 @@ What about function definitions, such as ``x => x``? Since every lambda expressi
 we might be tempted to use the same rule as above, i.e.,
 
 ```scala
-k => k(x => x
-)```
+k => k(x => x)
+```
 
 However, the transformation is more subtle. A function application invokes the function on two arguments, whereas
 the original function ``x => x`` consumes only one. What is the second argument?
