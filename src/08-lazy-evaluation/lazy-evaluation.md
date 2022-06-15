@@ -118,7 +118,7 @@ What lazy evaluation means:
 
 The choice of evaluation strategy is a purely semantic change that requires no change to the syntax.
 For this reason we reuse the syntactic definitions of FAE, hence load
-(higher-order-functions.scala)[https://ps-tuebingen-courses.github.io/pl1-lecture-notes/07-higher-order-functions/higher-order-functions.scala]
+[higher-order-functions.scala](../07-higher-order-functions/higher-order-functions.scala)
 before executing this script.
 Before we discuss lazy evaluation, we will first discuss a related evaluation strategy, _call-by-name_.
 
