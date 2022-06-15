@@ -2865,21 +2865,16 @@ the constant is simply sent to the continuation.
 For instance, the CPS transformation of the number 3 is <code>k =&gt; k(3)</code>.</p>
 <p>What about function definitions, such as <code>x =&gt; x</code>? Since every lambda expression is also a constant,
 we might be tempted to use the same rule as above, i.e.,</p>
-<pre><code class="language-scala">k =&gt; k(x =&gt; x
-)```
-
-However, the transformation is more subtle. A function application invokes the function on two arguments, whereas
-the original function ``x =&gt; x`` consumes only one. What is the second argument?
-
-__Answer__: It is the _dynamic_ continuation, i.e., the continuation at the time of the function _application_
+<pre><code class="language-scala">k =&gt; k(x =&gt; x)
+</code></pre>
+<p>However, the transformation is more subtle. A function application invokes the function on two arguments, whereas
+the original function <code>x =&gt; x</code> consumes only one. What is the second argument?</p>
+<p><strong>Answer</strong>: It is the <em>dynamic</em> continuation, i.e., the continuation at the time of the function <em>application</em>
 (as opposed to its definition). We cannot ignore this continuation: It is the stack active at the point
 of function invocation, so we want to preserve it. This is in contrast to what we did with environments,
-and more in line with our treatment of the store.
-
-The transformed version hence reads:
-
-```scala
-k =&gt; k((x,dynk) =&gt; (k =&gt; k(x))(dynk))
+and more in line with our treatment of the store.</p>
+<p>The transformed version hence reads:</p>
+<pre><code class="language-scala">k =&gt; k((x,dynk) =&gt; (k =&gt; k(x))(dynk))
 </code></pre>
 <p>which is equivalent (when the inner application finally happens) to:</p>
 <pre><code class="language-scala">k =&gt; k((x,dynk) =&gt; dynk(x))
