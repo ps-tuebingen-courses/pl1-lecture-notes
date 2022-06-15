@@ -1277,7 +1277,9 @@ assert( evalWithEnv(test2,Map.empty) == NumV(8))
 <p>Read &quot;Why Functional Programming Matters&quot; by John Hughes available at http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html</p>
 <p>What lazy evaluation means:</p>
 <p>The choice of evaluation strategy is a purely semantic change that requires no change to the syntax.
-For this reason we reuse the syntactic definitions of FAE, hence <code>:load 07-fae.scala</code> before executing this script.
+For this reason we reuse the syntactic definitions of FAE, hence load
+(higher-order-functions.scala)[https://ps-tuebingen-courses.github.io/pl1-lecture-notes/07-higher-order-functions/higher-order-functions.scala]
+before executing this script.
 Before we discuss lazy evaluation, we will first discuss a related evaluation strategy, <em>call-by-name</em>.</p>
 <p><em>Call-by-name</em> can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument <code>a</code> in the
 <code>Ap</code> case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.</p>
