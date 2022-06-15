@@ -117,7 +117,9 @@ Read "Why Functional Programming Matters" by John Hughes available at http://www
 What lazy evaluation means:
 
 The choice of evaluation strategy is a purely semantic change that requires no change to the syntax.
-For this reason we reuse the syntactic definitions of FAE, hence ``:load 07-fae.scala`` before executing this script.
+For this reason we reuse the syntactic definitions of FAE, hence load
+(higher-order-functions.scala)[https://ps-tuebingen-courses.github.io/pl1-lecture-notes/07-higher-order-functions/higher-order-functions.scala]
+before executing this script.
 Before we discuss lazy evaluation, we will first discuss a related evaluation strategy, _call-by-name_.
 
 _Call-by-name_ can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument `a` in the
