@@ -20,9 +20,9 @@ In Racket (and the related programming language Scheme), a continuation is creat
 
 Let's write some programs using continuations (try this in the Racket read-eval-print loop).
 
-``(let/cc k (k 3))`` What is the continuation k here?
+``(let/cc k (k 3))`` What is the continuation `k` here?
 
-``(+ 1 (let/cc k (k 3)))`` What is the continuation k here?
+``(+ 1 (let/cc k (k 3)))`` What is the continuation `k` here?
 
 Using ``let/cc`` for exception handling: ``let/cc`` acts as the "try", invoking ``k`` as the "throw".
 
@@ -30,9 +30,8 @@ Using ``let/cc`` for exception handling: ``let/cc`` acts as the "try", invoking 
 (define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
 ```
 
-Here we simulate a very simple kind of exception handling mechanism
+Next we simulate a very simple kind of exception handling mechanism
 with first-class continuations.
-Try evaluating ``(h)`` in the read-eval-print-loop.
 
 ```racket
 (define exceptionhandler (lambda (msg) (display "unhandled exception")))
@@ -56,14 +55,18 @@ Try evaluating ``(h)`` in the read-eval-print-loop.
       (displayln (g 2)))))
 ```      
 
-Here we encode a simple debugger with support for breakpoints.
+Try evaluating ``(h)`` in the read-eval-print-loop.
 
-The breakpoint variable stores the continuation at the current breakpoint
+Now we encode a simple debugger with support for breakpoints.
+The `breakpoint `variable stores the continuation at the current breakpoint
 
 ```racket
 (define breakpoint false) ; initalized with a dummy value
+```
 
-; the repl variable stores the continuation that jumps to the read-eval-print loop
+The `repl` variable stores the continuation that jumps to the read-eval-print loop
+
+```racket
 (define repl false)       ; initialized with a dummy value
 ```
 
@@ -98,11 +101,11 @@ Here is a simple test program of our "debugger":
   (set! repl k))
 ```
 
-Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
+Let's now consider a more sophisticated usage of `let/cc`, namely to program a simple form
 of cooperative multi-threading, often called _co-routines_. A co-routine designates points
 in the routine where a switch to another routine should occur - a so-called yield point.
 
-With let/cc we can program co-routines within the language, without having any dedicated
+With `let/cc` we can program co-routines within the language, without having any dedicated
 built-in support for it:
 
 ```racket

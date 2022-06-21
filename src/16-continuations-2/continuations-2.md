@@ -131,7 +131,7 @@ enum Exp:
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
 
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)

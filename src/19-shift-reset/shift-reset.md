@@ -41,7 +41,7 @@ reset e  ; no invocation of shift inside e
 e 
 ```
 
-In class, we will look at a couple of examples of using shift and reset. Shift and reset are available
+In class, we will look at a couple of examples of using `shift` and `reset`. `shift` and `reset` are available
 in some variants of Scheme, including Racket, as an extension of Scala, as a library in OcaML, as well
 as various usually partial, incomplete or buggy simulations in other languages.
 
@@ -53,7 +53,7 @@ enum Exp:
   case Id(name: Symbol)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: Symbol, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
   case Shift(param: Symbol, body: Exp)
   case Reset(body: Exp)
 
@@ -77,27 +77,27 @@ def eval(e: Exp, env: Env, k: Value => Value) : Value = e match {
   case Num(n: Int) => k(NumV(n))
   case Id(x) => k(env(x))
   case Add(l,r) => {
-    eval(l,env, lv =>
-        eval(r,env, rv =>
-          (lv,rv) match {
-            case (NumV(v1), NumV(v2)) => k(NumV(v1+v2))
+    eval(l, env, lv =>
+        eval(r, env, rv =>
+          (lv, rv) match {
+            case (NumV(v1), NumV(v2)) => k(NumV(v1 + v2))
             case _ => sys.error("can only add numbers")
           }))
   }
   case f@Fun(param,body) => k(ClosureV(f, env))
 
-  case Ap(f,a) => eval(f,env, cl => cl match {
-            case ClosureV(f,closureEnv) => eval(a,env, av => eval(f.body, closureEnv + (f.param -> av),k))
-            case ContV(k2) => eval(a,env, av => k(k2(av))) // compose continuations k2 and k
+  case Ap(f,a) => eval(f, env, cl => cl match {
+            case ClosureV(f, closureEnv) => eval(a, env, av => eval(f.body, closureEnv + (f.param -> av), k))
+            case ContV(k2) => eval(a, env, av => k(k2(av))) // compose continuations k2 and k
             case _ => sys.error("can only apply functions")
   })
-  case Reset(e) => k(eval(e,env,x=>x)) // reset the continuation to the identity function
-  case Shift(param,body) => eval(body, env+(param -> ContV(k)), x=>x)  // wrap current continuation and reset continuation
+  case Reset(e) => k(eval(e, env, x => x)) // reset the continuation to the identity function
+  case Shift(param,body) => eval(body, env + (param -> ContV(k)), x = >x)  // wrap current continuation and reset continuation
 }
 ```
 
 References:
 
-Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.
-O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html
-O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial
+  1) Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.
+  2) O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html
+  3) O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial
