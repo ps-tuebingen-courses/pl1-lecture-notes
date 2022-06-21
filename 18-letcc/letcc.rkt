@@ -24,7 +24,6 @@
 
 (define breakpoint false) ; initalized with a dummy value
 
-; the repl variable stores the continuation that jumps to the read-eval-print loop
 (define repl false)       ; initialized with a dummy value
 
 (define (break) (let/cc k

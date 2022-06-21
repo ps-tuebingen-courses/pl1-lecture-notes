@@ -174,25 +174,25 @@ reset e  ; no invocation of shift inside e
  ; --&gt; 
 e 
 </code></pre>
-<p>In class, we will look at a couple of examples of using shift and reset. Shift and reset are available
+<p>In class, we will look at a couple of examples of using <code>shift</code> and <code>reset</code>. <code>shift</code> and <code>reset</code> are available
 in some variants of Scheme, including Racket, as an extension of Scala, as a library in OcaML, as well
 as various usually partial, incomplete or buggy simulations in other languages.</p>
 <p>A definitional interpreter for delimited continuations is pretty simple.</p>
 <pre><code class="language-scala">enum Exp:
   case Num(n: Int)
-  case Id(name: Symbol)
+  case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
-  case Fun(param: Symbol, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
-  case Shift(param: Symbol, body: Exp)
+  case Fun(param: String, body: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
+  case Shift(param: String, body: Exp)
   case Reset(body: Exp)
 
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
-  implicit def id2exp(s: Symbol): Exp = Id(s)
+  implicit def id2exp(s: String): Exp = Id(s)
 </code></pre>
 <pre><code class="language-scala">sealed abstract class Value
-type Env = Map[Symbol, Value]
+type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 case class ContV(f: Value =&gt; Value) extends Value
@@ -201,28 +201,30 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value) : Value = e match {
   case Num(n: Int) =&gt; k(NumV(n))
   case Id(x) =&gt; k(env(x))
   case Add(l,r) =&gt; {
-    eval(l,env, lv =&gt;
-        eval(r,env, rv =&gt;
-          (lv,rv) match {
-            case (NumV(v1), NumV(v2)) =&gt; k(NumV(v1+v2))
+    eval(l, env, lv =&gt;
+        eval(r, env, rv =&gt;
+          (lv, rv) match {
+            case (NumV(v1), NumV(v2)) =&gt; k(NumV(v1 + v2))
             case _ =&gt; sys.error(&quot;can only add numbers&quot;)
           }))
   }
   case f@Fun(param,body) =&gt; k(ClosureV(f, env))
 
-  case Ap(f,a) =&gt; eval(f,env, cl =&gt; cl match {
-            case ClosureV(f,closureEnv) =&gt; eval(a,env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av),k))
-            case ContV(k2) =&gt; eval(a,env, av =&gt; k(k2(av))) // compose continuations k2 and k
+  case Ap(f,a) =&gt; eval(f, env, cl =&gt; cl match {
+            case ClosureV(f, closureEnv) =&gt; eval(a, env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
+            case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av))) // compose continuations k2 and k
             case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   })
-  case Reset(e) =&gt; k(eval(e,env,x=&gt;x)) // reset the continuation to the identity function
-  case Shift(param,body) =&gt; eval(body, env+(param -&gt; ContV(k)), x=&gt;x)  // wrap current continuation and reset continuation
+  case Reset(e) =&gt; k(eval(e, env, x =&gt; x)) // reset the continuation to the identity function
+  case Shift(param,body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)  // wrap current continuation and reset continuation
 }
 </code></pre>
 <p>References:</p>
-<p>Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.
-O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html
-O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial</p>
+<ol>
+<li>Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.</li>
+<li>O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html</li>
+<li>O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial</li>
+</ol>
 
                     </main>
 

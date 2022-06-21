@@ -156,14 +156,13 @@ immense power in numerous contexts.</p>
 <p>In Racket (and the related programming language Scheme), a continuation is created with
 <code>let/cc</code>. It can be used to give the current continuation a name: <code>(let/cc k ... k ...)</code></p>
 <p>Let's write some programs using continuations (try this in the Racket read-eval-print loop).</p>
-<p><code>(let/cc k (k 3))</code> What is the continuation k here?</p>
-<p><code>(+ 1 (let/cc k (k 3)))</code> What is the continuation k here?</p>
+<p><code>(let/cc k (k 3))</code> What is the continuation <code>k</code> here?</p>
+<p><code>(+ 1 (let/cc k (k 3)))</code> What is the continuation <code>k</code> here?</p>
 <p>Using <code>let/cc</code> for exception handling: <code>let/cc</code> acts as the &quot;try&quot;, invoking <code>k</code> as the &quot;throw&quot;.</p>
 <pre><code class="language-racket">(define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
 </code></pre>
-<p>Here we simulate a very simple kind of exception handling mechanism
-with first-class continuations.
-Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
+<p>Next we simulate a very simple kind of exception handling mechanism
+with first-class continuations.</p>
 <pre><code class="language-racket">(define exceptionhandler (lambda (msg) (display &quot;unhandled exception&quot;)))
 
 (define (f n)
@@ -184,12 +183,13 @@ Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
       (displayln (g 0))
       (displayln (g 2)))))
 </code></pre>
-<p>Here we encode a simple debugger with support for breakpoints.</p>
-<p>The breakpoint variable stores the continuation at the current breakpoint</p>
+<p>Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
+<p>Now we encode a simple debugger with support for breakpoints.
+The <code>breakpoint </code>variable stores the continuation at the current breakpoint</p>
 <pre><code class="language-racket">(define breakpoint false) ; initalized with a dummy value
-
-; the repl variable stores the continuation that jumps to the read-eval-print loop
-(define repl false)       ; initialized with a dummy value
+</code></pre>
+<p>The <code>repl</code> variable stores the continuation that jumps to the read-eval-print loop</p>
+<pre><code class="language-racket">(define repl false)       ; initialized with a dummy value
 </code></pre>
 <p>The <code>break</code> function captures the current continuation, stores it, and jumps to the REPL:</p>
 <pre><code class="language-racket">(define (break) (let/cc k
@@ -213,10 +213,10 @@ Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
 (let/cc k
   (set! repl k))
 </code></pre>
-<p>Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
+<p>Let's now consider a more sophisticated usage of <code>let/cc</code>, namely to program a simple form
 of cooperative multi-threading, often called <em>co-routines</em>. A co-routine designates points
 in the routine where a switch to another routine should occur - a so-called yield point.</p>
-<p>With let/cc we can program co-routines within the language, without having any dedicated
+<p>With <code>let/cc</code> we can program co-routines within the language, without having any dedicated
 built-in support for it:</p>
 <pre><code class="language-racket">(define queue empty)
 

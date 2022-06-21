@@ -2897,7 +2897,7 @@ result, most importantly the fact that all function applications are tail calls.
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
 
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
@@ -2997,13 +2997,13 @@ the function which is called is known.</p>
 <p>The content of this chapter is available as a Scala file <a href="17-first-class-continuations/./first-class-continuations.scala">here.</a></p>
 <p>Today's goal is to formalize first-class continuations as illustrated by Scheme's let/cc construct. In the previous lecture we have
 learned why first class continuations are a powerful language construct. Today we learn the semantics of first-class continuations by
-extending our interpreter to support letcc. Here is the abstract syntax of the language extended with letcc:</p>
+extending our interpreter to support let/cc. Here is the abstract syntax of the language extended with <code>Letcc</code>:</p>
 <pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
   /** The abstract syntax of Letcc is as follows */
   case Letcc(param: String, body: Exp)
 
@@ -3011,11 +3011,11 @@ object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
 </code></pre>
-<p>But how do we implement letcc? How do we get hold of the rest of the computation of the object (=interpreted) program?
-One idea would be to CPS-transform the object program. Then we have the current continuation available and could store it in environments
-etc.
+<p>But how do we implement <code>Letcc</code>? How do we get hold of the rest of the computation of the object (=interpreted) program?
+One idea would be to CPS-transform the object program. Then we would have the current continuation available and could
+store it in environments etc.
 However, we want to give a direct semantics to first-class continuations, without first  transforming the object program.</p>
-<p><strong>Insight</strong>: If we would CPS-transform the interpreter, the continuation of the interpreter also represents, in some way, the continuation
+<p><strong>Insight</strong>: If we CPS-transform the interpreter, the continuation of the interpreter also represents, in some way, the continuation
 of the object program. The difference is that it represents what's left to do in the interpreter and not in the object program.
 However, what is left in the interpreter <em>is</em> what is left in the object program.</p>
 <p>Hence we are faced with two tasks:</p>
@@ -3038,16 +3038,16 @@ some other object language value:</p>
 of continuation application. We will instead do what Scheme and other languages also do: We overload the normal function applicaton
 construct and also use it for application of continuations.</p>
 <p>This means that we will need a case distinction in our interpreter whether the function argument is a closure or a continuation.
-Let's now study the interpreter for our new language. The branches for Num, Id, Add, and Fun are straightforward applications of the
+Let's now study the interpreter for our new language. The branches for <code>Num</code>, <code>Id</code>, <code>Add</code>, and <code>Fun</code> are straightforward applications of the
 CPS transformation technique we already know.</p>
 <pre><code class="language-scala">def eval(e: Exp, env: Env, k: Value =&gt; Nothing) : Nothing = e match {
   case Num(n: Int) =&gt; k(NumV(n))
   case Id(x) =&gt; k(env(x))
   case Add(l,r) =&gt; {
-    eval(l,env, lv =&gt;
-        eval(r,env, rv =&gt;
-          (lv,rv) match {
-            case (NumV(v1), NumV(v2)) =&gt; k(NumV(v1+v2))
+    eval(l, env, lv =&gt;
+        eval(r, env, rv =&gt;
+          (lv, rv) match {
+            case (NumV(v1), NumV(v2)) =&gt; k(NumV(v1 + v2))
             case _ =&gt; sys.error(&quot;can only add numbers&quot;)
           }))
   }
@@ -3057,30 +3057,30 @@ CPS transformation technique we already know.</p>
    * is a closure or a continuation. If it is a continuation, we ignore the
    * current continuation k and &quot;jump&quot; to the stored continuation by applying the
    * evaluated continuation argument to it. */
-  case Ap(f,a) =&gt; eval(f,env, cl =&gt; cl match {
-            case ClosureV(f,closureEnv) =&gt; eval(a,env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av),k))
-            case ContV(f) =&gt; eval(a,env, av =&gt; f(av))
+  case Ap(f,a) =&gt; eval(f, env, cl =&gt; cl match {
+            case ClosureV(f,closureEnv) =&gt; eval(a, env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
+            case ContV(f) =&gt; eval(a, env, av =&gt; f(av))
             case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   })
   /* Letcc is now surprisingly simple: We continue the evaluation in the body in an
    * extended environment in which param is bound to the current continuation k,
    * wrapped as a value using ContV. */
-  case Letcc(param,body) =&gt; eval(body, env+(param -&gt; ContV(k)), k)
+  case Letcc(param, body) =&gt; eval(body, env + (param -&gt; ContV(k)), k)
 }
 </code></pre>
-<p>To make it easier to experiment with the interpreter this code provides the right initialization to eval. We have to give eval a
-continuation which represents the rest of the computation after eval is done. A small technical problem arises due to our usage of
-the return type &quot;Nothing&quot; for continuations, to emphasize that they do not return: The only way to implement a value that has this
+<p>To make it easier to experiment with the interpreter this code provides the right initialization to <code>eval</code>. We have to give <code>eval</code> a
+continuation which represents the rest of the computation after <code>eval</code> is done. A small technical problem arises due to our usage of
+the return type <code>Nothing</code> for continuations, to emphasize that they do not return: The only way to implement a value that has this
 type is a function that does indeed not return. We do so by letting this function throw an exception. To keep track of the returned
 value we store it temporarily in a variable, catch the exception, and return the stored value.</p>
 <pre><code class="language-scala">def starteval(e: Exp) : Value = {
   var res : Value = null
   val s : Value =&gt; Nothing = (v) =&gt; { res = v; sys.error(&quot;program terminated&quot;) }
-  try { eval(e, Map.empty, s) } catch { case e:Throwable =&gt; () }
+  try { eval(e, Map.empty, s) } catch { case e: Throwable =&gt; () }
   res
 }
 </code></pre>
-<p>Finally a small test of Letcc.</p>
+<p>Finally a small test of ~Letcc`.</p>
 <pre><code class="language-scala">val testprog = Add(1, Letcc(&quot;k&quot;, Add(2, Ap(&quot;k&quot;, 3))))
 
 assert(starteval(testprog) == NumV(4))
@@ -3099,14 +3099,13 @@ immense power in numerous contexts.</p>
 <p>In Racket (and the related programming language Scheme), a continuation is created with
 <code>let/cc</code>. It can be used to give the current continuation a name: <code>(let/cc k ... k ...)</code></p>
 <p>Let's write some programs using continuations (try this in the Racket read-eval-print loop).</p>
-<p><code>(let/cc k (k 3))</code> What is the continuation k here?</p>
-<p><code>(+ 1 (let/cc k (k 3)))</code> What is the continuation k here?</p>
+<p><code>(let/cc k (k 3))</code> What is the continuation <code>k</code> here?</p>
+<p><code>(+ 1 (let/cc k (k 3)))</code> What is the continuation <code>k</code> here?</p>
 <p>Using <code>let/cc</code> for exception handling: <code>let/cc</code> acts as the &quot;try&quot;, invoking <code>k</code> as the &quot;throw&quot;.</p>
 <pre><code class="language-racket">(define (f n) (+ 10 (* 5 (let/cc k (/ 1 (if (zero? n) (k 1) n))))))
 </code></pre>
-<p>Here we simulate a very simple kind of exception handling mechanism
-with first-class continuations.
-Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
+<p>Next we simulate a very simple kind of exception handling mechanism
+with first-class continuations.</p>
 <pre><code class="language-racket">(define exceptionhandler (lambda (msg) (display &quot;unhandled exception&quot;)))
 
 (define (f n)
@@ -3127,12 +3126,13 @@ Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
       (displayln (g 0))
       (displayln (g 2)))))
 </code></pre>
-<p>Here we encode a simple debugger with support for breakpoints.</p>
-<p>The breakpoint variable stores the continuation at the current breakpoint</p>
+<p>Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
+<p>Now we encode a simple debugger with support for breakpoints.
+The <code>breakpoint </code>variable stores the continuation at the current breakpoint</p>
 <pre><code class="language-racket">(define breakpoint false) ; initalized with a dummy value
-
-; the repl variable stores the continuation that jumps to the read-eval-print loop
-(define repl false)       ; initialized with a dummy value
+</code></pre>
+<p>The <code>repl</code> variable stores the continuation that jumps to the read-eval-print loop</p>
+<pre><code class="language-racket">(define repl false)       ; initialized with a dummy value
 </code></pre>
 <p>The <code>break</code> function captures the current continuation, stores it, and jumps to the REPL:</p>
 <pre><code class="language-racket">(define (break) (let/cc k
@@ -3156,10 +3156,10 @@ Try evaluating <code>(h)</code> in the read-eval-print-loop.</p>
 (let/cc k
   (set! repl k))
 </code></pre>
-<p>Let's now consider a more sophisticated usage of let/cc, namely to program a simple form
+<p>Let's now consider a more sophisticated usage of <code>let/cc</code>, namely to program a simple form
 of cooperative multi-threading, often called <em>co-routines</em>. A co-routine designates points
 in the routine where a switch to another routine should occur - a so-called yield point.</p>
-<p>With let/cc we can program co-routines within the language, without having any dedicated
+<p>With <code>let/cc</code> we can program co-routines within the language, without having any dedicated
 built-in support for it:</p>
 <pre><code class="language-racket">(define queue empty)
 
@@ -3255,25 +3255,25 @@ reset e  ; no invocation of shift inside e
  ; --&gt; 
 e 
 </code></pre>
-<p>In class, we will look at a couple of examples of using shift and reset. Shift and reset are available
+<p>In class, we will look at a couple of examples of using <code>shift</code> and <code>reset</code>. <code>shift</code> and <code>reset</code> are available
 in some variants of Scheme, including Racket, as an extension of Scala, as a library in OcaML, as well
 as various usually partial, incomplete or buggy simulations in other languages.</p>
 <p>A definitional interpreter for delimited continuations is pretty simple.</p>
 <pre><code class="language-scala">enum Exp:
   case Num(n: Int)
-  case Id(name: Symbol)
+  case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
-  case Fun(param: Symbol, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
-  case Shift(param: Symbol, body: Exp)
+  case Fun(param: String, body: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
+  case Shift(param: String, body: Exp)
   case Reset(body: Exp)
 
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
-  implicit def id2exp(s: Symbol): Exp = Id(s)
+  implicit def id2exp(s: String): Exp = Id(s)
 </code></pre>
 <pre><code class="language-scala">sealed abstract class Value
-type Env = Map[Symbol, Value]
+type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 case class ContV(f: Value =&gt; Value) extends Value
@@ -3282,28 +3282,30 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value) : Value = e match {
   case Num(n: Int) =&gt; k(NumV(n))
   case Id(x) =&gt; k(env(x))
   case Add(l,r) =&gt; {
-    eval(l,env, lv =&gt;
-        eval(r,env, rv =&gt;
-          (lv,rv) match {
-            case (NumV(v1), NumV(v2)) =&gt; k(NumV(v1+v2))
+    eval(l, env, lv =&gt;
+        eval(r, env, rv =&gt;
+          (lv, rv) match {
+            case (NumV(v1), NumV(v2)) =&gt; k(NumV(v1 + v2))
             case _ =&gt; sys.error(&quot;can only add numbers&quot;)
           }))
   }
   case f@Fun(param,body) =&gt; k(ClosureV(f, env))
 
-  case Ap(f,a) =&gt; eval(f,env, cl =&gt; cl match {
-            case ClosureV(f,closureEnv) =&gt; eval(a,env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av),k))
-            case ContV(k2) =&gt; eval(a,env, av =&gt; k(k2(av))) // compose continuations k2 and k
+  case Ap(f,a) =&gt; eval(f, env, cl =&gt; cl match {
+            case ClosureV(f, closureEnv) =&gt; eval(a, env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
+            case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av))) // compose continuations k2 and k
             case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   })
-  case Reset(e) =&gt; k(eval(e,env,x=&gt;x)) // reset the continuation to the identity function
-  case Shift(param,body) =&gt; eval(body, env+(param -&gt; ContV(k)), x=&gt;x)  // wrap current continuation and reset continuation
+  case Reset(e) =&gt; k(eval(e, env, x =&gt; x)) // reset the continuation to the identity function
+  case Shift(param,body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)  // wrap current continuation and reset continuation
 }
 </code></pre>
 <p>References:</p>
-<p>Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.
-O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html
-O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial</p>
+<ol>
+<li>Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.</li>
+<li>O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html</li>
+<li>O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial</li>
+</ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="introduction-to-monads"><a class="header" href="#introduction-to-monads">Introduction to Monads</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="20-monads-intro/./monads-intro.scala">here.</a></p>
 <p>We have seen various patterns of function composition:</p>

@@ -5,7 +5,7 @@ enum Exp:
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
   /** The abstract syntax of Letcc is as follows */
   case Letcc(param: String, body: Exp)
 
@@ -26,10 +26,10 @@ def eval(e: Exp, env: Env, k: Value => Nothing) : Nothing = e match {
   case Num(n: Int) => k(NumV(n))
   case Id(x) => k(env(x))
   case Add(l,r) => {
-    eval(l,env, lv =>
-        eval(r,env, rv =>
-          (lv,rv) match {
-            case (NumV(v1), NumV(v2)) => k(NumV(v1+v2))
+    eval(l, env, lv =>
+        eval(r, env, rv =>
+          (lv, rv) match {
+            case (NumV(v1), NumV(v2)) => k(NumV(v1 + v2))
             case _ => sys.error("can only add numbers")
           }))
   }
@@ -39,21 +39,21 @@ def eval(e: Exp, env: Env, k: Value => Nothing) : Nothing = e match {
    * is a closure or a continuation. If it is a continuation, we ignore the
    * current continuation k and "jump" to the stored continuation by applying the
    * evaluated continuation argument to it. */
-  case Ap(f,a) => eval(f,env, cl => cl match {
-            case ClosureV(f,closureEnv) => eval(a,env, av => eval(f.body, closureEnv + (f.param -> av),k))
-            case ContV(f) => eval(a,env, av => f(av))
+  case Ap(f,a) => eval(f, env, cl => cl match {
+            case ClosureV(f,closureEnv) => eval(a, env, av => eval(f.body, closureEnv + (f.param -> av), k))
+            case ContV(f) => eval(a, env, av => f(av))
             case _ => sys.error("can only apply functions")
   })
   /* Letcc is now surprisingly simple: We continue the evaluation in the body in an
    * extended environment in which param is bound to the current continuation k,
    * wrapped as a value using ContV. */
-  case Letcc(param,body) => eval(body, env+(param -> ContV(k)), k)
+  case Letcc(param, body) => eval(body, env + (param -> ContV(k)), k)
 }
 
 def starteval(e: Exp) : Value = {
   var res : Value = null
   val s : Value => Nothing = (v) => { res = v; sys.error("program terminated") }
-  try { eval(e, Map.empty, s) } catch { case e:Throwable => () }
+  try { eval(e, Map.empty, s) } catch { case e: Throwable => () }
   res
 }
 
