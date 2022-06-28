@@ -146,80 +146,81 @@
 <p>The content of this chapter is available as a Scala file <a href="./monads-intro.scala">here.</a></p>
 <p>We have seen various patterns of function composition:</p>
 <ul>
-<li>The environment passing style, in which an environment is passed down in recursive calls</li>
-<li>The store passing style, in which a store is threaded in and out of every computation</li>
-<li>The continuation passing style, in which every function call is a tail call.#</li>
+<li>The environment passing style, in which an environment is passed down in recursive calls.</li>
+<li>The store passing style, in which a store is threaded in and out of every computation.</li>
+<li>The continuation passing style, in which every function call is a tail call.</li>
 </ul>
 <p>Monads are way to abstract over such patterns of function composition.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
 <p>Using monads, we can write code which can be parameterized to be in
 one of the styles above (or many others).
 Here is another common pattern of function composition. Suppose we have the following API of (nonsensical) functions:</p>
-<pre><code class="language-scala">def f(n: Int) : String = &quot;x&quot;
-def g(x: String) : Boolean = x == &quot;x&quot;
-def h(b: Boolean) : Int = if (b) 27 else sys.error(&quot;error&quot;)
+<pre><code class="language-scala">def f(n: Int): String = &quot;x&quot;
+def g(x: String): Boolean = x == &quot;x&quot;
+def h(b: Boolean): Int = if (b) 27 else sys.error(&quot;error&quot;)
 
-def clientCode = h(!g(f(27)+&quot;z&quot;))
+def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
 <p>Now suppose that these functions can possibly fail (say, because they involve remote communication). A common way to deal with such
-failures is to use the Option datatype:</p>
-<pre><code class="language-scala">def fOp(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
-def gOp(x: String) : Option[Boolean] = Some(x == &quot;x&quot;)
-def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
+failures is to use the <code>Option</code> datatype:</p>
+<pre><code class="language-scala">def fOp(n: Int): Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
+def gOp(x: String): Option[Boolean] = Some(x == &quot;x&quot;)
+def hOp(b: Boolean): Option[Int] = if (b) Some(27) else None
 </code></pre>
-<p>However, now the clientCode must be changed rather dramatically:</p>
+<p>However, now the <code>clientCode</code> must be changed rather dramatically:</p>
 <pre><code class="language-scala">def clientCodeOp =
   fOp(27) match {
-    case Some(x) =&gt; gOp(x+&quot;z&quot;) match {
-            case Some(y) =&gt; hOp(!y)
-            case None =&gt; None
+    case Some(x) =&gt; gOp(x + &quot;z&quot;) match {
+        case Some(y) =&gt; hOp(!y)
+        case None =&gt; None
       }
     case None =&gt; None
   }
 </code></pre>
-<p>We see a kind of pattern in this code. We have a value of type <code>Option[A]</code>, but the next function we need to call requires an A and
+<p>We see a kind of pattern in this code. We have a value of type <code>Option[A]</code>, but the next function we need to call requires an <code>A</code> and
 produces an <code>Option[B]</code>. If the <code>Option[A]</code> value is <code>None</code>, then the whole computation produces <code>None</code>. If it is <code>Some(x)</code>
 instead, we pass <code>x</code> to the function.</p>
 <p>We can capture this pattern in the form of a function:</p>
-<pre><code class="language-scala">def bindOption[A,B](a: Option[A], f: A =&gt; Option[B]) : Option[B] = a match {
+<pre><code class="language-scala">def bindOption[A,B](a: Option[A], f: A =&gt; Option[B]): Option[B] = a match {
   case Some(x) =&gt; f(x)
   case None =&gt; None
 }
 </code></pre>
 <p>Using <code>bindOption</code>, we can rewrite the code above as follows:</p>
 <pre><code class="language-scala">def clientCodeOpBind =
-  bindOption(fOp(27), (x:String) =&gt;
-    bindOption(gOp(x+&quot;z&quot;), (y:Boolean) =&gt;
+  bindOption(fOp(27), (x: String) =&gt;
+    bindOption(gOp(x + &quot;z&quot;), (y: Boolean) =&gt;
       hOp(!y)))
 </code></pre>
-<p>Now suppose that our original client code was not <code>h(!g(f(27)+&quot;z&quot;))</code>
-but instead <code>!g(f(27)+&quot;z&quot;)</code>. How can we express this with bind? This
+<p>Now suppose that our original client code was not <code>h(!g(f(27) + &quot;z&quot;))</code>
+but instead <code>!g(f(27) + &quot;z&quot;)</code>. How can we express this with <code>bindOption</code>? This
 thing does not type check:</p>
-<pre><code class="language-scala">    def clientCode =
-      f(27) bind ((x: String) =&gt;
-      g(x+&quot;z&quot;) bind  ((y: Boolean) =&gt;
+<pre><code class="language-scala">def clientCode =
+  bindOption(f(27), (x: String) =&gt;
+    bindOption(g(x + &quot;z&quot;), (y: Boolean) =&gt;
       !y))
 </code></pre>
 <p>One way to fix the situation is to insert a call to <code>Some</code>, like so:</p>
 <pre><code class="language-scala">def clientCode2Op =
-  bindOption(fOp(27), ((x: String) =&gt;
-  bindOption(gOp(x+&quot;z&quot;), ((y: Boolean) =&gt;
-  Some(!y)))))
+  bindOption(fOp(27), (x: String) =&gt;
+    bindOption(gOp(x + &quot;z&quot;), (y: Boolean) =&gt;
+      Some(!y)))
 </code></pre>
 <p>While this works, it is incompatible with our original goal of abstracting over the function composition pattern, because the
-Some constructor exposes what kind of pattern we are currently dealing with. Hence let's abstract over it by adding a second
+<code>Some</code> constructor exposes what kind of pattern we are currently dealing with. Hence let's abstract over it by adding a second
 function <code>unit</code> to our function composition interface:</p>
-<pre><code class="language-scala">def unit[A](x: A) : Option[A] = Some(x)
+<pre><code class="language-scala">def unit[A](x: A): Option[A] = Some(x)
 
 def clientCode2OpUnit =
-  bindOption(fOp(27), ((x: String) =&gt;
-  bindOption(gOp(x+&quot;z&quot;), ((y: Boolean) =&gt;
-  unit(!y)))))
+  bindOption(fOp(27), (x: String) =&gt;
+    bindOption(gOp(x + &quot;z&quot;), (y: Boolean) =&gt;
+      unit(!y)))
 </code></pre>
-<p>This looks better, but the types of unit and bind still reveal that we are dealing with the <code>Option</code> function composition pattern.
-Let's abstract over the Option type constructor by turning the type constructor into a parameter. The resulting triple
-(type constructor, unit function, bind function) is called a <em>monad</em>. Certain conditions (the &quot;monad laws&quot;) on <code>unit</code> and <code>bind</code> also
-need to hold to make it a true monad, but we'll defer a discussion of these conditions until later.</p>
+<p>This looks better, but the types of <code>unit</code> and <code>bindOption</code> (and also the name, but we can of course change that) still
+reveal that we are dealing with the <code>Option</code> function composition pattern. Let's abstract over the <code>Option</code> type constructor
+by turning the type constructor into a parameter. The resulting triple (type constructor, <code>unit</code> function, <code>bind</code> function) is
+called a <em>monad</em>. Certain conditions (the &quot;monad laws&quot;) on <code>unit</code> and <code>bind</code> also need to hold to make it a true monad,
+but we'll defer a discussion of these conditions until later.</p>
 <h2 id="the-monad-interface"><a class="header" href="#the-monad-interface">The Monad Interface</a></h2>
 <p>So here it is: The Monad interface.</p>
 <pre><code class="language-scala">trait Monad[M[_]] {
@@ -227,40 +228,40 @@ need to hold to make it a true monad, but we'll defer a discussion of these cond
   def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B]
   // The &quot;monad laws&quot;:
   // 1) &quot;unit&quot; acts as a kind of neutral element of &quot;bind&quot;, that is:
-  //    1a) bind(unit(x),f) == f(x) and
+  //    1a) bind(unit(x), f) == f(x) and
   //    1b) bind(x, y =&gt; unit(y)) == x
   // 2) Bind enjoys an associative property
-  //     bind(bind(x,f),g) == bind(x, y =&gt; bind(f(y),g))
+  //     bind(bind(x, f), g) == bind(x, y =&gt; bind(f(y), g))
 }
 </code></pre>
-<p>Using this interface, we can now make clientCode depend only on this interface, but no longer on the Option type:</p>
+<p>Using this interface, we can now make <code>clientCode</code> depend only on this interface, but no longer on the <code>Option</code> type:</p>
 <pre><code class="language-scala">def clientCode2Op(m: Monad[Option]) =
   m.bind(fOp(27), (x: String) =&gt;
-  m.bind(gOp(x+&quot;z&quot;), (y: Boolean) =&gt;
-  m.unit(!y)))
+    m.bind(gOp(x + &quot;z&quot;), (y: Boolean) =&gt;
+      m.unit(!y)))
 </code></pre>
 <p>If the API is parametric in the monad, we can make the client code fully parametric, too. We model the monad object as an
 implicit parameter to save the work of passing on the monad in every call.</p>
-<pre><code class="language-scala">def fM[M[_]](n: Int)(using m: Monad[M]) : M[String] = sys.error(&quot;not implemented&quot;)
-def gM[M[_]](x: String)(using m: Monad[M]) : M[Boolean] = sys.error(&quot;not implemented&quot;)
-def hM[M[_]](b: Boolean)(using m: Monad[M]) : M[Int] = sys.error(&quot;not implemented&quot;)
+<pre><code class="language-scala">def fM[M[_]](n: Int)(using m: Monad[M]): M[String] = sys.error(&quot;not implemented&quot;)
+def gM[M[_]](x: String)(using m: Monad[M]): M[Boolean] = sys.error(&quot;not implemented&quot;)
+def hM[M[_]](b: Boolean)(using m: Monad[M]): M[Int] = sys.error(&quot;not implemented&quot;)
 
 def clientCode2[M[_]](using m: Monad[M]) =
   m.bind(fM(27), (x: String) =&gt;
-  m.bind(gM(x+&quot;z&quot;), (y: Boolean) =&gt;
-  m.unit(!y)))
+    m.bind(gM(x + &quot;z&quot;), (y: Boolean) =&gt;
+      m.unit(!y)))
 </code></pre>
 <h2 id="for-comprehension-syntax"><a class="header" href="#for-comprehension-syntax">For-Comprehension Syntax</a></h2>
-<p>All these nested calls to bind can make the code hard to read. Luckily, there is a notation called &quot;monad comprehension&quot; to make
-monadic code look simpler. Monad comprehensions are directly supported in Haskell and some other languages. In Scala, we can
-piggy-back on the &quot;For comprehension&quot; syntax instead.
-A &quot;for comprehension&quot;  is usually used for lists and other collections. For instance:</p>
-<pre><code class="language-scala">  val l = List(List(1,2), List(3,4))
-  assert( (for { x &lt;- l; y &lt;- x } yield y+1) == List(2,3,4,5))
+<p>All these nested calls to <code>bind</code> can make the code hard to read. Luckily, there is a notation called &quot;monad-comprehension&quot; to make
+monadic code look simpler. Monad-comprehensions are directly supported in Haskell and some other languages. In Scala, we can
+piggy-back on the &quot;for-comprehension&quot; syntax instead.
+A &quot;for-comprehension&quot; is usually used for lists and other collections. For instance:</p>
+<pre><code class="language-scala">val l = List(List(1,2), List(3,4))
+assert((for { x &lt;- l; y &lt;- x } yield y + 1) == List(2,3,4,5))
 </code></pre>
-<p>The Scala compiler desugars the for-comprehension above into calls of the standard map and flatMap functions. That is, the above
-for comprehension is equivalent to:</p>
-<pre><code class="language-scala">  assert(l.flatMap(x =&gt; x.map(y =&gt; y+1)) == List(2,3,4,5))
+<p>The Scala compiler desugars the for-comprehension above into calls of the standard <code>map</code> and `flatMap`` functions. That is, the above
+for-comprehension is equivalent to:</p>
+<pre><code class="language-scala">assert(l.flatMap(x =&gt; x.map(y =&gt; y + 1)) == List(2,3,4,5))
 </code></pre>
 <p>We will make use of for-comprehension syntax by supporting both <code>flatMap</code> (which is like <code>bind</code>) and <code>map</code> (which is like <code>fmap</code>).
 We support these functions by an implicit conversion to an object that supports these functions as follows:</p>
@@ -269,28 +270,28 @@ We support these functions by an implicit conversion to an object that supports 
   def flatMap[B](f: A =&gt; M[B]): M[B] = mm.bind(m, f)
 </code></pre>
 <p>Using the new support for for-comprehension syntax, we can rewrite our client code as follows: Given the API from above,</p>
-<pre><code class="language-scala">def fOp(n: Int) : Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
-def gOp(x: String) : Option[Boolean] = Some(x == &quot;x&quot;)
-def hOp(b: Boolean) : Option[Int] = if (b) Some(27) else None
+<pre><code class="language-scala">def fOp(n: Int): Option[String] = if (n &lt; 100) Some(&quot;x&quot;) else None
+def gOp(x: String): Option[Boolean] = Some(x == &quot;x&quot;)
+def hOp(b: Boolean): Option[Int] = if (b) Some(27) else None
 </code></pre>
 <p>We can now rewrite this</p>
 <pre><code class="language-scala">def clientCode2Op(m: Monad[Option]) =
   m.bind(fOp(27), (x: String) =&gt;
-  m.bind(gOp(x+&quot;z&quot;), (y: Boolean) =&gt;
-  m.unit(!y)))
+    m.bind(gOp(x + &quot;z&quot;), (y: Boolean) =&gt;
+      m.unit(!y)))
 </code></pre>
 <p>to this:</p>
 <pre><code class="language-scala">def clientCode2OpFor(using m: Monad[Option]) =
   for {
     x &lt;- fOp(27)
-    y &lt;- gOp(x+&quot;z&quot;)
+    y &lt;- gOp(x + &quot;z&quot;)
   } yield !y
 </code></pre>
 <h2 id="the-option-monad"><a class="header" href="#the-option-monad">The Option Monad</a></h2>
-<p>Let's look at some concrete monads now. We have of course already seen one particular Monad: The Option monad. This monad is also
-sometimes called the Maybe monad.</p>
+<p>Let's look at some concrete monads now. We have of course already seen one particular monad: The <code>Option</code> monad. This monad is also
+sometimes called the <code>Maybe</code> monad.</p>
 <pre><code class="language-scala">object OptionMonad extends Monad[Option] {
-  override def bind[A,B](a: Option[A], f: A =&gt; Option[B]) : Option[B] =
+  override def bind[A,B](a: Option[A], f: A =&gt; Option[B]): Option[B] =
     a match {
       case Some(x) =&gt; f(x)
       case None =&gt; None
@@ -298,188 +299,200 @@ sometimes called the Maybe monad.</p>
   override def unit[A](a: A) = Some(a)
 }
 </code></pre>
-<p>We can now parameterize clientCode with OptionMonad.</p>
-<pre><code class="language-scala">def v : Option[Boolean] = clientCode2Op(OptionMonad)
+<p>We can now parameterize <code>clientCode</code> with <code>OptionMonad</code>.</p>
+<pre><code class="language-scala">def v: Option[Boolean] = clientCode2Op(OptionMonad)
 </code></pre>
 <p>There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
 enough to be useful for many different monads. Here are some of these functions:</p>
 <p><code>fmap</code> turns every function between <code>A</code> and <code>B</code> into a function between <code>M[A]</code> and <code>M[B]</code>:</p>
-<pre><code class="language-scala">def fmap[M[_],A,B](f: A =&gt; B)(using m: Monad[M]): M[A] =&gt; M[B] = a =&gt; m.bind(a,(x:A) =&gt; m.unit(f(x)))
+<pre><code class="language-scala">def fmap[M[_],A,B](f: A =&gt; B)(using m: Monad[M]): M[A] =&gt; M[B] =
+  a =&gt; m.bind(a, (x: A) =&gt; m.unit(f(x)))
 </code></pre>
 <p>In fancy category theory terms, we can say that every monad is a functor.</p>
 <p><code>sequence</code> composes a list of monadic values into a single monadic value which is a list.</p>
-<pre><code class="language-scala">def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]) : M[List[A]] = l match {
+<pre><code class="language-scala">def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]): M[List[A]] = l match {
   case x :: xs =&gt; m.bind(x, (y: A) =&gt;
-    m.bind(sequence(xs), (ys : List[A]) =&gt;
+    m.bind(sequence(xs), (ys: List[A]) =&gt;
       m.unit(y :: ys)))
   case Nil =&gt; m.unit(List.empty)
 }
 </code></pre>
 <p><code>mapM</code> composes <code>sequence</code> and the standard <code>map</code> function:</p>
-<pre><code class="language-scala">def mapM[M[_],A,B](f : A =&gt; M[B], l: List[A])(using m: Monad[M]) : M[List[B]] =
+<pre><code class="language-scala">def mapM[M[_],A,B](f: A =&gt; M[B], l: List[A])(using m: Monad[M]): M[List[B]] =
   sequence(l.map(f))
 </code></pre>
 <p><code>join</code> is another useful function to unwrap a layer of monads.
-In category theory, monads are defined via <code>unit</code> (denoted by the greek letter <code>η</code>)
-and <code>join (μ)</code> instead of <code>unit</code> and <code>bind</code>. There are additional &quot;naturality&quot; and
+In category theory, monads are defined via <code>unit</code> (denoted by the greek letter η)
+and <code>join</code> (denoted μ) instead of <code>unit</code> and <code>bind</code>. There are additional &quot;naturality&quot; and
 &quot;coherence conditions&quot; that make the category theory definition equivalent to ours.</p>
-<pre><code class="language-scala">def join[M[_],A](x : M[M[A]])(using m: Monad[M]) : M[A] = m.bind(x, (y : M[A]) =&gt; y)
+<pre><code class="language-scala">def join[M[_],A](x: M[M[A]])(using m: Monad[M]): M[A] = m.bind(x, (y: M[A]) =&gt; y)
 </code></pre>
 <p>Here are some other common monads:</p>
 <h2 id="the-identity-monad"><a class="header" href="#the-identity-monad">The Identity Monad</a></h2>
 <p>The <em>identity monad</em> is the simplest monad which corresponds to ordinary function application. If we parameterize monadic code
-with the Identity monad, we get the behavior of the original non-monadic code.</p>
-<pre><code class="language-scala">type Id[X] = X      
+with the identity monad, we get the behavior of the original non-monadic code.</p>
+<pre><code class="language-scala">type Id[X] = X
 object IdentityMonad extends Monad[Id] {
-  def bind[A,B](x: A, f: A =&gt; B) : B = f(x)
-  def unit[A](a: A) : A = a
+  def bind[A,B](x: A, f: A =&gt; B): B = f(x)
+  def unit[A](a: A): A = a
 }
 </code></pre>
 <h2 id="the-reader-monad"><a class="header" href="#the-reader-monad">The Reader Monad</a></h2>
 <p>This is the <em>reader monad</em>, a.k.a. <em>environment monad</em>. It captures the essence of &quot;environment passing style&quot;.</p>
-<p>The type parameter <code>({type M[A] = R =&gt; A})#M</code> looks complicated, but
+<p>The type parameter <code>[A] =&gt;&gt; R =&gt; A</code> may look a bit complicated, but
 it is merely &quot;currying&quot; the function arrow type constructor.</p>
 <p>The type constructor which is created here is <code>M[A] = R =&gt; A</code></p>
 <pre><code class="language-scala">trait ReaderMonad[R] extends Monad[[A] =&gt;&gt; R =&gt; A] {
-  override def bind[A,B](x: R =&gt; A, f: A =&gt; R =&gt; B) : R =&gt; B = r =&gt; f(x(r))(r) // pass the &quot;environment&quot; r into both computations
-  override def unit[A](a: A) : R =&gt; A = (_) =&gt; a
+  // pass the &quot;environment&quot; r into both computations
+  override def bind[A,B](x: R =&gt; A, f: A =&gt; R =&gt; B): R =&gt; B = r =&gt; f(x(r))(r)
+  override def unit[A](a: A): R =&gt; A = (_) =&gt; a
 }
 </code></pre>
 <p><strong>Example</strong>: Suppose that all functions in our API above depend on some kind of environment, say, the current configuration.
 For simplicitly, let's assume  that the current configuration is just an <code>Int</code>, hence all functions have a return type of
 the form <code>Int =&gt; A</code>:</p>
-<pre><code class="language-scala">def fRead(n: Int) : Int =&gt; String  = sys.error(&quot;not implemented&quot;)
-def gRead(x: String) : Int =&gt; Boolean  = sys.error(&quot;not implemented&quot;)
-def hRead(b: Boolean) : Int =&gt; Int = sys.error(&quot;not implemented&quot;)
+<pre><code class="language-scala">def fRead(n: Int): Int =&gt; String = sys.error(&quot;not implemented&quot;)
+def gRead(x: String): Int =&gt; Boolean = sys.error(&quot;not implemented&quot;)
+def hRead(b: Boolean): Int =&gt; Int = sys.error(&quot;not implemented&quot;)
 </code></pre>
 <p>Our original code,</p>
-<pre><code class="language-scala">  def clientCode = h(!g(f(27)+&quot;z&quot;))
+<pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
 <p>becomes :</p>
-<pre><code class="language-scala">def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env)+&quot;z&quot;)(env))(env)
+<pre><code class="language-scala">def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env) + &quot;z&quot;)(env))(env)
 </code></pre>
 <p>In monadic form, the explicit handling of the environment disappears again:</p>
 <pre><code class="language-scala">def clientCode2Read(using m: ReaderMonad[Int]) =
-  m.bind(fRead(27), ((x: String) =&gt;
-  m.bind(gRead(x+&quot;z&quot;), ((y: Boolean) =&gt;
-  m.unit(!y)))))
+  m.bind(fRead(27), (x: String) =&gt;
+    m.bind(gRead(x + &quot;z&quot;), (y: Boolean) =&gt;
+      m.unit(!y)))
 
-/* this code does not work in older versions of Scala */
+/** this code does not work in older versions of Scala */
 def clientCode2ReadFor(using m: ReaderMonad[Int]) =
-    for {
-      x &lt;- fRead(27)
-      y &lt;- gRead(x+&quot;z&quot;)
-    } yield !y
+  for {
+    x &lt;- fRead(27)
+    y &lt;- gRead(x + &quot;z&quot;)
+  } yield !y
 </code></pre>
 <h2 id="the-state-monad"><a class="header" href="#the-state-monad">The State Monad</a></h2>
 <p>The <em>state monad</em>, in which computations depend on a state <code>S</code>
 which is threaded through the computations, is defind as follows:</p>
-<pre><code class="language-scala">trait StateMonad[S] extends Monad[[A] =&gt;&gt; S =&gt; (A,S)] {
-  override def bind[A,B](x: S =&gt; (A,S), f: A =&gt; S =&gt; (B,S)) : S =&gt; (B,S) =
-    s =&gt; x(s) match { case (y,s2) =&gt; f(y)(s2) } // thread the state through the computations
-  override def unit[A](a: A) : S =&gt; (A,S) = s =&gt; (a,s)
+<pre><code class="language-scala">trait StateMonad[S] extends Monad[[A] =&gt;&gt; S =&gt; (A, S)] {
+  override def bind[A,B](x: S =&gt; (A, S), f: A =&gt; S =&gt; (B, S)): S =&gt; (B, S) =
+    // thread the state through the computations
+    s =&gt; x(s) match { case (y, s2) =&gt; f(y)(s2) }
+  override def unit[A](a: A): S =&gt; (A, S) = s =&gt; (a, s)
 }
 </code></pre>
 <p>Example: Assume that our API maintains a state which (for simplicity) we assume to be a single integer. That is, it would look like this:</p>
-<pre><code class="language-scala">def fState(n: Int) : Int =&gt; (String,Int)  = sys.error(&quot;not implemented&quot;)
-def gState(x: String) : Int =&gt; (Boolean,Int)  = sys.error(&quot;not implemented&quot;)
-def hState(b: Boolean) : Int =&gt; (Int,Int) = sys.error(&quot;not implemented&quot;)
+<pre><code class="language-scala">def fState(n: Int): Int =&gt; (String, Int) = sys.error(&quot;not implemented&quot;)
+def gState(x: String): Int =&gt; (Boolean, Int) = sys.error(&quot;not implemented&quot;)
+def hState(b: Boolean): Int =&gt; (Int, Int) = sys.error(&quot;not implemented&quot;)
 </code></pre>
-<p>The original code,
-<code>def clientCode = h(!g(f(27)+&quot;z&quot;))</code>
-becomes :</p>
+<p>The original code,</p>
+<pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
+</code></pre>
+<p>becomes :</p>
 <pre><code class="language-scala">def clientCodeState(s: Int) =
   fState(27)(s) match {
-    case (x,s2) =&gt; gState(x+&quot;z&quot;)(s2) match {
-      case (y,s3) =&gt; hState(!y)(s3) }}
+    case (x, s2) =&gt; gState(x + &quot;z&quot;)(s2) match {
+      case (y, s3) =&gt; hState(!y)(s3) }}
 </code></pre>
 <p>In monadic style, however, the state handling disappears once more:</p>
 <pre><code class="language-scala">def clientCode2State(using m: StateMonad[Int]) =
-  m.bind(fState(27), ((x: String) =&gt;
-  m.bind(gState(x+&quot;z&quot;), ((y: Boolean) =&gt;
-  m.unit(!y)))))
+  m.bind(fState(27), (x: String) =&gt;
+    m.bind(gState(x + &quot;z&quot;), (y: Boolean) =&gt;
+      m.unit(!y)))
 </code></pre>
 <h2 id="the-list-monad"><a class="header" href="#the-list-monad">The List Monad</a></h2>
 <p>In the <em>list monad</em>, computations produce lists of results. The <code>bind</code> operator combines all those results in a single list.</p>
 <pre><code class="language-scala">object ListMonad extends Monad[List] {
-  override def bind[A,B](x: List[A], f: A =&gt; List[B]) : List[B] = x.flatMap(f) // apply f to each element, concatenate the resulting lists
+  // apply f to each element, concatenate the resulting lists
+  override def bind[A,B](x: List[A], f: A =&gt; List[B]): List[B] = x.flatMap(f)
   override def unit[A](a: A) = List(a)
 }
 </code></pre>
 <p><strong>Example</strong>: Assume that our API functions return lists of results, and our client code must exercise the combination of all possible answers.</p>
-<pre><code class="language-scala">def fList(n: Int) : List[String] = sys.error(&quot;not implemented&quot;)
-def gList(x: String) : List[Boolean] = sys.error(&quot;not implemented&quot;)
-def hList(b: Boolean) : List[Int] = sys.error(&quot;not implemented&quot;)
+<pre><code class="language-scala">def fList(n: Int): List[String] = sys.error(&quot;not implemented&quot;)
+def gList(x: String): List[Boolean] = sys.error(&quot;not implemented&quot;)
+def hList(b: Boolean): List[Int] = sys.error(&quot;not implemented&quot;)
 </code></pre>
-<p>The original code,
-<code>def clientCode = h(!g(f(27)+&quot;z&quot;))</code>
-becomes :</p>
+<p>The original code,</p>
+<pre><code class="language-scala">def clientCode = h(!g(f(27)+&quot;z&quot;))
+</code></pre>
+<p>becomes :</p>
 <pre><code class="language-scala">def clientCodeList =
-  fList(27).map(x =&gt; gList(x+&quot;z&quot;)).flatten.map(y =&gt; hList(!y)).flatten
+  fList(27).map(x =&gt; gList(x + &quot;z&quot;)).flatten.map(y =&gt; hList(!y)).flatten
 </code></pre>
 <p>The monadic version of the client code stays the same, as expected:</p>
 <pre><code class="language-scala">def clientCode2List = {
   given Monad[List] = ListMonad
   for {
     x &lt;- fList(27)
-    y &lt;- gList(x+&quot;z&quot;)
+    y &lt;- gList(x + &quot;z&quot;)
   } yield !y
 }
 </code></pre>
 <h2 id="the-continuation-monad"><a class="header" href="#the-continuation-monad">The Continuation Monad</a></h2>
-<p>The last monad we are going to present is the continuation monad,  which stands for computations that are continuations.</p>
+<p>The last monad we are going to present is the continuation monad, which stands for computations that are continuations.</p>
 <pre><code class="language-scala">trait ContinuationMonad[R] extends Monad[[A] =&gt;&gt; (A =&gt; R) =&gt; R] {
   type Cont[X] = (X =&gt; R) =&gt; R
 
-  override def bind[A,B](x: Cont[A], f: A =&gt; Cont[B]) : Cont[B] =
-     k =&gt; x( a =&gt; f(a)(k)) // construct continuation for x that calls f with the result of x               
-  override def unit[A](a: A) : Cont[A] = k =&gt; k(a)
+  override def bind[A,B](x: Cont[A], f: A =&gt; Cont[B]): Cont[B] =
+    // construct continuation for x that calls f with the result of x
+    k =&gt; x(a =&gt; f(a)(k))
+  override def unit[A](a: A): Cont[A] = k =&gt; k(a)
 
-  // callcc is like letcc; the difference is that letcc binds a name, whereas callcc expects a function as argument
-  // That means that letcc(k,...) is expressed as callcc( k =&gt; ...).
-  def callcc[A,B](f: (A =&gt; Cont[B]) =&gt; Cont[A]   ) : Cont[A] = k =&gt; f( (a:A) =&gt; (_:B=&gt;R) =&gt; k(a))(k)
+  // callcc is like letcc; the difference is that letcc binds a name,
+  // whereas callcc expects a function as argument.
+  // That means that letcc(k,...) is expressed as callcc(k =&gt; ...).
+  def callcc[A,B](f: (A =&gt; Cont[B]) =&gt; Cont[A]): Cont[A] =
+    k =&gt; f((a: A) =&gt; (_: B =&gt; R) =&gt; k(a))(k)
 }
 </code></pre>
 <p><strong>Example</strong>: Suppose our API was CPS-transformed:</p>
-<pre><code class="language-scala">def fCPS[R](n: Int) : (String =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
-def gCPS[R](x: String) : (Boolean =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
-def hCPS[R](b: Boolean) : (Int =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
+<pre><code class="language-scala">def fCPS[R](n: Int): (String =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
+def gCPS[R](x: String): (Boolean =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
+def hCPS[R](b: Boolean): (Int =&gt; R) =&gt; R = sys.error(&quot;not implemented&quot;)
 </code></pre>
-<p>The original code,
-<code>def clientCode = h(!g(f(27)+&quot;z&quot;))</code>
-becomes :</p>
+<p>The original code,</p>
+<pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
+</code></pre>
+<p>becomes :</p>
 <pre><code class="language-scala">def clientCodeCPS[R]: (Int =&gt; R) =&gt; R =
-  k =&gt; fCPS(27)( (x: String) =&gt; gCPS(x+&quot;z&quot;)( (y: Boolean) =&gt;  hCPS(!y)(k)))
+  k =&gt; fCPS(27)((x: String) =&gt; gCPS(x + &quot;z&quot;)((y: Boolean) =&gt;  hCPS(!y)(k)))
 </code></pre>
-<p>The monadic version hides the CPS transformation in the operations of the Monad.</p>
+<p>The monadic version hides the CPS transformation in the operations of the monad.</p>
 <pre><code class="language-scala">def clientCode2CPS[R](using m: ContinuationMonad[R]) =
-  m.bind(fCPS(27), ((x: String) =&gt;
-  m.bind(gCPS(x+&quot;z&quot;), ((y: Boolean) =&gt;
-  m.unit(!y)))))
+  m.bind(fCPS(27), (x: String) =&gt;
+    m.bind(gCPS(x + &quot;z&quot;), (y: Boolean) =&gt;
+      m.unit(!y)))
 </code></pre>
 <p>Let's implement <code>1 + (2 + 3)</code> in monadic style and implicitly CPS-transform using the continuation monad:</p>
 <pre><code class="language-scala">// unfortunately we can, again, not use for-comprehension syntax
 def ex123[R](using m: ContinuationMonad[R])  = {
   m.bind(
-    m.bind(m.unit(2), (two:Int) =&gt;
-      m.bind(m.unit(3), (three:Int) =&gt; m.unit(two+three))),
-    (five:Int) =&gt; m.unit(1+five))
+    m.bind(m.unit(2), (two: Int) =&gt;
+      m.bind(m.unit(3), (three: Int) =&gt; m.unit(two + three))),
+    (five: Int) =&gt; m.unit(1 + five))
 }
 
-def runEx123 = ex123(using new ContinuationMonad[Int]{})(x=&gt;x)
+def runEx123 = ex123(using new ContinuationMonad[Int]{})(x =&gt; x)
 </code></pre>
 <p>Let's implement the <code>(+ 1 (let/cc k (+ 2 (k 3))))</code> example using <code>callcc</code></p>
 <pre><code class="language-scala">def excallcc[R](using m: ContinuationMonad[R])  = {
   m.bind(
-    m.bind(m.unit(2),
-           (two:Int) =&gt; m.callcc[Int,Int]( k =&gt; m.bind(k(3), (three:Int) =&gt; m.unit(two+three)))),
-    (five:Int) =&gt; m.unit(1+five))
+    m.bind(m.unit(2), (two: Int) =&gt;
+      m.callcc[Int,Int](k =&gt; m.bind(k(3), (three: Int) =&gt; m.unit(two + three)))),
+    (five: Int) =&gt; m.unit(1 + five))
 }
-def runExcallcc = excallcc(using new ContinuationMonad[Int]{})(x=&gt;x)
+
+def runExcallcc = excallcc(using new ContinuationMonad[Int]{})(x =&gt; x)
 </code></pre>
-<p>Remember how we had to CPS-transform the &quot;map&quot; function in the &quot;allCosts&quot; example when we talked about continuations?
-Now we can define a monadic version of &quot;map&quot; that works for any monad, including the continuation monad:</p>
-<pre><code class="language-scala">def mapM[M[_],A,B](x: List[A], f: A =&gt; M[B])(using m: Monad[M]) : M[List[B]] = sequence(x.map(f))
+<p>Remember how we had to CPS-transform the <code>map</code> function in the &quot;allCosts&quot; example when we talked about continuations?
+Now we can define a monadic version of <code>map</code> that works for any monad, including the continuation monad:</p>
+<pre><code class="language-scala">def mapM[M[_],A,B](x: List[A], f: A =&gt; M[B])(using m: Monad[M]): M[List[B]] =
+  sequence(x.map(f))
 </code></pre>
 <h2 id="monad-transformers"><a class="header" href="#monad-transformers">Monad Transformers</a></h2>
 <p>The purpose of monad transformers is to compose monads.
@@ -490,46 +503,46 @@ parameterized with another monad. We show this for the Option monad case.</p>
 <pre><code class="language-scala">type OptionT[M[_]] = { type x[A] = M[Option[A]] }
 
 
-class OptionTMonad[M[_]](val m : Monad[M]) extends Monad[OptionT[M]#x] {
+class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]#x] {
 
-  override def bind[A,B](x : M[Option[A]], f: A =&gt; M[Option[B]]) : M[Option[B]] =
+  override def bind[A,B](x: M[Option[A]], f: A =&gt; M[Option[B]]): M[Option[B]] =
     m.bind(x, (z: Option[A]) =&gt; z match { case Some(y) =&gt; f(y)
                                           case None =&gt; m.unit(None) })
 
   override def unit[A](a: A) = m.unit(Some(a))
 
-  def lift[A](x: M[A]) : M[Option[A]] = m.bind(x, (a: A) =&gt; m.unit(Some(a)))                                   
+  def lift[A](x: M[A]): M[Option[A]] = m.bind(x, (a: A) =&gt; m.unit(Some(a)))
 }
 </code></pre>
 <pre><code class="language-scala">val ListOptionM = new OptionTMonad(ListMonad)
 </code></pre>
-<pre><code class="language-scala">// in this case, for-comprehension syntax doesn't work because it clashes with the built-in support for
-// for-comprehensions for lists :-(
+<pre><code class="language-scala">// in this case, for-comprehension syntax doesn't work because it clashes with the
+// built-in support for for-comprehensions for lists :-(
 def example = {
   val m = ListOptionM
-  m.bind(List(Some(3),Some(4)), (x: Int) =&gt; m.unit(x+1))
+  m.bind(List(Some(3), Some(4)), (x: Int) =&gt; m.unit(x + 1))
 }
 
 def example2 = {
   val m = ListOptionM
-  m.bind(List(Some(3),Some(4)), (x: Int) =&gt; m.lift(List(1,2,3,x)))
+  m.bind(List(Some(3), Some(4)), (x: Int) =&gt; m.lift(List(1, 2, 3, x)))
 }
 
 def example3 = {
   val m = ListOptionM
-  m.bind(List(Some(3),None,Some(4)), (x: Int) =&gt; m.unit(x+1))
+  m.bind(List(Some(3), None, Some(4)), (x: Int) =&gt; m.unit(x + 1))
 }
 
 def example4 = {
   val m = ListOptionM
-  m.bind(List(Some(3),Some(4)), (x: Int) =&gt; if (x &gt; 3) m.m.unit(None) else m.unit(x*2))
+  m.bind(List(Some(3), Some(4)), (x: Int) =&gt; if (x &gt; 3) m.m.unit(None) else m.unit(x * 2))
 }
 </code></pre>
 <p>Monad transformers are a standard way to compose monads, e.g., in Haskell and in Scala.
 They have a number of well-known disadvantages. For instance, one needs additional transformer
 versions of monads and the required lifting sometimes destroys modularity.
-There are a number of alternative proposals to monad transformers, such as &quot;extensible effects&quot;.
-https://hackage.haskell.org/package/extensible-effects</p>
+There are a number of alternative proposals to monad transformers, such as
+<a href="https://hackage.haskell.org/package/extensible-effects">&quot;extensible effects&quot;</a>.</p>
 
                     </main>
 
