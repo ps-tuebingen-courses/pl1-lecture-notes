@@ -259,7 +259,7 @@ A &quot;for-comprehension&quot; is usually used for lists and other collections.
 <pre><code class="language-scala">val l = List(List(1,2), List(3,4))
 assert((for { x &lt;- l; y &lt;- x } yield y + 1) == List(2,3,4,5))
 </code></pre>
-<p>The Scala compiler desugars the for-comprehension above into calls of the standard <code>map</code> and `flatMap`` functions. That is, the above
+<p>The Scala compiler desugars the for-comprehension above into calls of the standard <code>map</code> and <code>flatMap</code> functions. That is, the above
 for-comprehension is equivalent to:</p>
 <pre><code class="language-scala">assert(l.flatMap(x =&gt; x.map(y =&gt; y + 1)) == List(2,3,4,5))
 </code></pre>

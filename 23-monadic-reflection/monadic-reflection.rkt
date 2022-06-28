@@ -1,7 +1,7 @@
 #lang racket
 
 (require racket/control)
-Monadic style can encode continuation-passing style:
+
 (define (return x) (list x))
 (define (bind m f)
   (apply append (map f m)))
@@ -44,4 +44,3 @@ Monadic style can encode continuation-passing style:
          (inclusive-range 1 n)))
 
 (reify (queens 8))
-

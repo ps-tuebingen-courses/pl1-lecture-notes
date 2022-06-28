@@ -149,7 +149,7 @@
 (require racket/control)
 </code></pre>
 <p>Monadic style can encode continuation-passing style:</p>
-<p>Just use the continuation monad</p>
+<p>Just use the continuation monad.</p>
 <p>But the converse is also true in a certain sense that was
 discovered by A. Filinski, who invented the notion of
 &quot;monadic reflection&quot;. Here, we exemplify monadic reflection
@@ -182,10 +182,8 @@ for every monad.</p>
 </code></pre>
 <p>More information in &quot;Representing Monads&quot; by A. Filinski:
 https://doi.org/10.1145/174675.178047</p>
-<p><strong>Example</strong>: Backtracking using monadic reflection
-The <code>n</code>-queens problem
-If partial results are desired, lists should be
-replaced by streams</p>
+<p><strong>Example</strong>: Backtracking using monadic reflection: The <code>n</code>-queens problem.
+If partial results are desired, lists should be replaced by streams.</p>
 <pre><code class="language-racket">(define (fail) (reflect empty))
 
 ; Nat List[Nat] Nat -&gt; Bool
@@ -207,7 +205,6 @@ replaced by streams</p>
          (inclusive-range 1 n)))
 
 (reify (queens 8))
-
 </code></pre>
 
                     </main>
