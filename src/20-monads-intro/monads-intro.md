@@ -169,7 +169,7 @@ val l = List(List(1,2), List(3,4))
 assert((for { x <- l; y <- x } yield y + 1) == List(2,3,4,5))
 ```
 
-The Scala compiler desugars the for-comprehension above into calls of the standard `map` and `flatMap`` functions. That is, the above
+The Scala compiler desugars the for-comprehension above into calls of the standard `map` and `flatMap` functions. That is, the above
 for-comprehension is equivalent to:
 
 ```scala mdoc:silent

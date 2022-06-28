@@ -7,9 +7,10 @@ The content of this chapter is available as a Racket file [here.](./monadic-refl
 
 (require racket/control)
 ```
+
 Monadic style can encode continuation-passing style:
 
-Just use the continuation monad
+Just use the continuation monad.
 
 But the converse is also true in a certain sense that was
 discovered by A. Filinski, who invented the notion of
@@ -55,10 +56,8 @@ https://doi.org/10.1145/174675.178047
 
 
 
-__Example__: Backtracking using monadic reflection
-The `n`-queens problem
-If partial results are desired, lists should be
-replaced by streams
+__Example__: Backtracking using monadic reflection: The `n`-queens problem.
+If partial results are desired, lists should be replaced by streams.
 
 ```racket
 (define (fail) (reflect empty))
@@ -82,5 +81,4 @@ replaced by streams
          (inclusive-range 1 n)))
 
 (reify (queens 8))
-
 ```
