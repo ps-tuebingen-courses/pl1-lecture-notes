@@ -9,14 +9,14 @@
 
 # Basic Topics
 
-- [Arithmetic Expressions](./03-arithmetic-expressions/arithmetic-expressions.md)
+- [Arithmetic Expressions (AEId)](./03-arithmetic-expressions/arithmetic-expressions.md)
 - [Desugaring](./04-desugaring/desugaring.md)
-- [Name Binding](./05-name-binding/name-binding.md)
-- [First Order Functions](./06-first-order-functions/first-order-functions.md)
-- [Higher Order Functions](./07-higher-order-functions/higher-order-functions.md)
-- [Lazy Evaluation](./08-lazy-evaluation/lazy-evaluation.md)
-- [Recursive Functions](./09-recursive-functions/recursive-functions.md)
-- [Mutation](./10-mutation/mutation.md)
+- [Name Binding (WAE)](./05-name-binding/name-binding.md)
+- [First Order Functions (F1WAE](./06-first-order-functions/first-order-functions.md)
+- [Higher Order Functions (FAE)](./07-higher-order-functions/higher-order-functions.md)
+- [Lazy Evaluation (LCFAE)](./08-lazy-evaluation/lazy-evaluation.md)
+- [Recursive Functions (RCFAE)](./09-recursive-functions/recursive-functions.md)
+- [Mutation (BCFAE)](./10-mutation/mutation.md)
 
 # Advanced Topics 1
 

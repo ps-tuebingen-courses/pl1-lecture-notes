@@ -6,7 +6,7 @@ The content of this chapter is available as a Scala file [here.](./higher-order-
 
 # Higher-Order Functions
 
-F1-WAE, the language with first-order functions, lets us abstract over patterns that involve numbers. But what if we want to abstract
+F1WAE, the language with first-order functions, lets us abstract over patterns that involve numbers. But what if we want to abstract
 over patterns that involve functions, such as the "list fold" pattern, whose instantiations include summing or multiplying a list of
 integers?
 
