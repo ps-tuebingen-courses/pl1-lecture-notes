@@ -285,7 +285,7 @@ val s7 = transition(s6)
 val s8 = transition(s7)
 val s9 = transition(s8)  
 val s10 = transition(s9)  
-val s11 = transition(s10) 
+val s11 = transition(s10)
 ```
 We can also automate this into a function that collects the list of all states.
 
@@ -299,3 +299,99 @@ def evalMachine(e: Exp) : List[MachineState[Value]] =
 
 val q = evalMachine(test)
 ```
+
+## Refunctionalization
+
+Can we also invert defunctionalization? That is, can we represent a
+program such that a data type is replaced by a function type?
+
+Let's look at an example.
+
+```scala mdoc
+enum MyList[T]:
+  case MyEmptyList[T]() extends MyList[T]
+  case MyCons[T](x: T, xs: MyList[T]) extends MyList[T]
+
+import MyList._
+
+def nth[T](l: MyList[T], i: Int) : T = l match {
+  case MyEmptyList() => sys.error("index out of range")
+  case MyCons(x,xs) => if (i==0) then x  else nth(xs,i-1)
+}
+```
+Refunctionalization works smoothly when there is just one pattern match on
+a data type. In this case, we represent a list by "its" ``nth`` function:
+
+```scala mdoc
+type MyListR[T] = Int => T
+
+def myEmptyList[T] : MyListR[T] = _ => sys.error("index out of range")
+def myCons[T](x: T,  xs: MyListR[T]) : MyListR[T] =
+  i => if (i==0) then x  else xs(i-1)
+```
+
+The defunctionalized and the refunctionalized lists differ in their modular structure.
+In the defunctionalized version, it is "easy" (only addition of code but no modification
+of existing code necessary) to add new functions that pattern-match on lists, such
+as a ``length``function.
+
+
+```scala mdoc
+def length[T](l: MyList[T]) : Int = l match {
+  case MyEmptyList() => 0
+  case MyCons(x,xs) => 1 + length(xs)
+}
+```
+In the refunctionalized version, on the other hand, it is "easy" to add new ways to create lists.
+For instance, here is a constructor for the infinite list of numbers
+
+```scala mdoc
+def allNats : MyListR[Int] = i => i   
+```
+
+The two versions hence corresponds to the two dimensions of the aforementioned "expression problem".
+These program  transformations are hence generally applicable program transformations in
+a programmer's modularity toolbox.
+
+But what about refunctionalization in the case that there is more than one pattern-match on the
+data type? It turns out that we can refunctionalize if we generalize functions to objects, that is,
+if we view functions as special kinds of objects with a single ``apply`` method.
+
+For instance, in the case of lists with two pattern-matching functions, ``nth`` and ``length``,
+we can represent lists as _objects_ with two methods, one for each pattern match.
+
+```scala mdoc
+trait MyListRO[T] {
+  def nth(i: Int) : T
+  def length : Int  
+}
+
+def myEmptyListO[T] : MyListRO[T] = new MyListRO[T] {
+  def nth(i: Int) : T = sys.error("index out of range")
+  def length : Int = 0
+}
+
+def myConsO[T](x: T,  xs: MyListRO[T]) : MyListRO[T] = new MyListRO[T] {
+  def nth(i: Int) : T = if (i==0) then x  else xs.nth(i-1)
+  def length : Int =  1 + xs.length
+}
+```
+
+With this generalization, we can defunctionalize any object type (the transformation
+could then maybe be called "deobjectionalization") and we can refunctionalize any
+algebraic data type, and thereby completely invert the extensibility of the program.
+
+Recall that both transformations are _global_ and not compositional, that is, the full program must be
+transformed at once.
+
+We have glossed over some technical details that would need to be addressed to automate
+these transformations and make them inverse to each other. For instance, we have not
+addressed how to reverse the lambda lifting part.
+
+Historical notes: Defunctionalization was proposed by John Reynolds in 1972 in his landmark
+paper "Reynolds, John (August 1972). ""Definitional Interpreters for Higher-Order Programming Languages".
+Similar to these lecture notes, Reynolds applied defunctionalization to a CPS-transformed interpreter.
+The generalization of refunctionalization to use objects instead of functions was presented
+in a 2015 paper by Rendel, Trieflinger, and Ostermann entitled "Automatic Refunctionalization to a Language with Copattern Matching: With Applications to the Expression Problem". A fully formal account
+of the transformations that also addresses invertible lambda lifting and proves that the
+transformations are inverses of each other can be found in the 2020 paper "Decomposition Diversity with Symmetric Data and Codata" by Binder, Jabs, Skupin and Ostermann.
