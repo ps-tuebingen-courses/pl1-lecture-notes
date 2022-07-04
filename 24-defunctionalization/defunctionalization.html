@@ -392,21 +392,21 @@ val initMS : MachineState[Value] = EvalState(test,Map.empty,IdentityFV())
 //   env = Map(),
 //   fv = IdentityFV()
 // )
-val s1 = transition(initMS)//= EvalState(Fun(x,Add(Id(x),Num(1))),Map(),ApC1(Num(5),Map(),IdentityFV()))
+val s1 = transition(initMS)
 // s1: MachineState[Value] = EvalState(
 //   e = Fun(param = &quot;x&quot;, body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))),
 //   env = Map(),
 //   fv = ApC1(a = Num(n = 5), env = Map(), k = IdentityFV())
-// )//= EvalState(Fun(x,Add(Id(x),Num(1))),Map(),ApC1(Num(5),Map(),IdentityFV()))
-val s2 = transition(s1)   // = ApplyState(ApC1(Num(5),Map(),IdentityFV()),ClosureV(Fun(x,Add(Id(x),Num(1))),Map()))
+// )
+val s2 = transition(s1)   
 // s2: MachineState[Value] = ApplyState(
 //   fv = ApC1(a = Num(n = 5), env = Map(), k = IdentityFV()),
 //   v = ClosureV(
 //     f = Fun(param = &quot;x&quot;, body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))),
 //     env = Map()
 //   )
-// )   // = ApplyState(ApC1(Num(5),Map(),IdentityFV()),ClosureV(Fun(x,Add(Id(x),Num(1))),Map()))
-val s3 = transition(s2)   // = EvalState(Num(5),Map(),ApC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()))
+// )   
+val s3 = transition(s2)   
 // s3: MachineState[Value] = EvalState(
 //   e = Num(n = 5),
 //   env = Map(),
@@ -415,8 +415,8 @@ val s3 = transition(s2)   // = EvalState(Num(5),Map(),ApC2(Fun(x,Add(Id(x),Num(1
 //     closureEnv = Map(),
 //     k = IdentityFV()
 //   )
-// )   // = EvalState(Num(5),Map(),ApC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()))
-val s4 = transition(s3)   // = ApplyState(ApC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()),NumV(5))
+// )   
+val s4 = transition(s3)   
 // s4: MachineState[Value] = ApplyState(
 //   fv = ApC2(
 //     f = Fun(param = &quot;x&quot;, body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))),
@@ -424,38 +424,38 @@ val s4 = transition(s3)   // = ApplyState(ApC2(Fun(x,Add(Id(x),Num(1))),Map(),Id
 //     k = IdentityFV()
 //   ),
 //   v = NumV(n = 5)
-// )   // = ApplyState(ApC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()),NumV(5))
-val s5 = transition(s4)   // = EvalState(Add(Id(x),Num(1)),Map(x -&gt; NumV(5)),IdentityFV())
+// )   
+val s5 = transition(s4)  
 // s5: MachineState[Value] = EvalState(
 //   e = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1)),
 //   env = Map(&quot;x&quot; -&gt; NumV(n = 5)),
 //   fv = IdentityFV()
-// )   // = EvalState(Add(Id(x),Num(1)),Map(x -&gt; NumV(5)),IdentityFV())
-val s6 = transition(s5)   // = EvalState(Id(x),Map(x -&gt; NumV(5)),AddC1(Num(1),Map(x -&gt; NumV(5)),IdentityFV()))
+// )  
+val s6 = transition(s5)   
 // s6: MachineState[Value] = EvalState(
 //   e = Id(name = &quot;x&quot;),
 //   env = Map(&quot;x&quot; -&gt; NumV(n = 5)),
 //   fv = AddC1(r = Num(n = 1), env = Map(&quot;x&quot; -&gt; NumV(n = 5)), k = IdentityFV())
-// )   // = EvalState(Id(x),Map(x -&gt; NumV(5)),AddC1(Num(1),Map(x -&gt; NumV(5)),IdentityFV()))
-val s7 = transition(s6)   // = ApplyState(AddC1(Num(1),Map(x -&gt; NumV(5)),IdentityFV()),NumV(5))
+// )   
+val s7 = transition(s6)   
 // s7: MachineState[Value] = ApplyState(
 //   fv = AddC1(r = Num(n = 1), env = Map(&quot;x&quot; -&gt; NumV(n = 5)), k = IdentityFV()),
 //   v = NumV(n = 5)
-// )   // = ApplyState(AddC1(Num(1),Map(x -&gt; NumV(5)),IdentityFV()),NumV(5))
-val s8 = transition(s7)   // = EvalState(Num(1),Map(x -&gt; NumV(5)),AddC2(NumV(5),IdentityFV()))
+// )   
+val s8 = transition(s7)
 // s8: MachineState[Value] = EvalState(
 //   e = Num(n = 1),
 //   env = Map(&quot;x&quot; -&gt; NumV(n = 5)),
 //   fv = AddC2(lv = NumV(n = 5), k = IdentityFV())
-// )   // = EvalState(Num(1),Map(x -&gt; NumV(5)),AddC2(NumV(5),IdentityFV()))
-val s9 = transition(s8)   // = ApplyState(AddC2(NumV(5),IdentityFV()),NumV(1))
+// )
+val s9 = transition(s8)  
 // s9: MachineState[Value] = ApplyState(
 //   fv = AddC2(lv = NumV(n = 5), k = IdentityFV()),
 //   v = NumV(n = 1)
-// )   // = ApplyState(AddC2(NumV(5),IdentityFV()),NumV(1))
-val s10 = transition(s9)  // = ApplyState(IdentityFV(),NumV(6))
-// s10: MachineState[Value] = ApplyState(fv = IdentityFV(), v = NumV(n = 6))  // = ApplyState(IdentityFV(),NumV(6))
-val s11 = transition(s10) // = Done(NumV(6))
+// )  
+val s10 = transition(s9)  
+// s10: MachineState[Value] = ApplyState(fv = IdentityFV(), v = NumV(n = 6))  
+val s11 = transition(s10) 
 // s11: MachineState[Value] = Done(v = NumV(n = 6))
 </code></pre>
 <p>We can also automate this into a function that collects the list of all states.</p>
