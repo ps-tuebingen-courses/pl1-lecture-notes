@@ -2,10 +2,6 @@
 
 The content of this chapter is available as a Scala file [here.](./defunctionalization.scala)
 
-
-The material in these notes is based on: John C. Reynolds: Definitional Interpreters for Higher-Order Programming Languages.
-Higher-Order and Symbolic Computation 11(4): 363-397 (1998)
-
 In the discussion of syntactic interpretation vs. meta interpretation we have learned that we only learn something about (and control)
 a language feature if we choose syntactic interpretation.
 
