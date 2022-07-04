@@ -275,17 +275,17 @@ Now let's try this out with a concrete example and look at the tract of transiti
 ```scala mdoc
 val test = Ap(Fun("x",Add("x",1)),5)  
 val initMS : MachineState[Value] = EvalState(test,Map.empty,IdentityFV())
-val s1 = transition(initMS)//= EvalState(Fun(x,Add(Id(x),Num(1))),Map(),ApC1(Num(5),Map(),IdentityFV()))
-val s2 = transition(s1)   // = ApplyState(ApC1(Num(5),Map(),IdentityFV()),ClosureV(Fun(x,Add(Id(x),Num(1))),Map()))
-val s3 = transition(s2)   // = EvalState(Num(5),Map(),ApC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()))
-val s4 = transition(s3)   // = ApplyState(ApC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()),NumV(5))
-val s5 = transition(s4)   // = EvalState(Add(Id(x),Num(1)),Map(x -> NumV(5)),IdentityFV())
-val s6 = transition(s5)   // = EvalState(Id(x),Map(x -> NumV(5)),AddC1(Num(1),Map(x -> NumV(5)),IdentityFV()))
-val s7 = transition(s6)   // = ApplyState(AddC1(Num(1),Map(x -> NumV(5)),IdentityFV()),NumV(5))
-val s8 = transition(s7)   // = EvalState(Num(1),Map(x -> NumV(5)),AddC2(NumV(5),IdentityFV()))
-val s9 = transition(s8)   // = ApplyState(AddC2(NumV(5),IdentityFV()),NumV(1))
-val s10 = transition(s9)  // = ApplyState(IdentityFV(),NumV(6))
-val s11 = transition(s10) // = Done(NumV(6))
+val s1 = transition(initMS)
+val s2 = transition(s1)   
+val s3 = transition(s2)   
+val s4 = transition(s3)   
+val s5 = transition(s4)  
+val s6 = transition(s5)   
+val s7 = transition(s6)   
+val s8 = transition(s7)
+val s9 = transition(s8)  
+val s10 = transition(s9)  
+val s11 = transition(s10) 
 ```
 We can also automate this into a function that collects the list of all states.
 
