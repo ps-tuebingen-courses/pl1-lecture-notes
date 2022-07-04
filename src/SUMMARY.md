@@ -7,7 +7,7 @@
 - [Introduction](./01-intro/intro.md)
 - [Scala Basics](./02-scala-basics/scala-basics.md)
 
-# Basic Topics
+# Basic Language Features
 
 - [Arithmetic Expressions](./03-arithmetic-expressions/arithmetic-expressions.md)
 - [Desugaring](./04-desugaring/desugaring.md)
@@ -18,7 +18,7 @@
 - [Recursive Functions](./09-recursive-functions/recursive-functions.md)
 - [Mutation](./10-mutation/mutation.md)
 
-# Advanced Topics 1
+# Miscellaneous
 
 - [Garbage Collection](./11-garbage-collection/garbage-collection.md)
 - [Syntactic and Meta Interpretation](./12-meta-interpretation/meta-interpretation.md)
@@ -37,11 +37,11 @@
 
 - [Monads Intro](./20-monads-intro/monads-intro.md)
 - [The IO Monad](./21-io-monad/io-monad.md)
-
-# Advanced Topics 2
-
 - [Modular Interpreters](./22-modular-interpreters/modular-interpreters.md)
 - [Monadic Reflection](./23-monadic-reflection/monadic-reflection.md)
+
+# Program Transformations
+
 - [Defunctionalization, Refunctionalization](./24-defunctionalization/defunctionalization.md)
 
 # Type Systems
@@ -49,6 +49,3 @@
 - [Type Systems](./25-type-systems/type-systems.md)
 - [Simply Typed Lambda Calculus (STLC)](./26-stlc/stlc.md)
 - [Type Inference](./27-type-inference/type-inference.md)
-
-
-[Further Reading](./furtherreading.md)
