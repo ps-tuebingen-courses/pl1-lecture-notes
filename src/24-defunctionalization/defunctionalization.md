@@ -106,10 +106,10 @@ def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_),
 
 Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:
 two in the ``Add`` branch and two in the ``Ap`` branch. We call the corresponding top-level functions, from left to right,
-``addc1``, ``addc2``, ``appc1`` and ``appc2``.
+``addc1``, ``addc2``, ``ApC1`` and ``ApC2``.
 
-An interesting novelty in the interpreter is that some local functions (corresponding to ``addc1`` and ``appc1``) create local
-functions themselves. This means that ``addc1`` must call ``addc2`` and ``appc1`` must call ``appc2``. The rest of the transformation
+An interesting novelty in the interpreter is that some local functions (corresponding to ``addc1`` and ``ApC1``) create local
+functions themselves. This means that ``addc1`` must call ``addc2`` and ``ApC1`` must call ``ApC2``. The rest of the transformation
 is a straightforward application of the transformation steps described above:
 
 ```scala mdoc
@@ -121,19 +121,19 @@ object LambdaLifted {
     case _ => sys.error("can only add numbers")
   }
 
-  def appc1[T](a : Exp, env : Env, k : Value => T)(cl : Value) = cl match {
-    case ClosureV(f, closureEnv) => eval(a, env, appc2(f, closureEnv, k))
+  def ApC1[T](a : Exp, env : Env, k : Value => T)(cl : Value) = cl match {
+    case ClosureV(f, closureEnv) => eval(a, env, ApC2(f, closureEnv, k))
     case _ => sys.error("can only apply functions")
   }
 
-  def appc2[T](f : Fun, closureEnv : Env, k : Value => T)(av : Value) = eval(f.body, closureEnv + (f.param -> av), k)
+  def ApC2[T](f : Fun, closureEnv : Env, k : Value => T)(av : Value) = eval(f.body, closureEnv + (f.param -> av), k)
 
   def eval[T](e : Exp, env : Env, k : Value => T) : T = e match {
     case Num(n : Int) => k(NumV(n))
     case Id(x) => k(env(x))
     case Add(l, r) => eval(l, env, addc1(r, env, k))
     case f@Fun(param, body) => k(ClosureV(f, env))
-    case Ap(f, a) => eval(f, env, appc1(a, env, k))
+    case Ap(f, a) => eval(f, env, ApC1(a, env, k))
   }
 }
 ```
@@ -251,7 +251,7 @@ object AbstractMachine {
     case Add(l,r) =>
       EvalState(l, env,AddC1(r,env,k))
     case f@Fun(param,body) => ApplyState(k,ClosureV(f,env))         
-    case Ap(f,a) =>  EvalState(f, env, AppC1(a,env,k))
+    case Ap(f,a) =>  EvalState(f, env, ApC1(a,env,k))
    }
 
    def transitionApply[T](fv: FunctionValue[T], v: Value) : MachineState[T] = fv match {
@@ -261,11 +261,11 @@ object AbstractMachine {
           case (NumV(v1),NumV(v2)) => ApplyState(k, NumV(v1+v2))
           case _ => sys.error("can only add numbers")
          }
-    case AppC1(a,env,k) => v match {
-        case ClosureV(f, closureEnv) => EvalState(a, env, AppC2(f,closureEnv,k))
+    case ApC1(a,env,k) => v match {
+        case ClosureV(f, closureEnv) => EvalState(a, env, ApC2(f,closureEnv,k))
         case _ => sys.error("can only apply functions")
     }
-    case AppC2(f,closureEnv,k) => EvalState(f.body, closureEnv + (f.param -> v),k)
+    case ApC2(f,closureEnv,k) => EvalState(f.body, closureEnv + (f.param -> v),k)
   }
 }
 import AbstractMachine._
@@ -275,10 +275,10 @@ Now let's try this out with a concrete example and look at the tract of transiti
 ```scala mdoc
 val test = Ap(Fun("x",Add("x",1)),5)  
 val initMS : MachineState[Value] = EvalState(test,Map.empty,IdentityFV())
-val s1 = transition(initMS)//= EvalState(Fun(x,Add(Id(x),Num(1))),Map(),AppC1(Num(5),Map(),IdentityFV()))
-val s2 = transition(s1)   // = ApplyState(AppC1(Num(5),Map(),IdentityFV()),ClosureV(Fun(x,Add(Id(x),Num(1))),Map()))
-val s3 = transition(s2)   // = EvalState(Num(5),Map(),AppC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()))
-val s4 = transition(s3)   // = ApplyState(AppC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()),NumV(5))
+val s1 = transition(initMS)//= EvalState(Fun(x,Add(Id(x),Num(1))),Map(),ApC1(Num(5),Map(),IdentityFV()))
+val s2 = transition(s1)   // = ApplyState(ApC1(Num(5),Map(),IdentityFV()),ClosureV(Fun(x,Add(Id(x),Num(1))),Map()))
+val s3 = transition(s2)   // = EvalState(Num(5),Map(),ApC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()))
+val s4 = transition(s3)   // = ApplyState(ApC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()),NumV(5))
 val s5 = transition(s4)   // = EvalState(Add(Id(x),Num(1)),Map(x -> NumV(5)),IdentityFV())
 val s6 = transition(s5)   // = EvalState(Id(x),Map(x -> NumV(5)),AddC1(Num(1),Map(x -> NumV(5)),IdentityFV()))
 val s7 = transition(s6)   // = ApplyState(AddC1(Num(1),Map(x -> NumV(5)),IdentityFV()),NumV(5))
