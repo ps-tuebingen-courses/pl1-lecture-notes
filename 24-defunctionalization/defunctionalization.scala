@@ -179,7 +179,7 @@ val s7 = transition(s6)
 val s8 = transition(s7)
 val s9 = transition(s8)  
 val s10 = transition(s9)  
-val s11 = transition(s10) 
+val s11 = transition(s10)
 We can also automate this into a function that collects the list of all states.
 def evalMachine(e: Exp) : List[MachineState[Value]] =
 {
@@ -189,3 +189,43 @@ def evalMachine(e: Exp) : List[MachineState[Value]] =
 }
 
 val q = evalMachine(test)
+
+enum MyList[T]:
+  case MyEmptyList[T]() extends MyList[T]
+  case MyCons[T](x: T, xs: MyList[T]) extends MyList[T]
+
+import MyList._
+
+def nth[T](l: MyList[T], i: Int) : T = l match {
+  case MyEmptyList() => sys.error("index out of range")
+  case MyCons(x,xs) => if (i==0) then x  else nth(xs,i-1)
+}
+Refunctionalization works smoothly when there is just one pattern match on
+type MyListR[T] = Int => T
+
+def myEmptyList[T] : MyListR[T] = _ => sys.error("index out of range")
+def myCons[T](x: T,  xs: MyListR[T]) : MyListR[T] =
+  i => if (i==0) then x  else xs(i-1)
+
+def length[T](l: MyList[T]) : Int = l match {
+  case MyEmptyList() => 0
+  case MyCons(x,xs) => 1 + length(xs)
+}
+In the refunctionalized version, on the other hand, it is "easy" to add new ways to create lists.
+def allNats : MyListR[Int] = i => i   
+
+trait MyListRO[T] {
+  def nth(i: Int) : T
+  def length : Int  
+}
+
+def myEmptyListO[T] : MyListRO[T] = new MyListRO[T] {
+  def nth(i: Int) : T = sys.error("index out of range")
+  def length : Int = 0
+}
+
+def myConsO[T](x: T,  xs: MyListRO[T]) : MyListRO[T] = new MyListRO[T] {
+  def nth(i: Int) : T = if (i==0) then x  else xs.nth(i-1)
+  def length : Int =  1 + xs.length
+}
+

@@ -455,7 +455,7 @@ val s9 = transition(s8)
 // )  
 val s10 = transition(s9)  
 // s10: MachineState[Value] = ApplyState(fv = IdentityFV(), v = NumV(n = 6))  
-val s11 = transition(s10) 
+val s11 = transition(s10)
 // s11: MachineState[Value] = Done(v = NumV(n = 6))
 </code></pre>
 <p>We can also automate this into a function that collects the list of all states.</p>
@@ -518,6 +518,80 @@ val q = evalMachine(test)
 //     env = Map(&quot;x&quot; -&gt; NumV(n = 5)),
 // ...
 </code></pre>
+<h2 id="refunctionalization"><a class="header" href="#refunctionalization">Refunctionalization</a></h2>
+<p>Can we also invert defunctionalization? That is, can we represent a
+program such that a data type is replaced by a function type?</p>
+<p>Let's look at an example.</p>
+<pre><code class="language-scala">enum MyList[T]:
+  case MyEmptyList[T]() extends MyList[T]
+  case MyCons[T](x: T, xs: MyList[T]) extends MyList[T]
+
+import MyList._
+
+def nth[T](l: MyList[T], i: Int) : T = l match {
+  case MyEmptyList() =&gt; sys.error(&quot;index out of range&quot;)
+  case MyCons(x,xs) =&gt; if (i==0) then x  else nth(xs,i-1)
+}
+</code></pre>
+<p>Refunctionalization works smoothly when there is just one pattern match on
+a data type. In this case, we represent a list by &quot;its&quot; <code>nth</code> function:</p>
+<pre><code class="language-scala">type MyListR[T] = Int =&gt; T
+
+def myEmptyList[T] : MyListR[T] = _ =&gt; sys.error(&quot;index out of range&quot;)
+def myCons[T](x: T,  xs: MyListR[T]) : MyListR[T] =
+  i =&gt; if (i==0) then x  else xs(i-1)
+</code></pre>
+<p>The defunctionalized and the refunctionalized lists differ in their modular structure.
+In the defunctionalized version, it is &quot;easy&quot; (only addition of code but no modification
+of existing code necessary) to add new functions that pattern-match on lists, such
+as a <code>length</code>function.</p>
+<pre><code class="language-scala">def length[T](l: MyList[T]) : Int = l match {
+  case MyEmptyList() =&gt; 0
+  case MyCons(x,xs) =&gt; 1 + length(xs)
+}
+</code></pre>
+<p>In the refunctionalized version, on the other hand, it is &quot;easy&quot; to add new ways to create lists.
+For instance, here is a constructor for the infinite list of numbers</p>
+<pre><code class="language-scala">def allNats : MyListR[Int] = i =&gt; i
+</code></pre>
+<p>The two versions hence corresponds to the two dimensions of the aforementioned &quot;expression problem&quot;.
+These program  transformations are hence generally applicable program transformations in
+a programmer's modularity toolbox.</p>
+<p>But what about refunctionalization in the case that there is more than one pattern-match on the
+data type? It turns out that we can refunctionalize if we generalize functions to objects, that is,
+if we view functions as special kinds of objects with a single <code>apply</code> method.</p>
+<p>For instance, in the case of lists with two pattern-matching functions, <code>nth</code> and <code>length</code>,
+we can represent lists as <em>objects</em> with two methods, one for each pattern match.</p>
+<pre><code class="language-scala">trait MyListRO[T] {
+  def nth(i: Int) : T
+  def length : Int  
+}
+
+def myEmptyListO[T] : MyListRO[T] = new MyListRO[T] {
+  def nth(i: Int) : T = sys.error(&quot;index out of range&quot;)
+  def length : Int = 0
+}
+
+def myConsO[T](x: T,  xs: MyListRO[T]) : MyListRO[T] = new MyListRO[T] {
+  def nth(i: Int) : T = if (i==0) then x  else xs.nth(i-1)
+  def length : Int =  1 + xs.length
+}
+</code></pre>
+<p>With this generalization, we can defunctionalize any object type (the transformation
+could then maybe be called &quot;deobjectionalization&quot;) and we can refunctionalize any
+algebraic data type, and thereby completely invert the extensibility of the program.</p>
+<p>Recall that both transformations are <em>global</em> and not compositional, that is, the full program must be
+transformed at once.</p>
+<p>We have glossed over some technical details that would need to be addressed to automate
+these transformations and make them inverse to each other. For instance, we have not
+addressed how to reverse the lambda lifting part.</p>
+<p>Historical notes: Defunctionalization was proposed by John Reynolds in 1972 in his landmark
+paper &quot;Reynolds, John (August 1972). &quot;&quot;Definitional Interpreters for Higher-Order Programming Languages&quot;.
+Similar to these lecture notes, Reynolds applied defunctionalization to a CPS-transformed interpreter.
+The generalization of refunctionalization to use objects instead of functions was presented
+in a 2015 paper by Rendel, Trieflinger, and Ostermann entitled &quot;Automatic Refunctionalization to a Language with Copattern Matching: With Applications to the Expression Problem&quot;. A fully formal account
+of the transformations that also addresses invertible lambda lifting and proves that the
+transformations are inverses of each other can be found in the 2020 paper &quot;Decomposition Diversity with Symmetric Data and Codata&quot; by Binder, Jabs, Skupin and Ostermann.</p>
 
                     </main>
 
