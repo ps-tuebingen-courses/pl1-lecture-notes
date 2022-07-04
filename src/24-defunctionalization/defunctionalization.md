@@ -23,6 +23,9 @@ enum Exp:
   case Ap (funExpr : Exp, argExpr : Exp)
 import Exp._
 
+implicit def num2exp(n: Int) : Exp = Num(n)
+implicit def id2exp(s: String) : Exp = Id(s)
+
 sealed abstract class Value
 type Env = Map[String, Value]
 case class NumV(n : Int) extends Value
@@ -208,3 +211,91 @@ object Defunctionalized {
 This interpreter can be seen as an abstract machine. The state space of the abstract machine is
 (``Exp`` x ``Env`` x ``FunctionValue``) U (``FunctionValue`` x ``Value``), where "x" stands for cross product and "U" stands for set union.
 Every case in the pattern matches in ``apply`` and ``eval`` can be read as a transition in this state space.
+
+## From Interpreter to Abstract Machine
+
+To see that we can read the above functions as transitions of an abstract machine, let's actually
+construct that machine.
+Its domain of States is the type ``MachineState[T]``.
+The final state of the machine is ``Done(v)``, for some value ``v``.
+Its transition function is the function named ``transition``.
+We can see every intermediate state of the abstract machine.
+Its state is fully described by the (first-order) state type. We are no
+longer dependent on call-stack management or higher-order functions of
+the meta language (Scala)
+
+```scala mdoc
+object AbstractMachine {
+  sealed abstract class FunctionValue[T]
+  case class AddC1[T](r : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
+  case class AddC2[T](lv : Value, k : FunctionValue[T]) extends FunctionValue[T]
+  case class ApC1[T](a : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
+  case class ApC2[T](f : Fun, closureEnv : Env, k : FunctionValue[T]) extends FunctionValue[T]
+  case class IdentityFV() extends FunctionValue[Value]
+
+  sealed abstract class MachineState[T]
+  case class EvalState[T](e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
+  case class ApplyState[T](fv: FunctionValue[T], v: Value) extends MachineState[T]
+  case class Done(v: Value) extends MachineState[Value]
+
+  def transition[T](s: MachineState[T]) : MachineState[T] =  
+    s match {
+      case EvalState(e,env,k) => transitionEval(e,env,k)
+      case ApplyState(fv,v) => transitionApply(fv,v)
+      case Done(v) => sys.error("already done")
+    }
+
+  def transitionEval[T](e: Exp, env: Env, k: FunctionValue[T]) : MachineState[T] = e match {
+    case Num(n: Int) => ApplyState(k, NumV(n))
+    case Id(x) => ApplyState(k,env(x))
+    case Add(l,r) =>
+      EvalState(l, env,AddC1(r,env,k))
+    case f@Fun(param,body) => ApplyState(k,ClosureV(f,env))         
+    case Ap(f,a) =>  EvalState(f, env, AppC1(a,env,k))
+   }
+
+   def transitionApply[T](fv: FunctionValue[T], v: Value) : MachineState[T] = fv match {
+    case IdentityFV() => Done(v)
+    case AddC1(r,env,k) => EvalState(r,env,AddC2(v,k))
+    case AddC2(lv,k) => (lv,v) match {
+          case (NumV(v1),NumV(v2)) => ApplyState(k, NumV(v1+v2))
+          case _ => sys.error("can only add numbers")
+         }
+    case AppC1(a,env,k) => v match {
+        case ClosureV(f, closureEnv) => EvalState(a, env, AppC2(f,closureEnv,k))
+        case _ => sys.error("can only apply functions")
+    }
+    case AppC2(f,closureEnv,k) => EvalState(f.body, closureEnv + (f.param -> v),k)
+  }
+}
+import AbstractMachine._
+```
+Now let's try this out with a concrete example and look at the tract of transitions
+
+```scala mdoc
+val test = Ap(Fun("x",Add("x",1)),5)  
+val initMS : MachineState[Value] = EvalState(test,Map.empty,IdentityFV())
+val s1 = transition(initMS)//= EvalState(Fun(x,Add(Id(x),Num(1))),Map(),AppC1(Num(5),Map(),IdentityFV()))
+val s2 = transition(s1)   // = ApplyState(AppC1(Num(5),Map(),IdentityFV()),ClosureV(Fun(x,Add(Id(x),Num(1))),Map()))
+val s3 = transition(s2)   // = EvalState(Num(5),Map(),AppC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()))
+val s4 = transition(s3)   // = ApplyState(AppC2(Fun(x,Add(Id(x),Num(1))),Map(),IdentityFV()),NumV(5))
+val s5 = transition(s4)   // = EvalState(Add(Id(x),Num(1)),Map(x -> NumV(5)),IdentityFV())
+val s6 = transition(s5)   // = EvalState(Id(x),Map(x -> NumV(5)),AddC1(Num(1),Map(x -> NumV(5)),IdentityFV()))
+val s7 = transition(s6)   // = ApplyState(AddC1(Num(1),Map(x -> NumV(5)),IdentityFV()),NumV(5))
+val s8 = transition(s7)   // = EvalState(Num(1),Map(x -> NumV(5)),AddC2(NumV(5),IdentityFV()))
+val s9 = transition(s8)   // = ApplyState(AddC2(NumV(5),IdentityFV()),NumV(1))
+val s10 = transition(s9)  // = ApplyState(IdentityFV(),NumV(6))
+val s11 = transition(s10) // = Done(NumV(6))
+```
+We can also automate this into a function that collects the list of all states.
+
+```scala mdoc
+def evalMachine(e: Exp) : List[MachineState[Value]] =
+{
+  val initMS : MachineState[Value] = EvalState(e,Map.empty,IdentityFV())
+  List.unfold(initMS)({ case Done(v) => None
+                        case s => { val s2 = transition(s); Some((s,s2))}})
+}
+
+val q = evalMachine(test)
+```
