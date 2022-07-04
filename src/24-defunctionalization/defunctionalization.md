@@ -389,7 +389,7 @@ these transformations and make them inverse to each other. For instance, we have
 addressed how to reverse the lambda lifting part.
 
 Historical notes: Defunctionalization was proposed by John Reynolds in 1972 in his landmark
-paper "Reynolds, John (August 1972). ""Definitional Interpreters for Higher-Order Programming Languages".
+paper "Definitional Interpreters for Higher-Order Programming Languages".
 Similar to these lecture notes, Reynolds applied defunctionalization to a CPS-transformed interpreter.
 The generalization of refunctionalization to use objects instead of functions was presented
 in a 2015 paper by Rendel, Trieflinger, and Ostermann entitled "Automatic Refunctionalization to a Language with Copattern Matching: With Applications to the Expression Problem". A fully formal account
