@@ -212,8 +212,8 @@ object Defunctionalized {
 ```
 
 This interpreter can be seen as an abstract machine. The state space of the abstract machine is
-(``Exp`` \\( \times \\) ``Env`` \\( \times \\) ``FunctionValue``) \\( \union \\) (``FunctionValue`` \\( \times \\) ``Value``),
-where \\( \times \\) stands for cross product and \\( \union \\) stands for set union.
+(``Exp`` \\( \times \\) ``Env`` \\( \times \\) ``FunctionValue``) \\( \cap \\) (``FunctionValue`` \\( \times \\) ``Value``),
+where \\( \times \\) stands for cross product and \\( \cap \\) stands for set union.
 Every case in the pattern matches in ``apply`` and ``eval`` can be read as a transition in this state space.
 
 ## From Interpreter to Abstract Machine
