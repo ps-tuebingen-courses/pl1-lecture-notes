@@ -6,7 +6,7 @@ The content of this chapter is available as a Scala file [here.](./type-inferenc
 import scala.language.implicitConversions
 ```
 
-Hindley-Milner type inference with let-polymorphism:
+Hindley-Milner type inference with "let-polymorphism":
 
 ```scala mdoc
 enum Type:
@@ -147,7 +147,7 @@ def eval(e: Exp): Exp = e match {
     case _ => sys.error("can only add numbers")
   }
   case Ap(f, a) => eval(f) match {
-    case Fun(x, body) => eval(subst(body, x, eval(a)))  // call-by-value
+    case Fun(x, body) => eval(subst(body, x, eval(a))) // call-by-value
     case _ => sys.error("can only apply functions")
   }
   case Let(x, xdef, body) => eval(subst(body, x, eval(xdef)))
@@ -159,7 +159,7 @@ assert(doTypeCheck(42, Map.empty) == NumType())
 assert(doTypeCheck(Fun("x", Add("x", 1)), Map.empty) == FunType(NumType(), NumType()))
 ```
 
-Test ``let-polymorphism``: The identity function is once applied to a function and once to a number:
+Test "let-polymorphism": The identity function is once applied to a function and once to a number:
 
 ```scala mdoc
 val exId =
@@ -181,8 +181,8 @@ Completeness of type inference:
 > If there exist type annotations that make a program type-check in the STLC type checker,
 > then the type inference will also be able to type-check the non-annotated version of the program.
 
-Due to ``let-polymorphism``, this program also type-checks some programs that would be ill-formed in STLC
+Due to "let-polymorphism", this program also type-checks some programs that would be ill-formed in STLC
 
 The type system is still sound:
 
-> If `doTypeCheck(e, Map.empty) == t`, then `eval(e) == v` and `doTypeCheck(v) == t` (modulo \( \alpha \)-renaming of type variables).
+> If `doTypeCheck(e, Map.empty) == t`, then `eval(e) == v` and `doTypeCheck(v) == t` (modulo \\( \alpha \\)-renaming of type variables).
