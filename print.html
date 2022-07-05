@@ -4385,8 +4385,8 @@ def addAndMultNToListDefun(n: Int, xs: List[Int]) = map(G(n), map(F(n), xs))
 }
 </code></pre>
 <p>This interpreter can be seen as an abstract machine. The state space of the abstract machine is
-(<code>Exp</code> \( \times \) <code>Env</code> \( \times \) <code>FunctionValue</code>) \( \cap \) (<code>FunctionValue</code> \( \times \) <code>Value</code>),
-where \( \times \) stands for cross product and \( \cap \) stands for set union.
+(<code>Exp</code> \( \times \) <code>Env</code> \( \times \) <code>FunctionValue</code>) \( \cup \) (<code>FunctionValue</code> \( \times \) <code>Value</code>),
+where \( \times \) stands for cross product and \( \cup \) stands for set union.
 Every case in the pattern matches in <code>apply</code> and <code>eval</code> can be read as a transition in this state space.</p>
 <h2 id="from-interpreter-to-abstract-machine"><a class="header" href="#from-interpreter-to-abstract-machine">From Interpreter to Abstract Machine</a></h2>
 <p>To see that we can read the above functions as transitions of an abstract machine, let's actually
