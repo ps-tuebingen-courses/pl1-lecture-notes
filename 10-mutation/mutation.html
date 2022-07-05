@@ -171,7 +171,7 @@ We will add boxes to our base language, FAE.</p>
   object Exp:
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def id2exp(s: String): Exp = Id(s)
-    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+    def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 }
 import Syntax._
 import Exp._
@@ -199,7 +199,7 @@ together with the computed value when it evaluates an expression.  However, this
 example:</p>
 <pre><code class="language-scala">val test2 = wth(&quot;a&quot;, NewBox(1),
               wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, OpenBox(&quot;a&quot;))),
-                Seq(SetBox(&quot;a&quot;,2),
+                Seq(SetBox(&quot;a&quot;, 2),
                   Ap(&quot;f&quot;, 5))))
 </code></pre>
 <p>The mutation should affect the box stored in the closure bound to <code>f</code>.  But with the implementation strategy described above it would not.
@@ -236,7 +236,7 @@ type Store = Map[Address, Value]
 <p>We will often need a fresh address in the store. We do so using a counter variable.</p>
 <pre><code class="language-scala">var _nextAddress = 0
 
-def nextAddress : Address = {
+def nextAddress: Address = {
   _nextAddress += 1
   _nextAddress
 }
@@ -248,7 +248,7 @@ Let's now discuss the evaluation of FAE with conditionals and boxes, BCFAE. To t
              wth(&quot;toggle&quot;, Fun(&quot;dummy&quot;, If0(OpenBox(&quot;switch&quot;),
                                           Seq(SetBox(&quot;switch&quot;, 1), 1),
                                           Seq(SetBox(&quot;switch&quot;, 0), 0))),
-                 Add(Ap(&quot;toggle&quot;,42), Ap(&quot;toggle&quot;,42))))
+                 Add(Ap(&quot;toggle&quot;, 42), Ap(&quot;toggle&quot;, 42))))
 </code></pre>
 <p>This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
 evaluation of this program.</p>
@@ -258,12 +258,12 @@ evaluation of this program.</p>
 <tr><td>C</td><td>Add(..</td><td></td><td></td><td></td></tr>
 <tr><td>D</td><td>Ap(&quot;toggle&quot;)</td><td>1</td><td></td><td>1 -&gt; NumV(1)</td></tr>
 <tr><td>E</td><td>Ap(&quot;toggle&quot;)</td><td>0</td><td></td><td>1 -&gt; NumV(0)</td></tr>
-<tr><td>F</td><td>Add(0,1)</td><td>1</td><td></td><td></td></tr>
+<tr><td>F</td><td>Add(0, 1)</td><td>1</td><td></td><td></td></tr>
 </tbody></table>
 <p>Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
 This is called <em>store-passing style</em>.  Consequently, we have to update the type of our evaluator.</p>
-<pre><code class="language-scala">def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env, s: Store): (Value, Store) = e match {
   /* All expressions whose evaluation does not alter the store just return s. */
   case Num(n) =&gt; (NumV(n), s)
   case Id(x) =&gt; (env(x), s)
@@ -359,18 +359,18 @@ and all the problems associated with manual memory management.</p>
 <p>Our model of stores is sufficient to illustrate how modern languages deal with memory management: by garbage collection.
 Garbage collectors automatically reclaim memory that is no longer referenced from within the active part of the computation.
 We can model a (naive) mark-and-sweep garbage collector as follows:</p>
-<pre><code class="language-scala">def gc(env: Env, store: Store) : Store = {
+<pre><code class="language-scala">def gc(env: Env, store: Store): Store = {
 
-  def allAddrInVal(v: Value) : Set[Address] = v match {
+  def allAddrInVal(v: Value): Set[Address] = v match {
     case AddressV(a)      =&gt; Set(a)
     case NumV(_)          =&gt; Set.empty
     case ClosureV(f, env) =&gt; allAddrInEnv(env)
   }
 
-  def allAddrInEnv(env: Env) : Set[Address] =
+  def allAddrInEnv(env: Env): Set[Address] =
     env.values.map(allAddrInVal _).fold(Set.empty)(_ union _)
 
-  def mark(seed: Set[Address]) : Set[Address] = {
+  def mark(seed: Set[Address]): Set[Address] = {
     val newAddresses = seed.flatMap(ad =&gt; allAddrInVal(store(ad)))
     if (newAddresses.subsetOf(seed)) seed
     else mark(seed union newAddresses)

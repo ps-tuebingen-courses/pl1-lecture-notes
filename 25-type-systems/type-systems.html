@@ -205,7 +205,7 @@ import Type._
 </code></pre>
 <p>A type checker is a compositional assignment of types (or type errors) to expressions. Compositionality means that the type of a
 composite expression is computed from the type of its subexpressions. Compositionality is quite important for reasoning about types.
-In this case, the type checker is a rather straightforward structural recursion ( = compositionality) over expressions.</p>
+In this case, the type checker is a rather straightforward structural recursion (= compositionality) over expressions.</p>
 <pre><code class="language-scala">def typeCheck(e: Exp): Type = e match {
   case Num(n) =&gt; IntType()
   case Bool(x) =&gt; BoolType()

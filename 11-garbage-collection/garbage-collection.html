@@ -164,14 +164,14 @@ a functional store, because our purpose is not to explain mutation but to explai
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+  def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 
 import Exp._
 </code></pre>
 <p>We will equip our values with a mutable flag that is useful for mark-and-sweep garbage collection.
 In real systems it is implemented as a bit flag, or, if the so-called &quot;tri-color algorithm&quot; is used, with two bit flags.</p>
 <pre><code class="language-scala">abstract class Value {
-  var marked : Boolean = false
+  var marked: Boolean = false
 }
 </code></pre>
 <p>We will also use a mutable map instead of a map for environments. This is not needed for mark-and-sweep,
@@ -184,15 +184,15 @@ case class AddressV(a: Int) extends Value
 <p>To be able to experiment with different store and gc designs, we create an interface for stores.
 The stack parameter in <code>malloc</code> is needed during gc to determine the root nodes from which the algorithms can start.</p>
 <pre><code class="language-scala">trait Store {
-  def malloc(stack: List[Env], v: Value) : Int
-  def update(index: Int, v: Value) : Unit
-  def apply(index: Int) : Value
+  def malloc(stack: List[Env], v: Value): Int
+  def update(index: Int, v: Value): Unit
+  def apply(index: Int): Value
 }
 </code></pre>
 <p>In our interpreter, the stack of environments is only implicitly available on the stack of the meta-language.
 To reify the call-stack we need to make it explicit. We do so by constructing the stack explicitly and passing it as parameter.
 The first element of the stack is the current environment; the rest is only needed for gc.</p>
-<pre><code class="language-scala">def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
+<pre><code class="language-scala">def eval(e: Exp, stack: List[Env], store: Store): Value = e match {
 
   case Num(n) =&gt; NumV(n)
 
@@ -278,9 +278,9 @@ The first element of the stack is the current environment; the rest is only need
 
   val memory = new Array[Value](size)
 
-  var nextFreeAddr : Int = 0
+  var nextFreeAddr: Int = 0
 
-  def malloc(stack: List[Env], v: Value) : Int = {
+  def malloc(stack: List[Env], v: Value): Int = {
     val x = nextFreeAddr
     if (x &gt;= size) sys.error(&quot;out of memory&quot;)
     nextFreeAddr += 1
@@ -288,7 +288,7 @@ The first element of the stack is the current environment; the rest is only need
     x
   }
 
-  def update(index: Int, v: Value) : Unit = memory.update(index, v)
+  def update(index: Int, v: Value): Unit = memory.update(index, v)
 
   def apply(index: Int) = memory(index)
 }
@@ -298,11 +298,11 @@ The first element of the stack is the current environment; the rest is only need
 
   val memory = new Array[Value](size)
 
-  var free : Int = size
+  var free: Int = size
 
-  var nextFreeAddr : Int = 0
+  var nextFreeAddr: Int = 0
 
-  def malloc(stack: List[Env], v: Value) : Int = {
+  def malloc(stack: List[Env], v: Value): Int = {
     if (free &lt;= 0) gc(stack)
     if (free &lt;= 0) sys.error(&quot;out of memory&quot;)
 
@@ -327,20 +327,20 @@ The first element of the stack is the current environment; the rest is only need
     nextFreeAddr
   }
 
-  def update(index: Int, v: Value) : Unit = memory.update(index, v)
+  def update(index: Int, v: Value): Unit = memory.update(index, v)
 
   def apply(index: Int) = memory(index)
 
-  def allAddrInVal(v: Value) : Set[Int] = v match {
+  def allAddrInVal(v: Value): Set[Int] = v match {
     case AddressV(a)      =&gt; Set(a)
     case NumV(_)          =&gt; Set.empty
     case ClosureV(f, env) =&gt; allAddrInEnv(env)
   }
 
-  def allAddrInEnv(env: Env) : Set[Int] =
+  def allAddrInEnv(env: Env): Set[Int] =
     env.values.map(allAddrInVal _).fold(Set.empty)(_ union _)
 
-  def mark(seed: Set[Int]) : Unit = {
+  def mark(seed: Set[Int]): Unit = {
     seed.foreach(memory(_).marked = true)
     val newAddresses = seed.flatMap(
                          ad =&gt; allAddrInVal(memory(ad))
@@ -353,7 +353,7 @@ The first element of the stack is the current environment; the rest is only need
   /* What graph algorithm underlies the mark step as implemented here?
    * What potential problem could it cause in a &quot;real&quot; interpreter? */
 
-  def sweep() : Unit = {
+  def sweep(): Unit = {
     memory.indices.foreach(
       index =&gt;   if (memory(index) == null) {
                    /* No work needed on an empty memory cell */
@@ -369,7 +369,7 @@ The first element of the stack is the current environment; the rest is only need
     )
   }
 
-  def gc(stack: List[Env]) : Unit = {
+  def gc(stack: List[Env]): Unit = {
     println(&quot;\nSTARTING GC\nSTACK = &quot; + stack + &quot;\nSTORE = &quot; + memory)
     mark(stack.map(allAddrInEnv _).fold(Set.empty)(_ union _))
     sweep()

@@ -219,13 +219,13 @@ a core language and syntactic sugar.</p>
 </code></pre>
 <p>However, another way of adding sub is to treat it as syntactic sugar using the fact that <code>a - b = a + (-1 * b)</code>
 One way of expressing the desugaring is as a syntax transformation:</p>
-<pre><code class="language-scala">def desugarSMAE2MAE(e: SMAE.Exp) : MAE.Exp = e match {
+<pre><code class="language-scala">def desugarSMAE2MAE(e: SMAE.Exp): MAE.Exp = e match {
   case SMAE.Exp.Num(n) =&gt; MAE.Exp.Num(n)
   case SMAE.Exp.Add(lhs, rhs) =&gt; MAE.Exp.Add(desugarSMAE2MAE(lhs), desugarSMAE2MAE(rhs))
   case SMAE.Exp.Mult(lhs, rhs) =&gt; MAE.Exp.Mult(desugarSMAE2MAE(lhs), desugarSMAE2MAE(rhs))
   case SMAE.Exp.Sub(lhs, rhs) =&gt;
     MAE.Exp.Add(desugarSMAE2MAE(lhs),
-                 MAE.Exp.Mult(MAE.Exp.Num(-1),desugarSMAE2MAE(rhs)))
+                 MAE.Exp.Mult(MAE.Exp.Num(-1), desugarSMAE2MAE(rhs)))
 }
 </code></pre>
 <p>With this desugaring in place, we do not need an interpreter for SMAE anymore; rather we can reuse the MAE interpreter:</p>
@@ -245,7 +245,7 @@ namely during the construction of the AST:</p>
     case Add(lhs: Exp, rhs: Exp) extends Exp
     case Mult(lhs: Exp, rhs: Exp) extends Exp
   object Exp:
-    def sub(e1: Exp, e2: Exp) : Exp =
+    def sub(e1: Exp, e2: Exp): Exp =
       Add(e1, Mult(Num(-1), e2))
   import Exp._
 
@@ -276,7 +276,7 @@ namely during the construction of the AST:</p>
     case Add(lhs: Exp, rhs: Exp) extends Exp
     case Mult(lhs: Exp, rhs: Exp) extends Exp
   object Exp:
-    def sub(e1: Exp, e2: Exp) : Exp =
+    def sub(e1: Exp, e2: Exp): Exp =
       Add(e1, Mult(Num(-1), e2))
     def unaryminus(e: Exp) = sub(Num(0), e)
   import Exp._

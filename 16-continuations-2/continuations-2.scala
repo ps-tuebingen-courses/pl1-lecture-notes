@@ -26,7 +26,7 @@ case class CPSContAp(k: CPSVal, a: CPSVal) extends CPSExp
 // the arguments are even CPSVar and not only CPSVal!
 case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp
 
-def freeVars(e: Exp) : Set[String] =  e match {
+def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) => Set(x)
    case Add(l, r) => freeVars(l) ++ freeVars(r)
    case Fun(x, body) => freeVars(body) - x
@@ -34,15 +34,15 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case Num(n) => Set.empty
 }
 
-def freshName(names: Set[String], default: String) : String = {
-  var last : Int = 0
+def freshName(names: Set[String], default: String): String = {
+  var last: Int = 0
   var freshName = default
   while (names contains freshName) { freshName = default + last; last += 1; }
   freshName
 }
 
-def cps(e: Exp) : CPSCont = e match {
-   case Add(e1,e2) => {
+def cps(e: Exp): CPSCont = e match {
+   case Add(e1, e2) => {
      val k = freshName(freeVars(e), "k")
      val lv = freshName(freeVars(e2), "lv")
      CPSCont(k, CPSContAp(cps(e1), CPSCont(lv, CPSContAp(cps(e2), CPSCont("rv", CPSContAp(k, CPSAdd("rv", lv)))))))
@@ -52,7 +52,7 @@ def cps(e: Exp) : CPSCont = e match {
      val dynk = freshName(freeVars(e), "dynk")
      CPSCont(k, CPSContAp(k, CPSFun(a, dynk, CPSContAp(cps(body), dynk))))
    }
-   case Ap(f,a) => {
+   case Ap(f, a) => {
      val k = freshName(freeVars(e), "k")
      val fval = freshName(freeVars(a), "fval")
      CPSCont(k, CPSContAp(cps(f), CPSCont(fval, CPSContAp(cps(a), CPSCont("aval", CPSFunAp(fval, "aval", k))))))

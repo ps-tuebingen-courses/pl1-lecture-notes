@@ -19,7 +19,7 @@ object Syntax {
   object Exp:
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def id2exp(s: String): Exp = Id(s)
-    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+    def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 }
 import Syntax._
 import Exp._
@@ -31,7 +31,7 @@ val test1 = wth("b", NewBox(0),
 
 val test2 = wth("a", NewBox(1),
               wth("f", Fun("x", Add("x", OpenBox("a"))),
-                Seq(SetBox("a",2),
+                Seq(SetBox("a", 2),
                   Ap("f", 5))))
 
 sealed abstract class Value
@@ -46,7 +46,7 @@ type Store = Map[Address, Value]
 
 var _nextAddress = 0
 
-def nextAddress : Address = {
+def nextAddress: Address = {
   _nextAddress += 1
   _nextAddress
 }
@@ -55,9 +55,9 @@ val test3 = wth("switch", NewBox(0),
              wth("toggle", Fun("dummy", If0(OpenBox("switch"),
                                           Seq(SetBox("switch", 1), 1),
                                           Seq(SetBox("switch", 0), 0))),
-                 Add(Ap("toggle",42), Ap("toggle",42))))
+                 Add(Ap("toggle", 42), Ap("toggle", 42))))
 
-def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
+def eval(e: Exp, env: Env, s: Store): (Value, Store) = e match {
   /* All expressions whose evaluation does not alter the store just return s. */
   case Num(n) => (NumV(n), s)
   case Id(x) => (env(x), s)
@@ -147,18 +147,18 @@ def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
        }
 }
 
-def gc(env: Env, store: Store) : Store = {
+def gc(env: Env, store: Store): Store = {
 
-  def allAddrInVal(v: Value) : Set[Address] = v match {
+  def allAddrInVal(v: Value): Set[Address] = v match {
     case AddressV(a)      => Set(a)
     case NumV(_)          => Set.empty
     case ClosureV(f, env) => allAddrInEnv(env)
   }
 
-  def allAddrInEnv(env: Env) : Set[Address] =
+  def allAddrInEnv(env: Env): Set[Address] =
     env.values.map(allAddrInVal _).fold(Set.empty)(_ union _)
 
-  def mark(seed: Set[Address]) : Set[Address] = {
+  def mark(seed: Set[Address]): Set[Address] = {
     val newAddresses = seed.flatMap(ad => allAddrInVal(store(ad)))
     if (newAddresses.subsetOf(seed)) seed
     else mark(seed union newAddresses)

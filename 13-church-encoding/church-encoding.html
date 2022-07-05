@@ -165,13 +165,13 @@ case class ClosureV(f:Fun, env:Env) extends Value
 </code></pre>
 <p>Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,
 say, a number but get in fact a closure. Hence, this language has the fascinating property that  no dynamic type errors can occur.</p>
-<pre><code class="language-scala">def eval(e: Exp, env: Env) : Value = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env): Value = e match {
   // We give the identity function as dummy value for PrintDot
-  case PrintDot() =&gt; print(&quot;.&quot;); ClosureV(Fun(&quot;x&quot;,&quot;x&quot;), Map.empty)
+  case PrintDot() =&gt; print(&quot;.&quot;); ClosureV(Fun(&quot;x&quot;, &quot;x&quot;), Map.empty)
   case Id(x) =&gt; env(x)
-  case f@Fun(param,body) =&gt; ClosureV(f, env)
-  case Ap(f,a) =&gt; eval(f,env) match {
-    case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
+  case f@Fun(param, body) =&gt; ClosureV(f, env)
+  case Ap(f, a) =&gt; eval(f, env) match {
+    case ClosureV(f, closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a, env)))
   }
 }
 </code></pre>
@@ -181,9 +181,9 @@ To do so, we use the technique of Church encoding. This means that each datum is
 <p>Let's start with booleans and boolean arithmetic.</p>
 <pre><code class="language-scala">val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
 val t = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;t&quot;))  // true
-val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
+val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;b&quot;), &quot;a&quot;)))
 val or = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;a&quot;), &quot;b&quot;)))
-val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;a&quot;,&quot;f&quot;),&quot;t&quot;))))
+val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;a&quot;, &quot;f&quot;), &quot;t&quot;))))
 </code></pre>
 <p>We can now write our own control structures, such as <code>if/then/else</code></p>
 <pre><code class="language-scala">val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
@@ -195,8 +195,8 @@ val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(&quot;s&q
 val one = Ap(succ, zero)
 val two = Ap(succ, one)
 val three = Ap(succ, two)
-val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;,&quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;), &quot;z&quot;))))))
-val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, Ap(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
+val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, &quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;), &quot;z&quot;))))))
+val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, Ap(&quot;b&quot;, &quot;s&quot;)), &quot;z&quot;)))))
 val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;b&quot;, Ap(mult, &quot;a&quot;)), one)))
 val iszero = Fun(&quot;a&quot;, Ap(Ap(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
 </code></pre>
@@ -208,14 +208,14 @@ For testing, here is a function that prints a unary representation of a number.<
 <p>Again straightforward, except &quot;tail&quot;, which we do not show here. It needs the same kind of trick (called &quot;pairing trick&quot;)
 as the predecessor function.</p>
 <pre><code class="language-scala">val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;,&quot;c&quot;), &quot;e&quot;))))))
+val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;, &quot;c&quot;), &quot;e&quot;))))))
 val head = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
 </code></pre>
 <p>For instance, we can multiply all numbers in a list</p>
 <pre><code class="language-scala">val multlist = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, mult), one))
 </code></pre>
-<p>Here is the list 3,2,3:</p>
-<pre><code class="language-scala">val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three), emptylist)))
+<p>Here is the list 3, 2, 3:</p>
+<pre><code class="language-scala">val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons, three), emptylist)))
 
 </code></pre>
 <pre><code class="language-scala">val test = Ap(printnum, Ap(multlist, list323))

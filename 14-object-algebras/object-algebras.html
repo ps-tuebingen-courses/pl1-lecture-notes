@@ -157,7 +157,7 @@ solution to the expression problem.</p>
 calculus. We use objects instead of functions, but otherwise
 it is the same. Let's start with booleans.</p>
 <pre><code class="language-scala">trait Bool {
-  def ifthenelse[T](t: T, e: T) : T
+  def ifthenelse[T](t: T, e: T): T
 }
 
 case object T extends Bool {
@@ -166,26 +166,26 @@ case object T extends Bool {
 case object F extends Bool {
   def ifthenelse[T](t: T, e: T) = e
 }
-def and(a: Bool, b: Bool) : Bool = a.ifthenelse(b,a)
+def and(a: Bool, b: Bool): Bool = a.ifthenelse(b, a)
 </code></pre>
 <p>In Smalltalk and related languages, booleans are actually implemented
 like that (at least conceptually).</p>
 <p>In the same way, we can encode Church numerals.</p>
 <pre><code class="language-scala">trait NumC {
-  def fold[T](z: T, s: T =&gt; T) : T
+  def fold[T](z: T, s: T =&gt; T): T
 }
 case object Zero extends NumC {
   def fold[T](z: T, s: T =&gt; T) = z
 }
 
 case class Succ(n: NumC) extends NumC {
-  def fold[T](z: T, s: T =&gt; T) = s(n.fold(z,s))
+  def fold[T](z: T, s: T =&gt; T) = s(n.fold(z, s))
 }
 
 def plus(a: NumC, b: NumC) = {
   new NumC {
-    def fold[T](z: T, s: T =&gt; T) : T = {
-      a.fold(b.fold(z,s), s)
+    def fold[T](z: T, s: T =&gt; T): T = {
+      a.fold(b.fold(z, s), s)
     }
   }
 }
@@ -194,18 +194,18 @@ def plus(a: NumC, b: NumC) = {
 val twoC = Succ(oneC)
 val threeC = Succ(twoC)
 
-def testplusC = plus(twoC,threeC).fold[Unit]( (), _ =&gt; print(&quot;.&quot;))
+def testplusC = plus(twoC, threeC).fold[Unit]((), _ =&gt; print(&quot;.&quot;))
 </code></pre>
 <p>Object algebras are a different way to do Church encodings
 in object-oriented languages. This is what the encoding
 of Church numbers looks like in object algebra style.</p>
 <pre><code class="language-scala">trait NumSig[T] {
-  def z : T
-  def s(p: T) : T
+  def z: T
+  def s(p: T): T
 }
 
 trait Num {
-  def apply[T](x: NumSig[T]) : T
+  def apply[T](x: NumSig[T]): T
 }
 </code></pre>
 <p>In other words, every constructor of the data type is turned into
@@ -221,22 +221,22 @@ The advantage of this encoding is that we can extend the set of parameters
 of the <code>fold</code> by using inheritance.</p>
 <p>In this encoding, the <code>plus</code>-function looks like this:</p>
 <pre><code class="language-scala">def plus(a: Num, b: Num) = new Num {
-  def apply[T](x: NumSig[T]) : T = a( new NumSig[T] {
+  def apply[T](x: NumSig[T]): T = a(new NumSig[T] {
     def z = b(x)
     def s(p: T) = x.s(p)
   })
 }
 </code></pre>
 <p>Here is the representation of some numbers.</p>
-<pre><code class="language-scala">val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
+<pre><code class="language-scala">val zero: Num = new Num { def apply[T](x: NumSig[T]) = x.z }
+val one: Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
+val two: Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
+val three: Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
 </code></pre>
 <p>This is an interpretation of the <code>Num</code>-&quot;language&quot; as Scala integers:</p>
 <pre><code class="language-scala">object NumAlg extends NumSig[Int] {
   def z = 0
-  def s(x : Int) = x + 1
+  def s(x: Int) = x + 1
 }
 </code></pre>
 <pre><code class="language-scala">val testplus = plus(two, three)(NumAlg)
@@ -245,12 +245,12 @@ val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
 <p>Let's look at a more useful application of object algebras. We encode
 expression trees as object algebras.</p>
 <pre><code class="language-scala">trait Exp[T] {
-  implicit def id(name: String) : T
+  implicit def id(name: String): T
   def fun(param: String, body: T): T
-  def ap(funExpr: T, argExpr: T) :T
-  implicit def num(n: Int) : T
-  def add(e1: T, e2: T) : T
-  def wth(x: String, xdef: T, body: T) : T = ap(fun(x,body), xdef)
+  def ap(funExpr: T, argExpr: T):T
+  implicit def num(n: Int): T
+  def add(e1: T, e2: T): T
+  def wth(x: String, xdef: T, body: T): T = ap(fun(x, body), xdef)
 }
 </code></pre>
 <p>The structure of expressions forces compositional interpretations. Hence
@@ -279,7 +279,7 @@ case class NumV(n: Int) extends Value
 object eval extends eval
 </code></pre>
 <p>An example program becomes a function that is parametric in the choosen interpretation:</p>
-<pre><code class="language-scala">def test[T](semantics : Exp[T]) = {
+<pre><code class="language-scala">def test[T](semantics: Exp[T]) = {
   import semantics._
 
   ap(ap(fun(&quot;x&quot;, fun(&quot;y&quot;, add(&quot;x&quot;, &quot;y&quot;))), 5), 3)
@@ -292,7 +292,7 @@ object eval extends eval
 <p>The object algebra encoding of expressions is quite extensible. For instance, we can
 add another case to the expression data type by extending the interface.</p>
 <pre><code class="language-scala">trait ExpWithMult[T] extends Exp[T] {
-  def mult(e1: T, e2: T) : T
+  def mult(e1: T, e2: T): T
 }
 
 trait evalWithMult extends eval with ExpWithMult[Env =&gt; Value] {
@@ -303,7 +303,7 @@ trait evalWithMult extends eval with ExpWithMult[Env =&gt; Value] {
 }
 object evalWithMult extends evalWithMult
 
-def testMult[T](semantics : ExpWithMult[T]) = {
+def testMult[T](semantics: ExpWithMult[T]) = {
   import semantics._
 
   ap(ap(fun(&quot;x&quot;, fun(&quot;y&quot;, mult(&quot;x&quot;, &quot;y&quot;))), 5), 3)
@@ -315,7 +315,7 @@ def testMult[T](semantics : ExpWithMult[T]) = {
 <p>Note that there is no danger of confusing the language variants. For instance,
 an attempt to pass <code>testMult</code> to <code>eval</code> will be a static type error.</p>
 <p>At the same time, we can add another function on expressions (such as a pretty-printer)
-without changing existing code, too: Just add a 
+without changing existing code, too: Just add a
 <code>trait prettyPrint extends Exp[String]</code> and, if pretty-printing of <code>ExpWithMult</code>
 is required, extend with <code>trait prettyPrintMult extends prettyPrint with ExpWithMult[String]</code>.
 This is the object algebra way of solving the expression problem.</p>
@@ -324,15 +324,15 @@ typed higher-order abstract syntax, using higher-kinded type members.
 Don't panic if you don't understand what is going on here.</p>
 <pre><code class="language-scala">trait ExpT {
   type Rep[_]
-  def fun[S,T](f: Rep[S] =&gt; Rep[T]): Rep[S =&gt; T]
-  def ap[S,T](funExpr: Rep[S =&gt; T], argExpr: Rep[S]) : Rep[T]
-  implicit def num(n: Int) : Rep[Int]
-  def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
+  def fun[S, T](f: Rep[S] =&gt; Rep[T]): Rep[S =&gt; T]
+  def ap[S, T](funExpr: Rep[S =&gt; T], argExpr: Rep[S]): Rep[T]
+  implicit def num(n: Int): Rep[Int]
+  def add(e1: Rep[Int], e2: Rep[Int]): Rep[Int]
 }
 </code></pre>
-<p>Instead of having the semantic domain as a type parameter <code>T</code> as above, 
+<p>Instead of having the semantic domain as a type parameter <code>T</code> as above,
 we encode it as a higher-kinded abstract type member <code>Rep[_]</code>. This leads
-to significantly shorter type signatures and more fine-grained typing 
+to significantly shorter type signatures and more fine-grained typing
 via Scala's support for &quot;path-dependent types&quot;.</p>
 <p>Note that, in contrast to <code>eval</code>, no dynamic checks (<code>match</code> ...) are needed
 in the interpreter. Also, the result type of the evaluator is just <code>X</code>. In
@@ -344,8 +344,8 @@ interpreting a program is just as fast as writing the program directly in
 the meta language.</p>
 <pre><code class="language-scala">object evalT extends ExpT {
   type Rep[X] = X
-  def fun[S,T](f: S =&gt; T) = f
-  def ap[S,T](f: S =&gt; T, a: S) = f(a)
+  def fun[S, T](f: S =&gt; T) = f
+  def ap[S, T](f: S =&gt; T, a: S) = f(a)
   def num(n: Int) = n
   def add(e1: Int, e2: Int) = e1 + e2
 }
@@ -353,12 +353,12 @@ the meta language.</p>
 object prettyprintT extends ExpT {
   var counter = 0
   type Rep[X] = String
-  def fun[S,T](f: String =&gt; String) = {
+  def fun[S, T](f: String =&gt; String) = {
     val varname = &quot;x&quot; + counter.toString
     counter += 1
     &quot;(&quot; + varname + &quot; =&gt; &quot; +  f(varname) + &quot;)&quot;
   }
-  def ap[S,T](f: String, a: String) = f + &quot;(&quot; + a + &quot;)&quot;
+  def ap[S, T](f: String, a: String) = f + &quot;(&quot; + a + &quot;)&quot;
   def num(n: Int) = n.toString
   def add(e1: String, e2: String) = &quot;(&quot; + e1 + &quot;+&quot; + e2 + &quot;)&quot;
 }
@@ -386,9 +386,9 @@ a number and a function is rejected by the Scala type checker:</p>
 //   add(5, fun((x: Rep[Int]) =&gt; x))
 //          ^^^^^^^^^^^^^^^^^^^^^^^
 </code></pre>
-<p>The type system encoded in the <code>ExpT</code> type is the so-called &quot;simply-typed lambda calculus&quot;. 
-Encoding more expressive type system in a similar style (including, e.g., type parameters) 
-is an active area of research. </p>
+<p>The type system encoded in the <code>ExpT</code> type is the so-called &quot;simply-typed lambda calculus&quot;.
+Encoding more expressive type system in a similar style (including, e.g., type parameters)
+is an active area of research.</p>
 <p>References:
 B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with Object Algebras. Proc. ECOOP 2012.</p>
 

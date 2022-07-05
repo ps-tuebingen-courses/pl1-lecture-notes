@@ -147,27 +147,27 @@
 <pre><code class="language-scala">trait IOMonad {
   type IO[_]
   def unit[A](a: A): IO[A]
-  def bind[A,B](m: IO[A], f: A =&gt; IO[B]): IO[B]
+  def bind[A, B](m: IO[A], f: A =&gt; IO[B]): IO[B]
   def printString(s: String): IO[Unit]
   def inputString: IO[String]
 
   def performIO[A](action: IO[A]): A
 }
 </code></pre>
-<pre><code class="language-scala">val iomonad : IOMonad = new IOMonad {
+<pre><code class="language-scala">val iomonad: IOMonad = new IOMonad {
   type World = String
   type IO[A] = World =&gt; (A, World)
   def unit[A](a: A): IO[A] = w =&gt; (a, w)
-  def bind[A,B](m: IO[A], f: A =&gt; IO[B]): IO[B] = w =&gt; m(w) match { case (a, w2) =&gt; f(a)(w2) }
-  def printString(s: String) : IO[Unit] = w =&gt; { println(s); ((), w + s + &quot; was printed and then ...\n&quot;) }
+  def bind[A, B](m: IO[A], f: A =&gt; IO[B]): IO[B] = w =&gt; m(w) match { case (a, w2) =&gt; f(a)(w2) }
+  def printString(s: String): IO[Unit] = w =&gt; { println(s); ((), w + s + &quot; was printed and then ...\n&quot;) }
   def inputString: IO[String] = w =&gt; { val input = scala.io.StdIn.readLine(); (input, w + input + &quot; was entered and then ...\n&quot;) }
 
-  def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
+  def performIO[A](action: IO[A]): A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a, w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot; + w); a
   }
 }
 </code></pre>
-<pre><code class="language-scala">def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
+<pre><code class="language-scala">def someIOActions(implicit m: IOMonad): m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_: Unit) =&gt;
   m.bind(m.inputString, (firstName: String) =&gt;
   m.bind(m.printString(&quot;Enter your last name:&quot;), (_: Unit) =&gt;

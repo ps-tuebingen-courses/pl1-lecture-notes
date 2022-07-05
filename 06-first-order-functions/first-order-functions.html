@@ -169,7 +169,7 @@ The following definitions are the language we have analyzed so far together with
   object Exp:
     /** The new language constructs for first-order functions: */
     case class FunDef(args: List[String], body: Exp)
-    type Funs = Map[String,FunDef]
+    type Funs = Map[String, FunDef]
 
     /** We use implicits again to make example programs less verbose. */
     implicit def num2exp(n: Int): Exp = Num(n)
@@ -183,36 +183,36 @@ has a name. To make the invariant that there can only be one function for each
 name explicit, we have stored functions in the form of a map from function names to
 <code>FunDefs</code> above.</p>
 <p>The substitution for the new language is a straightforward extension of the former one.</p>
-<pre><code class="language-scala">def subst(e: Exp,i: String,v: Num) : Exp =  e match {
+<pre><code class="language-scala">def subst(e: Exp, i: String, v: Num): Exp =  e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
-    case Add(l,r) =&gt; Add( subst(l,i,v), subst(r,i,v))
-    case Mul(l,r) =&gt; Mul( subst(l,i,v), subst(r,i,v))
-    case With(x,xdef,body) =&gt; With(x,
-                                   subst(xdef,i,v),
-                                   if (x == i) body else subst(body,i,v))
-    case Call(f,args) =&gt; Call(f, args.map(subst(_,i,v)))
+    case Add(l, r) =&gt; Add(subst(l, i, v), subst(r, i, v))
+    case Mul(l, r) =&gt; Mul(subst(l, i, v), subst(r, i, v))
+    case With(x, xdef, body) =&gt; With(x,
+                                   subst(xdef, i, v),
+                                   if (x == i) body else subst(body, i, v))
+    case Call(f, args) =&gt; Call(f, args.map(subst(_, i, v)))
 }
 </code></pre>
 <p>We will first study a &quot;reference interpreter&quot; based on substitution.
 We pass the map of functions as an additional parameter.</p>
-<pre><code class="language-scala">def eval(funs: Funs, e: Exp) : Int = e match {
+<pre><code class="language-scala">def eval(funs: Funs, e: Exp): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; sys.error(&quot;unbound identifier: &quot; + x)
-  case Add(l,r) =&gt; eval(funs,l) + eval(funs,r)
-  case Mul(l,r) =&gt; eval(funs,l) * eval(funs,r)
-  case With(x, xdef, body) =&gt; eval(funs,subst(body,x,Num(eval(funs,xdef))))
-  case Call(f,args) =&gt; {
+  case Add(l, r) =&gt; eval(funs, l) + eval(funs, r)
+  case Mul(l, r) =&gt; eval(funs, l) * eval(funs, r)
+  case With(x, xdef, body) =&gt; eval(funs, subst(body, x, Num(eval(funs, xdef))))
+  case Call(f, args) =&gt; {
      val fd = funs(f) // lookup function definition
-     val vargs = args.map( eval(funs,_)) // evaluate function arguments
+     val vargs = args.map(eval(funs, _)) // evaluate function arguments
      if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      // We construct the function body to be evaluated by subsequently substituting all formal
      // arguments with their respective argument values.
      // If we have only a single argument &quot;fd.arg&quot; and a single argument value &quot;varg&quot;,
      // the next line of code is equivalent to:
      // val substbody = subst(fd.body, fd.arg, Num(varg))
-     val substbody = fd.args.zip(vargs).foldLeft(fd.body)( (b,av) =&gt; subst(b,av._1,Num(av._2)) )
-     eval(funs,substbody)
+     val substbody = fd.args.zip(vargs).foldLeft(fd.body)((b, av) =&gt; subst(b, av._1, Num(av._2)))
+     eval(funs, substbody)
   }
 }
 </code></pre>
@@ -223,23 +223,23 @@ We say in this case that function names and variable names live in different &qu
 An alternative would be to have them share one namespace. As an exercise, think about how
 to support a common namespace for function names and variable names.</p>
 <p>A test case:</p>
-<pre><code class="language-scala">val someFuns: Funs = Map( &quot;adder&quot; -&gt; FunDef(List(&quot;a&quot;,&quot;b&quot;), Add(&quot;a&quot;,&quot;b&quot;)),
-                     &quot;doubleadder&quot; -&gt; FunDef(List(&quot;a&quot;,&quot;x&quot;), Add(Call(&quot;adder&quot;, List(&quot;a&quot;,5)),Call(&quot;adder&quot;, List(&quot;x&quot;,7)))))
+<pre><code class="language-scala">val someFuns: Funs = Map(&quot;adder&quot; -&gt; FunDef(List(&quot;a&quot;, &quot;b&quot;), Add(&quot;a&quot;, &quot;b&quot;)),
+                     &quot;doubleadder&quot; -&gt; FunDef(List(&quot;a&quot;, &quot;x&quot;), Add(Call(&quot;adder&quot;, List(&quot;a&quot;, 5)), Call(&quot;adder&quot;, List(&quot;x&quot;, 7)))))
 </code></pre>
-<pre><code class="language-scala">val callSomeFuns = eval(someFuns,Call(&quot;doubleadder&quot;,List(2,3)))
+<pre><code class="language-scala">val callSomeFuns = eval(someFuns, Call(&quot;doubleadder&quot;, List(2, 3)))
 // callSomeFuns: Int = 17
-assert( callSomeFuns == 17)
+assert(callSomeFuns == 17)
 </code></pre>
 <h3 id="the-scope-of-function-definitions"><a class="header" href="#the-scope-of-function-definitions">The scope of function definitions:</a></h3>
 <p>As can be seen in the example above, each function can &quot;see&quot; the other functions. We say that in this language functions have a <em>global scope</em>.
 Exercise: Can a function also invoke itself? Is this useful?
 We will now study an environment-based version of the interpreter. To motivate environments, consider the following sample program:</p>
-<pre><code class="language-scala">val testProg = With(&quot;x&quot;, 1, With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(&quot;x&quot;,Add(&quot;y&quot;,&quot;z&quot;)))))
+<pre><code class="language-scala">val testProg = With(&quot;x&quot;, 1, With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(&quot;x&quot;, Add(&quot;y&quot;, &quot;z&quot;)))))
 </code></pre>
 <p>When considering the <code>With</code> case of the interpreter, the interpreter will subsequently produce and evaluate the following intermediate expressions:</p>
-<pre><code class="language-scala">val testProgAfterOneStep     = With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(1,Add(&quot;y&quot;,&quot;z&quot;))))
-val testProgAfterTwoSteps    = With(&quot;z&quot;, 3, Add(1,Add(2,&quot;z&quot;)))
-val testProgAfterThreeSteps  = Add(1,Add(2,3))
+<pre><code class="language-scala">val testProgAfterOneStep     = With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(1, Add(&quot;y&quot;, &quot;z&quot;))))
+val testProgAfterTwoSteps    = With(&quot;z&quot;, 3, Add(1, Add(2, &quot;z&quot;)))
+val testProgAfterThreeSteps  = Add(1, Add(2, 3))
 </code></pre>
 <p>At this point only pure arithmetic is left. But we see that the interpreter had to apply subsitution three times. In general, if the
 program size is n, then the interpreter may perform up to O(n) substitutions, each of which takes O(n) time. This quadratic complexity
@@ -247,7 +247,7 @@ seems rather wasteful. Can we do better?
 We can avoid the redundancy by deferring the substitutions until they are really needed. Concretely, we define a repository of deferred
 substitutions, called <em>environment</em>. It tells us which identifiers are supposed to be eventually substituted by which value. This idea
 is captured in the following type definition:</p>
-<pre><code class="language-scala">type Env = Map[String,Int]
+<pre><code class="language-scala">type Env = Map[String, Int]
 </code></pre>
 <p>Initially, we have no substitutions to perform, so the repository is empty. Every time we encounter a construct (a <code>With</code> or an application <code>Call</code>)
 that requires substitution, we augment the repository with one more entry, recording the identifier’s name and the value (if eager) or
@@ -255,51 +255,51 @@ expression (if lazy) it should eventually be substituted with. We continue to ev
 This strategy breaks a key invariant we had established earlier, which is that any identifier the interpreter could encounter must be
 free, for had it been bound, it would have already been substituted.  Now that we’re longer using the substitution-based model, we may
 encounter bound identifiers during interpretation.  How do we handle them?  We must substitute them by consulting the repository.</p>
-<pre><code class="language-scala">def evalWithEnv(funs: Funs, env: Env, e: Exp) : Int = e match {
+<pre><code class="language-scala">def evalWithEnv(funs: Funs, env: Env, e: Exp): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x) // look up in repository of deferred substitutions
-  case Add(l,r) =&gt; evalWithEnv(funs,env,l) + evalWithEnv(funs,env,r)
-  case Mul(l,r) =&gt; evalWithEnv(funs,env,l) * evalWithEnv(funs,env,r)
-  case With(x, xdef, body) =&gt; evalWithEnv(funs,env + ((x,evalWithEnv(funs,env,xdef))),body)
-  case Call(f,args) =&gt; {
+  case Add(l, r) =&gt; evalWithEnv(funs, env, l) + evalWithEnv(funs, env, r)
+  case Mul(l, r) =&gt; evalWithEnv(funs, env, l) * evalWithEnv(funs, env, r)
+  case With(x, xdef, body) =&gt; evalWithEnv(funs, env + ((x, evalWithEnv(funs, env, xdef))), body)
+  case Call(f, args) =&gt; {
      val fd = funs(f) // lookup function definition
-     val vargs = args.map(evalWithEnv(funs,env,_)) // evaluate function arguments
+     val vargs = args.map(evalWithEnv(funs, env, _)) // evaluate function arguments
      if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      // We construct the environment by associating each formal argument to its actual value
      val newenv = Map() ++ fd.args.zip(vargs)
-     evalWithEnv(funs,newenv,fd.body)
+     evalWithEnv(funs, newenv, fd.body)
   }
 }
 
-val evalEnvSomeFuns = evalWithEnv(someFuns,Map.empty, Call(&quot;doubleadder&quot;,List(2,3)))
+val evalEnvSomeFuns = evalWithEnv(someFuns, Map.empty, Call(&quot;doubleadder&quot;, List(2, 3)))
 // evalEnvSomeFuns: Int = 17
-assert( evalEnvSomeFuns == 17)
+assert(evalEnvSomeFuns == 17)
 </code></pre>
 <p>In the interpreter above, we have extended the empty environment when constructing <code>newenv</code>. A conceivable alternative is to
 extend <code>env</code> instead, like so:</p>
-<pre><code class="language-scala">def evalDynScope(funs: Funs, env: Env, e: Exp) : Int = e match {
+<pre><code class="language-scala">def evalDynScope(funs: Funs, env: Env, e: Exp): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x)
-  case Add(l,r) =&gt; evalDynScope(funs,env,l) + evalDynScope(funs,env,r)
-  case Mul(l,r) =&gt; evalDynScope(funs,env,l) * evalDynScope(funs,env,r)
-  case With(x, xdef, body) =&gt; evalDynScope(funs,env + ((x,evalDynScope(funs,env,xdef))),body)
-  case Call(f,args) =&gt; {
+  case Add(l, r) =&gt; evalDynScope(funs, env, l) + evalDynScope(funs, env, r)
+  case Mul(l, r) =&gt; evalDynScope(funs, env, l) * evalDynScope(funs, env, r)
+  case With(x, xdef, body) =&gt; evalDynScope(funs, env + ((x, evalDynScope(funs, env, xdef))), body)
+  case Call(f, args) =&gt; {
      val fd = funs(f)
-     val vargs = args.map(evalDynScope(funs,env,_))
-     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot;+ f + &quot; does not match&quot;)
+     val vargs = args.map(evalDynScope(funs, env, _))
+     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      val newenv = env ++ fd.args.zip(vargs) // extending env instead of Map() !!
-     evalDynScope(funs,newenv,fd.body)
+     evalDynScope(funs, newenv, fd.body)
   }
 }
 
-val evalDynSomeFuns = evalDynScope(someFuns,Map.empty, Call(&quot;doubleadder&quot;,List(2,3)))
+val evalDynSomeFuns = evalDynScope(someFuns, Map.empty, Call(&quot;doubleadder&quot;, List(2, 3)))
 // evalDynSomeFuns: Int = 17
-assert( evalDynSomeFuns == 17)
+assert(evalDynSomeFuns == 17)
 </code></pre>
 <p>Does this make a difference? Yes, it does. Here is an example:</p>
-<pre><code class="language-scala">val funnyFun: Funs = Map( &quot;funny&quot; -&gt; FunDef(List(&quot;a&quot;), Add(&quot;a&quot;,&quot;b&quot;)))
+<pre><code class="language-scala">val funnyFun: Funs = Map(&quot;funny&quot; -&gt; FunDef(List(&quot;a&quot;), Add(&quot;a&quot;, &quot;b&quot;)))
 </code></pre>
-<pre><code class="language-scala">val evalDynFunnyFun = evalDynScope(funnyFun, Map.empty, With(&quot;b&quot;, 3, Call(&quot;funny&quot;,List(4))))
+<pre><code class="language-scala">val evalDynFunnyFun = evalDynScope(funnyFun, Map.empty, With(&quot;b&quot;, 3, Call(&quot;funny&quot;, List(4))))
 // evalDynFunnyFun: Int = 7
 assert(evalDynFunnyFun == 7)
 </code></pre>

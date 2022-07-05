@@ -296,7 +296,7 @@ object AE {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="arithmetic-expressions-with-variables"><a class="header" href="#arithmetic-expressions-with-variables">Arithmetic Expressions With Variables</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="03-arithmetic-expressions/./arithmetic-expressions.scala">here.</a></p>
 <p>Let us now consider an extension of the arithmetic expression language with variables. We do this by a new kind of expression, which we
-call Identifier, or Id.</p>
+call Identifier, or <code>Id</code>.</p>
 <p>\[
 \begin{array}{lclr}
 e &amp; := &amp; n &amp; \textit{Numeric Literals} \\
@@ -315,28 +315,28 @@ e &amp; := &amp; n &amp; \textit{Numeric Literals} \\
 import Exp._
 </code></pre>
 <p>Here is a sample program written in this language, directly written down using case class constructors:</p>
-<pre><code class="language-scala">val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
+<pre><code class="language-scala">val test0 = Add(Mul(Id(&quot;x&quot;), Num(2)), Add(Id(&quot;y&quot;), Id(&quot;y&quot;)))
 </code></pre>
-<p>With a proper parser we could choose a syntax like <code>x*2+y+y</code>. We do not care much about concrete syntax and parsing, though.</p>
+<p>With a proper parser we could choose a syntax like <code>x * 2 + y + y</code>. We do not care much about concrete syntax and parsing, though.</p>
 <p>That said, to make writing examples less verbose, Scala's implicits come to the rescue.
 Calls to implicit functions are inserted automatically by the compiler if they help to restore well-typedness. For instance, we can define</p>
 <pre><code class="language-scala">implicit def num2exp(n: Int): Exp = Num(n)
 implicit def sym2exp(x: String): Exp = Id(x)
 </code></pre>
 <p>to lift integers and Strings to expressions. Using these implicits, the example can be written as:</p>
-<pre><code class="language-scala">val test = Add(Mul(&quot;x&quot;,2),Add(&quot;y&quot;,&quot;y&quot;))
+<pre><code class="language-scala">val test = Add(Mul(&quot;x&quot;, 2), Add(&quot;y&quot;, &quot;y&quot;))
 </code></pre>
 <p>To give meaning to identifiers, we use <em>environments</em>. Environments are mappings from Identifiers (which we represent as Strings) to Values.
 In our simple language the only values are integers, hence:</p>
-<pre><code class="language-scala">type Env = Map[String,Int]
+<pre><code class="language-scala">type Env = Map[String, Int]
 </code></pre>
 <p>An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
 &quot;Int&quot;. This interpreter uses pattern matching over case classes.</p>
-<pre><code class="language-scala">def eval(e: Exp, env: Env) : Int = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x)
-  case Add(l,r) =&gt; eval(l,env) + eval(r,env)
-  case Mul(l,r) =&gt; eval(l,env) * eval(r,env)
+  case Add(l, r) =&gt; eval(l, env) + eval(r, env)
+  case Mul(l, r) =&gt; eval(l, env) * eval(r, env)
 }
 </code></pre>
 <p>A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract &quot;eval&quot; method to the Exp
@@ -347,7 +347,7 @@ topics in the lecture. To try the example, we need a sample environment that giv
 <p>The test environment also illustrates how Scala supports direct definitions of constant maps.</p>
 <pre><code class="language-scala">val testEnv = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
 </code></pre>
-<p>We can automatically test our evaluator using assert :</p>
+<p>We can automatically test our evaluator using assert:</p>
 <pre><code class="language-scala">val exa = eval(test, testEnv)
 // exa: Int = 14
 assert(eval(test, testEnv) == 14)
@@ -393,13 +393,13 @@ def foldExp[T](v: VisitorAE[T], e: ExpAE): T = {
 <pre><code class="language-scala">def eval(e: ExpAE) = foldExp(evalVisitorAE, e)
 </code></pre>
 <p>Let's test whether it works.</p>
-<pre><code class="language-scala">val exaVisitorAE = eval(AddAE(AddAE(NumAE(1),NumAE(2)),NumAE(3)))
+<pre><code class="language-scala">val exaVisitorAE = eval(AddAE(AddAE(NumAE(1), NumAE(2)), NumAE(3)))
 // exaVisitorAE: Int = 6
 assert(exaVisitorAE == 6)
 </code></pre>
 <p>We can also apply other algorithms using visitors, such as counting the number of <code>NumAE</code> literals, or printing to a string:</p>
-<pre><code class="language-scala">val countVisitorAE = VisitorAE[Int]( _=&gt;1, _+_)
-val printVisitorAE = VisitorAE[String](_.toString, &quot;(&quot;+_+&quot;+&quot;+_+&quot;)&quot;)
+<pre><code class="language-scala">val countVisitorAE = VisitorAE[Int](_ =&gt; 1, _ + _)
+val printVisitorAE = VisitorAE[String](_.toString, &quot;(&quot; + _ + &quot;+&quot; + _ + &quot;)&quot;)
 </code></pre>
 <pre><code class="language-scala">}
 </code></pre>
@@ -409,14 +409,14 @@ import AEId._
 </code></pre>
 <pre><code class="language-scala">case class Visitor[T](num: Int =&gt; T, add: (T, T) =&gt; T, mul: (T, T) =&gt; T, id: String =&gt; T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
-val countVisitor = Visitor[Int](_=&gt;1, _ + _, _ + _, _ =&gt; 0)
+val countVisitor = Visitor[Int](_ =&gt; 1, _ + _, _ + _, _ =&gt; 0)
 val printVisitor = Visitor[String](_.toString, &quot;(&quot; + _ + &quot;+&quot; + _ + &quot;)&quot;, _ + &quot;*&quot; + _, identity)
 
-def foldExp[T](v: Visitor[T], e: Exp) : T = {
+def foldExp[T](v: Visitor[T], e: Exp): T = {
   e match {
     case Num(n) =&gt; v.num(n)
-    case Add(l,r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
-    case Mul(l,r) =&gt; v.mul(foldExp(v, l), foldExp(v, r))
+    case Add(l, r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
+    case Mul(l, r) =&gt; v.mul(foldExp(v, l), foldExp(v, r))
     case Id(x) =&gt; v.id(x)
   }
 }
@@ -430,7 +430,7 @@ assert(exaCount == 1)
 <p>However, what about the evaluator? If we instantiate <code>T</code> = <code>Int</code>, then how can we access the environment? Insight: For evaluation, we must
 instantiate <code>T</code> with a function type <code>Env =&gt; Int</code>! This way of transforming a multi-argument function into a single-argument
 higher-order function is called <em>currying</em>.</p>
-<pre><code class="language-scala">val evalVisitor = Visitor[Env=&gt;Int](
+<pre><code class="language-scala">val evalVisitor = Visitor[Env =&gt; Int](
    env =&gt; _ ,
    (a, b) =&gt; env =&gt;
      a(env) + b(env),
@@ -518,13 +518,13 @@ a core language and syntactic sugar.</p>
 </code></pre>
 <p>However, another way of adding sub is to treat it as syntactic sugar using the fact that <code>a - b = a + (-1 * b)</code>
 One way of expressing the desugaring is as a syntax transformation:</p>
-<pre><code class="language-scala">def desugarSMAE2MAE(e: SMAE.Exp) : MAE.Exp = e match {
+<pre><code class="language-scala">def desugarSMAE2MAE(e: SMAE.Exp): MAE.Exp = e match {
   case SMAE.Exp.Num(n) =&gt; MAE.Exp.Num(n)
   case SMAE.Exp.Add(lhs, rhs) =&gt; MAE.Exp.Add(desugarSMAE2MAE(lhs), desugarSMAE2MAE(rhs))
   case SMAE.Exp.Mult(lhs, rhs) =&gt; MAE.Exp.Mult(desugarSMAE2MAE(lhs), desugarSMAE2MAE(rhs))
   case SMAE.Exp.Sub(lhs, rhs) =&gt;
     MAE.Exp.Add(desugarSMAE2MAE(lhs),
-                 MAE.Exp.Mult(MAE.Exp.Num(-1),desugarSMAE2MAE(rhs)))
+                 MAE.Exp.Mult(MAE.Exp.Num(-1), desugarSMAE2MAE(rhs)))
 }
 </code></pre>
 <p>With this desugaring in place, we do not need an interpreter for SMAE anymore; rather we can reuse the MAE interpreter:</p>
@@ -544,7 +544,7 @@ namely during the construction of the AST:</p>
     case Add(lhs: Exp, rhs: Exp) extends Exp
     case Mult(lhs: Exp, rhs: Exp) extends Exp
   object Exp:
-    def sub(e1: Exp, e2: Exp) : Exp =
+    def sub(e1: Exp, e2: Exp): Exp =
       Add(e1, Mult(Num(-1), e2))
   import Exp._
 
@@ -575,7 +575,7 @@ namely during the construction of the AST:</p>
     case Add(lhs: Exp, rhs: Exp) extends Exp
     case Mult(lhs: Exp, rhs: Exp) extends Exp
   object Exp:
-    def sub(e1: Exp, e2: Exp) : Exp =
+    def sub(e1: Exp, e2: Exp): Exp =
       Add(e1, Mult(Num(-1), e2))
     def unaryminus(e: Exp) = sub(Num(0), e)
   import Exp._
@@ -621,7 +621,7 @@ import Exp._
 implicit def string2exp(x: String): Exp = Id(x)
 </code></pre>
 <p>A first example program in WAE.</p>
-<pre><code class="language-scala">val test = With(&quot;x&quot;, 5, Add(&quot;x&quot;,&quot;x&quot;))
+<pre><code class="language-scala">val test = With(&quot;x&quot;, 5, Add(&quot;x&quot;, &quot;x&quot;))
 </code></pre>
 <p>Note that we deal with <em>two</em> languages here:</p>
 <ol>
@@ -648,22 +648,22 @@ they are <em>equivalent</em> in the sense that when evaluated, they will produce
 somehow equivalent programs are an important tool for the study of programs, and of programming languages. Often, if we know which
 programs behave identically, we understand better how programs behave in general. We will see more examples of this in this lecture.
 Hence, the implementation of the <code>With</code> case of our interpreter should be something like:</p>
-<pre><code>case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef))))
+<pre><code>case With(x, xdef, body) =&gt; eval(subst(body, x, Num(eval(xdef))))
 </code></pre>
 <p>for a function <code>subst</code> with signature</p>
-<pre><code>subst: (Exp,String,Num) =&gt; Exp
+<pre><code>subst: (Exp, String, Num) =&gt; Exp
 </code></pre>
 <p>The type of the third parameter is <code>Num</code> instead of <code>Exp</code> because it is more difficult to get substitution correct when arbitrary
 expressions can be inserted (accidential name capture problem, more about that later).
 Since we want to experiment with different versions of substitution, we write the interpreter in such a way that we can parameterize
 it with a substitution function:</p>
-<pre><code class="language-scala">def makeEval(subst: (Exp,String,Num)=&gt;Exp) : Exp=&gt;Int = {
-  def eval(e: Exp) : Int = e match {
+<pre><code class="language-scala">def makeEval(subst: (Exp, String, Num) =&gt; Exp): Exp =&gt; Int = {
+  def eval(e: Exp): Int = e match {
     case Num(n) =&gt; n
     case Id(x) =&gt; sys.error(&quot;unbound variable: &quot; + x)
-    case Add(l,r) =&gt; eval(l) + eval(r)
-    case Mul(l,r) =&gt; eval(l) * eval(r)
-    case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef)))) // take the int and wrap it into a Num
+    case Add(l, r) =&gt; eval(l) + eval(r)
+    case Mul(l, r) =&gt; eval(l) * eval(r)
+    case With(x, xdef, body) =&gt; eval(subst(body, x, Num(eval(xdef)))) // take the int and wrap it into a Num
   }
   eval
 }
@@ -671,14 +671,14 @@ it with a substitution function:</p>
 <h3 id="substitution-take-1"><a class="header" href="#substitution-take-1">Substitution, take 1</a></h3>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all identifiers in <code>e</code> that have the name <code>i</code> with the expression <code>v</code>.
 Let's try to formalize this definition:</p>
-<pre><code class="language-scala">val subst1 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst1: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
   case Num(n) =&gt; e
   case Id(x) =&gt; if (x == i) v else e
-  case Add(l,r) =&gt; Add( subst1(l,i,v), subst1(r,i,v))
-  case Mul(l,r) =&gt; Mul( subst1(l,i,v), subst1(r,i,v))
-  case With(x,xdef,body) =&gt; With( if (x == i) v else x,
-                                    subst1(xdef,i,v),
-                                    subst1(body,i,v))
+  case Add(l, r) =&gt; Add(subst1(l, i, v), subst1(r, i, v))
+  case Mul(l, r) =&gt; Mul(subst1(l, i, v), subst1(r, i, v))
+  case With(x, xdef, body) =&gt; With(if (x == i) v else x,
+                                    subst1(xdef, i, v),
+                                    subst1(body, i, v))
   }
 </code></pre>
 <p>Unfortunately this does not even type-check! And rightly so, because it might otherwise turn reasonable programs into programs that are
@@ -703,19 +703,19 @@ To correct this mistake, we make another take at substitution:</p>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all identifiers in <code>e</code> which are not binding
 instances that have the name <code>i</code> with the expression <code>v</code>.
 Here is the formalization of this definition.</p>
-<pre><code class="language-scala">val subst2 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst2: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
   case Num(n) =&gt; e
 
   // Bound or free instance =&gt; substitute if names match
   case Id(x) =&gt; if (x == i) v else e
 
-  case Add(l,r) =&gt; Add( subst2(l,i,v), subst2(r,i,v))
-  case Mul(l,r) =&gt; Mul( subst2(l,i,v), subst2(r,i,v))
+  case Add(l, r) =&gt; Add(subst2(l, i, v), subst2(r, i, v))
+  case Mul(l, r) =&gt; Mul(subst2(l, i, v), subst2(r, i, v))
 
   // binding instance =&gt; do not substitute
-  case With(x,xdef,body) =&gt; With( x,
-                                  subst2(xdef,i,v),
-                                  subst2(body,i,v))
+  case With(x, xdef, body) =&gt; With(x,
+                                  subst2(xdef, i, v),
+                                  subst2(body, i, v))
 }
 </code></pre>
 <p>Let's create an interpreter that uses this substitution function.</p>
@@ -737,13 +737,13 @@ doesn’t recognize this possibility, it incorrectly substitutes the inner <code
 <h3 id="substitution-take-3"><a class="header" href="#substitution-take-3">Substitution, take 3</a></h3>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all non-binding identifiers in <code>e</code> having
 the name <code>i</code> with the expression <code>v</code>, unless the identifier is in a scope different from that introduced by <code>i</code>.</p>
-<pre><code class="language-scala">val subst3 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst3: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
-    case Add(l,r) =&gt; Add( subst3(l,i,v), subst3(r,i,v))
-    case Mul(l,r) =&gt; Mul( subst3(l,i,v), subst3(r,i,v))
-    case With(x,xdef,body) =&gt; With( x,
-                                    subst3(xdef,i,v),
+    case Add(l, r) =&gt; Add(subst3(l, i, v), subst3(r, i, v))
+    case Mul(l, r) =&gt; Mul(subst3(l, i, v), subst3(r, i, v))
+    case With(x, xdef, body) =&gt; With(x,
+                                    subst3(xdef, i, v),
                                     // what if we forget to substitute into the body?
                                     body)
 }
@@ -756,7 +756,7 @@ assert(eval3(test2) == 15)
 
 assert(eval3(test3) == 8) // Success!
 
-val test4 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;y&quot;, 3,&quot;x&quot;)))
+val test4 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;y&quot;, 3, &quot;x&quot;)))
 
 // assert(eval3(test4) == 10) // Bang! unbound variable: &quot;x&quot;
 </code></pre>
@@ -772,16 +772,16 @@ any nested scopes.</p>
 the name <code>i</code> with the expression <code>v</code>, except within nested scopes of <code>i</code>.
 Finally, we have a version of substitution that works. A different, more succinct way of phrasing this definition is:
 &quot;To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all free instances of <code>i</code> in <code>e</code> with <code>v</code>.&quot;</p>
-<pre><code class="language-scala">val subst4 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst4: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
-    case Add(l,r) =&gt; Add( subst4(l,i,v), subst4(r,i,v))
-    case Mul(l,r) =&gt; Mul( subst4(l,i,v), subst4(r,i,v))
+    case Add(l, r) =&gt; Add(subst4(l, i, v), subst4(r, i, v))
+    case Mul(l, r) =&gt; Mul(subst4(l, i, v), subst4(r, i, v))
     // do not substitute when shadowed
-    case With(x,xdef,body) =&gt; if (x == i) e
+    case With(x, xdef, body) =&gt; if (x == i) e
                                  else With(x,
-                                           subst4(xdef,i,v),
-                                           subst4(body,i,v))
+                                           subst4(xdef, i, v),
+                                           subst4(body, i, v))
 }
 
 def eval4 = makeEval(subst4)
@@ -804,15 +804,15 @@ being substituted, because its named expression is still in the scope of the enc
 <h3 id="substitution-take-5"><a class="header" href="#substitution-take-5">Substitution, take 5</a></h3>
 <p>We finally get a valid
 programmatic definition of substitution (relative to the language we have so far):</p>
-<pre><code class="language-scala">val subst5 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst5: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
-    case Add(l,r) =&gt; Add( subst5(l,i,v), subst5(r,i,v))
-    case Mul(l,r) =&gt; Mul( subst5(l,i,v), subst5(r,i,v))
+    case Add(l, r) =&gt; Add(subst5(l, i, v), subst5(r, i, v))
+    case Mul(l, r) =&gt; Mul(subst5(l, i, v), subst5(r, i, v))
     // handle shadowing correctly
-    case With(x,xdef,body) =&gt; With(x,
-                                   subst5(xdef,i,v),
-                                   if (x == i) body else subst5(body,i,v))
+    case With(x, xdef, body) =&gt; With(x,
+                                   subst5(xdef, i, v),
+                                   if (x == i) body else subst5(body, i, v))
 }
 
 def eval5 = makeEval(subst5)
@@ -859,7 +859,7 @@ The following definitions are the language we have analyzed so far together with
   object Exp:
     /** The new language constructs for first-order functions: */
     case class FunDef(args: List[String], body: Exp)
-    type Funs = Map[String,FunDef]
+    type Funs = Map[String, FunDef]
 
     /** We use implicits again to make example programs less verbose. */
     implicit def num2exp(n: Int): Exp = Num(n)
@@ -873,36 +873,36 @@ has a name. To make the invariant that there can only be one function for each
 name explicit, we have stored functions in the form of a map from function names to
 <code>FunDefs</code> above.</p>
 <p>The substitution for the new language is a straightforward extension of the former one.</p>
-<pre><code class="language-scala">def subst(e: Exp,i: String,v: Num) : Exp =  e match {
+<pre><code class="language-scala">def subst(e: Exp, i: String, v: Num): Exp =  e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
-    case Add(l,r) =&gt; Add( subst(l,i,v), subst(r,i,v))
-    case Mul(l,r) =&gt; Mul( subst(l,i,v), subst(r,i,v))
-    case With(x,xdef,body) =&gt; With(x,
-                                   subst(xdef,i,v),
-                                   if (x == i) body else subst(body,i,v))
-    case Call(f,args) =&gt; Call(f, args.map(subst(_,i,v)))
+    case Add(l, r) =&gt; Add(subst(l, i, v), subst(r, i, v))
+    case Mul(l, r) =&gt; Mul(subst(l, i, v), subst(r, i, v))
+    case With(x, xdef, body) =&gt; With(x,
+                                   subst(xdef, i, v),
+                                   if (x == i) body else subst(body, i, v))
+    case Call(f, args) =&gt; Call(f, args.map(subst(_, i, v)))
 }
 </code></pre>
 <p>We will first study a &quot;reference interpreter&quot; based on substitution.
 We pass the map of functions as an additional parameter.</p>
-<pre><code class="language-scala">def eval(funs: Funs, e: Exp) : Int = e match {
+<pre><code class="language-scala">def eval(funs: Funs, e: Exp): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; sys.error(&quot;unbound identifier: &quot; + x)
-  case Add(l,r) =&gt; eval(funs,l) + eval(funs,r)
-  case Mul(l,r) =&gt; eval(funs,l) * eval(funs,r)
-  case With(x, xdef, body) =&gt; eval(funs,subst(body,x,Num(eval(funs,xdef))))
-  case Call(f,args) =&gt; {
+  case Add(l, r) =&gt; eval(funs, l) + eval(funs, r)
+  case Mul(l, r) =&gt; eval(funs, l) * eval(funs, r)
+  case With(x, xdef, body) =&gt; eval(funs, subst(body, x, Num(eval(funs, xdef))))
+  case Call(f, args) =&gt; {
      val fd = funs(f) // lookup function definition
-     val vargs = args.map( eval(funs,_)) // evaluate function arguments
+     val vargs = args.map(eval(funs, _)) // evaluate function arguments
      if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      // We construct the function body to be evaluated by subsequently substituting all formal
      // arguments with their respective argument values.
      // If we have only a single argument &quot;fd.arg&quot; and a single argument value &quot;varg&quot;,
      // the next line of code is equivalent to:
      // val substbody = subst(fd.body, fd.arg, Num(varg))
-     val substbody = fd.args.zip(vargs).foldLeft(fd.body)( (b,av) =&gt; subst(b,av._1,Num(av._2)) )
-     eval(funs,substbody)
+     val substbody = fd.args.zip(vargs).foldLeft(fd.body)((b, av) =&gt; subst(b, av._1, Num(av._2)))
+     eval(funs, substbody)
   }
 }
 </code></pre>
@@ -913,23 +913,23 @@ We say in this case that function names and variable names live in different &qu
 An alternative would be to have them share one namespace. As an exercise, think about how
 to support a common namespace for function names and variable names.</p>
 <p>A test case:</p>
-<pre><code class="language-scala">val someFuns: Funs = Map( &quot;adder&quot; -&gt; FunDef(List(&quot;a&quot;,&quot;b&quot;), Add(&quot;a&quot;,&quot;b&quot;)),
-                     &quot;doubleadder&quot; -&gt; FunDef(List(&quot;a&quot;,&quot;x&quot;), Add(Call(&quot;adder&quot;, List(&quot;a&quot;,5)),Call(&quot;adder&quot;, List(&quot;x&quot;,7)))))
+<pre><code class="language-scala">val someFuns: Funs = Map(&quot;adder&quot; -&gt; FunDef(List(&quot;a&quot;, &quot;b&quot;), Add(&quot;a&quot;, &quot;b&quot;)),
+                     &quot;doubleadder&quot; -&gt; FunDef(List(&quot;a&quot;, &quot;x&quot;), Add(Call(&quot;adder&quot;, List(&quot;a&quot;, 5)), Call(&quot;adder&quot;, List(&quot;x&quot;, 7)))))
 </code></pre>
-<pre><code class="language-scala">val callSomeFuns = eval(someFuns,Call(&quot;doubleadder&quot;,List(2,3)))
+<pre><code class="language-scala">val callSomeFuns = eval(someFuns, Call(&quot;doubleadder&quot;, List(2, 3)))
 // callSomeFuns: Int = 17
-assert( callSomeFuns == 17)
+assert(callSomeFuns == 17)
 </code></pre>
 <h3 id="the-scope-of-function-definitions"><a class="header" href="#the-scope-of-function-definitions">The scope of function definitions:</a></h3>
 <p>As can be seen in the example above, each function can &quot;see&quot; the other functions. We say that in this language functions have a <em>global scope</em>.
 Exercise: Can a function also invoke itself? Is this useful?
 We will now study an environment-based version of the interpreter. To motivate environments, consider the following sample program:</p>
-<pre><code class="language-scala">val testProg = With(&quot;x&quot;, 1, With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(&quot;x&quot;,Add(&quot;y&quot;,&quot;z&quot;)))))
+<pre><code class="language-scala">val testProg = With(&quot;x&quot;, 1, With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(&quot;x&quot;, Add(&quot;y&quot;, &quot;z&quot;)))))
 </code></pre>
 <p>When considering the <code>With</code> case of the interpreter, the interpreter will subsequently produce and evaluate the following intermediate expressions:</p>
-<pre><code class="language-scala">val testProgAfterOneStep     = With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(1,Add(&quot;y&quot;,&quot;z&quot;))))
-val testProgAfterTwoSteps    = With(&quot;z&quot;, 3, Add(1,Add(2,&quot;z&quot;)))
-val testProgAfterThreeSteps  = Add(1,Add(2,3))
+<pre><code class="language-scala">val testProgAfterOneStep     = With(&quot;y&quot;, 2, With(&quot;z&quot;, 3, Add(1, Add(&quot;y&quot;, &quot;z&quot;))))
+val testProgAfterTwoSteps    = With(&quot;z&quot;, 3, Add(1, Add(2, &quot;z&quot;)))
+val testProgAfterThreeSteps  = Add(1, Add(2, 3))
 </code></pre>
 <p>At this point only pure arithmetic is left. But we see that the interpreter had to apply subsitution three times. In general, if the
 program size is n, then the interpreter may perform up to O(n) substitutions, each of which takes O(n) time. This quadratic complexity
@@ -937,7 +937,7 @@ seems rather wasteful. Can we do better?
 We can avoid the redundancy by deferring the substitutions until they are really needed. Concretely, we define a repository of deferred
 substitutions, called <em>environment</em>. It tells us which identifiers are supposed to be eventually substituted by which value. This idea
 is captured in the following type definition:</p>
-<pre><code class="language-scala">type Env = Map[String,Int]
+<pre><code class="language-scala">type Env = Map[String, Int]
 </code></pre>
 <p>Initially, we have no substitutions to perform, so the repository is empty. Every time we encounter a construct (a <code>With</code> or an application <code>Call</code>)
 that requires substitution, we augment the repository with one more entry, recording the identifier’s name and the value (if eager) or
@@ -945,51 +945,51 @@ expression (if lazy) it should eventually be substituted with. We continue to ev
 This strategy breaks a key invariant we had established earlier, which is that any identifier the interpreter could encounter must be
 free, for had it been bound, it would have already been substituted.  Now that we’re longer using the substitution-based model, we may
 encounter bound identifiers during interpretation.  How do we handle them?  We must substitute them by consulting the repository.</p>
-<pre><code class="language-scala">def evalWithEnv(funs: Funs, env: Env, e: Exp) : Int = e match {
+<pre><code class="language-scala">def evalWithEnv(funs: Funs, env: Env, e: Exp): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x) // look up in repository of deferred substitutions
-  case Add(l,r) =&gt; evalWithEnv(funs,env,l) + evalWithEnv(funs,env,r)
-  case Mul(l,r) =&gt; evalWithEnv(funs,env,l) * evalWithEnv(funs,env,r)
-  case With(x, xdef, body) =&gt; evalWithEnv(funs,env + ((x,evalWithEnv(funs,env,xdef))),body)
-  case Call(f,args) =&gt; {
+  case Add(l, r) =&gt; evalWithEnv(funs, env, l) + evalWithEnv(funs, env, r)
+  case Mul(l, r) =&gt; evalWithEnv(funs, env, l) * evalWithEnv(funs, env, r)
+  case With(x, xdef, body) =&gt; evalWithEnv(funs, env + ((x, evalWithEnv(funs, env, xdef))), body)
+  case Call(f, args) =&gt; {
      val fd = funs(f) // lookup function definition
-     val vargs = args.map(evalWithEnv(funs,env,_)) // evaluate function arguments
+     val vargs = args.map(evalWithEnv(funs, env, _)) // evaluate function arguments
      if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      // We construct the environment by associating each formal argument to its actual value
      val newenv = Map() ++ fd.args.zip(vargs)
-     evalWithEnv(funs,newenv,fd.body)
+     evalWithEnv(funs, newenv, fd.body)
   }
 }
 
-val evalEnvSomeFuns = evalWithEnv(someFuns,Map.empty, Call(&quot;doubleadder&quot;,List(2,3)))
+val evalEnvSomeFuns = evalWithEnv(someFuns, Map.empty, Call(&quot;doubleadder&quot;, List(2, 3)))
 // evalEnvSomeFuns: Int = 17
-assert( evalEnvSomeFuns == 17)
+assert(evalEnvSomeFuns == 17)
 </code></pre>
 <p>In the interpreter above, we have extended the empty environment when constructing <code>newenv</code>. A conceivable alternative is to
 extend <code>env</code> instead, like so:</p>
-<pre><code class="language-scala">def evalDynScope(funs: Funs, env: Env, e: Exp) : Int = e match {
+<pre><code class="language-scala">def evalDynScope(funs: Funs, env: Env, e: Exp): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x)
-  case Add(l,r) =&gt; evalDynScope(funs,env,l) + evalDynScope(funs,env,r)
-  case Mul(l,r) =&gt; evalDynScope(funs,env,l) * evalDynScope(funs,env,r)
-  case With(x, xdef, body) =&gt; evalDynScope(funs,env + ((x,evalDynScope(funs,env,xdef))),body)
-  case Call(f,args) =&gt; {
+  case Add(l, r) =&gt; evalDynScope(funs, env, l) + evalDynScope(funs, env, r)
+  case Mul(l, r) =&gt; evalDynScope(funs, env, l) * evalDynScope(funs, env, r)
+  case With(x, xdef, body) =&gt; evalDynScope(funs, env + ((x, evalDynScope(funs, env, xdef))), body)
+  case Call(f, args) =&gt; {
      val fd = funs(f)
-     val vargs = args.map(evalDynScope(funs,env,_))
-     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot;+ f + &quot; does not match&quot;)
+     val vargs = args.map(evalDynScope(funs, env, _))
+     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      val newenv = env ++ fd.args.zip(vargs) // extending env instead of Map() !!
-     evalDynScope(funs,newenv,fd.body)
+     evalDynScope(funs, newenv, fd.body)
   }
 }
 
-val evalDynSomeFuns = evalDynScope(someFuns,Map.empty, Call(&quot;doubleadder&quot;,List(2,3)))
+val evalDynSomeFuns = evalDynScope(someFuns, Map.empty, Call(&quot;doubleadder&quot;, List(2, 3)))
 // evalDynSomeFuns: Int = 17
-assert( evalDynSomeFuns == 17)
+assert(evalDynSomeFuns == 17)
 </code></pre>
 <p>Does this make a difference? Yes, it does. Here is an example:</p>
-<pre><code class="language-scala">val funnyFun: Funs = Map( &quot;funny&quot; -&gt; FunDef(List(&quot;a&quot;), Add(&quot;a&quot;,&quot;b&quot;)))
+<pre><code class="language-scala">val funnyFun: Funs = Map(&quot;funny&quot; -&gt; FunDef(List(&quot;a&quot;), Add(&quot;a&quot;, &quot;b&quot;)))
 </code></pre>
-<pre><code class="language-scala">val evalDynFunnyFun = evalDynScope(funnyFun, Map.empty, With(&quot;b&quot;, 3, Call(&quot;funny&quot;,List(4))))
+<pre><code class="language-scala">val evalDynFunnyFun = evalDynScope(funnyFun, Map.empty, With(&quot;b&quot;, 3, Call(&quot;funny&quot;, List(4))))
 // evalDynFunnyFun: Int = 7
 assert(evalDynFunnyFun == 7)
 </code></pre>
@@ -1048,40 +1048,40 @@ been highly influential in the design and theory of programming languages.</p>
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def id2exp(s: String): Exp = Id(s)
     // &quot;with&quot; would be a better name for this function, but it is reserved in Scala
-    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+    def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 }
 
 import Syntax._
 import Exp._
 </code></pre>
 <p>Due to the lambda calculus, the concrete syntax for function abstraction is often written
-with a lambda, such as <code>lambda x. x+3</code>, thus also called lambda abstraction. The Scala
-syntax for lambda terms is <code>(x) =&gt; x+3</code>, the Haskell syntax is <code>\x -&gt; x+3</code>.</p>
+with a lambda, such as <code>lambda x. x + 3</code>, thus also called lambda abstraction. The Scala
+syntax for lambda terms is <code>(x) =&gt; x + 3</code>, the Haskell syntax is <code>\x -&gt; x + 3</code>.</p>
 <p>The concrete syntax for function application is often either juxtaposition <code>f a</code> or
 using brackets <code>f(a)</code>. Haskell and the lambda calculus use the former, Scala uses the
 latter.</p>
 <p>The <code>with</code> construct is not needed anymore since it can be encoded using <code>Ap</code> and
-<code>Fun</code>. For instance, <code>with x = 7 in x+3</code> can be encoded (using Scala syntax) as
-<code>((x) =&gt; x+3)(7)</code>. We have made this idea explicit above by giving a constructive
+<code>Fun</code>. For instance, <code>with x = 7 in x + 3</code> can be encoded (using Scala syntax) as
+<code>((x) =&gt; x + 3)(7)</code>. We have made this idea explicit above by giving a constructive
 translation. Remember that such translations are often called &quot;desugaring&quot;.</p>
 <p>Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
-<pre><code class="language-scala">def subst0(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+<pre><code class="language-scala">def subst0(e1: Exp, x: String, e2: Exp): Exp = e1 match {
   case Num(n) =&gt; e1
-  case Add(l,r) =&gt; Add(subst0(l,x,e2), subst0(r,x,e2))
+  case Add(l, r) =&gt; Add(subst0(l, x, e2), subst0(r, x, e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case Ap(f,a) =&gt; Ap(subst0(f,x,e2), subst0(a,x,e2))
-  case Fun(param,body) =&gt;
+  case Ap(f, a) =&gt; Ap(subst0(f, x, e2), subst0(a, x, e2))
+  case Fun(param, body) =&gt;
     if (param == x) e1  else Fun(param, subst0(body, x, e2))
 }
 </code></pre>
 <p>Let's try whether <code>subst0</code> produces reasonable results.</p>
-<pre><code class="language-scala">assert( subst0(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
-assert( subst0(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
-assert( subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
+<pre><code class="language-scala">assert(subst0(Add(5, &quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
+assert(subst0(Add(5, &quot;x&quot;), &quot;y&quot;, 7) == Add(5, &quot;x&quot;))
+assert(subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)))
 </code></pre>
 <p>Looks good. However, what happens if <code>e2</code> contains free variables? The danger here is that they may be accidentially &quot;captured&quot; by the substitution.
 For instance, consider</p>
-<pre><code class="language-scala">val subst0Test = subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))
+<pre><code class="language-scala">val subst0Test = subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5))
 // subst0Test: Exp = Fun(
 //   param = &quot;x&quot;,
 //   body = Add(
@@ -1090,7 +1090,7 @@ For instance, consider</p>
 //   )
 // )
 </code></pre>
-<p>The result is <code>Fun(&quot;x&quot;,Add(&quot;x&quot;,Add(&quot;x&quot;,5)))</code>
+<p>The result is <code>Fun(&quot;x&quot;, Add(&quot;x&quot;, Add(&quot;x&quot;, 5)))</code>
 This is not desirable, since it again violates static scoping.</p>
 <p>Note that this problem did not show up in earlier languages, because there we only substituted variables by numbers, but not by
 expressions that may contain free variables: The type of <code>e2</code> was <code>Num</code> and not <code>Exp</code>.</p>
@@ -1098,53 +1098,53 @@ expressions that may contain free variables: The type of <code>e2</code> was <co
 The answer is that we must avoid the name clash by renaming the variable bound by the &quot;lambda&quot; if the variable name occurs free in <code>e2</code>.
 This new variable name should be &quot;fresh&quot;, i.e., not occur free in <code>e2</code>.</p>
 <p>For instance, in the example above, we could first rename <code>&quot;x&quot;</code> to the fresh name <code>&quot;x0&quot;</code> and only then substitute, i.e.</p>
-<p><code>subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x0&quot;,Add(&quot;x0&quot;,Add(&quot;x&quot;,Num(5))))</code></p>
+<p><code>subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5)) == Fun(&quot;x0&quot;, Add(&quot;x0&quot;, Add(&quot;x&quot;, Num(5))))</code></p>
 <p>Let's do this step by step.</p>
-<pre><code class="language-scala">def freshName(names: Set[String], default: String) : String = {
-  var last : Int = 0
+<pre><code class="language-scala">def freshName(names: Set[String], default: String): String = {
+  var last: Int = 0
   var freshName = default
-  while (names contains freshName) { freshName = default+last; last += 1; }
+  while (names contains freshName) { freshName = default + last; last += 1; }
   freshName
 }
 
-val freshNameExa1 = freshName(Set(&quot;y&quot;,&quot;z&quot;),&quot;x&quot;)
+val freshNameExa1 = freshName(Set(&quot;y&quot;, &quot;z&quot;), &quot;x&quot;)
 // freshNameExa1: String = &quot;x&quot;
-val freshNameExa2 = freshName(Set(&quot;x2&quot;,&quot;x0&quot;,&quot;x4&quot;,&quot;x&quot;,&quot;x1&quot;),&quot;x&quot;)
+val freshNameExa2 = freshName(Set(&quot;x2&quot;, &quot;x0&quot;, &quot;x4&quot;, &quot;x&quot;, &quot;x1&quot;), &quot;x&quot;)
 // freshNameExa2: String = &quot;x3&quot;
-assert( freshNameExa1 == &quot;x&quot;)
-assert( freshNameExa2 == &quot;x3&quot;)
+assert(freshNameExa1 == &quot;x&quot;)
+assert(freshNameExa2 == &quot;x3&quot;)
 
-def freeVars(e: Exp) : Set[String] =  e match {
+def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) =&gt; Set(x)
-   case Add(l,r) =&gt; freeVars(l) ++ freeVars(r)
-   case Fun(x,body) =&gt; freeVars(body) - x
-   case Ap(f,a) =&gt; freeVars(f) ++ freeVars(a)
+   case Add(l, r) =&gt; freeVars(l) ++ freeVars(r)
+   case Fun(x, body) =&gt; freeVars(body) - x
+   case Ap(f, a) =&gt; freeVars(f) ++ freeVars(a)
    case Num(n) =&gt; Set.empty
 }
 
-val freeVarsExa = freeVars(Fun(&quot;x&quot;,Add(&quot;x&quot;,&quot;y&quot;)))
+val freeVarsExa = freeVars(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)))
 // freeVarsExa: Set[String] = Set(&quot;y&quot;)
 assert(freeVarsExa == Set(&quot;y&quot;))
 
-def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+def subst(e1: Exp, x: String, e2: Exp): Exp = e1 match {
   case Num(n) =&gt; e1
-  case Add(l,r) =&gt; Add(subst(l,x,e2), subst(r,x,e2))
+  case Add(l, r) =&gt; Add(subst(l, x, e2), subst(r, x, e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case Ap(f,a) =&gt; Ap(subst(f,x,e2),subst(a,x,e2))
-  case Fun(param,body) =&gt;
+  case Ap(f, a) =&gt; Ap(subst(f, x, e2), subst(a, x, e2))
+  case Fun(param, body) =&gt;
     if (param == x) e1 else {
-      val fvs = freeVars(Fun(param,body)) ++ freeVars(e2) + x
+      val fvs = freeVars(Fun(param, body)) ++ freeVars(e2) + x
       val newvar = freshName(fvs, param)
       Fun(newvar, subst(subst(body, param, Id(newvar)), x, e2))
     }
 }
 
-assert( subst(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
-assert( subst(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
-assert( subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
+assert(subst(Add(5, &quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
+assert(subst(Add(5, &quot;x&quot;), &quot;y&quot;, 7) == Add(5, &quot;x&quot;))
+assert(subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)))
 // test capture-avoiding substitution
-assert( subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x0&quot;,Add(Id(&quot;x0&quot;),Add(Id(&quot;x&quot;),Num(5)))))
-assert( subst(Fun(&quot;x&quot;, Add(Id(&quot;x0&quot;), Id(&quot;y&quot;))), &quot;y&quot;, Add(Id(&quot;x&quot;), 5)) == Fun(&quot;x1&quot;, Add(Id(&quot;x0&quot;), Add(Id(&quot;x&quot;), Num(5)))) )
+assert(subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5)) == Fun(&quot;x0&quot;, Add(Id(&quot;x0&quot;), Add(Id(&quot;x&quot;), Num(5)))))
+assert(subst(Fun(&quot;x&quot;, Add(Id(&quot;x0&quot;), Id(&quot;y&quot;))), &quot;y&quot;, Add(Id(&quot;x&quot;), 5)) == Fun(&quot;x1&quot;, Add(Id(&quot;x0&quot;), Add(Id(&quot;x&quot;), Num(5)))))
 </code></pre>
 <p>OK, equipped with this new version of substitution we can now define the interpreter for this language.
 But how do we evaluate a function abstraction? Obviously we cannot return a number.</p>
@@ -1155,42 +1155,42 @@ sophisticated.</p>
 Such errors are called <em>type errors</em>, and we will talk about them in much more detail later.</p>
 <p>For now, it means that we need to analyze (typically by pattern matching) the result of recursive invocations of eval to check whether the result has the right type.</p>
 <p>The remainder of the interpreter is unsurprising:</p>
-<pre><code class="language-scala">def eval(e: Exp) : Exp = e match {
+<pre><code class="language-scala">def eval(e: Exp): Exp = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
-  case Add(l,r) =&gt; (eval(l), eval(r)) match {
-                     case (Num(x),Num(y)) =&gt; Num(x+y)
+  case Add(l, r) =&gt; (eval(l), eval(r)) match {
+                     case (Num(x), Num(y)) =&gt; Num(x + y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case Ap(f,a) =&gt; eval(f) match {
-     case Fun(x,body) =&gt; eval( subst(body,x, eval(a)))  // call-by-value
-     // case Fun(x,body) =&gt; eval( subst(body,x, a))        // call-by-name
+  case Ap(f, a) =&gt; eval(f) match {
+     case Fun(x, body) =&gt; eval(subst(body, x, eval(a)))  // call-by-value
+     // case Fun(x, body) =&gt; eval(subst(body, x, a))        // call-by-name
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case _ =&gt; e // numbers and functions evaluate to themselves
 }
 </code></pre>
 <p>We can also make the return type more precise to verify the invariant  that numbers and functions are the only values.</p>
-<pre><code class="language-scala">def eval2(e: Exp) : Either[Num,Fun] = e match {
+<pre><code class="language-scala">def eval2(e: Exp): Either[Num, Fun] = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
-  case Add(l,r) =&gt; (eval2(l), eval2(r)) match {
-                     case (Left(Num(x)),Left(Num(y))) =&gt; Left(Num(x+y))
+  case Add(l, r) =&gt; (eval2(l), eval2(r)) match {
+                     case (Left(Num(x)), Left(Num(y))) =&gt; Left(Num(x + y))
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case Ap(f,a) =&gt; eval2(f) match {
-     case Right(Fun(x,body)) =&gt; eval2( subst(body,x, eval(a)))
+  case Ap(f, a) =&gt; eval2(f) match {
+     case Right(Fun(x, body)) =&gt; eval2(subst(body, x, eval(a)))
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
-  case f@Fun(_,_) =&gt; Right(f)
+  case f@Fun(_, _) =&gt; Right(f)
   case n@Num(_) =&gt; Left(n)
 }
 </code></pre>
 <p>Let's test:</p>
-<pre><code class="language-scala">val test = Ap( Fun(&quot;x&quot;,Add(&quot;x&quot;,5)), 7)
-assert( eval(test) == Num(12))
+<pre><code class="language-scala">val test = Ap(Fun(&quot;x&quot;, Add(&quot;x&quot;, 5)), 7)
+assert(eval(test) == Num(12))
 </code></pre>
 <p>FAE is a computationally (Turing)-complete language. For instance, we can define  a non-terminating program. This program is commonly
 called Omega:</p>
-<pre><code class="language-scala">val omega = Ap(Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)), Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)))
+<pre><code class="language-scala">val omega = Ap(Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)), Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)))
 // try eval(omega) to crash the interpreter ;-)
 </code></pre>
 <p>Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
@@ -1199,25 +1199,25 @@ this topic later.</p>
 Here is a first attempt:</p>
 <pre><code class="language-scala">type Env0 = Map[String, Exp]
 
-def evalWithEnv0(e: Exp, env: Env0) : Exp = e match {
+def evalWithEnv0(e: Exp, env: Env0): Exp = e match {
   case Id(x) =&gt; env(x)
-  case Add(l,r) =&gt; {
-    (evalWithEnv0(l,env), evalWithEnv0(r,env)) match {
-      case (Num(v1),Num(v2)) =&gt; Num(v1+v2)
+  case Add(l, r) =&gt; {
+    (evalWithEnv0(l, env), evalWithEnv0(r, env)) match {
+      case (Num(v1), Num(v2)) =&gt; Num(v1 + v2)
       case _ =&gt; sys.error(&quot;can only add numbers&quot;)
     }
   }
-  case Ap(f,a) =&gt; evalWithEnv0(f,env) match {
-    case Fun(x,body) =&gt; evalWithEnv0(body, Map(x -&gt; evalWithEnv0(a,env)))
+  case Ap(f, a) =&gt; evalWithEnv0(f, env) match {
+    case Fun(x, body) =&gt; evalWithEnv0(body, Map(x -&gt; evalWithEnv0(a, env)))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case _ =&gt; e // numbers and functions evaluate to themselves
 }
 
-assert( evalWithEnv0(test, Map.empty) == Num(12))
+assert(evalWithEnv0(test, Map.empty) == Num(12))
 </code></pre>
 <p>However, consider the following example:</p>
-<pre><code class="language-scala">val test2 = wth(&quot;x&quot;, 5, Ap(Fun(&quot;f&quot;, Ap(&quot;f&quot;,3)), Fun(&quot;y&quot;,Add(&quot;x&quot;,&quot;y&quot;))))
+<pre><code class="language-scala">val test2 = wth(&quot;x&quot;, 5, Ap(Fun(&quot;f&quot;, Ap(&quot;f&quot;, 3)), Fun(&quot;y&quot;, Add(&quot;x&quot;, &quot;y&quot;))))
 </code></pre>
 <p>It works fine in the substitution-based interpreter,</p>
 <pre><code class="language-scala">val evalTest2 = eval(test2)
@@ -1225,7 +1225,7 @@ assert( evalWithEnv0(test, Map.empty) == Num(12))
 assert(evalTest2 == Num(8))
 </code></pre>
 <p>but</p>
-<pre><code class="language-scala">val evalEnv0Test2 = evalWithEnv0(test2,Map.empty)
+<pre><code class="language-scala">val evalEnv0Test2 = evalWithEnv0(test2, Map.empty)
 // java.util.NoSuchElementException: key not found: x
 // 	at scala.collection.immutable.Map$Map1.apply(Map.scala:245)
 // 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:208)
@@ -1240,7 +1240,7 @@ assert(evalTest2 == Num(8))
 The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.</p>
 <p>What can we do to fix this problem?
 We could try to replace the second line in the &quot;Ap&quot; case by</p>
-<pre><code>case Fun(x,body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a,env)))
+<pre><code>case Fun(x, body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a, env)))
 </code></pre>
 <p>but this would again introduce dynamic scoping.</p>
 <p>Hence, when we evaluate a function, we do not only have to store the function, but also the environment active when the function was
@@ -1254,25 +1254,25 @@ type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 </code></pre>
-<p>The evaluator becomes :</p>
-<pre><code class="language-scala">def evalWithEnv(e: Exp, env: Env) : Value = e match {
+<p>The evaluator becomes:</p>
+<pre><code class="language-scala">def evalWithEnv(e: Exp, env: Env): Value = e match {
   case Num(n: Int) =&gt; NumV(n)
   case Id(x) =&gt; env(x)
-  case Add(l,r) =&gt; {
-    (evalWithEnv(l,env), evalWithEnv(r,env)) match {
-      case (NumV(v1),NumV(v2)) =&gt; NumV(v1+v2)
+  case Add(l, r) =&gt; {
+    (evalWithEnv(l, env), evalWithEnv(r, env)) match {
+      case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
       case _ =&gt; sys.error(&quot;can only add numbers&quot;)
     }
   }
-  case f@Fun(param,body) =&gt; ClosureV(f, env)
-  case Ap(f,a) =&gt; evalWithEnv(f,env) match {
+  case f@Fun(param, body) =&gt; ClosureV(f, env)
+  case Ap(f, a) =&gt; evalWithEnv(f, env) match {
     // Use environment stored in closure to realize proper lexical scoping!
-    case ClosureV(f,closureEnv) =&gt; evalWithEnv(f.body, closureEnv + (f.param -&gt; evalWithEnv(a,env)))
+    case ClosureV(f, closureEnv) =&gt; evalWithEnv(f.body, closureEnv + (f.param -&gt; evalWithEnv(a, env)))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
 }
-assert( evalWithEnv(test, Map.empty) == NumV(12))
-assert( evalWithEnv(test2,Map.empty) == NumV(8))
+assert(evalWithEnv(test, Map.empty) == NumV(12))
+assert(evalWithEnv(test2, Map.empty) == NumV(8))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="lazy-evaluation"><a class="header" href="#lazy-evaluation">Lazy Evaluation</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="08-lazy-evaluation/./lazy-evaluation.scala">here.</a></p>
@@ -1286,14 +1286,14 @@ before executing this script.
 Before we discuss lazy evaluation, we will first discuss a related evaluation strategy, <em>call-by-name</em>.</p>
 <p><em>Call-by-name</em> can be explained very succintly in the substitution-based interpreter: Instead of evaluating the argument <code>a</code> in the
 <code>Ap</code> case before substitution, we substitute the unevaluated argument into the body. The rest remains exactly the same.</p>
-<pre><code class="language-scala">def evalcbn(e: Exp) : Exp = e match {
+<pre><code class="language-scala">def evalcbn(e: Exp): Exp = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
-  case Add(l,r) =&gt; (evalcbn(l), evalcbn(r)) match {
-                     case (Num(x),Num(y)) =&gt; Num(x+y)
+  case Add(l, r) =&gt; (evalcbn(l), evalcbn(r)) match {
+                     case (Num(x), Num(y)) =&gt; Num(x + y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case Ap(f,a) =&gt; evalcbn(f) match {
-     case Fun(x,body) =&gt; evalcbn( subst(body,x, a)) // no evaluation of a!
+  case Ap(f, a) =&gt; evalcbn(f) match {
+     case Fun(x, body) =&gt; evalcbn(subst(body, x, a)) // no evaluation of a!
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case _ =&gt; e
@@ -1307,10 +1307,10 @@ assert(evalcbn(test2) == eval(test2))
 <p>One can formally prove that if <code>eval</code> and <code>evalcbn</code> both produce a number then the numbers are equal. Do they also agree if they produce
 a function?
 Not necessarily. Consider:</p>
-<pre><code class="language-scala">val test3 = Ap(Fun(&quot;f&quot;,Fun(&quot;x&quot;,Ap(&quot;f&quot;,&quot;x&quot;))),Add(1,2))
+<pre><code class="language-scala">val test3 = Ap(Fun(&quot;f&quot;, Fun(&quot;x&quot;, Ap(&quot;f&quot;, &quot;x&quot;))), Add(1, 2))
 
-assert(eval(test3) == Fun(&quot;x&quot;,Ap(Num(3),Id(&quot;x&quot;))))
-assert(evalcbn(test3) == Fun(&quot;x&quot;,Ap(Add(Num(1),Num(2)),Id(&quot;x&quot;))))
+assert(eval(test3) == Fun(&quot;x&quot;, Ap(Num(3), Id(&quot;x&quot;))))
+assert(evalcbn(test3) == Fun(&quot;x&quot;, Ap(Add(Num(1), Num(2)), Id(&quot;x&quot;))))
 </code></pre>
 <p>However, if both produce a function, then the functions &quot;behave&quot; the same. More specifically, the function bodies produced by <code>eval</code>
 may be &quot;more evaluated&quot; than those produced by <code>evalcbn</code> since for the latter the evaluation of the arguments substituted for the parameters
@@ -1319,7 +1319,7 @@ lambda&quot;) - which our interpreters do not do - we could produce the expressi
 This kind of equivalence is also called &quot;beta-equivalence&quot;.</p>
 <p>Most importantly, however, <code>eval</code> and <code>evalcbn</code> differ with regard to their termination behavior. We have seen that <code>omega</code> is a diverging
 expression. In <code>eval</code>, the term</p>
-<pre><code class="language-scala"> val test4 = Ap(Fun(&quot;x&quot;,5),omega)
+<pre><code class="language-scala"> val test4 = Ap(Fun(&quot;x&quot;, 5), omega)
 </code></pre>
 <p>is hence also diverging. In contrast:</p>
 <pre><code class="language-scala">assert(evalcbn(test4) == Num(5))
@@ -1329,46 +1329,46 @@ expression. In <code>eval</code>, the term</p>
 infinite lists.</p>
 <p>We do not have direct support for lists, but we can encode lists. This kind of encoding is called <em>Church encoding</em>.</p>
 <pre><code class="language-scala">val nil = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-val cons  = Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;x&quot;), Ap(Ap(&quot;xs&quot;, &quot;c&quot;),&quot;e&quot;))))))
+val cons  = Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;x&quot;), Ap(Ap(&quot;xs&quot;, &quot;c&quot;), &quot;e&quot;))))))
 </code></pre>
-<p>For instance, the list 1,2,3 is encoded as:</p>
-<pre><code class="language-scala">val list123 = Ap(Ap(&quot;cons&quot;,1),Ap(Ap(&quot;cons&quot;,2),Ap(Ap(&quot;cons&quot;,3), &quot;nil&quot;)))
+<p>For instance, the list 1, 2, 3 is encoded as:</p>
+<pre><code class="language-scala">val list123 = Ap(Ap(&quot;cons&quot;, 1), Ap(Ap(&quot;cons&quot;, 2), Ap(Ap(&quot;cons&quot;, 3), &quot;nil&quot;)))
 </code></pre>
-<p>The map function on lists becomes :</p>
-<pre><code class="language-scala">val maplist = Fun(&quot;f&quot;, Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Ap(Ap(&quot;cons&quot;, Ap(&quot;f&quot;,&quot;x&quot;)),&quot;xs&quot;)))), &quot;nil&quot;)))
+<p>The map function on lists becomes:</p>
+<pre><code class="language-scala">val maplist = Fun(&quot;f&quot;, Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Ap(Ap(&quot;cons&quot;, Ap(&quot;f&quot;, &quot;x&quot;)), &quot;xs&quot;)))), &quot;nil&quot;)))
 </code></pre>
-<p>For instance, we can map the successor function over the 1,2,3 list.</p>
-<pre><code class="language-scala">val test5 = wth(&quot;cons&quot;,cons,
+<p>For instance, we can map the successor function over the 1, 2, 3 list.</p>
+<pre><code class="language-scala">val test5 = wth(&quot;cons&quot;, cons,
             wth(&quot;nil&quot;, nil,
             wth(&quot;maplist&quot;, maplist,
-            Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,1))), list123))))
+            Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), list123))))
 </code></pre>
 <p>Since it is somewhat difficult to print out the resulting list in our primitive language we construct the result we expect explicitly.</p>
-<pre><code class="language-scala">val test5res = wth(&quot;cons&quot;,cons,
+<pre><code class="language-scala">val test5res = wth(&quot;cons&quot;, cons,
                wth(&quot;nil&quot;, nil,
-                 Ap(Ap(&quot;cons&quot;,2),Ap(Ap(&quot;cons&quot;,3),Ap(Ap(&quot;cons&quot;,4), &quot;nil&quot;)))))
+                 Ap(Ap(&quot;cons&quot;, 2), Ap(Ap(&quot;cons&quot;, 3), Ap(Ap(&quot;cons&quot;, 4), &quot;nil&quot;)))))
 assert(eval(test5) == eval(test5res))
 </code></pre>
 <p>Using <code>evalcbn</code> instead of <code>eval</code> the assertion does not hold (why?), but the results are beta-equivalent.
 We can also construct infinite lists. To this end, we need some form of recursion. We choose the standard fixed-point operator Y.
 This operator only works under call-by-name or other so-called &quot;non-strict&quot; evaluation strategies.</p>
-<pre><code class="language-scala">val y = Fun(&quot;f&quot;, Ap(Fun(&quot;x&quot;,Ap(&quot;f&quot;, Ap(&quot;x&quot;,&quot;x&quot;))), Fun(&quot;x&quot;,Ap(&quot;f&quot;,Ap(&quot;x&quot;,&quot;x&quot;)))))
+<pre><code class="language-scala">val y = Fun(&quot;f&quot;, Ap(Fun(&quot;x&quot;, Ap(&quot;f&quot;, Ap(&quot;x&quot;, &quot;x&quot;))), Fun(&quot;x&quot;, Ap(&quot;f&quot;, Ap(&quot;x&quot;, &quot;x&quot;)))))
 </code></pre>
 <p>Using Y, we can construct infinite lists, such as the list of all natural numbers.</p>
-<pre><code class="language-scala">val allnats = Ap(Ap(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, Ap(Ap(&quot;cons&quot;,&quot;n&quot;), Ap(&quot;nats&quot;, Add(&quot;n&quot;,1)))))),1)
+<pre><code class="language-scala">val allnats = Ap(Ap(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, Ap(Ap(&quot;cons&quot;, &quot;n&quot;), Ap(&quot;nats&quot;, Add(&quot;n&quot;, 1)))))), 1)
 </code></pre>
 <p>We can also perform standard computations on infinite lists, such as mapping the successor function over it.</p>
-<pre><code class="language-scala">val list2toinfty = wth(&quot;cons&quot;,cons,
+<pre><code class="language-scala">val list2toinfty = wth(&quot;cons&quot;, cons,
                    wth(&quot;nil&quot;, nil,
                    wth(&quot;y&quot;, y,
                    wth(&quot;maplist&quot;, maplist,
-                      Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,1))), allnats)))))
+                      Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), allnats)))))
 </code></pre>
 <p>Of course, <code>list2toinfty</code> diverges when we use <code>eval</code>, but it works fine with <code>evalcbn</code>. It is hard to verify the result due to
 an almost unreadable output. Hence we propose the following</p>
 <p>Exercise: Extend the language such that you can implement the &quot;take&quot; function as known from Haskell within the language
 (if0-expressions or something like it are needed for that). Now add a &quot;print&quot; function that prints a number on the console.
-Use it to display that the first 3 list elements of <code>list2toinfty</code> are 2,3,4.</p>
+Use it to display that the first 3 list elements of <code>list2toinfty</code> are 2, 3, 4.</p>
 <p><em>end of extra material</em></p>
 <h2 id="environment-based-lazy-evaluation"><a class="header" href="#environment-based-lazy-evaluation">Environment-based lazy evaluation</a></h2>
 <p>Let us now consider the question how we can implement call-by-name in the environment-based interpreter. Translating the idea of not
@@ -1397,32 +1397,32 @@ of the evaluator that leaves open how to</p>
 
     case class EnvThunk(map: Map[String, Thunk]) {
       def apply(key: String) = map.apply(key)
-      def +(other: (String, Thunk)) : EnvThunk = EnvThunk(map+other)
+      def +(other: (String, Thunk)): EnvThunk = EnvThunk(map + other)
     }
 
-    def delay(e: Exp, env: EnvThunk) : Thunk
-    def force(t: Thunk) : ValueCBN
+    def delay(e: Exp, env: EnvThunk): Thunk
+    def force(t: Thunk): ValueCBN
 
     // since values also depend on EnvThunk and hence on Thunk they need to
     // be defined within this trait
     sealed abstract class ValueCBN
     case class NumV(n: Int) extends ValueCBN
     case class ClosureV(f: Fun, env: EnvThunk) extends ValueCBN
-    def evalCBN(e: Exp, env: EnvThunk) : ValueCBN = e match {
+    def evalCBN(e: Exp, env: EnvThunk): ValueCBN = e match {
       case Id(x) =&gt; force(env(x)) // force evaluation of thunk if identifier is evaluated
-      case Add(l,r) =&gt; {
-        (evalCBN(l,env), evalCBN(r,env)) match {
-          case (NumV(v1),NumV(v2)) =&gt; NumV(v1+v2)
+      case Add(l, r) =&gt; {
+        (evalCBN(l, env), evalCBN(r, env)) match {
+          case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
         }
       }
-      case Ap(f,a) =&gt; evalCBN(f,env) match {
+      case Ap(f, a) =&gt; evalCBN(f, env) match {
         // delay argument expression and add it to environment of the closure
-        case ClosureV(f,cenv) =&gt; evalCBN(f.body, cenv + (f.param -&gt; delay(a,env)))
+        case ClosureV(f, cenv) =&gt; evalCBN(f.body, cenv + (f.param -&gt; delay(a, env)))
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
       }
       case Num(n) =&gt; NumV(n)
-      case f@Fun(x,body) =&gt; ClosureV(f,env)
+      case f@Fun(x, body) =&gt; ClosureV(f, env)
     }
 }
 </code></pre>
@@ -1430,11 +1430,11 @@ of the evaluator that leaves open how to</p>
 of expression and environment. Forcing a thunk just evaluates it in the stored environment.
 To understand what is going on during evaluation of tests we trace argument evaluation by a  printout to the console.</p>
 <pre><code class="language-scala">object CallByName extends CBN {
-  type Thunk = (Exp,EnvThunk)
-  def delay(e: Exp, env: EnvThunk) = (e,env)
+  type Thunk = (Exp, EnvThunk)
+  def delay(e: Exp, env: EnvThunk) = (e, env)
   def force(t: Thunk) = {
-    println(&quot;Forcing evaluation of expression: &quot;+t._1)
-    evalCBN(t._1,t._2)
+    println(&quot;Forcing evaluation of expression: &quot; + t._1)
+    evalCBN(t._1, t._2)
   }
 }
 
@@ -1444,18 +1444,18 @@ assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.Nu
 <h2 id="call-by-need"><a class="header" href="#call-by-need">Call-by-need</a></h2>
 <p>Call-by-name is rather wasteful: If an argument is used <em>n</em> times in the body, the argument expression is re-evaluated <em>n</em>-times.
 For instance, in</p>
-<pre><code class="language-scala">val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&quot;)),
-               Ap(&quot;double&quot;, Add(2,3)))
+<pre><code class="language-scala">val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;x&quot;)),
+               Ap(&quot;double&quot;, Add(2, 3)))
 </code></pre>
 <p>the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blow-up.</p>
 <p>Example:</p>
-<pre><code class="language-mdoc:silent">val blowup  = wth(&quot;a&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;x&quot;)),
-              wth(&quot;b&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;a&quot;,&quot;x&quot;), Ap(&quot;a&quot;,&quot;x&quot;))),
-              wth(&quot;c&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;b&quot;,&quot;x&quot;), Ap(&quot;b&quot;,&quot;x&quot;))),
-              wth(&quot;d&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;c&quot;,&quot;x&quot;), Ap(&quot;c&quot;,&quot;x&quot;))),
-              wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;d&quot;,&quot;x&quot;), Ap(&quot;d&quot;,&quot;x&quot;))),
-              wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;e&quot;,&quot;x&quot;), Ap(&quot;e&quot;,&quot;x&quot;))),
-              Ap(&quot;f&quot;, Add(2,3))))))))
+<pre><code class="language-mdoc:silent">val blowup  = wth(&quot;a&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;x&quot;)),
+              wth(&quot;b&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;a&quot;, &quot;x&quot;), Ap(&quot;a&quot;, &quot;x&quot;))),
+              wth(&quot;c&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;b&quot;, &quot;x&quot;), Ap(&quot;b&quot;, &quot;x&quot;))),
+              wth(&quot;d&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;c&quot;, &quot;x&quot;), Ap(&quot;c&quot;, &quot;x&quot;))),
+              wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;d&quot;, &quot;x&quot;), Ap(&quot;d&quot;, &quot;x&quot;))),
+              wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;e&quot;, &quot;x&quot;), Ap(&quot;e&quot;, &quot;x&quot;))),
+              Ap(&quot;f&quot;, Add(2, 3))))))))
 </code></pre>
 <p>Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is
 called <em>call-by-need</em>.</p>
@@ -1465,13 +1465,13 @@ called <em>call-by-need</em>.</p>
     var cache: ValueCBN = null
   }
   type Thunk = MemoThunk
-  def delay(e: Exp, env: EnvThunk) = MemoThunk(e,env)
+  def delay(e: Exp, env: EnvThunk) = MemoThunk(e, env)
   def force(t: Thunk) = {
     if (t.cache == null) {
-      println(&quot;Forcing evaluation of expression: &quot;+t.e)
+      println(&quot;Forcing evaluation of expression: &quot; + t.e)
       t.cache = evalCBN(t.e, t.env)
       t.cache
-    } else println (&quot;Reusing cached value &quot;+t.cache+&quot; for expression &quot;+t.e)
+    } else println (&quot;Reusing cached value &quot; + t.cache + &quot; for expression &quot; + t.e)
     t.cache
   }
 }
@@ -1493,8 +1493,8 @@ determine that an argument will definitely be used (lookup &quot;strictness anal
 <p>The content of this chapter is available as a Scala file <a href="09-recursive-functions/./recursive-functions.scala">here.</a></p>
 <h2 id="recursion"><a class="header" href="#recursion">Recursion</a></h2>
 <p>Let's try to write a function that computes the sum of the first \( n \) integers. Let's pretend we do not know that the sum of the
-first \( n \) integers is \( n*(n+1)/2 \) and instead compute the sum in a loop. Let's try to do this in FAE (with <code>If0</code>):</p>
-<pre><code class="language-scala">val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
+first \( n \) integers is \( n * (n + 1) / 2 \) and instead compute the sum in a loop. Let's try to do this in FAE (with <code>If0</code>):</p>
+<pre><code class="language-scala">val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))), Ap(&quot;sum&quot;, 10))
 </code></pre>
 <p><code>sumattempt</code> won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
 <em>y</em> combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
@@ -1516,22 +1516,22 @@ the String is bound to:</p>
   object Exp:
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def id2exp(s: String): Exp = Id(s)
-    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+    def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 }
 
 import Syntax._
 import Exp._
 </code></pre>
 <p>Using <code>Letrec</code>, our example can be expressed as follows.</p>
-<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
+<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))), Ap(&quot;sum&quot;, 10))
 </code></pre>
-<p>Let's now consider the semantics of <code>Letrec</code>. Consider the evaluation of <code>Letrec(x,e,body)</code> in an environment <code>env</code>.
-What environment should we use to evaluate <code>e</code> and <code>body</code>, respectively? Using <code>env</code> for <code>e</code> will produce a <code>ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;'...),env)</code>,
-and hence the environment when evaluating body will be <code>envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env))</code>.</p>
+<p>Let's now consider the semantics of <code>Letrec</code>. Consider the evaluation of <code>Letrec(x, e, body)</code> in an environment <code>env</code>.
+What environment should we use to evaluate <code>e</code> and <code>body</code>, respectively? Using <code>env</code> for <code>e</code> will produce a <code>ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;'...), env)</code>,
+and hence the environment when evaluating body will be <code>envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...), env))</code>.</p>
 <p>This is bad, because the <code>env</code> in the closure does not contain a binding for <code>&quot;sum&quot;</code> and hence the recursive invocation will fail.
 The environment in the closure must contain a mapping for <code>&quot;sum&quot;</code>. Hence envbody should look like</p>
 <pre><code>  envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...),
-                                 env + (&quot;sum&quot; -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env)))
+                                 env + (&quot;sum&quot; -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...), env)))
 </code></pre>
 <p>This looks better, but now the second closure contains an environment with no binding of <code>&quot;sum&quot;</code>. What we need is an environment
 that satisfies the equation:</p>
@@ -1546,7 +1546,7 @@ distinction by a polymorphic <code>value</code> method.
 Due to the mutual recursion between <code>ValueHolder</code> and <code>Value</code> the definitions are put into an object.</p>
 <pre><code class="language-scala">object Values {
   trait ValueHolder {
-    def value : Value
+    def value: Value
   }
   sealed abstract class Value extends ValueHolder { def value = this }
   case class ValuePointer(var v: Value) extends ValueHolder { def value = v }
@@ -1558,29 +1558,29 @@ Due to the mutual recursion between <code>ValueHolder</code> and <code>Value</co
 import Values._  // such that we do not have to write Values.ValueHolder etc.
 </code></pre>
 <p>The interpreter is unchanged except for the additional <code>Letrec</code> case and the modified <code>Id</code> case.</p>
-<pre><code class="language-scala">def eval(e: Exp, env: Env) : Value = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env): Value = e match {
   case Num(n: Int) =&gt; NumV(n)
   case Id(x) =&gt; env(x).value  // dereference potential ValuePointer
-  case If0(cond, thenExp, elseExp) =&gt; eval(cond,env) match {
-    case NumV(0) =&gt; eval(thenExp,env)
-    case _ =&gt; eval(elseExp,env)
+  case If0(cond, thenExp, elseExp) =&gt; eval(cond, env) match {
+    case NumV(0) =&gt; eval(thenExp, env)
+    case _ =&gt; eval(elseExp, env)
   }
-  case Add(l,r) =&gt; {
-    (eval(l,env), eval(r,env)) match {
-      case (NumV(v1),NumV(v2)) =&gt; NumV(v1+v2)
+  case Add(l, r) =&gt; {
+    (eval(l, env), eval(r, env)) match {
+      case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
       case _ =&gt; sys.error(&quot;can only add numbers&quot;)
     }
   }
-  case f@Fun(param,body) =&gt; ClosureV(f, env)
-  case Ap(f,a) =&gt; eval(f,env) match {
-    case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
+  case f@Fun(param, body) =&gt; ClosureV(f, env)
+  case Ap(f, a) =&gt; eval(f, env) match {
+    case ClosureV(f, closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a, env)))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
-  case Letrec(x,e,body) =&gt; {
+  case Letrec(x, e, body) =&gt; {
     val vp = ValuePointer(null)  // initialize pointer with null
     val newenv = env + (x -&gt; vp)  // evaluate e in the environment extended with the placeholder
-    vp.v = eval(e,newenv)         // create the circle in the environment
-    eval(body,newenv) // evaluate body in circular environment
+    vp.v = eval(e, newenv)         // create the circle in the environment
+    eval(body, newenv) // evaluate body in circular environment
   }
 }
 </code></pre>
@@ -1623,7 +1623,7 @@ We will add boxes to our base language, FAE.</p>
   object Exp:
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def id2exp(s: String): Exp = Id(s)
-    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+    def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 }
 import Syntax._
 import Exp._
@@ -1651,7 +1651,7 @@ together with the computed value when it evaluates an expression.  However, this
 example:</p>
 <pre><code class="language-scala">val test2 = wth(&quot;a&quot;, NewBox(1),
               wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, OpenBox(&quot;a&quot;))),
-                Seq(SetBox(&quot;a&quot;,2),
+                Seq(SetBox(&quot;a&quot;, 2),
                   Ap(&quot;f&quot;, 5))))
 </code></pre>
 <p>The mutation should affect the box stored in the closure bound to <code>f</code>.  But with the implementation strategy described above it would not.
@@ -1688,7 +1688,7 @@ type Store = Map[Address, Value]
 <p>We will often need a fresh address in the store. We do so using a counter variable.</p>
 <pre><code class="language-scala">var _nextAddress = 0
 
-def nextAddress : Address = {
+def nextAddress: Address = {
   _nextAddress += 1
   _nextAddress
 }
@@ -1700,7 +1700,7 @@ Let's now discuss the evaluation of FAE with conditionals and boxes, BCFAE. To t
              wth(&quot;toggle&quot;, Fun(&quot;dummy&quot;, If0(OpenBox(&quot;switch&quot;),
                                           Seq(SetBox(&quot;switch&quot;, 1), 1),
                                           Seq(SetBox(&quot;switch&quot;, 0), 0))),
-                 Add(Ap(&quot;toggle&quot;,42), Ap(&quot;toggle&quot;,42))))
+                 Add(Ap(&quot;toggle&quot;, 42), Ap(&quot;toggle&quot;, 42))))
 </code></pre>
 <p>This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
 evaluation of this program.</p>
@@ -1710,12 +1710,12 @@ evaluation of this program.</p>
 <tr><td>C</td><td>Add(..</td><td></td><td></td><td></td></tr>
 <tr><td>D</td><td>Ap(&quot;toggle&quot;)</td><td>1</td><td></td><td>1 -&gt; NumV(1)</td></tr>
 <tr><td>E</td><td>Ap(&quot;toggle&quot;)</td><td>0</td><td></td><td>1 -&gt; NumV(0)</td></tr>
-<tr><td>F</td><td>Add(0,1)</td><td>1</td><td></td><td></td></tr>
+<tr><td>F</td><td>Add(0, 1)</td><td>1</td><td></td><td></td></tr>
 </tbody></table>
 <p>Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
 This is called <em>store-passing style</em>.  Consequently, we have to update the type of our evaluator.</p>
-<pre><code class="language-scala">def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env, s: Store): (Value, Store) = e match {
   /* All expressions whose evaluation does not alter the store just return s. */
   case Num(n) =&gt; (NumV(n), s)
   case Id(x) =&gt; (env(x), s)
@@ -1811,18 +1811,18 @@ and all the problems associated with manual memory management.</p>
 <p>Our model of stores is sufficient to illustrate how modern languages deal with memory management: by garbage collection.
 Garbage collectors automatically reclaim memory that is no longer referenced from within the active part of the computation.
 We can model a (naive) mark-and-sweep garbage collector as follows:</p>
-<pre><code class="language-scala">def gc(env: Env, store: Store) : Store = {
+<pre><code class="language-scala">def gc(env: Env, store: Store): Store = {
 
-  def allAddrInVal(v: Value) : Set[Address] = v match {
+  def allAddrInVal(v: Value): Set[Address] = v match {
     case AddressV(a)      =&gt; Set(a)
     case NumV(_)          =&gt; Set.empty
     case ClosureV(f, env) =&gt; allAddrInEnv(env)
   }
 
-  def allAddrInEnv(env: Env) : Set[Address] =
+  def allAddrInEnv(env: Env): Set[Address] =
     env.values.map(allAddrInVal _).fold(Set.empty)(_ union _)
 
-  def mark(seed: Set[Address]) : Set[Address] = {
+  def mark(seed: Set[Address]): Set[Address] = {
     val newAddresses = seed.flatMap(ad =&gt; allAddrInVal(store(ad)))
     if (newAddresses.subsetOf(seed)) seed
     else mark(seed union newAddresses)
@@ -1875,14 +1875,14 @@ a functional store, because our purpose is not to explain mutation but to explai
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+  def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 
 import Exp._
 </code></pre>
 <p>We will equip our values with a mutable flag that is useful for mark-and-sweep garbage collection.
 In real systems it is implemented as a bit flag, or, if the so-called &quot;tri-color algorithm&quot; is used, with two bit flags.</p>
 <pre><code class="language-scala">abstract class Value {
-  var marked : Boolean = false
+  var marked: Boolean = false
 }
 </code></pre>
 <p>We will also use a mutable map instead of a map for environments. This is not needed for mark-and-sweep,
@@ -1895,15 +1895,15 @@ case class AddressV(a: Int) extends Value
 <p>To be able to experiment with different store and gc designs, we create an interface for stores.
 The stack parameter in <code>malloc</code> is needed during gc to determine the root nodes from which the algorithms can start.</p>
 <pre><code class="language-scala">trait Store {
-  def malloc(stack: List[Env], v: Value) : Int
-  def update(index: Int, v: Value) : Unit
-  def apply(index: Int) : Value
+  def malloc(stack: List[Env], v: Value): Int
+  def update(index: Int, v: Value): Unit
+  def apply(index: Int): Value
 }
 </code></pre>
 <p>In our interpreter, the stack of environments is only implicitly available on the stack of the meta-language.
 To reify the call-stack we need to make it explicit. We do so by constructing the stack explicitly and passing it as parameter.
 The first element of the stack is the current environment; the rest is only needed for gc.</p>
-<pre><code class="language-scala">def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
+<pre><code class="language-scala">def eval(e: Exp, stack: List[Env], store: Store): Value = e match {
 
   case Num(n) =&gt; NumV(n)
 
@@ -1989,9 +1989,9 @@ The first element of the stack is the current environment; the rest is only need
 
   val memory = new Array[Value](size)
 
-  var nextFreeAddr : Int = 0
+  var nextFreeAddr: Int = 0
 
-  def malloc(stack: List[Env], v: Value) : Int = {
+  def malloc(stack: List[Env], v: Value): Int = {
     val x = nextFreeAddr
     if (x &gt;= size) sys.error(&quot;out of memory&quot;)
     nextFreeAddr += 1
@@ -1999,7 +1999,7 @@ The first element of the stack is the current environment; the rest is only need
     x
   }
 
-  def update(index: Int, v: Value) : Unit = memory.update(index, v)
+  def update(index: Int, v: Value): Unit = memory.update(index, v)
 
   def apply(index: Int) = memory(index)
 }
@@ -2009,11 +2009,11 @@ The first element of the stack is the current environment; the rest is only need
 
   val memory = new Array[Value](size)
 
-  var free : Int = size
+  var free: Int = size
 
-  var nextFreeAddr : Int = 0
+  var nextFreeAddr: Int = 0
 
-  def malloc(stack: List[Env], v: Value) : Int = {
+  def malloc(stack: List[Env], v: Value): Int = {
     if (free &lt;= 0) gc(stack)
     if (free &lt;= 0) sys.error(&quot;out of memory&quot;)
 
@@ -2038,20 +2038,20 @@ The first element of the stack is the current environment; the rest is only need
     nextFreeAddr
   }
 
-  def update(index: Int, v: Value) : Unit = memory.update(index, v)
+  def update(index: Int, v: Value): Unit = memory.update(index, v)
 
   def apply(index: Int) = memory(index)
 
-  def allAddrInVal(v: Value) : Set[Int] = v match {
+  def allAddrInVal(v: Value): Set[Int] = v match {
     case AddressV(a)      =&gt; Set(a)
     case NumV(_)          =&gt; Set.empty
     case ClosureV(f, env) =&gt; allAddrInEnv(env)
   }
 
-  def allAddrInEnv(env: Env) : Set[Int] =
+  def allAddrInEnv(env: Env): Set[Int] =
     env.values.map(allAddrInVal _).fold(Set.empty)(_ union _)
 
-  def mark(seed: Set[Int]) : Unit = {
+  def mark(seed: Set[Int]): Unit = {
     seed.foreach(memory(_).marked = true)
     val newAddresses = seed.flatMap(
                          ad =&gt; allAddrInVal(memory(ad))
@@ -2064,7 +2064,7 @@ The first element of the stack is the current environment; the rest is only need
   /* What graph algorithm underlies the mark step as implemented here?
    * What potential problem could it cause in a &quot;real&quot; interpreter? */
 
-  def sweep() : Unit = {
+  def sweep(): Unit = {
     memory.indices.foreach(
       index =&gt;   if (memory(index) == null) {
                    /* No work needed on an empty memory cell */
@@ -2080,7 +2080,7 @@ The first element of the stack is the current environment; the rest is only need
     )
   }
 
-  def gc(stack: List[Env]) : Unit = {
+  def gc(stack: List[Env]): Unit = {
     println(&quot;\nSTARTING GC\nSTACK = &quot; + stack + &quot;\nSTORE = &quot; + memory)
     mark(stack.map(allAddrInEnv _).fold(Set.empty)(_ union _))
     sweep()
@@ -2144,7 +2144,7 @@ Of course, if the meta-language has no corresponding feature, then we have no ch
 <p>That said, it is possible to make the FAE interpreters still more &quot;meta&quot;. Here are two examples.
 The first one is a version of FAE that uses a different representation of the program syntax, namely one using
 meta-language functions to represent object-language functions. This technique is called higher-order abstract syntax, or HOAS.
-For instance, the function <code>Fun(&quot;x&quot;, Add(&quot;x&quot;,5))</code> is now represented as <code>Fun(x =&gt; Add(x,5))</code>.
+For instance, the function <code>Fun(&quot;x&quot;, Add(&quot;x&quot;, 5))</code> is now represented as <code>Fun(x =&gt; Add(x, 5))</code>.
 The interpreter becomes rather short, because substitution and lexical scoping are now being dealt with by the
 corresponding meta-level construct.</p>
 <pre><code class="language-scala">object HOAS {
@@ -2157,14 +2157,14 @@ corresponding meta-level construct.</p>
 
   import Exp._
 
-  def eval(e: Exp) : Exp = e match {
-      case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot;+v)
-      case Add(l,r) =&gt; (eval(l), eval(r)) match {
-                         case (Num(x),Num(y)) =&gt; Num(x+y)
+  def eval(e: Exp): Exp = e match {
+      case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
+      case Add(l, r) =&gt; (eval(l), eval(r)) match {
+                         case (Num(x), Num(y)) =&gt; Num(x + y)
                          case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                         }
-      case Ap(f,a) =&gt; eval(f) match {
-         case Fun(f) =&gt; eval( f(eval(a)))
+      case Ap(f, a) =&gt; eval(f) match {
+         case Fun(f) =&gt; eval(f(eval(a)))
          case _ =&gt; sys.error(&quot;can only apply functions&quot;)
       }
       case _ =&gt; e // numbers and functions evaluate to themselves
@@ -2197,19 +2197,19 @@ object Compositional {
     case class NumV(n: Int) extends Value
     case class FunV(f: Value =&gt; Value) extends Value
 
-    def eval(e: Exp) : Env =&gt; Value = e match {
+    def eval(e: Exp): Env =&gt; Value = e match {
       case Num(n: Int) =&gt; (env) =&gt; NumV(n)
       case Id(x) =&gt; env =&gt; env(x)
-      case Add(l,r) =&gt; { (env) =&gt;
+      case Add(l, r) =&gt; { (env) =&gt;
         (eval(l)(env),  eval(r)(env)) match {
-          case (NumV(v1),NumV(v2)) =&gt; NumV(v1+v2)
+          case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
         }
       }
-      case Fun(param,body) =&gt; (env) =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
-      case Ap(f,a) =&gt; (env) =&gt; (eval(f)(env), eval(a)(env)) match {
+      case Fun(param, body) =&gt; (env) =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
+      case Ap(f, a) =&gt; (env) =&gt; (eval(f)(env), eval(a)(env)) match {
         // Use environment stored in (meta-level) closure to realize proper lexical scoping!
-        case (FunV(g),arg) =&gt; g(arg)
+        case (FunV(g), arg) =&gt; g(arg)
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
       }
     }
@@ -2222,19 +2222,19 @@ object Compositional {
     case class NumV(n: Int) extends Value
     case class ClosureV(f: Fun, env: Env) extends Value
 
-    def eval(e: Exp, env: Env) : Value = e match {
+    def eval(e: Exp, env: Env): Value = e match {
       case Num(n: Int) =&gt; NumV(n)
       case Id(x) =&gt; env(x)
-      case Add(l,r) =&gt; {
-        (eval(l,env), eval(r,env)) match {
-          case (NumV(v1),NumV(v2)) =&gt; NumV(v1+v2)
+      case Add(l, r) =&gt; {
+        (eval(l, env), eval(r, env)) match {
+          case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
         }
       }
-      case f@Fun(param,body) =&gt; ClosureV(f, env)
-      case Ap(f,a) =&gt; eval(f,env) match {
+      case f@Fun(param, body) =&gt; ClosureV(f, env)
+      case Ap(f, a) =&gt; eval(f, env) match {
         // Use environment stored in closure to realize proper lexical scoping!
-        case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
+        case ClosureV(f, closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a, env)))
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
       }
     }
@@ -2271,13 +2271,13 @@ case class ClosureV(f:Fun, env:Env) extends Value
 </code></pre>
 <p>Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,
 say, a number but get in fact a closure. Hence, this language has the fascinating property that  no dynamic type errors can occur.</p>
-<pre><code class="language-scala">def eval(e: Exp, env: Env) : Value = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env): Value = e match {
   // We give the identity function as dummy value for PrintDot
-  case PrintDot() =&gt; print(&quot;.&quot;); ClosureV(Fun(&quot;x&quot;,&quot;x&quot;), Map.empty)
+  case PrintDot() =&gt; print(&quot;.&quot;); ClosureV(Fun(&quot;x&quot;, &quot;x&quot;), Map.empty)
   case Id(x) =&gt; env(x)
-  case f@Fun(param,body) =&gt; ClosureV(f, env)
-  case Ap(f,a) =&gt; eval(f,env) match {
-    case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
+  case f@Fun(param, body) =&gt; ClosureV(f, env)
+  case Ap(f, a) =&gt; eval(f, env) match {
+    case ClosureV(f, closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a, env)))
   }
 }
 </code></pre>
@@ -2287,9 +2287,9 @@ To do so, we use the technique of Church encoding. This means that each datum is
 <p>Let's start with booleans and boolean arithmetic.</p>
 <pre><code class="language-scala">val f = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;f&quot;))  // false
 val t = Fun(&quot;t&quot;, Fun(&quot;f&quot;, &quot;t&quot;))  // true
-val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;b&quot;),&quot;a&quot;)))
+val and = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;b&quot;), &quot;a&quot;)))
 val or = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;a&quot;, &quot;a&quot;), &quot;b&quot;)))
-val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;a&quot;,&quot;f&quot;),&quot;t&quot;))))
+val not = Fun(&quot;a&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;a&quot;, &quot;f&quot;), &quot;t&quot;))))
 </code></pre>
 <p>We can now write our own control structures, such as <code>if/then/else</code></p>
 <pre><code class="language-scala">val ifthenelse = Fun(&quot;cond&quot;, Fun(&quot;t&quot;, Fun(&quot;f&quot;, Ap(Ap(&quot;cond&quot;, &quot;t&quot;), &quot;f&quot;))))
@@ -2301,8 +2301,8 @@ val succ = Fun(&quot;n&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(&quot;s&q
 val one = Ap(succ, zero)
 val two = Ap(succ, one)
 val three = Ap(succ, two)
-val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;,&quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;), &quot;z&quot;))))))
-val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, Ap(&quot;b&quot;,&quot;s&quot;)), &quot;z&quot;)))))
+val add  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, &quot;s&quot;), Ap(Ap(&quot;b&quot;, &quot;s&quot;), &quot;z&quot;))))))
+val mult = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Fun(&quot;s&quot;, Fun(&quot;z&quot;, Ap(Ap(&quot;a&quot;, Ap(&quot;b&quot;, &quot;s&quot;)), &quot;z&quot;)))))
 val exp  = Fun(&quot;a&quot;, Fun(&quot;b&quot;, Ap(Ap(&quot;b&quot;, Ap(mult, &quot;a&quot;)), one)))
 val iszero = Fun(&quot;a&quot;, Ap(Ap(&quot;a&quot;, Fun(&quot;x&quot;, f)), t))
 </code></pre>
@@ -2314,14 +2314,14 @@ For testing, here is a function that prints a unary representation of a number.<
 <p>Again straightforward, except &quot;tail&quot;, which we do not show here. It needs the same kind of trick (called &quot;pairing trick&quot;)
 as the predecessor function.</p>
 <pre><code class="language-scala">val emptylist = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;,&quot;c&quot;), &quot;e&quot;))))))
+val cons = Fun(&quot;h&quot;, Fun(&quot;r&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;h&quot;), Ap(Ap(&quot;r&quot;, &quot;c&quot;), &quot;e&quot;))))))
 val head = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;h&quot;, Fun(&quot;t&quot;, &quot;h&quot;))), f))
 </code></pre>
 <p>For instance, we can multiply all numbers in a list</p>
 <pre><code class="language-scala">val multlist = Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, mult), one))
 </code></pre>
-<p>Here is the list 3,2,3:</p>
-<pre><code class="language-scala">val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three), emptylist)))
+<p>Here is the list 3, 2, 3:</p>
+<pre><code class="language-scala">val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons, three), emptylist)))
 
 </code></pre>
 <pre><code class="language-scala">val test = Ap(printnum, Ap(multlist, list323))
@@ -2350,7 +2350,7 @@ solution to the expression problem.</p>
 calculus. We use objects instead of functions, but otherwise
 it is the same. Let's start with booleans.</p>
 <pre><code class="language-scala">trait Bool {
-  def ifthenelse[T](t: T, e: T) : T
+  def ifthenelse[T](t: T, e: T): T
 }
 
 case object T extends Bool {
@@ -2359,26 +2359,26 @@ case object T extends Bool {
 case object F extends Bool {
   def ifthenelse[T](t: T, e: T) = e
 }
-def and(a: Bool, b: Bool) : Bool = a.ifthenelse(b,a)
+def and(a: Bool, b: Bool): Bool = a.ifthenelse(b, a)
 </code></pre>
 <p>In Smalltalk and related languages, booleans are actually implemented
 like that (at least conceptually).</p>
 <p>In the same way, we can encode Church numerals.</p>
 <pre><code class="language-scala">trait NumC {
-  def fold[T](z: T, s: T =&gt; T) : T
+  def fold[T](z: T, s: T =&gt; T): T
 }
 case object Zero extends NumC {
   def fold[T](z: T, s: T =&gt; T) = z
 }
 
 case class Succ(n: NumC) extends NumC {
-  def fold[T](z: T, s: T =&gt; T) = s(n.fold(z,s))
+  def fold[T](z: T, s: T =&gt; T) = s(n.fold(z, s))
 }
 
 def plus(a: NumC, b: NumC) = {
   new NumC {
-    def fold[T](z: T, s: T =&gt; T) : T = {
-      a.fold(b.fold(z,s), s)
+    def fold[T](z: T, s: T =&gt; T): T = {
+      a.fold(b.fold(z, s), s)
     }
   }
 }
@@ -2387,18 +2387,18 @@ def plus(a: NumC, b: NumC) = {
 val twoC = Succ(oneC)
 val threeC = Succ(twoC)
 
-def testplusC = plus(twoC,threeC).fold[Unit]( (), _ =&gt; print(&quot;.&quot;))
+def testplusC = plus(twoC, threeC).fold[Unit]((), _ =&gt; print(&quot;.&quot;))
 </code></pre>
 <p>Object algebras are a different way to do Church encodings
 in object-oriented languages. This is what the encoding
 of Church numbers looks like in object algebra style.</p>
 <pre><code class="language-scala">trait NumSig[T] {
-  def z : T
-  def s(p: T) : T
+  def z: T
+  def s(p: T): T
 }
 
 trait Num {
-  def apply[T](x: NumSig[T]) : T
+  def apply[T](x: NumSig[T]): T
 }
 </code></pre>
 <p>In other words, every constructor of the data type is turned into
@@ -2414,22 +2414,22 @@ The advantage of this encoding is that we can extend the set of parameters
 of the <code>fold</code> by using inheritance.</p>
 <p>In this encoding, the <code>plus</code>-function looks like this:</p>
 <pre><code class="language-scala">def plus(a: Num, b: Num) = new Num {
-  def apply[T](x: NumSig[T]) : T = a( new NumSig[T] {
+  def apply[T](x: NumSig[T]): T = a(new NumSig[T] {
     def z = b(x)
     def s(p: T) = x.s(p)
   })
 }
 </code></pre>
 <p>Here is the representation of some numbers.</p>
-<pre><code class="language-scala">val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
+<pre><code class="language-scala">val zero: Num = new Num { def apply[T](x: NumSig[T]) = x.z }
+val one: Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
+val two: Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
+val three: Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
 </code></pre>
 <p>This is an interpretation of the <code>Num</code>-&quot;language&quot; as Scala integers:</p>
 <pre><code class="language-scala">object NumAlg extends NumSig[Int] {
   def z = 0
-  def s(x : Int) = x + 1
+  def s(x: Int) = x + 1
 }
 </code></pre>
 <pre><code class="language-scala">val testplus = plus(two, three)(NumAlg)
@@ -2438,12 +2438,12 @@ val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
 <p>Let's look at a more useful application of object algebras. We encode
 expression trees as object algebras.</p>
 <pre><code class="language-scala">trait Exp[T] {
-  implicit def id(name: String) : T
+  implicit def id(name: String): T
   def fun(param: String, body: T): T
-  def ap(funExpr: T, argExpr: T) :T
-  implicit def num(n: Int) : T
-  def add(e1: T, e2: T) : T
-  def wth(x: String, xdef: T, body: T) : T = ap(fun(x,body), xdef)
+  def ap(funExpr: T, argExpr: T):T
+  implicit def num(n: Int): T
+  def add(e1: T, e2: T): T
+  def wth(x: String, xdef: T, body: T): T = ap(fun(x, body), xdef)
 }
 </code></pre>
 <p>The structure of expressions forces compositional interpretations. Hence
@@ -2472,7 +2472,7 @@ case class NumV(n: Int) extends Value
 object eval extends eval
 </code></pre>
 <p>An example program becomes a function that is parametric in the choosen interpretation:</p>
-<pre><code class="language-scala">def test[T](semantics : Exp[T]) = {
+<pre><code class="language-scala">def test[T](semantics: Exp[T]) = {
   import semantics._
 
   ap(ap(fun(&quot;x&quot;, fun(&quot;y&quot;, add(&quot;x&quot;, &quot;y&quot;))), 5), 3)
@@ -2485,7 +2485,7 @@ object eval extends eval
 <p>The object algebra encoding of expressions is quite extensible. For instance, we can
 add another case to the expression data type by extending the interface.</p>
 <pre><code class="language-scala">trait ExpWithMult[T] extends Exp[T] {
-  def mult(e1: T, e2: T) : T
+  def mult(e1: T, e2: T): T
 }
 
 trait evalWithMult extends eval with ExpWithMult[Env =&gt; Value] {
@@ -2496,7 +2496,7 @@ trait evalWithMult extends eval with ExpWithMult[Env =&gt; Value] {
 }
 object evalWithMult extends evalWithMult
 
-def testMult[T](semantics : ExpWithMult[T]) = {
+def testMult[T](semantics: ExpWithMult[T]) = {
   import semantics._
 
   ap(ap(fun(&quot;x&quot;, fun(&quot;y&quot;, mult(&quot;x&quot;, &quot;y&quot;))), 5), 3)
@@ -2508,7 +2508,7 @@ def testMult[T](semantics : ExpWithMult[T]) = {
 <p>Note that there is no danger of confusing the language variants. For instance,
 an attempt to pass <code>testMult</code> to <code>eval</code> will be a static type error.</p>
 <p>At the same time, we can add another function on expressions (such as a pretty-printer)
-without changing existing code, too: Just add a 
+without changing existing code, too: Just add a
 <code>trait prettyPrint extends Exp[String]</code> and, if pretty-printing of <code>ExpWithMult</code>
 is required, extend with <code>trait prettyPrintMult extends prettyPrint with ExpWithMult[String]</code>.
 This is the object algebra way of solving the expression problem.</p>
@@ -2517,15 +2517,15 @@ typed higher-order abstract syntax, using higher-kinded type members.
 Don't panic if you don't understand what is going on here.</p>
 <pre><code class="language-scala">trait ExpT {
   type Rep[_]
-  def fun[S,T](f: Rep[S] =&gt; Rep[T]): Rep[S =&gt; T]
-  def ap[S,T](funExpr: Rep[S =&gt; T], argExpr: Rep[S]) : Rep[T]
-  implicit def num(n: Int) : Rep[Int]
-  def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
+  def fun[S, T](f: Rep[S] =&gt; Rep[T]): Rep[S =&gt; T]
+  def ap[S, T](funExpr: Rep[S =&gt; T], argExpr: Rep[S]): Rep[T]
+  implicit def num(n: Int): Rep[Int]
+  def add(e1: Rep[Int], e2: Rep[Int]): Rep[Int]
 }
 </code></pre>
-<p>Instead of having the semantic domain as a type parameter <code>T</code> as above, 
+<p>Instead of having the semantic domain as a type parameter <code>T</code> as above,
 we encode it as a higher-kinded abstract type member <code>Rep[_]</code>. This leads
-to significantly shorter type signatures and more fine-grained typing 
+to significantly shorter type signatures and more fine-grained typing
 via Scala's support for &quot;path-dependent types&quot;.</p>
 <p>Note that, in contrast to <code>eval</code>, no dynamic checks (<code>match</code> ...) are needed
 in the interpreter. Also, the result type of the evaluator is just <code>X</code>. In
@@ -2537,8 +2537,8 @@ interpreting a program is just as fast as writing the program directly in
 the meta language.</p>
 <pre><code class="language-scala">object evalT extends ExpT {
   type Rep[X] = X
-  def fun[S,T](f: S =&gt; T) = f
-  def ap[S,T](f: S =&gt; T, a: S) = f(a)
+  def fun[S, T](f: S =&gt; T) = f
+  def ap[S, T](f: S =&gt; T, a: S) = f(a)
   def num(n: Int) = n
   def add(e1: Int, e2: Int) = e1 + e2
 }
@@ -2546,12 +2546,12 @@ the meta language.</p>
 object prettyprintT extends ExpT {
   var counter = 0
   type Rep[X] = String
-  def fun[S,T](f: String =&gt; String) = {
+  def fun[S, T](f: String =&gt; String) = {
     val varname = &quot;x&quot; + counter.toString
     counter += 1
     &quot;(&quot; + varname + &quot; =&gt; &quot; +  f(varname) + &quot;)&quot;
   }
-  def ap[S,T](f: String, a: String) = f + &quot;(&quot; + a + &quot;)&quot;
+  def ap[S, T](f: String, a: String) = f + &quot;(&quot; + a + &quot;)&quot;
   def num(n: Int) = n.toString
   def add(e1: String, e2: String) = &quot;(&quot; + e1 + &quot;+&quot; + e2 + &quot;)&quot;
 }
@@ -2579,9 +2579,9 @@ a number and a function is rejected by the Scala type checker:</p>
 //   add(5, fun((x: Rep[Int]) =&gt; x))
 //          ^^^^^^^^^^^^^^^^^^^^^^^
 </code></pre>
-<p>The type system encoded in the <code>ExpT</code> type is the so-called &quot;simply-typed lambda calculus&quot;. 
-Encoding more expressive type system in a similar style (including, e.g., type parameters) 
-is an active area of research. </p>
+<p>The type system encoded in the <code>ExpT</code> type is the so-called &quot;simply-typed lambda calculus&quot;.
+Encoding more expressive type system in a similar style (including, e.g., type parameters)
+is an active area of research.</p>
 <p>References:
 B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with Object Algebras. Proc. ECOOP 2012.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-1"><a class="header" href="#continuations-1">Continuations 1</a></h1>
@@ -2592,7 +2592,7 @@ B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with O
   Integer.parseInt(readLine())
 }
 def progSimple = {
-  println(inputNumber(&quot;First number:&quot; ) + inputNumber(&quot;Second number&quot;))
+  println(inputNumber(&quot;First number:&quot;) + inputNumber(&quot;Second number&quot;))
 }
 </code></pre>
 <p>Now consider a web version of the program:</p>
@@ -2621,12 +2621,12 @@ Hence, the actual program in a web developer's mind has the structure of the fol
 An actual web program is of course more complicated, but this primitive model of web
 programming is sufficient to explain the problem.</p>
 <pre><code class="language-scala">// we use the return type &quot;Nothing&quot; for functions that will never return (normally)
-def webdisplay(s: String) : Nothing = {
+def webdisplay(s: String): Nothing = {
   println(s)
   sys.error(&quot;program terminated&quot;)
 }
 
-def webread(prompt: String, continue: String) : Nothing = {
+def webread(prompt: String, continue: String): Nothing = {
   println(prompt)
   println(&quot;send input to: &quot; + continue)
   sys.error(&quot;program terminated&quot;)
@@ -2634,7 +2634,7 @@ def webread(prompt: String, continue: String) : Nothing = {
 
 def program1 = webread(&quot;enter first number&quot;, &quot;s2&quot;)
 def program2(n1: Int) = webread(&quot;enter second number and remind me of previoulsy entered number &quot; + n1, &quot;s3&quot;)
-def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot; + n1 + &quot; and &quot;+ n2 + &quot; is &quot; + (n1 + n2))
+def program3(n1: Int, n2: Int) = webdisplay(&quot;The sum of &quot; + n1 + &quot; and &quot; + n2 + &quot; is &quot; + (n1 + n2))
 </code></pre>
 <p>We could write a better <code>webread</code> and <code>webdisplay</code> procedure if we could somehow get hold of the
 pending computation at the time when the procedure was invoked. Such a pending computation is
@@ -2662,13 +2662,13 @@ submitted back to the server once the client presses the submit button.</p>
 <p>Here is code illustrating the idea. For simplicity we assume that all web forms return
 a single integer value.</p>
 <pre><code class="language-scala">val continuations = new scala.collection.mutable.HashMap[Symbol, Int =&gt; Nothing]()
-var nextIndex : Int = 0
+var nextIndex: Int = 0
 def getNextID = {
   nextIndex += 1
   Symbol(&quot;c&quot; + nextIndex.toString)
 }
 
-def webread_k(prompt: String, k: Int =&gt; Nothing) : Nothing = {
+def webread_k(prompt: String, k: Int =&gt; Nothing): Nothing = {
   val id = getNextID
   continuations += (id -&gt; k)
   println(prompt)
@@ -2685,15 +2685,15 @@ If you try <code>webprog</code>, ignore the stack traces.</p>
 </code></pre>
 <p>For instance, try:</p>
 <pre><code>scala&gt; webprog           -- yields some continuation id 'c1
-scala&gt; continue('c1,5)   -- yields some continuation id 'c2
-scala&gt; continue('c2,7)
+scala&gt; continue('c1, 5)   -- yields some continuation id 'c2
+scala&gt; continue('c2, 7)
 
 This should yield the result 12 as expected. But also try:
 scala&gt; webprog           -- yields some continuation id 'c1
-scala&gt; contine('c1,5)    -- yields some continuation id 'c2
-scala&gt; contine('c1,6)    -- yields some continuation id 'c3
-scala&gt; continue('c2,3)   -- should yield 8
-scala&gt; continue('c3,3)   -- should yield 9
+scala&gt; contine('c1, 5)    -- yields some continuation id 'c2
+scala&gt; contine('c1, 6)    -- yields some continuation id 'c3
+scala&gt; continue('c2, 3)   -- should yield 8
+scala&gt; continue('c3, 3)   -- should yield 9
 </code></pre>
 <p>The style of programming in <code>webprog</code>, which is obviously more complicated than the logical
 structure of <code>progSimple</code>, shows up in many practical programming scenarios - server-side web programming
@@ -2704,12 +2704,12 @@ as the one in <code>webprog</code> above.</p>
 To this purpose, let's make our application a bit more sophisticated. Instead of entering only two
 numbers, the user enters n numbers, e.g., the prices of a list of n items.</p>
 <p>Here is the &quot;non-web&quot; version of the application:</p>
-<pre><code class="language-scala">def allCosts(itemList: List[String]) : Int = itemList match {
+<pre><code class="language-scala">def allCosts(itemList: List[String]): Int = itemList match {
    case Nil =&gt; 0
    case x :: rest =&gt; inputNumber(&quot;Cost of item &quot; + x + &quot;:&quot;) + allCosts(rest)
 }
 </code></pre>
-<pre><code class="language-scala">val testData : List[String] = List(&quot;banana&quot;, &quot;apple&quot;, &quot;orange&quot;)
+<pre><code class="language-scala">val testData: List[String] = List(&quot;banana&quot;, &quot;apple&quot;, &quot;orange&quot;)
 
 def test = println(&quot;Total sum: &quot; + allCosts(testData))
 </code></pre>
@@ -2723,16 +2723,16 @@ computation that invoked <code>allCosts</code> -- will be lost. To prevent this,
 a continuation, that represents the rest of the pending computation. To signify this change in contract, we will use
 the convention of appending <code>_k</code> to the name of the procedure and <code>k</code> to name the continuation parameter.</p>
 <p>Here is a first attempt to define <code>allCosts_k</code>.</p>
-<pre><code class="language-scala"> def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
+<pre><code class="language-scala"> def allCosts_k(itemList: List[String], k: Int =&gt; Nothing): Nothing = itemList match {
    case Nil =&gt; 0
-   case x :: rest =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, n =&gt; n + allCosts_k(rest,k))
+   case x :: rest =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, n =&gt; n + allCosts_k(rest, k))
 }
 </code></pre>
 <p>This may look reasonable, but it suffers from an immediate problem. When the recursive call occurs, if
 the list had two or more elements, then there will immediately be another web interaction. Because this will
 terminate the program, the pending addition will be lost! Therefore, the addition of <code>n</code> has to move into the
 continuation fed to <code>allCosts_k</code>. In code:</p>
-<pre><code class="language-scala">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
+<pre><code class="language-scala">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing): Nothing = itemList match {
    case Nil =&gt; 0
    case x :: rest =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, n =&gt; allCosts_k(rest, m =&gt; k(m + n)))
 }
@@ -2748,7 +2748,7 @@ the act of web interaction terminates the pending computation. Therefore, when t
 is the value 0 going? Presumably to the pending computation, but there is none. Any computation that
 would have been pending has now been recorded in <code>k</code>, which is expecting a value. Therefore, the correct
 transformation of this procedure is:</p>
-<pre><code class="language-scala">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing = itemList match {
+<pre><code class="language-scala">def allCosts_k(itemList: List[String], k: Int =&gt; Nothing): Nothing = itemList match {
    case Nil =&gt; k(0)
    case x :: rest =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, n =&gt; allCosts_k(rest, m =&gt; k(m + n)))
 }
@@ -2757,13 +2757,13 @@ def testweb = allCosts_k(testData, m =&gt; webdisplay(&quot;Total sum: &quot; + 
 </code></pre>
 <p>Let's now consider the case that we have used a library function for the iteration in <code>allCosts</code>, namely
 the <code>map</code> function, which we replicate here.</p>
-<pre><code class="language-scala">def map[S,T](c: List[S], f: S =&gt; T) : List[T] = c match {
+<pre><code class="language-scala">def map[S, T](c: List[S], f: S =&gt; T): List[T] = c match {
   case Nil =&gt; Nil
   case x :: rest =&gt; f(x) :: map(rest, f)
 }
 </code></pre>
-<p>Using <code>map</code>, we can rephrase <code>allCosts</code> as follows. </p>
-<pre><code class="language-scala">def allCosts2(itemList: List[String]) : Int =
+<p>Using <code>map</code>, we can rephrase <code>allCosts</code> as follows.</p>
+<pre><code class="language-scala">def allCosts2(itemList: List[String]): Int =
   map(itemList, (x: String) =&gt; inputNumber(&quot;Cost of item &quot; + x + &quot;:&quot;)).sum
 </code></pre>
 <p>What if we we want to use <code>map</code> in <code>allCosts_k</code>?</p>
@@ -2771,12 +2771,12 @@ the <code>map</code> function, which we replicate here.</p>
 Obviously we must somehow modify the definition of <code>map</code>. But what can we pass as second parameter in the call
 to <code>f</code>?</p>
 <p><strong>Insight</strong>: We must perform the &quot;web transformation&quot; to <code>map</code> as well. We call the result <code>map_k</code>. Here is the code:</p>
-<pre><code class="language-scala">def map_k[S,T](c: List[S], f: (S,T =&gt; Nothing) =&gt; Nothing, k: List[T] =&gt; Nothing) : Nothing = c match {
+<pre><code class="language-scala">def map_k[S, T](c: List[S], f: (S, T =&gt; Nothing) =&gt; Nothing, k: List[T] =&gt; Nothing): Nothing = c match {
    case Nil =&gt; k(Nil)
    case x :: rest =&gt; f(x, t =&gt; map_k(rest, f, (tr: List[T]) =&gt; k(t :: tr)))
 }
 
-def allCosts2_k(itemList: List[String], k: Int =&gt; Nothing) : Nothing =
+def allCosts2_k(itemList: List[String], k: Int =&gt; Nothing): Nothing =
    map_k(itemList, (x: String, k2: Int =&gt; Nothing) =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, k2), (l: List[Int]) =&gt; k(l.sum))
 </code></pre>
 <h2 id="implications-of-the-web-transformation"><a class="header" href="#implications-of-the-web-transformation">Implications of the &quot;web transformation&quot;:</a></h2>
@@ -2811,7 +2811,7 @@ compile a program in a language like Scheme into one in a language like C!</p>
 <p>Today's goal is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
 in the previous lecture formal.</p>
 <p>In the previous lecture we have seen that we had to translate the following program:</p>
-<pre><code class="language-scala">println(&quot;The sum is: &quot;+ (inputNumber(&quot;First number:&quot; ) + inputNumber(&quot;Second number&quot;)))
+<pre><code class="language-scala">println(&quot;The sum is: &quot; + (inputNumber(&quot;First number:&quot;) + inputNumber(&quot;Second number&quot;)))
 </code></pre>
 <p>into this program:</p>
 <pre><code class="language-scala">webread_k(&quot;First number&quot;, (n) =&gt;
@@ -2877,10 +2877,10 @@ the original function <code>x =&gt; x</code> consumes only one. What is the seco
 of function invocation, so we want to preserve it. This is in contrast to what we did with environments,
 and more in line with our treatment of the store.</p>
 <p>The transformed version hence reads:</p>
-<pre><code class="language-scala">k =&gt; k((x,dynk) =&gt; (k =&gt; k(x))(dynk))
+<pre><code class="language-scala">k =&gt; k((x, dynk) =&gt; (k =&gt; k(x))(dynk))
 </code></pre>
 <p>which is equivalent (when the inner application finally happens) to:</p>
-<pre><code class="language-scala">k =&gt; k((x,dynk) =&gt; dynk(x))
+<pre><code class="language-scala">k =&gt; k((x, dynk) =&gt; dynk(x))
 </code></pre>
 <p>This is a function that accepts a value and a dynamic continuation and sends the value to that continuation.
 We are now ready to write this transformation formally, as a source-to-source transformation. This transformation
@@ -2933,7 +2933,7 @@ There is one technical issue: We need to introduce new names for binders into ou
 We need to make sure that we do not accidentially capture existing names in the program.
 For this reason we need our <code>freshName</code> machinery we introduced for
 (FAE)[../07-higher-order-functions/higher-order-functions.html].</p>
-<pre><code class="language-scala">def freeVars(e: Exp) : Set[String] =  e match {
+<pre><code class="language-scala">def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) =&gt; Set(x)
    case Add(l, r) =&gt; freeVars(l) ++ freeVars(r)
    case Fun(x, body) =&gt; freeVars(body) - x
@@ -2941,15 +2941,15 @@ For this reason we need our <code>freshName</code> machinery we introduced for
    case Num(n) =&gt; Set.empty
 }
 
-def freshName(names: Set[String], default: String) : String = {
-  var last : Int = 0
+def freshName(names: Set[String], default: String): String = {
+  var last: Int = 0
   var freshName = default
   while (names contains freshName) { freshName = default + last; last += 1; }
   freshName
 }
 
-def cps(e: Exp) : CPSCont = e match {
-   case Add(e1,e2) =&gt; {
+def cps(e: Exp): CPSCont = e match {
+   case Add(e1, e2) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
      val lv = freshName(freeVars(e2), &quot;lv&quot;)
      CPSCont(k, CPSContAp(cps(e1), CPSCont(lv, CPSContAp(cps(e2), CPSCont(&quot;rv&quot;, CPSContAp(k, CPSAdd(&quot;rv&quot;, lv)))))))
@@ -2959,7 +2959,7 @@ def cps(e: Exp) : CPSCont = e match {
      val dynk = freshName(freeVars(e), &quot;dynk&quot;)
      CPSCont(k, CPSContAp(k, CPSFun(a, dynk, CPSContAp(cps(body), dynk))))
    }
-   case Ap(f,a) =&gt; {
+   case Ap(f, a) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
      val fval = freshName(freeVars(a), &quot;fval&quot;)
      CPSCont(k, CPSContAp(cps(f), CPSCont(fval, CPSContAp(cps(a), CPSCont(&quot;aval&quot;, CPSFunAp(fval, &quot;aval&quot;, k))))))
@@ -2980,20 +2980,20 @@ recursion over the AST. Its main disadvantage is the existence of so-called &quo
 <p>An administrative redex is a function application whose operator is a &quot;continuation lambda&quot; - a lambda produced during
 CPS transformation that was not in the original program. Such function applications can be computed immediately because
 the function which is called is known.</p>
-<p>For instance, <code>cps(Add(2,3))</code> yields</p>
+<p>For instance, <code>cps(Add(2, 3))</code> yields</p>
 <pre><code class="language-scala">CPSCont(&quot;k&quot;,
         CPSContAp(
           CPSCont(&quot;k&quot;,
-                  CPSContAp(&quot;k&quot;,2)),
+                  CPSContAp(&quot;k&quot;, 2)),
           CPSCont(&quot;lv&quot;,
                   CPSContAp(
                     CPSCont(&quot;k&quot;,
-                            CPSContAp(&quot;k&quot;,3)),
+                            CPSContAp(&quot;k&quot;, 3)),
                     CPSCont(&quot;rv&quot;,
                             CPSContAp(&quot;k&quot;, CPSAdd(&quot;rv&quot;, &quot;lv&quot;)))))))
 </code></pre>
 <p>instead of</p>
-<pre><code class="language-scala">CPSCont(&quot;k&quot;, CPSContAp(&quot;k&quot;, CPSAdd(2,3)))
+<pre><code class="language-scala">CPSCont(&quot;k&quot;, CPSContAp(&quot;k&quot;, CPSAdd(2, 3)))
 </code></pre>
 <p>Many more advanced CPS transformation algorithms try to avoid as many administrative redexes as possible.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="first-class-continuations"><a class="header" href="#first-class-continuations">First Class Continuations</a></h1>
@@ -3043,10 +3043,10 @@ construct and also use it for application of continuations.</p>
 <p>This means that we will need a case distinction in our interpreter whether the function argument is a closure or a continuation.
 Let's now study the interpreter for our new language. The branches for <code>Num</code>, <code>Id</code>, <code>Add</code>, and <code>Fun</code> are straightforward applications of the
 CPS transformation technique we already know.</p>
-<pre><code class="language-scala">def eval(e: Exp, env: Env, k: Value =&gt; Nothing) : Nothing = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env, k: Value =&gt; Nothing): Nothing = e match {
   case Num(n: Int) =&gt; k(NumV(n))
   case Id(x) =&gt; k(env(x))
-  case Add(l,r) =&gt; {
+  case Add(l, r) =&gt; {
     eval(l, env, lv =&gt;
         eval(r, env, rv =&gt;
           (lv, rv) match {
@@ -3054,14 +3054,14 @@ CPS transformation technique we already know.</p>
             case _ =&gt; sys.error(&quot;can only add numbers&quot;)
           }))
   }
-  case f@Fun(param,body) =&gt; k(ClosureV(f, env))
+  case f@Fun(param, body) =&gt; k(ClosureV(f, env))
 
   /* In the application case we now need to distinguish whether the first argument
    * is a closure or a continuation. If it is a continuation, we ignore the
    * current continuation k and &quot;jump&quot; to the stored continuation by applying the
    * evaluated continuation argument to it. */
-  case Ap(f,a) =&gt; eval(f, env, cl =&gt; cl match {
-            case ClosureV(f,closureEnv) =&gt; eval(a, env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
+  case Ap(f, a) =&gt; eval(f, env, cl =&gt; cl match {
+            case ClosureV(f, closureEnv) =&gt; eval(a, env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
             case ContV(f) =&gt; eval(a, env, av =&gt; f(av))
             case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   })
@@ -3076,9 +3076,9 @@ continuation which represents the rest of the computation after <code>eval</code
 the return type <code>Nothing</code> for continuations, to emphasize that they do not return: The only way to implement a value that has this
 type is a function that does indeed not return. We do so by letting this function throw an exception. To keep track of the returned
 value we store it temporarily in a variable, catch the exception, and return the stored value.</p>
-<pre><code class="language-scala">def starteval(e: Exp) : Value = {
-  var res : Value = null
-  val s : Value =&gt; Nothing = (v) =&gt; { res = v; sys.error(&quot;program terminated&quot;) }
+<pre><code class="language-scala">def starteval(e: Exp): Value = {
+  var res: Value = null
+  val s: Value =&gt; Nothing = (v) =&gt; { res = v; sys.error(&quot;program terminated&quot;) }
   try { eval(e, Map.empty, s) } catch { case e: Throwable =&gt; () }
   res
 }
@@ -3247,16 +3247,16 @@ early 1990s. One of the most common forms of delimited continuations is in the f
 proposed by Olivier Danvy and Andrzej Filinski in 1990. The first of these primitives, <code>reset e</code>, marks the
 current stack frame and continues with <code>e</code>. An invocation of the second primitive, <code>shift k e</code>, reifies the
 stack segment between the current stack frame and the closest stack frame marked by a <code>reset</code> as a function,
-binds this function to <code>k</code>, and evaluates <code>e</code> (which can then call <code>k</code> zero or more times). </p>
+binds this function to <code>k</code>, and evaluates <code>e</code> (which can then call <code>k</code> zero or more times).</p>
 <p>Their meaning can be understood via a code transformation.</p>
-<pre><code>reset (...A... shift k e ...B...) 
- ; --&gt; 
-with k = lambda x. reset (...A... x ...B...) : 
-  reset e 
-  
-reset e  ; no invocation of shift inside e 
- ; --&gt; 
-e 
+<pre><code>reset (...A... shift k e ...B...)
+ ; --&gt;
+with k = lambda x. reset (...A... x ...B...) :
+  reset e
+
+reset e  ; no invocation of shift inside e
+ ; --&gt;
+e
 </code></pre>
 <p>In class, we will look at a couple of examples of using <code>shift</code> and <code>reset</code>. <code>shift</code> and <code>reset</code> are available
 in some variants of Scheme, including Racket, as an extension of Scala, as a library in OcaML, as well
@@ -3281,10 +3281,10 @@ case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 case class ContV(f: Value =&gt; Value) extends Value
 
-def eval(e: Exp, env: Env, k: Value =&gt; Value) : Value = e match {
+def eval(e: Exp, env: Env, k: Value =&gt; Value): Value = e match {
   case Num(n: Int) =&gt; k(NumV(n))
   case Id(x) =&gt; k(env(x))
-  case Add(l,r) =&gt; {
+  case Add(l, r) =&gt; {
     eval(l, env, lv =&gt;
         eval(r, env, rv =&gt;
           (lv, rv) match {
@@ -3292,20 +3292,20 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value) : Value = e match {
             case _ =&gt; sys.error(&quot;can only add numbers&quot;)
           }))
   }
-  case f@Fun(param,body) =&gt; k(ClosureV(f, env))
+  case f@Fun(param, body) =&gt; k(ClosureV(f, env))
 
-  case Ap(f,a) =&gt; eval(f, env, cl =&gt; cl match {
+  case Ap(f, a) =&gt; eval(f, env, cl =&gt; cl match {
             case ClosureV(f, closureEnv) =&gt; eval(a, env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
             case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av))) // compose continuations k2 and k
             case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   })
   case Reset(e) =&gt; k(eval(e, env, x =&gt; x)) // reset the continuation to the identity function
-  case Shift(param,body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)  // wrap current continuation and reset continuation
+  case Shift(param, body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)  // wrap current continuation and reset continuation
 }
 </code></pre>
 <p>References:</p>
 <ol>
-<li>Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.</li>
+<li>Olivier Danvy and Andre Filinski, “Abstracting Control, ” LISP and Functional Programming, 1990.</li>
 <li>O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html</li>
 <li>O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial</li>
 </ol>
@@ -3348,7 +3348,7 @@ def hOp(b: Boolean): Option[Int] = if (b) Some(27) else None
 produces an <code>Option[B]</code>. If the <code>Option[A]</code> value is <code>None</code>, then the whole computation produces <code>None</code>. If it is <code>Some(x)</code>
 instead, we pass <code>x</code> to the function.</p>
 <p>We can capture this pattern in the form of a function:</p>
-<pre><code class="language-scala">def bindOption[A,B](a: Option[A], f: A =&gt; Option[B]): Option[B] = a match {
+<pre><code class="language-scala">def bindOption[A, B](a: Option[A], f: A =&gt; Option[B]): Option[B] = a match {
   case Some(x) =&gt; f(x)
   case None =&gt; None
 }
@@ -3392,7 +3392,7 @@ but we'll defer a discussion of these conditions until later.</p>
 <p>So here it is: The Monad interface.</p>
 <pre><code class="language-scala">trait Monad[M[_]] {
   def unit[A](a: A): M[A]
-  def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B]
+  def bind[A, B](m: M[A], f: A =&gt; M[B]): M[B]
   // The &quot;monad laws&quot;:
   // 1) &quot;unit&quot; acts as a kind of neutral element of &quot;bind&quot;, that is:
   //    1a) bind(unit(x), f) == f(x) and
@@ -3423,12 +3423,12 @@ def clientCode2[M[_]](using m: Monad[M]) =
 monadic code look simpler. Monad-comprehensions are directly supported in Haskell and some other languages. In Scala, we can
 piggy-back on the &quot;for-comprehension&quot; syntax instead.
 A &quot;for-comprehension&quot; is usually used for lists and other collections. For instance:</p>
-<pre><code class="language-scala">val l = List(List(1,2), List(3,4))
-assert((for { x &lt;- l; y &lt;- x } yield y + 1) == List(2,3,4,5))
+<pre><code class="language-scala">val l = List(List(1, 2), List(3, 4))
+assert((for { x &lt;- l; y &lt;- x } yield y + 1) == List(2, 3, 4, 5))
 </code></pre>
 <p>The Scala compiler desugars the for-comprehension above into calls of the standard <code>map</code> and <code>flatMap</code> functions. That is, the above
 for-comprehension is equivalent to:</p>
-<pre><code class="language-scala">assert(l.flatMap(x =&gt; x.map(y =&gt; y + 1)) == List(2,3,4,5))
+<pre><code class="language-scala">assert(l.flatMap(x =&gt; x.map(y =&gt; y + 1)) == List(2, 3, 4, 5))
 </code></pre>
 <p>We will make use of for-comprehension syntax by supporting both <code>flatMap</code> (which is like <code>bind</code>) and <code>map</code> (which is like <code>fmap</code>).
 We support these functions by an implicit conversion to an object that supports these functions as follows:</p>
@@ -3458,7 +3458,7 @@ def hOp(b: Boolean): Option[Int] = if (b) Some(27) else None
 <p>Let's look at some concrete monads now. We have of course already seen one particular monad: The <code>Option</code> monad. This monad is also
 sometimes called the <code>Maybe</code> monad.</p>
 <pre><code class="language-scala">object OptionMonad extends Monad[Option] {
-  override def bind[A,B](a: Option[A], f: A =&gt; Option[B]): Option[B] =
+  override def bind[A, B](a: Option[A], f: A =&gt; Option[B]): Option[B] =
     a match {
       case Some(x) =&gt; f(x)
       case None =&gt; None
@@ -3472,12 +3472,12 @@ sometimes called the <code>Maybe</code> monad.</p>
 <p>There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
 enough to be useful for many different monads. Here are some of these functions:</p>
 <p><code>fmap</code> turns every function between <code>A</code> and <code>B</code> into a function between <code>M[A]</code> and <code>M[B]</code>:</p>
-<pre><code class="language-scala">def fmap[M[_],A,B](f: A =&gt; B)(using m: Monad[M]): M[A] =&gt; M[B] =
+<pre><code class="language-scala">def fmap[M[_], A, B](f: A =&gt; B)(using m: Monad[M]): M[A] =&gt; M[B] =
   a =&gt; m.bind(a, (x: A) =&gt; m.unit(f(x)))
 </code></pre>
 <p>In fancy category theory terms, we can say that every monad is a functor.</p>
 <p><code>sequence</code> composes a list of monadic values into a single monadic value which is a list.</p>
-<pre><code class="language-scala">def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]): M[List[A]] = l match {
+<pre><code class="language-scala">def sequence[M[_], A](l: List[M[A]])(using m: Monad[M]): M[List[A]] = l match {
   case x :: xs =&gt; m.bind(x, (y: A) =&gt;
     m.bind(sequence(xs), (ys: List[A]) =&gt;
       m.unit(y :: ys)))
@@ -3485,14 +3485,14 @@ enough to be useful for many different monads. Here are some of these functions:
 }
 </code></pre>
 <p><code>mapM</code> composes <code>sequence</code> and the standard <code>map</code> function:</p>
-<pre><code class="language-scala">def mapM[M[_],A,B](f: A =&gt; M[B], l: List[A])(using m: Monad[M]): M[List[B]] =
+<pre><code class="language-scala">def mapM[M[_], A, B](f: A =&gt; M[B], l: List[A])(using m: Monad[M]): M[List[B]] =
   sequence(l.map(f))
 </code></pre>
 <p><code>join</code> is another useful function to unwrap a layer of monads.
 In category theory, monads are defined via <code>unit</code> (denoted by the greek letter η)
 and <code>join</code> (denoted μ) instead of <code>unit</code> and <code>bind</code>. There are additional &quot;naturality&quot; and
 &quot;coherence conditions&quot; that make the category theory definition equivalent to ours.</p>
-<pre><code class="language-scala">def join[M[_],A](x: M[M[A]])(using m: Monad[M]): M[A] = m.bind(x, (y: M[A]) =&gt; y)
+<pre><code class="language-scala">def join[M[_], A](x: M[M[A]])(using m: Monad[M]): M[A] = m.bind(x, (y: M[A]) =&gt; y)
 </code></pre>
 <p>Here are some other common monads:</p>
 <h2 id="the-identity-monad"><a class="header" href="#the-identity-monad">The Identity Monad</a></h2>
@@ -3500,7 +3500,7 @@ and <code>join</code> (denoted μ) instead of <code>unit</code> and <code>bind</
 with the identity monad, we get the behavior of the original non-monadic code.</p>
 <pre><code class="language-scala">type Id[X] = X
 object IdentityMonad extends Monad[Id] {
-  def bind[A,B](x: A, f: A =&gt; B): B = f(x)
+  def bind[A, B](x: A, f: A =&gt; B): B = f(x)
   def unit[A](a: A): A = a
 }
 </code></pre>
@@ -3511,7 +3511,7 @@ it is merely &quot;currying&quot; the function arrow type constructor.</p>
 <p>The type constructor which is created here is <code>M[A] = R =&gt; A</code></p>
 <pre><code class="language-scala">trait ReaderMonad[R] extends Monad[[A] =&gt;&gt; R =&gt; A] {
   // pass the &quot;environment&quot; r into both computations
-  override def bind[A,B](x: R =&gt; A, f: A =&gt; R =&gt; B): R =&gt; B = r =&gt; f(x(r))(r)
+  override def bind[A, B](x: R =&gt; A, f: A =&gt; R =&gt; B): R =&gt; B = r =&gt; f(x(r))(r)
   override def unit[A](a: A): R =&gt; A = (_) =&gt; a
 }
 </code></pre>
@@ -3525,7 +3525,7 @@ def hRead(b: Boolean): Int =&gt; Int = sys.error(&quot;not implemented&quot;)
 <p>Our original code,</p>
 <pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
-<p>becomes :</p>
+<p>becomes:</p>
 <pre><code class="language-scala">def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env) + &quot;z&quot;)(env))(env)
 </code></pre>
 <p>In monadic form, the explicit handling of the environment disappears again:</p>
@@ -3545,7 +3545,7 @@ def clientCode2ReadFor(using m: ReaderMonad[Int]) =
 <p>The <em>state monad</em>, in which computations depend on a state <code>S</code>
 which is threaded through the computations, is defind as follows:</p>
 <pre><code class="language-scala">trait StateMonad[S] extends Monad[[A] =&gt;&gt; S =&gt; (A, S)] {
-  override def bind[A,B](x: S =&gt; (A, S), f: A =&gt; S =&gt; (B, S)): S =&gt; (B, S) =
+  override def bind[A, B](x: S =&gt; (A, S), f: A =&gt; S =&gt; (B, S)): S =&gt; (B, S) =
     // thread the state through the computations
     s =&gt; x(s) match { case (y, s2) =&gt; f(y)(s2) }
   override def unit[A](a: A): S =&gt; (A, S) = s =&gt; (a, s)
@@ -3559,7 +3559,7 @@ def hState(b: Boolean): Int =&gt; (Int, Int) = sys.error(&quot;not implemented&q
 <p>The original code,</p>
 <pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
-<p>becomes :</p>
+<p>becomes:</p>
 <pre><code class="language-scala">def clientCodeState(s: Int) =
   fState(27)(s) match {
     case (x, s2) =&gt; gState(x + &quot;z&quot;)(s2) match {
@@ -3575,7 +3575,7 @@ def hState(b: Boolean): Int =&gt; (Int, Int) = sys.error(&quot;not implemented&q
 <p>In the <em>list monad</em>, computations produce lists of results. The <code>bind</code> operator combines all those results in a single list.</p>
 <pre><code class="language-scala">object ListMonad extends Monad[List] {
   // apply f to each element, concatenate the resulting lists
-  override def bind[A,B](x: List[A], f: A =&gt; List[B]): List[B] = x.flatMap(f)
+  override def bind[A, B](x: List[A], f: A =&gt; List[B]): List[B] = x.flatMap(f)
   override def unit[A](a: A) = List(a)
 }
 </code></pre>
@@ -3585,9 +3585,9 @@ def gList(x: String): List[Boolean] = sys.error(&quot;not implemented&quot;)
 def hList(b: Boolean): List[Int] = sys.error(&quot;not implemented&quot;)
 </code></pre>
 <p>The original code,</p>
-<pre><code class="language-scala">def clientCode = h(!g(f(27)+&quot;z&quot;))
+<pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
-<p>becomes :</p>
+<p>becomes:</p>
 <pre><code class="language-scala">def clientCodeList =
   fList(27).map(x =&gt; gList(x + &quot;z&quot;)).flatten.map(y =&gt; hList(!y)).flatten
 </code></pre>
@@ -3605,15 +3605,15 @@ def hList(b: Boolean): List[Int] = sys.error(&quot;not implemented&quot;)
 <pre><code class="language-scala">trait ContinuationMonad[R] extends Monad[[A] =&gt;&gt; (A =&gt; R) =&gt; R] {
   type Cont[X] = (X =&gt; R) =&gt; R
 
-  override def bind[A,B](x: Cont[A], f: A =&gt; Cont[B]): Cont[B] =
+  override def bind[A, B](x: Cont[A], f: A =&gt; Cont[B]): Cont[B] =
     // construct continuation for x that calls f with the result of x
     k =&gt; x(a =&gt; f(a)(k))
   override def unit[A](a: A): Cont[A] = k =&gt; k(a)
 
   // callcc is like letcc; the difference is that letcc binds a name,
   // whereas callcc expects a function as argument.
-  // That means that letcc(k,...) is expressed as callcc(k =&gt; ...).
-  def callcc[A,B](f: (A =&gt; Cont[B]) =&gt; Cont[A]): Cont[A] =
+  // That means that letcc(k, ...) is expressed as callcc(k =&gt; ...).
+  def callcc[A, B](f: (A =&gt; Cont[B]) =&gt; Cont[A]): Cont[A] =
     k =&gt; f((a: A) =&gt; (_: B =&gt; R) =&gt; k(a))(k)
 }
 </code></pre>
@@ -3625,7 +3625,7 @@ def hCPS[R](b: Boolean): (Int =&gt; R) =&gt; R = sys.error(&quot;not implemented
 <p>The original code,</p>
 <pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
-<p>becomes :</p>
+<p>becomes:</p>
 <pre><code class="language-scala">def clientCodeCPS[R]: (Int =&gt; R) =&gt; R =
   k =&gt; fCPS(27)((x: String) =&gt; gCPS(x + &quot;z&quot;)((y: Boolean) =&gt;  hCPS(!y)(k)))
 </code></pre>
@@ -3650,7 +3650,7 @@ def runEx123 = ex123(using new ContinuationMonad[Int]{})(x =&gt; x)
 <pre><code class="language-scala">def excallcc[R](using m: ContinuationMonad[R])  = {
   m.bind(
     m.bind(m.unit(2), (two: Int) =&gt;
-      m.callcc[Int,Int](k =&gt; m.bind(k(3), (three: Int) =&gt; m.unit(two + three)))),
+      m.callcc[Int, Int](k =&gt; m.bind(k(3), (three: Int) =&gt; m.unit(two + three)))),
     (five: Int) =&gt; m.unit(1 + five))
 }
 
@@ -3658,7 +3658,7 @@ def runExcallcc = excallcc(using new ContinuationMonad[Int]{})(x =&gt; x)
 </code></pre>
 <p>Remember how we had to CPS-transform the <code>map</code> function in the &quot;allCosts&quot; example when we talked about continuations?
 Now we can define a monadic version of <code>map</code> that works for any monad, including the continuation monad:</p>
-<pre><code class="language-scala">def mapM[M[_],A,B](x: List[A], f: A =&gt; M[B])(using m: Monad[M]): M[List[B]] =
+<pre><code class="language-scala">def mapM[M[_], A, B](x: List[A], f: A =&gt; M[B])(using m: Monad[M]): M[List[B]] =
   sequence(x.map(f))
 </code></pre>
 <h2 id="monad-transformers"><a class="header" href="#monad-transformers">Monad Transformers</a></h2>
@@ -3671,7 +3671,7 @@ parameterized with another monad. We show this for the Option monad case.</p>
 
 class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]] {
 
-  override def bind[A,B](x: M[Option[A]], f: A =&gt; M[Option[B]]): M[Option[B]] =
+  override def bind[A, B](x: M[Option[A]], f: A =&gt; M[Option[B]]): M[Option[B]] =
     m.bind(x, (z: Option[A]) =&gt; z match { case Some(y) =&gt; f(y)
                                           case None =&gt; m.unit(None) })
 
@@ -3714,27 +3714,27 @@ There are a number of alternative proposals to monad transformers, such as
 <pre><code class="language-scala">trait IOMonad {
   type IO[_]
   def unit[A](a: A): IO[A]
-  def bind[A,B](m: IO[A], f: A =&gt; IO[B]): IO[B]
+  def bind[A, B](m: IO[A], f: A =&gt; IO[B]): IO[B]
   def printString(s: String): IO[Unit]
   def inputString: IO[String]
 
   def performIO[A](action: IO[A]): A
 }
 </code></pre>
-<pre><code class="language-scala">val iomonad : IOMonad = new IOMonad {
+<pre><code class="language-scala">val iomonad: IOMonad = new IOMonad {
   type World = String
   type IO[A] = World =&gt; (A, World)
   def unit[A](a: A): IO[A] = w =&gt; (a, w)
-  def bind[A,B](m: IO[A], f: A =&gt; IO[B]): IO[B] = w =&gt; m(w) match { case (a, w2) =&gt; f(a)(w2) }
-  def printString(s: String) : IO[Unit] = w =&gt; { println(s); ((), w + s + &quot; was printed and then ...\n&quot;) }
+  def bind[A, B](m: IO[A], f: A =&gt; IO[B]): IO[B] = w =&gt; m(w) match { case (a, w2) =&gt; f(a)(w2) }
+  def printString(s: String): IO[Unit] = w =&gt; { println(s); ((), w + s + &quot; was printed and then ...\n&quot;) }
   def inputString: IO[String] = w =&gt; { val input = scala.io.StdIn.readLine(); (input, w + input + &quot; was entered and then ...\n&quot;) }
 
-  def performIO[A](action: IO[A]) : A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
+  def performIO[A](action: IO[A]): A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
     case (a, w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot; + w); a
   }
 }
 </code></pre>
-<pre><code class="language-scala">def someIOActions(implicit m: IOMonad) : m.IO[Unit] =
+<pre><code class="language-scala">def someIOActions(implicit m: IOMonad): m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_: Unit) =&gt;
   m.bind(m.inputString, (firstName: String) =&gt;
   m.bind(m.printString(&quot;Enter your last name:&quot;), (_: Unit) =&gt;
@@ -3753,11 +3753,11 @@ standard library look similar.</p>
   type M[_] // this time we treat M as a type member and not as type parameter
             // because it leads to shorter type signatures
   def unit[A](a: A): M[A]
-  def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B]
+  def bind[A, B](m: M[A], f: A =&gt; M[B]): M[B]
 
   extension [A](m: M[A])
     def map[B](f: A =&gt; B): M[B] = bind(m, (x: A) =&gt; unit(f(x)))
-    def flatMap[B](f: A =&gt; M[B]): M[B] = bind(m,f)
+    def flatMap[B](f: A =&gt; M[B]): M[B] = bind(m, f)
 }
 </code></pre>
 <p>We formulate concrete monads in the form of abstract interfaces first.
@@ -3784,7 +3784,7 @@ environment transformer <code>f</code>.</p>
 <pre><code class="language-scala">trait ReaderMonadImp extends ReaderMonad {
   type M[X] = R =&gt; X
   def unit[A](a: A): M[A] = r =&gt; a
-  def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B] = r =&gt; f(m(r))(r)
+  def bind[A, B](m: M[A], f: A =&gt; M[B]): M[B] = r =&gt; f(m(r))(r)
   def ask: M[R] = identity
   def local[A](f: R =&gt; R, a: M[A]): M[A] = r =&gt; a(f(r))
 }
@@ -3793,7 +3793,7 @@ environment transformer <code>f</code>.</p>
 of type <code>Int</code> through a computation.</p>
 <pre><code class="language-scala">object ReaderExample extends ReaderMonadImp {
   type R = Int
-  def example: M[Int] = for { x &lt;- ask } yield (x+1)
+  def example: M[Int] = for { x &lt;- ask } yield (x + 1)
   def example2: M[Int] = local(r =&gt; 99, example)
 }
 </code></pre>
@@ -3824,7 +3824,7 @@ that is, we curry <code>eval</code> to make it applicable to the reader monad.</
 }
 </code></pre>
 <p>The implementation of the <code>And</code> case is semantically equivalent to this code:</p>
-<pre><code class="language-scala">case And(l,r) =&gt; env =&gt; {
+<pre><code class="language-scala">case And(l, r) =&gt; env =&gt; {
   val x = eval(l)(env)
   val y = eval(r)(env)
   x &amp;&amp; y
@@ -3842,7 +3842,7 @@ more reusable) because it is not coupled to the concrete <code>M</code>.</p>
 trait StateMonadImp extends StateMonad {
   type M[A] = S =&gt; (A, S)
   def unit[A](a: A): M[A] = (s: S) =&gt; (a, s)
-  def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B] = (s: S) =&gt; {
+  def bind[A, B](m: M[A], f: A =&gt; M[B]): M[B] = (s: S) =&gt; {
     val (a, s2) = m(s)
     f(a)(s2)
   }
@@ -3853,7 +3853,7 @@ trait StateMonadImp extends StateMonad {
 <p>And here is the interface for the continuation monad. The continuation monad provides
 a method <code>callcc</code>, which reifies the current continuation <code>k: A =&gt; M[B]</code>.</p>
 <pre><code class="language-scala">trait ContinuationMonad extends Monad {
-  def callcc[A,B](f: (A =&gt; M[B]) =&gt; M[A]): M[A]
+  def callcc[A, B](f: (A =&gt; M[B]) =&gt; M[A]): M[A]
 }
 </code></pre>
 <p><em>End of Monad Interfaces</em></p>
@@ -3862,7 +3862,7 @@ a method <code>callcc</code>, which reifies the current continuation <code>k: A 
 <pre><code class="language-scala">trait IdentityMonad extends Monad {
   type M[A] = A
   def unit[A](a: A): M[A] = a
-  def bind[A,B](m: M[A], f: A =&gt; M[B]) = f(m)
+  def bind[A, B](m: M[A], f: A =&gt; M[B]) = f(m)
 }
 
 object IdentityMonad extends IdentityMonad
@@ -3884,15 +3884,15 @@ this type equation.</p>
   type R
   override type M[X] = R =&gt; m.M[X]
   override def unit[A](a: A): M[A] = r =&gt; m.unit(a)
-  override def bind[A,B](x: M[A], f: A =&gt; M[B]): M[B] =
+  override def bind[A, B](x: M[A], f: A =&gt; M[B]): M[B] =
     r =&gt; m.bind(x(r), (n: A) =&gt; f(n)(r))
   override def ask: M[R] = r =&gt; m.unit(r)
   override def local[A](f: R =&gt; R, a: M[A]): M[A] = r =&gt; a(f(r))
   protected implicit def lift[A](x: m.M[A]): M[A] = r =&gt; x
-  protected implicit def lift2[A,B](x: A =&gt; m.M[B]): A =&gt; M[B] = a =&gt; lift(x(a))
-  protected implicit def lift3[A,B,C](x: (A =&gt; m.M[B]) =&gt; m.M[C]): (A =&gt; M[B]) =&gt; M[C] =
+  protected implicit def lift2[A, B](x: A =&gt; m.M[B]): A =&gt; M[B] = a =&gt; lift(x(a))
+  protected implicit def lift3[A, B, C](x: (A =&gt; m.M[B]) =&gt; m.M[C]): (A =&gt; M[B]) =&gt; M[C] =
     f =&gt; r =&gt; x((a: A) =&gt; f(a)(r))
-  protected implicit def lift4[A,B,C,D](x: ((A =&gt; m.M[B]) =&gt; m.M[C]) =&gt; m.M[D]): ((A =&gt; M[B]) =&gt; M[C]) =&gt; M[D] =
+  protected implicit def lift4[A, B, C, D](x: ((A =&gt; m.M[B]) =&gt; m.M[C]) =&gt; m.M[D]): ((A =&gt; M[B]) =&gt; M[C]) =&gt; M[D] =
     f =&gt; r =&gt; x((a: A =&gt; m.M[B]) =&gt; f(lift2(a))(r))
 }
 
@@ -3906,7 +3906,7 @@ trait ReaderMonadImpl extends ReaderT {
 <pre><code class="language-scala">trait ReaderMonadImpl extends ReaderMonad {
   type M[X] = R =&gt; X
   def unit[A](a: A): M[A] = r =&gt; a
-  def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B] = r =&gt; f(m(r))(r)
+  def bind[A, B](m: M[A], f: A =&gt; M[B]): M[B] = r =&gt; f(m(r))(r)
   def ask: M[R] = identity
   def local[A](f: R =&gt; R, a: M[A]): M[A] = (r) =&gt; a(f(r))
 }
@@ -3915,8 +3915,8 @@ trait ReaderMonadImpl extends ReaderT {
 <pre><code class="language-scala">trait StateT extends MonadTransformer with StateMonad {
   type M[A] = S =&gt; m.M[(A, S)]
   override def unit[A](a: A): M[A] = (s: S) =&gt; m.unit(a, s)
-  override def bind[A,B](x: M[A], f: A =&gt; M[B]): M[B] = (s: S) =&gt; {
-     m.bind[(A, S),(B, S)](x(s), { case (a, s2) =&gt; f(a)(s2)})
+  override def bind[A, B](x: M[A], f: A =&gt; M[B]): M[B] = (s: S) =&gt; {
+     m.bind[(A, S), (B, S)](x(s), { case (a, s2) =&gt; f(a)(s2)})
   }
   override def getState: M[S] = s =&gt; m.unit((s, s))
   override def putState(s: S): M[Unit] = _ =&gt; m.unit(((), s))
@@ -3932,7 +3932,7 @@ trait StateMonadImpl extends StateT {
 <pre><code class="language-scala">trait StateMonadImpl extends StateMonad {
   type M[A] = S =&gt; (A, S)
   def unit[A](a: A): M[A] = (s: S) =&gt; (a, s)
-  def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B] = (s: S) =&gt; {
+  def bind[A, B](m: M[A], f: A =&gt; M[B]): M[B] = (s: S) =&gt; {
      val (a, s2) = m(s)
      f(a)(s2)
   }
@@ -3947,8 +3947,8 @@ but for simplicity we only present the ordinary continuation monad here.</p>
   type T
   type M[A] = (A =&gt; T) =&gt; T
   override def unit[A](a: A): M[A] = k =&gt; k(a)
-  override def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B] = k =&gt; m( a =&gt; f(a)(k))
-  override def callcc[A,B](f: (A =&gt; M[B]) =&gt; M[A]): M[A] = k =&gt; f(a =&gt; _ =&gt; k(a))(k)
+  override def bind[A, B](m: M[A], f: A =&gt; M[B]): M[B] = k =&gt; m(a =&gt; f(a)(k))
+  override def callcc[A, B](f: (A =&gt; M[B]) =&gt; M[A]): M[A] = k =&gt; f(a =&gt; _ =&gt; k(a))(k)
 }
 </code></pre>
 <p>Let's compose some monads.</p>
@@ -3956,7 +3956,7 @@ but for simplicity we only present the ordinary continuation monad here.</p>
 <pre><code class="language-scala">trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
   val m: ContinuationMonad
   // call to lift4 inserted automatically
-  override def callcc[A,B](f: (A =&gt; M[B]) =&gt; M[A]): M[A] = (m.callcc[A,B] _)(f)
+  override def callcc[A, B](f: (A =&gt; M[B]) =&gt; M[A]): M[A] = (m.callcc[A, B] _)(f)
 }
 </code></pre>
 <p>The composition of the reader monad and the continuation monad implementation.</p>
@@ -4108,7 +4108,7 @@ trait Letcc extends Expressions with ContinuationMonad with ReaderMonad {
   }
   case class Letcc(param: String, body: Exp) extends Exp {
     override def eval: M[Value] =
-      callcc[Value,Value](k =&gt; local(env =&gt; env + (param -&gt; ContV(k)), body.eval))
+      callcc[Value, Value](k =&gt; local(env =&gt; env + (param -&gt; ContV(k)), body.eval))
   }
   case class ContV(f: Value =&gt; M[Value]) extends Value
 }
@@ -4728,7 +4728,7 @@ import Type._
 </code></pre>
 <p>A type checker is a compositional assignment of types (or type errors) to expressions. Compositionality means that the type of a
 composite expression is computed from the type of its subexpressions. Compositionality is quite important for reasoning about types.
-In this case, the type checker is a rather straightforward structural recursion ( = compositionality) over expressions.</p>
+In this case, the type checker is a rather straightforward structural recursion (= compositionality) over expressions.</p>
 <pre><code class="language-scala">def typeCheck(e: Exp): Type = e match {
   case Num(n) =&gt; IntType()
   case Bool(x) =&gt; BoolType()

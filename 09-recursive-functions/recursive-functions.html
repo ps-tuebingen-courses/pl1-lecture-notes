@@ -146,8 +146,8 @@
 <p>The content of this chapter is available as a Scala file <a href="./recursive-functions.scala">here.</a></p>
 <h2 id="recursion"><a class="header" href="#recursion">Recursion</a></h2>
 <p>Let's try to write a function that computes the sum of the first \( n \) integers. Let's pretend we do not know that the sum of the
-first \( n \) integers is \( n*(n+1)/2 \) and instead compute the sum in a loop. Let's try to do this in FAE (with <code>If0</code>):</p>
-<pre><code class="language-scala">val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
+first \( n \) integers is \( n * (n + 1) / 2 \) and instead compute the sum in a loop. Let's try to do this in FAE (with <code>If0</code>):</p>
+<pre><code class="language-scala">val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))), Ap(&quot;sum&quot;, 10))
 </code></pre>
 <p><code>sumattempt</code> won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
 <em>y</em> combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
@@ -169,22 +169,22 @@ the String is bound to:</p>
   object Exp:
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def id2exp(s: String): Exp = Id(s)
-    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+    def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 }
 
 import Syntax._
 import Exp._
 </code></pre>
 <p>Using <code>Letrec</code>, our example can be expressed as follows.</p>
-<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;,-1))))), Ap(&quot;sum&quot;, 10))
+<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))), Ap(&quot;sum&quot;, 10))
 </code></pre>
-<p>Let's now consider the semantics of <code>Letrec</code>. Consider the evaluation of <code>Letrec(x,e,body)</code> in an environment <code>env</code>.
-What environment should we use to evaluate <code>e</code> and <code>body</code>, respectively? Using <code>env</code> for <code>e</code> will produce a <code>ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;'...),env)</code>,
-and hence the environment when evaluating body will be <code>envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env))</code>.</p>
+<p>Let's now consider the semantics of <code>Letrec</code>. Consider the evaluation of <code>Letrec(x, e, body)</code> in an environment <code>env</code>.
+What environment should we use to evaluate <code>e</code> and <code>body</code>, respectively? Using <code>env</code> for <code>e</code> will produce a <code>ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;'...), env)</code>,
+and hence the environment when evaluating body will be <code>envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...), env))</code>.</p>
 <p>This is bad, because the <code>env</code> in the closure does not contain a binding for <code>&quot;sum&quot;</code> and hence the recursive invocation will fail.
 The environment in the closure must contain a mapping for <code>&quot;sum&quot;</code>. Hence envbody should look like</p>
 <pre><code>  envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...),
-                                 env + (&quot;sum&quot; -&gt; ClosureV(Fun(&quot;n&quot;,...&quot;sum&quot;...),env)))
+                                 env + (&quot;sum&quot; -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...), env)))
 </code></pre>
 <p>This looks better, but now the second closure contains an environment with no binding of <code>&quot;sum&quot;</code>. What we need is an environment
 that satisfies the equation:</p>
@@ -199,7 +199,7 @@ distinction by a polymorphic <code>value</code> method.
 Due to the mutual recursion between <code>ValueHolder</code> and <code>Value</code> the definitions are put into an object.</p>
 <pre><code class="language-scala">object Values {
   trait ValueHolder {
-    def value : Value
+    def value: Value
   }
   sealed abstract class Value extends ValueHolder { def value = this }
   case class ValuePointer(var v: Value) extends ValueHolder { def value = v }
@@ -211,29 +211,29 @@ Due to the mutual recursion between <code>ValueHolder</code> and <code>Value</co
 import Values._  // such that we do not have to write Values.ValueHolder etc.
 </code></pre>
 <p>The interpreter is unchanged except for the additional <code>Letrec</code> case and the modified <code>Id</code> case.</p>
-<pre><code class="language-scala">def eval(e: Exp, env: Env) : Value = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env): Value = e match {
   case Num(n: Int) =&gt; NumV(n)
   case Id(x) =&gt; env(x).value  // dereference potential ValuePointer
-  case If0(cond, thenExp, elseExp) =&gt; eval(cond,env) match {
-    case NumV(0) =&gt; eval(thenExp,env)
-    case _ =&gt; eval(elseExp,env)
+  case If0(cond, thenExp, elseExp) =&gt; eval(cond, env) match {
+    case NumV(0) =&gt; eval(thenExp, env)
+    case _ =&gt; eval(elseExp, env)
   }
-  case Add(l,r) =&gt; {
-    (eval(l,env), eval(r,env)) match {
-      case (NumV(v1),NumV(v2)) =&gt; NumV(v1+v2)
+  case Add(l, r) =&gt; {
+    (eval(l, env), eval(r, env)) match {
+      case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
       case _ =&gt; sys.error(&quot;can only add numbers&quot;)
     }
   }
-  case f@Fun(param,body) =&gt; ClosureV(f, env)
-  case Ap(f,a) =&gt; eval(f,env) match {
-    case ClosureV(f,closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a,env)))
+  case f@Fun(param, body) =&gt; ClosureV(f, env)
+  case Ap(f, a) =&gt; eval(f, env) match {
+    case ClosureV(f, closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a, env)))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
-  case Letrec(x,e,body) =&gt; {
+  case Letrec(x, e, body) =&gt; {
     val vp = ValuePointer(null)  // initialize pointer with null
     val newenv = env + (x -&gt; vp)  // evaluate e in the environment extended with the placeholder
-    vp.v = eval(e,newenv)         // create the circle in the environment
-    eval(body,newenv) // evaluate body in circular environment
+    vp.v = eval(e, newenv)         // create the circle in the environment
+    eval(body, newenv) // evaluate body in circular environment
   }
 }
 </code></pre>

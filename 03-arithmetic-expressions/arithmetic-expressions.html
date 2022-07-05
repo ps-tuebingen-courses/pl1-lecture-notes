@@ -145,7 +145,7 @@
                         <h1 id="arithmetic-expressions-with-variables"><a class="header" href="#arithmetic-expressions-with-variables">Arithmetic Expressions With Variables</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="./arithmetic-expressions.scala">here.</a></p>
 <p>Let us now consider an extension of the arithmetic expression language with variables. We do this by a new kind of expression, which we
-call Identifier, or Id.</p>
+call Identifier, or <code>Id</code>.</p>
 <p>\[
 \begin{array}{lclr}
 e &amp; := &amp; n &amp; \textit{Numeric Literals} \\
@@ -164,28 +164,28 @@ e &amp; := &amp; n &amp; \textit{Numeric Literals} \\
 import Exp._
 </code></pre>
 <p>Here is a sample program written in this language, directly written down using case class constructors:</p>
-<pre><code class="language-scala">val test0 = Add(Mul(Id(&quot;x&quot;),Num(2)),Add(Id(&quot;y&quot;),Id(&quot;y&quot;)))
+<pre><code class="language-scala">val test0 = Add(Mul(Id(&quot;x&quot;), Num(2)), Add(Id(&quot;y&quot;), Id(&quot;y&quot;)))
 </code></pre>
-<p>With a proper parser we could choose a syntax like <code>x*2+y+y</code>. We do not care much about concrete syntax and parsing, though.</p>
+<p>With a proper parser we could choose a syntax like <code>x * 2 + y + y</code>. We do not care much about concrete syntax and parsing, though.</p>
 <p>That said, to make writing examples less verbose, Scala's implicits come to the rescue.
 Calls to implicit functions are inserted automatically by the compiler if they help to restore well-typedness. For instance, we can define</p>
 <pre><code class="language-scala">implicit def num2exp(n: Int): Exp = Num(n)
 implicit def sym2exp(x: String): Exp = Id(x)
 </code></pre>
 <p>to lift integers and Strings to expressions. Using these implicits, the example can be written as:</p>
-<pre><code class="language-scala">val test = Add(Mul(&quot;x&quot;,2),Add(&quot;y&quot;,&quot;y&quot;))
+<pre><code class="language-scala">val test = Add(Mul(&quot;x&quot;, 2), Add(&quot;y&quot;, &quot;y&quot;))
 </code></pre>
 <p>To give meaning to identifiers, we use <em>environments</em>. Environments are mappings from Identifiers (which we represent as Strings) to Values.
 In our simple language the only values are integers, hence:</p>
-<pre><code class="language-scala">type Env = Map[String,Int]
+<pre><code class="language-scala">type Env = Map[String, Int]
 </code></pre>
 <p>An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
 &quot;Int&quot;. This interpreter uses pattern matching over case classes.</p>
-<pre><code class="language-scala">def eval(e: Exp, env: Env) : Int = e match {
+<pre><code class="language-scala">def eval(e: Exp, env: Env): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x)
-  case Add(l,r) =&gt; eval(l,env) + eval(r,env)
-  case Mul(l,r) =&gt; eval(l,env) * eval(r,env)
+  case Add(l, r) =&gt; eval(l, env) + eval(r, env)
+  case Mul(l, r) =&gt; eval(l, env) * eval(r, env)
 }
 </code></pre>
 <p>A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract &quot;eval&quot; method to the Exp
@@ -196,7 +196,7 @@ topics in the lecture. To try the example, we need a sample environment that giv
 <p>The test environment also illustrates how Scala supports direct definitions of constant maps.</p>
 <pre><code class="language-scala">val testEnv = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
 </code></pre>
-<p>We can automatically test our evaluator using assert :</p>
+<p>We can automatically test our evaluator using assert:</p>
 <pre><code class="language-scala">val exa = eval(test, testEnv)
 // exa: Int = 14
 assert(eval(test, testEnv) == 14)
@@ -242,13 +242,13 @@ def foldExp[T](v: VisitorAE[T], e: ExpAE): T = {
 <pre><code class="language-scala">def eval(e: ExpAE) = foldExp(evalVisitorAE, e)
 </code></pre>
 <p>Let's test whether it works.</p>
-<pre><code class="language-scala">val exaVisitorAE = eval(AddAE(AddAE(NumAE(1),NumAE(2)),NumAE(3)))
+<pre><code class="language-scala">val exaVisitorAE = eval(AddAE(AddAE(NumAE(1), NumAE(2)), NumAE(3)))
 // exaVisitorAE: Int = 6
 assert(exaVisitorAE == 6)
 </code></pre>
 <p>We can also apply other algorithms using visitors, such as counting the number of <code>NumAE</code> literals, or printing to a string:</p>
-<pre><code class="language-scala">val countVisitorAE = VisitorAE[Int]( _=&gt;1, _+_)
-val printVisitorAE = VisitorAE[String](_.toString, &quot;(&quot;+_+&quot;+&quot;+_+&quot;)&quot;)
+<pre><code class="language-scala">val countVisitorAE = VisitorAE[Int](_ =&gt; 1, _ + _)
+val printVisitorAE = VisitorAE[String](_.toString, &quot;(&quot; + _ + &quot;+&quot; + _ + &quot;)&quot;)
 </code></pre>
 <pre><code class="language-scala">}
 </code></pre>
@@ -258,14 +258,14 @@ import AEId._
 </code></pre>
 <pre><code class="language-scala">case class Visitor[T](num: Int =&gt; T, add: (T, T) =&gt; T, mul: (T, T) =&gt; T, id: String =&gt; T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
-val countVisitor = Visitor[Int](_=&gt;1, _ + _, _ + _, _ =&gt; 0)
+val countVisitor = Visitor[Int](_ =&gt; 1, _ + _, _ + _, _ =&gt; 0)
 val printVisitor = Visitor[String](_.toString, &quot;(&quot; + _ + &quot;+&quot; + _ + &quot;)&quot;, _ + &quot;*&quot; + _, identity)
 
-def foldExp[T](v: Visitor[T], e: Exp) : T = {
+def foldExp[T](v: Visitor[T], e: Exp): T = {
   e match {
     case Num(n) =&gt; v.num(n)
-    case Add(l,r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
-    case Mul(l,r) =&gt; v.mul(foldExp(v, l), foldExp(v, r))
+    case Add(l, r) =&gt; v.add(foldExp(v, l), foldExp(v, r))
+    case Mul(l, r) =&gt; v.mul(foldExp(v, l), foldExp(v, r))
     case Id(x) =&gt; v.id(x)
   }
 }
@@ -279,7 +279,7 @@ assert(exaCount == 1)
 <p>However, what about the evaluator? If we instantiate <code>T</code> = <code>Int</code>, then how can we access the environment? Insight: For evaluation, we must
 instantiate <code>T</code> with a function type <code>Env =&gt; Int</code>! This way of transforming a multi-argument function into a single-argument
 higher-order function is called <em>currying</em>.</p>
-<pre><code class="language-scala">val evalVisitor = Visitor[Env=&gt;Int](
+<pre><code class="language-scala">val evalVisitor = Visitor[Env =&gt; Int](
    env =&gt; _ ,
    (a, b) =&gt; env =&gt;
      a(env) + b(env),

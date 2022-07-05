@@ -22,10 +22,10 @@ case class ClosureV(f: Fun, env: Env) extends Value
 
 case class ContV(f: Value => Nothing) extends Value
 
-def eval(e: Exp, env: Env, k: Value => Nothing) : Nothing = e match {
+def eval(e: Exp, env: Env, k: Value => Nothing): Nothing = e match {
   case Num(n: Int) => k(NumV(n))
   case Id(x) => k(env(x))
-  case Add(l,r) => {
+  case Add(l, r) => {
     eval(l, env, lv =>
         eval(r, env, rv =>
           (lv, rv) match {
@@ -33,14 +33,14 @@ def eval(e: Exp, env: Env, k: Value => Nothing) : Nothing = e match {
             case _ => sys.error("can only add numbers")
           }))
   }
-  case f@Fun(param,body) => k(ClosureV(f, env))
+  case f@Fun(param, body) => k(ClosureV(f, env))
 
   /* In the application case we now need to distinguish whether the first argument
    * is a closure or a continuation. If it is a continuation, we ignore the
    * current continuation k and "jump" to the stored continuation by applying the
    * evaluated continuation argument to it. */
-  case Ap(f,a) => eval(f, env, cl => cl match {
-            case ClosureV(f,closureEnv) => eval(a, env, av => eval(f.body, closureEnv + (f.param -> av), k))
+  case Ap(f, a) => eval(f, env, cl => cl match {
+            case ClosureV(f, closureEnv) => eval(a, env, av => eval(f.body, closureEnv + (f.param -> av), k))
             case ContV(f) => eval(a, env, av => f(av))
             case _ => sys.error("can only apply functions")
   })
@@ -50,9 +50,9 @@ def eval(e: Exp, env: Env, k: Value => Nothing) : Nothing = e match {
   case Letcc(param, body) => eval(body, env + (param -> ContV(k)), k)
 }
 
-def starteval(e: Exp) : Value = {
-  var res : Value = null
-  val s : Value => Nothing = (v) => { res = v; sys.error("program terminated") }
+def starteval(e: Exp): Value = {
+  var res: Value = null
+  val s: Value => Nothing = (v) => { res = v; sys.error("program terminated") }
   try { eval(e, Map.empty, s) } catch { case e: Throwable => () }
   res
 }

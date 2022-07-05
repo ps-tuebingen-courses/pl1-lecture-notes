@@ -6,11 +6,11 @@ trait Monad {
   type M[_] // this time we treat M as a type member and not as type parameter
             // because it leads to shorter type signatures
   def unit[A](a: A): M[A]
-  def bind[A,B](m: M[A], f: A => M[B]): M[B]
+  def bind[A, B](m: M[A], f: A => M[B]): M[B]
 
   extension [A](m: M[A])
     def map[B](f: A => B): M[B] = bind(m, (x: A) => unit(f(x)))
-    def flatMap[B](f: A => M[B]): M[B] = bind(m,f)
+    def flatMap[B](f: A => M[B]): M[B] = bind(m, f)
 }
 
 trait ReaderMonad extends Monad {
@@ -22,14 +22,14 @@ trait ReaderMonad extends Monad {
 trait ReaderMonadImp extends ReaderMonad {
   type M[X] = R => X
   def unit[A](a: A): M[A] = r => a
-  def bind[A,B](m: M[A], f: A => M[B]): M[B] = r => f(m(r))(r)
+  def bind[A, B](m: M[A], f: A => M[B]): M[B] = r => f(m(r))(r)
   def ask: M[R] = identity
   def local[A](f: R => R, a: M[A]): M[A] = r => a(f(r))
 }
 
 object ReaderExample extends ReaderMonadImp {
   type R = Int
-  def example: M[Int] = for { x <- ask } yield (x+1)
+  def example: M[Int] = for { x <- ask } yield (x + 1)
   def example2: M[Int] = local(r => 99, example)
 }
 
@@ -63,7 +63,7 @@ trait StateMonad extends Monad {
 trait StateMonadImp extends StateMonad {
   type M[A] = S => (A, S)
   def unit[A](a: A): M[A] = (s: S) => (a, s)
-  def bind[A,B](m: M[A], f: A => M[B]): M[B] = (s: S) => {
+  def bind[A, B](m: M[A], f: A => M[B]): M[B] = (s: S) => {
     val (a, s2) = m(s)
     f(a)(s2)
   }
@@ -72,13 +72,13 @@ trait StateMonadImp extends StateMonad {
 }
 
 trait ContinuationMonad extends Monad {
-  def callcc[A,B](f: (A => M[B]) => M[A]): M[A]
+  def callcc[A, B](f: (A => M[B]) => M[A]): M[A]
 }
 
 trait IdentityMonad extends Monad {
   type M[A] = A
   def unit[A](a: A): M[A] = a
-  def bind[A,B](m: M[A], f: A => M[B]) = f(m)
+  def bind[A, B](m: M[A], f: A => M[B]) = f(m)
 }
 
 object IdentityMonad extends IdentityMonad
@@ -91,15 +91,15 @@ trait ReaderT extends MonadTransformer with ReaderMonad {
   type R
   override type M[X] = R => m.M[X]
   override def unit[A](a: A): M[A] = r => m.unit(a)
-  override def bind[A,B](x: M[A], f: A => M[B]): M[B] =
+  override def bind[A, B](x: M[A], f: A => M[B]): M[B] =
     r => m.bind(x(r), (n: A) => f(n)(r))
   override def ask: M[R] = r => m.unit(r)
   override def local[A](f: R => R, a: M[A]): M[A] = r => a(f(r))
   protected implicit def lift[A](x: m.M[A]): M[A] = r => x
-  protected implicit def lift2[A,B](x: A => m.M[B]): A => M[B] = a => lift(x(a))
-  protected implicit def lift3[A,B,C](x: (A => m.M[B]) => m.M[C]): (A => M[B]) => M[C] =
+  protected implicit def lift2[A, B](x: A => m.M[B]): A => M[B] = a => lift(x(a))
+  protected implicit def lift3[A, B, C](x: (A => m.M[B]) => m.M[C]): (A => M[B]) => M[C] =
     f => r => x((a: A) => f(a)(r))
-  protected implicit def lift4[A,B,C,D](x: ((A => m.M[B]) => m.M[C]) => m.M[D]): ((A => M[B]) => M[C]) => M[D] =
+  protected implicit def lift4[A, B, C, D](x: ((A => m.M[B]) => m.M[C]) => m.M[D]): ((A => M[B]) => M[C]) => M[D] =
     f => r => x((a: A => m.M[B]) => f(lift2(a))(r))
 }
 
@@ -112,8 +112,8 @@ trait ReaderMonadImpl extends ReaderT {
 trait StateT extends MonadTransformer with StateMonad {
   type M[A] = S => m.M[(A, S)]
   override def unit[A](a: A): M[A] = (s: S) => m.unit(a, s)
-  override def bind[A,B](x: M[A], f: A => M[B]): M[B] = (s: S) => {
-     m.bind[(A, S),(B, S)](x(s), { case (a, s2) => f(a)(s2)})
+  override def bind[A, B](x: M[A], f: A => M[B]): M[B] = (s: S) => {
+     m.bind[(A, S), (B, S)](x(s), { case (a, s2) => f(a)(s2)})
   }
   override def getState: M[S] = s => m.unit((s, s))
   override def putState(s: S): M[Unit] = _ => m.unit(((), s))
@@ -129,14 +129,14 @@ trait ContinuationMonadImpl extends ContinuationMonad {
   type T
   type M[A] = (A => T) => T
   override def unit[A](a: A): M[A] = k => k(a)
-  override def bind[A,B](m: M[A], f: A => M[B]): M[B] = k => m( a => f(a)(k))
-  override def callcc[A,B](f: (A => M[B]) => M[A]): M[A] = k => f(a => _ => k(a))(k)
+  override def bind[A, B](m: M[A], f: A => M[B]): M[B] = k => m(a => f(a)(k))
+  override def callcc[A, B](f: (A => M[B]) => M[A]): M[A] = k => f(a => _ => k(a))(k)
 }
 
 trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
   val m: ContinuationMonad
   // call to lift4 inserted automatically
-  override def callcc[A,B](f: (A => M[B]) => M[A]): M[A] = (m.callcc[A,B] _)(f)
+  override def callcc[A, B](f: (A => M[B]) => M[A]): M[A] = (m.callcc[A, B] _)(f)
 }
 
 trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
@@ -283,7 +283,7 @@ trait Letcc extends Expressions with ContinuationMonad with ReaderMonad {
   }
   case class Letcc(param: String, body: Exp) extends Exp {
     override def eval: M[Value] =
-      callcc[Value,Value](k => local(env => env + (param -> ContV(k)), body.eval))
+      callcc[Value, Value](k => local(env => env + (param -> ContV(k)), body.eval))
   }
   case class ContV(f: Value => M[Value]) extends Value
 }

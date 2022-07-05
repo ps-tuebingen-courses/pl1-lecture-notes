@@ -170,7 +170,7 @@ import Exp._
 implicit def string2exp(x: String): Exp = Id(x)
 </code></pre>
 <p>A first example program in WAE.</p>
-<pre><code class="language-scala">val test = With(&quot;x&quot;, 5, Add(&quot;x&quot;,&quot;x&quot;))
+<pre><code class="language-scala">val test = With(&quot;x&quot;, 5, Add(&quot;x&quot;, &quot;x&quot;))
 </code></pre>
 <p>Note that we deal with <em>two</em> languages here:</p>
 <ol>
@@ -197,22 +197,22 @@ they are <em>equivalent</em> in the sense that when evaluated, they will produce
 somehow equivalent programs are an important tool for the study of programs, and of programming languages. Often, if we know which
 programs behave identically, we understand better how programs behave in general. We will see more examples of this in this lecture.
 Hence, the implementation of the <code>With</code> case of our interpreter should be something like:</p>
-<pre><code>case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef))))
+<pre><code>case With(x, xdef, body) =&gt; eval(subst(body, x, Num(eval(xdef))))
 </code></pre>
 <p>for a function <code>subst</code> with signature</p>
-<pre><code>subst: (Exp,String,Num) =&gt; Exp
+<pre><code>subst: (Exp, String, Num) =&gt; Exp
 </code></pre>
 <p>The type of the third parameter is <code>Num</code> instead of <code>Exp</code> because it is more difficult to get substitution correct when arbitrary
 expressions can be inserted (accidential name capture problem, more about that later).
 Since we want to experiment with different versions of substitution, we write the interpreter in such a way that we can parameterize
 it with a substitution function:</p>
-<pre><code class="language-scala">def makeEval(subst: (Exp,String,Num)=&gt;Exp) : Exp=&gt;Int = {
-  def eval(e: Exp) : Int = e match {
+<pre><code class="language-scala">def makeEval(subst: (Exp, String, Num) =&gt; Exp): Exp =&gt; Int = {
+  def eval(e: Exp): Int = e match {
     case Num(n) =&gt; n
     case Id(x) =&gt; sys.error(&quot;unbound variable: &quot; + x)
-    case Add(l,r) =&gt; eval(l) + eval(r)
-    case Mul(l,r) =&gt; eval(l) * eval(r)
-    case With(x, xdef, body) =&gt; eval(subst(body,x,Num(eval(xdef)))) // take the int and wrap it into a Num
+    case Add(l, r) =&gt; eval(l) + eval(r)
+    case Mul(l, r) =&gt; eval(l) * eval(r)
+    case With(x, xdef, body) =&gt; eval(subst(body, x, Num(eval(xdef)))) // take the int and wrap it into a Num
   }
   eval
 }
@@ -220,14 +220,14 @@ it with a substitution function:</p>
 <h3 id="substitution-take-1"><a class="header" href="#substitution-take-1">Substitution, take 1</a></h3>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all identifiers in <code>e</code> that have the name <code>i</code> with the expression <code>v</code>.
 Let's try to formalize this definition:</p>
-<pre><code class="language-scala">val subst1 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst1: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
   case Num(n) =&gt; e
   case Id(x) =&gt; if (x == i) v else e
-  case Add(l,r) =&gt; Add( subst1(l,i,v), subst1(r,i,v))
-  case Mul(l,r) =&gt; Mul( subst1(l,i,v), subst1(r,i,v))
-  case With(x,xdef,body) =&gt; With( if (x == i) v else x,
-                                    subst1(xdef,i,v),
-                                    subst1(body,i,v))
+  case Add(l, r) =&gt; Add(subst1(l, i, v), subst1(r, i, v))
+  case Mul(l, r) =&gt; Mul(subst1(l, i, v), subst1(r, i, v))
+  case With(x, xdef, body) =&gt; With(if (x == i) v else x,
+                                    subst1(xdef, i, v),
+                                    subst1(body, i, v))
   }
 </code></pre>
 <p>Unfortunately this does not even type-check! And rightly so, because it might otherwise turn reasonable programs into programs that are
@@ -252,19 +252,19 @@ To correct this mistake, we make another take at substitution:</p>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all identifiers in <code>e</code> which are not binding
 instances that have the name <code>i</code> with the expression <code>v</code>.
 Here is the formalization of this definition.</p>
-<pre><code class="language-scala">val subst2 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst2: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
   case Num(n) =&gt; e
 
   // Bound or free instance =&gt; substitute if names match
   case Id(x) =&gt; if (x == i) v else e
 
-  case Add(l,r) =&gt; Add( subst2(l,i,v), subst2(r,i,v))
-  case Mul(l,r) =&gt; Mul( subst2(l,i,v), subst2(r,i,v))
+  case Add(l, r) =&gt; Add(subst2(l, i, v), subst2(r, i, v))
+  case Mul(l, r) =&gt; Mul(subst2(l, i, v), subst2(r, i, v))
 
   // binding instance =&gt; do not substitute
-  case With(x,xdef,body) =&gt; With( x,
-                                  subst2(xdef,i,v),
-                                  subst2(body,i,v))
+  case With(x, xdef, body) =&gt; With(x,
+                                  subst2(xdef, i, v),
+                                  subst2(body, i, v))
 }
 </code></pre>
 <p>Let's create an interpreter that uses this substitution function.</p>
@@ -286,13 +286,13 @@ doesn’t recognize this possibility, it incorrectly substitutes the inner <code
 <h3 id="substitution-take-3"><a class="header" href="#substitution-take-3">Substitution, take 3</a></h3>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all non-binding identifiers in <code>e</code> having
 the name <code>i</code> with the expression <code>v</code>, unless the identifier is in a scope different from that introduced by <code>i</code>.</p>
-<pre><code class="language-scala">val subst3 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst3: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
-    case Add(l,r) =&gt; Add( subst3(l,i,v), subst3(r,i,v))
-    case Mul(l,r) =&gt; Mul( subst3(l,i,v), subst3(r,i,v))
-    case With(x,xdef,body) =&gt; With( x,
-                                    subst3(xdef,i,v),
+    case Add(l, r) =&gt; Add(subst3(l, i, v), subst3(r, i, v))
+    case Mul(l, r) =&gt; Mul(subst3(l, i, v), subst3(r, i, v))
+    case With(x, xdef, body) =&gt; With(x,
+                                    subst3(xdef, i, v),
                                     // what if we forget to substitute into the body?
                                     body)
 }
@@ -305,7 +305,7 @@ assert(eval3(test2) == 15)
 
 assert(eval3(test3) == 8) // Success!
 
-val test4 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;y&quot;, 3,&quot;x&quot;)))
+val test4 = With(&quot;x&quot;, 5, Add(&quot;x&quot;, With(&quot;y&quot;, 3, &quot;x&quot;)))
 
 // assert(eval3(test4) == 10) // Bang! unbound variable: &quot;x&quot;
 </code></pre>
@@ -321,16 +321,16 @@ any nested scopes.</p>
 the name <code>i</code> with the expression <code>v</code>, except within nested scopes of <code>i</code>.
 Finally, we have a version of substitution that works. A different, more succinct way of phrasing this definition is:
 &quot;To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all free instances of <code>i</code> in <code>e</code> with <code>v</code>.&quot;</p>
-<pre><code class="language-scala">val subst4 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst4: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
-    case Add(l,r) =&gt; Add( subst4(l,i,v), subst4(r,i,v))
-    case Mul(l,r) =&gt; Mul( subst4(l,i,v), subst4(r,i,v))
+    case Add(l, r) =&gt; Add(subst4(l, i, v), subst4(r, i, v))
+    case Mul(l, r) =&gt; Mul(subst4(l, i, v), subst4(r, i, v))
     // do not substitute when shadowed
-    case With(x,xdef,body) =&gt; if (x == i) e
+    case With(x, xdef, body) =&gt; if (x == i) e
                                  else With(x,
-                                           subst4(xdef,i,v),
-                                           subst4(body,i,v))
+                                           subst4(xdef, i, v),
+                                           subst4(body, i, v))
 }
 
 def eval4 = makeEval(subst4)
@@ -353,15 +353,15 @@ being substituted, because its named expression is still in the scope of the enc
 <h3 id="substitution-take-5"><a class="header" href="#substitution-take-5">Substitution, take 5</a></h3>
 <p>We finally get a valid
 programmatic definition of substitution (relative to the language we have so far):</p>
-<pre><code class="language-scala">val subst5 : (Exp,String,Num) =&gt; Exp = (e,i,v) =&gt; e match {
+<pre><code class="language-scala">val subst5: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
-    case Add(l,r) =&gt; Add( subst5(l,i,v), subst5(r,i,v))
-    case Mul(l,r) =&gt; Mul( subst5(l,i,v), subst5(r,i,v))
+    case Add(l, r) =&gt; Add(subst5(l, i, v), subst5(r, i, v))
+    case Mul(l, r) =&gt; Mul(subst5(l, i, v), subst5(r, i, v))
     // handle shadowing correctly
-    case With(x,xdef,body) =&gt; With(x,
-                                   subst5(xdef,i,v),
-                                   if (x == i) body else subst5(body,i,v))
+    case With(x, xdef, body) =&gt; With(x,
+                                   subst5(xdef, i, v),
+                                   if (x == i) body else subst5(body, i, v))
 }
 
 def eval5 = makeEval(subst5)

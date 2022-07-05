@@ -181,7 +181,7 @@ def hOp(b: Boolean): Option[Int] = if (b) Some(27) else None
 produces an <code>Option[B]</code>. If the <code>Option[A]</code> value is <code>None</code>, then the whole computation produces <code>None</code>. If it is <code>Some(x)</code>
 instead, we pass <code>x</code> to the function.</p>
 <p>We can capture this pattern in the form of a function:</p>
-<pre><code class="language-scala">def bindOption[A,B](a: Option[A], f: A =&gt; Option[B]): Option[B] = a match {
+<pre><code class="language-scala">def bindOption[A, B](a: Option[A], f: A =&gt; Option[B]): Option[B] = a match {
   case Some(x) =&gt; f(x)
   case None =&gt; None
 }
@@ -225,7 +225,7 @@ but we'll defer a discussion of these conditions until later.</p>
 <p>So here it is: The Monad interface.</p>
 <pre><code class="language-scala">trait Monad[M[_]] {
   def unit[A](a: A): M[A]
-  def bind[A,B](m: M[A], f: A =&gt; M[B]): M[B]
+  def bind[A, B](m: M[A], f: A =&gt; M[B]): M[B]
   // The &quot;monad laws&quot;:
   // 1) &quot;unit&quot; acts as a kind of neutral element of &quot;bind&quot;, that is:
   //    1a) bind(unit(x), f) == f(x) and
@@ -256,12 +256,12 @@ def clientCode2[M[_]](using m: Monad[M]) =
 monadic code look simpler. Monad-comprehensions are directly supported in Haskell and some other languages. In Scala, we can
 piggy-back on the &quot;for-comprehension&quot; syntax instead.
 A &quot;for-comprehension&quot; is usually used for lists and other collections. For instance:</p>
-<pre><code class="language-scala">val l = List(List(1,2), List(3,4))
-assert((for { x &lt;- l; y &lt;- x } yield y + 1) == List(2,3,4,5))
+<pre><code class="language-scala">val l = List(List(1, 2), List(3, 4))
+assert((for { x &lt;- l; y &lt;- x } yield y + 1) == List(2, 3, 4, 5))
 </code></pre>
 <p>The Scala compiler desugars the for-comprehension above into calls of the standard <code>map</code> and <code>flatMap</code> functions. That is, the above
 for-comprehension is equivalent to:</p>
-<pre><code class="language-scala">assert(l.flatMap(x =&gt; x.map(y =&gt; y + 1)) == List(2,3,4,5))
+<pre><code class="language-scala">assert(l.flatMap(x =&gt; x.map(y =&gt; y + 1)) == List(2, 3, 4, 5))
 </code></pre>
 <p>We will make use of for-comprehension syntax by supporting both <code>flatMap</code> (which is like <code>bind</code>) and <code>map</code> (which is like <code>fmap</code>).
 We support these functions by an implicit conversion to an object that supports these functions as follows:</p>
@@ -291,7 +291,7 @@ def hOp(b: Boolean): Option[Int] = if (b) Some(27) else None
 <p>Let's look at some concrete monads now. We have of course already seen one particular monad: The <code>Option</code> monad. This monad is also
 sometimes called the <code>Maybe</code> monad.</p>
 <pre><code class="language-scala">object OptionMonad extends Monad[Option] {
-  override def bind[A,B](a: Option[A], f: A =&gt; Option[B]): Option[B] =
+  override def bind[A, B](a: Option[A], f: A =&gt; Option[B]): Option[B] =
     a match {
       case Some(x) =&gt; f(x)
       case None =&gt; None
@@ -305,12 +305,12 @@ sometimes called the <code>Maybe</code> monad.</p>
 <p>There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
 enough to be useful for many different monads. Here are some of these functions:</p>
 <p><code>fmap</code> turns every function between <code>A</code> and <code>B</code> into a function between <code>M[A]</code> and <code>M[B]</code>:</p>
-<pre><code class="language-scala">def fmap[M[_],A,B](f: A =&gt; B)(using m: Monad[M]): M[A] =&gt; M[B] =
+<pre><code class="language-scala">def fmap[M[_], A, B](f: A =&gt; B)(using m: Monad[M]): M[A] =&gt; M[B] =
   a =&gt; m.bind(a, (x: A) =&gt; m.unit(f(x)))
 </code></pre>
 <p>In fancy category theory terms, we can say that every monad is a functor.</p>
 <p><code>sequence</code> composes a list of monadic values into a single monadic value which is a list.</p>
-<pre><code class="language-scala">def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]): M[List[A]] = l match {
+<pre><code class="language-scala">def sequence[M[_], A](l: List[M[A]])(using m: Monad[M]): M[List[A]] = l match {
   case x :: xs =&gt; m.bind(x, (y: A) =&gt;
     m.bind(sequence(xs), (ys: List[A]) =&gt;
       m.unit(y :: ys)))
@@ -318,14 +318,14 @@ enough to be useful for many different monads. Here are some of these functions:
 }
 </code></pre>
 <p><code>mapM</code> composes <code>sequence</code> and the standard <code>map</code> function:</p>
-<pre><code class="language-scala">def mapM[M[_],A,B](f: A =&gt; M[B], l: List[A])(using m: Monad[M]): M[List[B]] =
+<pre><code class="language-scala">def mapM[M[_], A, B](f: A =&gt; M[B], l: List[A])(using m: Monad[M]): M[List[B]] =
   sequence(l.map(f))
 </code></pre>
 <p><code>join</code> is another useful function to unwrap a layer of monads.
 In category theory, monads are defined via <code>unit</code> (denoted by the greek letter η)
 and <code>join</code> (denoted μ) instead of <code>unit</code> and <code>bind</code>. There are additional &quot;naturality&quot; and
 &quot;coherence conditions&quot; that make the category theory definition equivalent to ours.</p>
-<pre><code class="language-scala">def join[M[_],A](x: M[M[A]])(using m: Monad[M]): M[A] = m.bind(x, (y: M[A]) =&gt; y)
+<pre><code class="language-scala">def join[M[_], A](x: M[M[A]])(using m: Monad[M]): M[A] = m.bind(x, (y: M[A]) =&gt; y)
 </code></pre>
 <p>Here are some other common monads:</p>
 <h2 id="the-identity-monad"><a class="header" href="#the-identity-monad">The Identity Monad</a></h2>
@@ -333,7 +333,7 @@ and <code>join</code> (denoted μ) instead of <code>unit</code> and <code>bind</
 with the identity monad, we get the behavior of the original non-monadic code.</p>
 <pre><code class="language-scala">type Id[X] = X
 object IdentityMonad extends Monad[Id] {
-  def bind[A,B](x: A, f: A =&gt; B): B = f(x)
+  def bind[A, B](x: A, f: A =&gt; B): B = f(x)
   def unit[A](a: A): A = a
 }
 </code></pre>
@@ -344,7 +344,7 @@ it is merely &quot;currying&quot; the function arrow type constructor.</p>
 <p>The type constructor which is created here is <code>M[A] = R =&gt; A</code></p>
 <pre><code class="language-scala">trait ReaderMonad[R] extends Monad[[A] =&gt;&gt; R =&gt; A] {
   // pass the &quot;environment&quot; r into both computations
-  override def bind[A,B](x: R =&gt; A, f: A =&gt; R =&gt; B): R =&gt; B = r =&gt; f(x(r))(r)
+  override def bind[A, B](x: R =&gt; A, f: A =&gt; R =&gt; B): R =&gt; B = r =&gt; f(x(r))(r)
   override def unit[A](a: A): R =&gt; A = (_) =&gt; a
 }
 </code></pre>
@@ -358,7 +358,7 @@ def hRead(b: Boolean): Int =&gt; Int = sys.error(&quot;not implemented&quot;)
 <p>Our original code,</p>
 <pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
-<p>becomes :</p>
+<p>becomes:</p>
 <pre><code class="language-scala">def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env) + &quot;z&quot;)(env))(env)
 </code></pre>
 <p>In monadic form, the explicit handling of the environment disappears again:</p>
@@ -378,7 +378,7 @@ def clientCode2ReadFor(using m: ReaderMonad[Int]) =
 <p>The <em>state monad</em>, in which computations depend on a state <code>S</code>
 which is threaded through the computations, is defind as follows:</p>
 <pre><code class="language-scala">trait StateMonad[S] extends Monad[[A] =&gt;&gt; S =&gt; (A, S)] {
-  override def bind[A,B](x: S =&gt; (A, S), f: A =&gt; S =&gt; (B, S)): S =&gt; (B, S) =
+  override def bind[A, B](x: S =&gt; (A, S), f: A =&gt; S =&gt; (B, S)): S =&gt; (B, S) =
     // thread the state through the computations
     s =&gt; x(s) match { case (y, s2) =&gt; f(y)(s2) }
   override def unit[A](a: A): S =&gt; (A, S) = s =&gt; (a, s)
@@ -392,7 +392,7 @@ def hState(b: Boolean): Int =&gt; (Int, Int) = sys.error(&quot;not implemented&q
 <p>The original code,</p>
 <pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
-<p>becomes :</p>
+<p>becomes:</p>
 <pre><code class="language-scala">def clientCodeState(s: Int) =
   fState(27)(s) match {
     case (x, s2) =&gt; gState(x + &quot;z&quot;)(s2) match {
@@ -408,7 +408,7 @@ def hState(b: Boolean): Int =&gt; (Int, Int) = sys.error(&quot;not implemented&q
 <p>In the <em>list monad</em>, computations produce lists of results. The <code>bind</code> operator combines all those results in a single list.</p>
 <pre><code class="language-scala">object ListMonad extends Monad[List] {
   // apply f to each element, concatenate the resulting lists
-  override def bind[A,B](x: List[A], f: A =&gt; List[B]): List[B] = x.flatMap(f)
+  override def bind[A, B](x: List[A], f: A =&gt; List[B]): List[B] = x.flatMap(f)
   override def unit[A](a: A) = List(a)
 }
 </code></pre>
@@ -418,9 +418,9 @@ def gList(x: String): List[Boolean] = sys.error(&quot;not implemented&quot;)
 def hList(b: Boolean): List[Int] = sys.error(&quot;not implemented&quot;)
 </code></pre>
 <p>The original code,</p>
-<pre><code class="language-scala">def clientCode = h(!g(f(27)+&quot;z&quot;))
+<pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
-<p>becomes :</p>
+<p>becomes:</p>
 <pre><code class="language-scala">def clientCodeList =
   fList(27).map(x =&gt; gList(x + &quot;z&quot;)).flatten.map(y =&gt; hList(!y)).flatten
 </code></pre>
@@ -438,15 +438,15 @@ def hList(b: Boolean): List[Int] = sys.error(&quot;not implemented&quot;)
 <pre><code class="language-scala">trait ContinuationMonad[R] extends Monad[[A] =&gt;&gt; (A =&gt; R) =&gt; R] {
   type Cont[X] = (X =&gt; R) =&gt; R
 
-  override def bind[A,B](x: Cont[A], f: A =&gt; Cont[B]): Cont[B] =
+  override def bind[A, B](x: Cont[A], f: A =&gt; Cont[B]): Cont[B] =
     // construct continuation for x that calls f with the result of x
     k =&gt; x(a =&gt; f(a)(k))
   override def unit[A](a: A): Cont[A] = k =&gt; k(a)
 
   // callcc is like letcc; the difference is that letcc binds a name,
   // whereas callcc expects a function as argument.
-  // That means that letcc(k,...) is expressed as callcc(k =&gt; ...).
-  def callcc[A,B](f: (A =&gt; Cont[B]) =&gt; Cont[A]): Cont[A] =
+  // That means that letcc(k, ...) is expressed as callcc(k =&gt; ...).
+  def callcc[A, B](f: (A =&gt; Cont[B]) =&gt; Cont[A]): Cont[A] =
     k =&gt; f((a: A) =&gt; (_: B =&gt; R) =&gt; k(a))(k)
 }
 </code></pre>
@@ -458,7 +458,7 @@ def hCPS[R](b: Boolean): (Int =&gt; R) =&gt; R = sys.error(&quot;not implemented
 <p>The original code,</p>
 <pre><code class="language-scala">def clientCode = h(!g(f(27) + &quot;z&quot;))
 </code></pre>
-<p>becomes :</p>
+<p>becomes:</p>
 <pre><code class="language-scala">def clientCodeCPS[R]: (Int =&gt; R) =&gt; R =
   k =&gt; fCPS(27)((x: String) =&gt; gCPS(x + &quot;z&quot;)((y: Boolean) =&gt;  hCPS(!y)(k)))
 </code></pre>
@@ -483,7 +483,7 @@ def runEx123 = ex123(using new ContinuationMonad[Int]{})(x =&gt; x)
 <pre><code class="language-scala">def excallcc[R](using m: ContinuationMonad[R])  = {
   m.bind(
     m.bind(m.unit(2), (two: Int) =&gt;
-      m.callcc[Int,Int](k =&gt; m.bind(k(3), (three: Int) =&gt; m.unit(two + three)))),
+      m.callcc[Int, Int](k =&gt; m.bind(k(3), (three: Int) =&gt; m.unit(two + three)))),
     (five: Int) =&gt; m.unit(1 + five))
 }
 
@@ -491,7 +491,7 @@ def runExcallcc = excallcc(using new ContinuationMonad[Int]{})(x =&gt; x)
 </code></pre>
 <p>Remember how we had to CPS-transform the <code>map</code> function in the &quot;allCosts&quot; example when we talked about continuations?
 Now we can define a monadic version of <code>map</code> that works for any monad, including the continuation monad:</p>
-<pre><code class="language-scala">def mapM[M[_],A,B](x: List[A], f: A =&gt; M[B])(using m: Monad[M]): M[List[B]] =
+<pre><code class="language-scala">def mapM[M[_], A, B](x: List[A], f: A =&gt; M[B])(using m: Monad[M]): M[List[B]] =
   sequence(x.map(f))
 </code></pre>
 <h2 id="monad-transformers"><a class="header" href="#monad-transformers">Monad Transformers</a></h2>
@@ -504,7 +504,7 @@ parameterized with another monad. We show this for the Option monad case.</p>
 
 class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]] {
 
-  override def bind[A,B](x: M[Option[A]], f: A =&gt; M[Option[B]]): M[Option[B]] =
+  override def bind[A, B](x: M[Option[A]], f: A =&gt; M[Option[B]]): M[Option[B]] =
     m.bind(x, (z: Option[A]) =&gt; z match { case Some(y) =&gt; f(y)
                                           case None =&gt; m.unit(None) })
 

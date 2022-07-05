@@ -176,40 +176,40 @@ been highly influential in the design and theory of programming languages.</p>
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def id2exp(s: String): Exp = Id(s)
     // &quot;with&quot; would be a better name for this function, but it is reserved in Scala
-    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+    def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 }
 
 import Syntax._
 import Exp._
 </code></pre>
 <p>Due to the lambda calculus, the concrete syntax for function abstraction is often written
-with a lambda, such as <code>lambda x. x+3</code>, thus also called lambda abstraction. The Scala
-syntax for lambda terms is <code>(x) =&gt; x+3</code>, the Haskell syntax is <code>\x -&gt; x+3</code>.</p>
+with a lambda, such as <code>lambda x. x + 3</code>, thus also called lambda abstraction. The Scala
+syntax for lambda terms is <code>(x) =&gt; x + 3</code>, the Haskell syntax is <code>\x -&gt; x + 3</code>.</p>
 <p>The concrete syntax for function application is often either juxtaposition <code>f a</code> or
 using brackets <code>f(a)</code>. Haskell and the lambda calculus use the former, Scala uses the
 latter.</p>
 <p>The <code>with</code> construct is not needed anymore since it can be encoded using <code>Ap</code> and
-<code>Fun</code>. For instance, <code>with x = 7 in x+3</code> can be encoded (using Scala syntax) as
-<code>((x) =&gt; x+3)(7)</code>. We have made this idea explicit above by giving a constructive
+<code>Fun</code>. For instance, <code>with x = 7 in x + 3</code> can be encoded (using Scala syntax) as
+<code>((x) =&gt; x + 3)(7)</code>. We have made this idea explicit above by giving a constructive
 translation. Remember that such translations are often called &quot;desugaring&quot;.</p>
 <p>Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
-<pre><code class="language-scala">def subst0(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+<pre><code class="language-scala">def subst0(e1: Exp, x: String, e2: Exp): Exp = e1 match {
   case Num(n) =&gt; e1
-  case Add(l,r) =&gt; Add(subst0(l,x,e2), subst0(r,x,e2))
+  case Add(l, r) =&gt; Add(subst0(l, x, e2), subst0(r, x, e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case Ap(f,a) =&gt; Ap(subst0(f,x,e2), subst0(a,x,e2))
-  case Fun(param,body) =&gt;
+  case Ap(f, a) =&gt; Ap(subst0(f, x, e2), subst0(a, x, e2))
+  case Fun(param, body) =&gt;
     if (param == x) e1  else Fun(param, subst0(body, x, e2))
 }
 </code></pre>
 <p>Let's try whether <code>subst0</code> produces reasonable results.</p>
-<pre><code class="language-scala">assert( subst0(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
-assert( subst0(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
-assert( subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
+<pre><code class="language-scala">assert(subst0(Add(5, &quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
+assert(subst0(Add(5, &quot;x&quot;), &quot;y&quot;, 7) == Add(5, &quot;x&quot;))
+assert(subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)))
 </code></pre>
 <p>Looks good. However, what happens if <code>e2</code> contains free variables? The danger here is that they may be accidentially &quot;captured&quot; by the substitution.
 For instance, consider</p>
-<pre><code class="language-scala">val subst0Test = subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5))
+<pre><code class="language-scala">val subst0Test = subst0(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5))
 // subst0Test: Exp = Fun(
 //   param = &quot;x&quot;,
 //   body = Add(
@@ -218,7 +218,7 @@ For instance, consider</p>
 //   )
 // )
 </code></pre>
-<p>The result is <code>Fun(&quot;x&quot;,Add(&quot;x&quot;,Add(&quot;x&quot;,5)))</code>
+<p>The result is <code>Fun(&quot;x&quot;, Add(&quot;x&quot;, Add(&quot;x&quot;, 5)))</code>
 This is not desirable, since it again violates static scoping.</p>
 <p>Note that this problem did not show up in earlier languages, because there we only substituted variables by numbers, but not by
 expressions that may contain free variables: The type of <code>e2</code> was <code>Num</code> and not <code>Exp</code>.</p>
@@ -226,53 +226,53 @@ expressions that may contain free variables: The type of <code>e2</code> was <co
 The answer is that we must avoid the name clash by renaming the variable bound by the &quot;lambda&quot; if the variable name occurs free in <code>e2</code>.
 This new variable name should be &quot;fresh&quot;, i.e., not occur free in <code>e2</code>.</p>
 <p>For instance, in the example above, we could first rename <code>&quot;x&quot;</code> to the fresh name <code>&quot;x0&quot;</code> and only then substitute, i.e.</p>
-<p><code>subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x0&quot;,Add(&quot;x0&quot;,Add(&quot;x&quot;,Num(5))))</code></p>
+<p><code>subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5)) == Fun(&quot;x0&quot;, Add(&quot;x0&quot;, Add(&quot;x&quot;, Num(5))))</code></p>
 <p>Let's do this step by step.</p>
-<pre><code class="language-scala">def freshName(names: Set[String], default: String) : String = {
-  var last : Int = 0
+<pre><code class="language-scala">def freshName(names: Set[String], default: String): String = {
+  var last: Int = 0
   var freshName = default
-  while (names contains freshName) { freshName = default+last; last += 1; }
+  while (names contains freshName) { freshName = default + last; last += 1; }
   freshName
 }
 
-val freshNameExa1 = freshName(Set(&quot;y&quot;,&quot;z&quot;),&quot;x&quot;)
+val freshNameExa1 = freshName(Set(&quot;y&quot;, &quot;z&quot;), &quot;x&quot;)
 // freshNameExa1: String = &quot;x&quot;
-val freshNameExa2 = freshName(Set(&quot;x2&quot;,&quot;x0&quot;,&quot;x4&quot;,&quot;x&quot;,&quot;x1&quot;),&quot;x&quot;)
+val freshNameExa2 = freshName(Set(&quot;x2&quot;, &quot;x0&quot;, &quot;x4&quot;, &quot;x&quot;, &quot;x1&quot;), &quot;x&quot;)
 // freshNameExa2: String = &quot;x3&quot;
-assert( freshNameExa1 == &quot;x&quot;)
-assert( freshNameExa2 == &quot;x3&quot;)
+assert(freshNameExa1 == &quot;x&quot;)
+assert(freshNameExa2 == &quot;x3&quot;)
 
-def freeVars(e: Exp) : Set[String] =  e match {
+def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) =&gt; Set(x)
-   case Add(l,r) =&gt; freeVars(l) ++ freeVars(r)
-   case Fun(x,body) =&gt; freeVars(body) - x
-   case Ap(f,a) =&gt; freeVars(f) ++ freeVars(a)
+   case Add(l, r) =&gt; freeVars(l) ++ freeVars(r)
+   case Fun(x, body) =&gt; freeVars(body) - x
+   case Ap(f, a) =&gt; freeVars(f) ++ freeVars(a)
    case Num(n) =&gt; Set.empty
 }
 
-val freeVarsExa = freeVars(Fun(&quot;x&quot;,Add(&quot;x&quot;,&quot;y&quot;)))
+val freeVarsExa = freeVars(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)))
 // freeVarsExa: Set[String] = Set(&quot;y&quot;)
 assert(freeVarsExa == Set(&quot;y&quot;))
 
-def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+def subst(e1: Exp, x: String, e2: Exp): Exp = e1 match {
   case Num(n) =&gt; e1
-  case Add(l,r) =&gt; Add(subst(l,x,e2), subst(r,x,e2))
+  case Add(l, r) =&gt; Add(subst(l, x, e2), subst(r, x, e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case Ap(f,a) =&gt; Ap(subst(f,x,e2),subst(a,x,e2))
-  case Fun(param,body) =&gt;
+  case Ap(f, a) =&gt; Ap(subst(f, x, e2), subst(a, x, e2))
+  case Fun(param, body) =&gt;
     if (param == x) e1 else {
-      val fvs = freeVars(Fun(param,body)) ++ freeVars(e2) + x
+      val fvs = freeVars(Fun(param, body)) ++ freeVars(e2) + x
       val newvar = freshName(fvs, param)
       Fun(newvar, subst(subst(body, param, Id(newvar)), x, e2))
     }
 }
 
-assert( subst(Add(5,&quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
-assert( subst(Add(5,&quot;x&quot;), &quot;y&quot;, 7) == Add(5,&quot;x&quot;))
-assert( subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)))
+assert(subst(Add(5, &quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
+assert(subst(Add(5, &quot;x&quot;), &quot;y&quot;, 7) == Add(5, &quot;x&quot;))
+assert(subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)))
 // test capture-avoiding substitution
-assert( subst(Fun(&quot;x&quot;, Add(&quot;x&quot;,&quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;,5)) == Fun(&quot;x0&quot;,Add(Id(&quot;x0&quot;),Add(Id(&quot;x&quot;),Num(5)))))
-assert( subst(Fun(&quot;x&quot;, Add(Id(&quot;x0&quot;), Id(&quot;y&quot;))), &quot;y&quot;, Add(Id(&quot;x&quot;), 5)) == Fun(&quot;x1&quot;, Add(Id(&quot;x0&quot;), Add(Id(&quot;x&quot;), Num(5)))) )
+assert(subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5)) == Fun(&quot;x0&quot;, Add(Id(&quot;x0&quot;), Add(Id(&quot;x&quot;), Num(5)))))
+assert(subst(Fun(&quot;x&quot;, Add(Id(&quot;x0&quot;), Id(&quot;y&quot;))), &quot;y&quot;, Add(Id(&quot;x&quot;), 5)) == Fun(&quot;x1&quot;, Add(Id(&quot;x0&quot;), Add(Id(&quot;x&quot;), Num(5)))))
 </code></pre>
 <p>OK, equipped with this new version of substitution we can now define the interpreter for this language.
 But how do we evaluate a function abstraction? Obviously we cannot return a number.</p>
@@ -283,42 +283,42 @@ sophisticated.</p>
 Such errors are called <em>type errors</em>, and we will talk about them in much more detail later.</p>
 <p>For now, it means that we need to analyze (typically by pattern matching) the result of recursive invocations of eval to check whether the result has the right type.</p>
 <p>The remainder of the interpreter is unsurprising:</p>
-<pre><code class="language-scala">def eval(e: Exp) : Exp = e match {
+<pre><code class="language-scala">def eval(e: Exp): Exp = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
-  case Add(l,r) =&gt; (eval(l), eval(r)) match {
-                     case (Num(x),Num(y)) =&gt; Num(x+y)
+  case Add(l, r) =&gt; (eval(l), eval(r)) match {
+                     case (Num(x), Num(y)) =&gt; Num(x + y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case Ap(f,a) =&gt; eval(f) match {
-     case Fun(x,body) =&gt; eval( subst(body,x, eval(a)))  // call-by-value
-     // case Fun(x,body) =&gt; eval( subst(body,x, a))        // call-by-name
+  case Ap(f, a) =&gt; eval(f) match {
+     case Fun(x, body) =&gt; eval(subst(body, x, eval(a)))  // call-by-value
+     // case Fun(x, body) =&gt; eval(subst(body, x, a))        // call-by-name
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case _ =&gt; e // numbers and functions evaluate to themselves
 }
 </code></pre>
 <p>We can also make the return type more precise to verify the invariant  that numbers and functions are the only values.</p>
-<pre><code class="language-scala">def eval2(e: Exp) : Either[Num,Fun] = e match {
+<pre><code class="language-scala">def eval2(e: Exp): Either[Num, Fun] = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
-  case Add(l,r) =&gt; (eval2(l), eval2(r)) match {
-                     case (Left(Num(x)),Left(Num(y))) =&gt; Left(Num(x+y))
+  case Add(l, r) =&gt; (eval2(l), eval2(r)) match {
+                     case (Left(Num(x)), Left(Num(y))) =&gt; Left(Num(x + y))
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case Ap(f,a) =&gt; eval2(f) match {
-     case Right(Fun(x,body)) =&gt; eval2( subst(body,x, eval(a)))
+  case Ap(f, a) =&gt; eval2(f) match {
+     case Right(Fun(x, body)) =&gt; eval2(subst(body, x, eval(a)))
      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
-  case f@Fun(_,_) =&gt; Right(f)
+  case f@Fun(_, _) =&gt; Right(f)
   case n@Num(_) =&gt; Left(n)
 }
 </code></pre>
 <p>Let's test:</p>
-<pre><code class="language-scala">val test = Ap( Fun(&quot;x&quot;,Add(&quot;x&quot;,5)), 7)
-assert( eval(test) == Num(12))
+<pre><code class="language-scala">val test = Ap(Fun(&quot;x&quot;, Add(&quot;x&quot;, 5)), 7)
+assert(eval(test) == Num(12))
 </code></pre>
 <p>FAE is a computationally (Turing)-complete language. For instance, we can define  a non-terminating program. This program is commonly
 called Omega:</p>
-<pre><code class="language-scala">val omega = Ap(Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)), Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)))
+<pre><code class="language-scala">val omega = Ap(Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)), Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)))
 // try eval(omega) to crash the interpreter ;-)
 </code></pre>
 <p>Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
@@ -327,25 +327,25 @@ this topic later.</p>
 Here is a first attempt:</p>
 <pre><code class="language-scala">type Env0 = Map[String, Exp]
 
-def evalWithEnv0(e: Exp, env: Env0) : Exp = e match {
+def evalWithEnv0(e: Exp, env: Env0): Exp = e match {
   case Id(x) =&gt; env(x)
-  case Add(l,r) =&gt; {
-    (evalWithEnv0(l,env), evalWithEnv0(r,env)) match {
-      case (Num(v1),Num(v2)) =&gt; Num(v1+v2)
+  case Add(l, r) =&gt; {
+    (evalWithEnv0(l, env), evalWithEnv0(r, env)) match {
+      case (Num(v1), Num(v2)) =&gt; Num(v1 + v2)
       case _ =&gt; sys.error(&quot;can only add numbers&quot;)
     }
   }
-  case Ap(f,a) =&gt; evalWithEnv0(f,env) match {
-    case Fun(x,body) =&gt; evalWithEnv0(body, Map(x -&gt; evalWithEnv0(a,env)))
+  case Ap(f, a) =&gt; evalWithEnv0(f, env) match {
+    case Fun(x, body) =&gt; evalWithEnv0(body, Map(x -&gt; evalWithEnv0(a, env)))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case _ =&gt; e // numbers and functions evaluate to themselves
 }
 
-assert( evalWithEnv0(test, Map.empty) == Num(12))
+assert(evalWithEnv0(test, Map.empty) == Num(12))
 </code></pre>
 <p>However, consider the following example:</p>
-<pre><code class="language-scala">val test2 = wth(&quot;x&quot;, 5, Ap(Fun(&quot;f&quot;, Ap(&quot;f&quot;,3)), Fun(&quot;y&quot;,Add(&quot;x&quot;,&quot;y&quot;))))
+<pre><code class="language-scala">val test2 = wth(&quot;x&quot;, 5, Ap(Fun(&quot;f&quot;, Ap(&quot;f&quot;, 3)), Fun(&quot;y&quot;, Add(&quot;x&quot;, &quot;y&quot;))))
 </code></pre>
 <p>It works fine in the substitution-based interpreter,</p>
 <pre><code class="language-scala">val evalTest2 = eval(test2)
@@ -353,7 +353,7 @@ assert( evalWithEnv0(test, Map.empty) == Num(12))
 assert(evalTest2 == Num(8))
 </code></pre>
 <p>but</p>
-<pre><code class="language-scala">val evalEnv0Test2 = evalWithEnv0(test2,Map.empty)
+<pre><code class="language-scala">val evalEnv0Test2 = evalWithEnv0(test2, Map.empty)
 // java.util.NoSuchElementException: key not found: x
 // 	at scala.collection.immutable.Map$Map1.apply(Map.scala:245)
 // 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:208)
@@ -368,7 +368,7 @@ assert(evalTest2 == Num(8))
 The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.</p>
 <p>What can we do to fix this problem?
 We could try to replace the second line in the &quot;Ap&quot; case by</p>
-<pre><code>case Fun(x,body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a,env)))
+<pre><code>case Fun(x, body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a, env)))
 </code></pre>
 <p>but this would again introduce dynamic scoping.</p>
 <p>Hence, when we evaluate a function, we do not only have to store the function, but also the environment active when the function was
@@ -382,25 +382,25 @@ type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 </code></pre>
-<p>The evaluator becomes :</p>
-<pre><code class="language-scala">def evalWithEnv(e: Exp, env: Env) : Value = e match {
+<p>The evaluator becomes:</p>
+<pre><code class="language-scala">def evalWithEnv(e: Exp, env: Env): Value = e match {
   case Num(n: Int) =&gt; NumV(n)
   case Id(x) =&gt; env(x)
-  case Add(l,r) =&gt; {
-    (evalWithEnv(l,env), evalWithEnv(r,env)) match {
-      case (NumV(v1),NumV(v2)) =&gt; NumV(v1+v2)
+  case Add(l, r) =&gt; {
+    (evalWithEnv(l, env), evalWithEnv(r, env)) match {
+      case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
       case _ =&gt; sys.error(&quot;can only add numbers&quot;)
     }
   }
-  case f@Fun(param,body) =&gt; ClosureV(f, env)
-  case Ap(f,a) =&gt; evalWithEnv(f,env) match {
+  case f@Fun(param, body) =&gt; ClosureV(f, env)
+  case Ap(f, a) =&gt; evalWithEnv(f, env) match {
     // Use environment stored in closure to realize proper lexical scoping!
-    case ClosureV(f,closureEnv) =&gt; evalWithEnv(f.body, closureEnv + (f.param -&gt; evalWithEnv(a,env)))
+    case ClosureV(f, closureEnv) =&gt; evalWithEnv(f.body, closureEnv + (f.param -&gt; evalWithEnv(a, env)))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
 }
-assert( evalWithEnv(test, Map.empty) == NumV(12))
-assert( evalWithEnv(test2,Map.empty) == NumV(8))
+assert(evalWithEnv(test, Map.empty) == NumV(12))
+assert(evalWithEnv(test2, Map.empty) == NumV(8))
 </code></pre>
 
                     </main>

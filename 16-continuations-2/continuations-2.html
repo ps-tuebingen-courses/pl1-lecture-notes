@@ -147,7 +147,7 @@
 <p>Today's goal is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
 in the previous lecture formal.</p>
 <p>In the previous lecture we have seen that we had to translate the following program:</p>
-<pre><code class="language-scala">println(&quot;The sum is: &quot;+ (inputNumber(&quot;First number:&quot; ) + inputNumber(&quot;Second number&quot;)))
+<pre><code class="language-scala">println(&quot;The sum is: &quot; + (inputNumber(&quot;First number:&quot;) + inputNumber(&quot;Second number&quot;)))
 </code></pre>
 <p>into this program:</p>
 <pre><code class="language-scala">webread_k(&quot;First number&quot;, (n) =&gt;
@@ -213,10 +213,10 @@ the original function <code>x =&gt; x</code> consumes only one. What is the seco
 of function invocation, so we want to preserve it. This is in contrast to what we did with environments,
 and more in line with our treatment of the store.</p>
 <p>The transformed version hence reads:</p>
-<pre><code class="language-scala">k =&gt; k((x,dynk) =&gt; (k =&gt; k(x))(dynk))
+<pre><code class="language-scala">k =&gt; k((x, dynk) =&gt; (k =&gt; k(x))(dynk))
 </code></pre>
 <p>which is equivalent (when the inner application finally happens) to:</p>
-<pre><code class="language-scala">k =&gt; k((x,dynk) =&gt; dynk(x))
+<pre><code class="language-scala">k =&gt; k((x, dynk) =&gt; dynk(x))
 </code></pre>
 <p>This is a function that accepts a value and a dynamic continuation and sends the value to that continuation.
 We are now ready to write this transformation formally, as a source-to-source transformation. This transformation
@@ -269,7 +269,7 @@ There is one technical issue: We need to introduce new names for binders into ou
 We need to make sure that we do not accidentially capture existing names in the program.
 For this reason we need our <code>freshName</code> machinery we introduced for
 (FAE)[../07-higher-order-functions/higher-order-functions.html].</p>
-<pre><code class="language-scala">def freeVars(e: Exp) : Set[String] =  e match {
+<pre><code class="language-scala">def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) =&gt; Set(x)
    case Add(l, r) =&gt; freeVars(l) ++ freeVars(r)
    case Fun(x, body) =&gt; freeVars(body) - x
@@ -277,15 +277,15 @@ For this reason we need our <code>freshName</code> machinery we introduced for
    case Num(n) =&gt; Set.empty
 }
 
-def freshName(names: Set[String], default: String) : String = {
-  var last : Int = 0
+def freshName(names: Set[String], default: String): String = {
+  var last: Int = 0
   var freshName = default
   while (names contains freshName) { freshName = default + last; last += 1; }
   freshName
 }
 
-def cps(e: Exp) : CPSCont = e match {
-   case Add(e1,e2) =&gt; {
+def cps(e: Exp): CPSCont = e match {
+   case Add(e1, e2) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
      val lv = freshName(freeVars(e2), &quot;lv&quot;)
      CPSCont(k, CPSContAp(cps(e1), CPSCont(lv, CPSContAp(cps(e2), CPSCont(&quot;rv&quot;, CPSContAp(k, CPSAdd(&quot;rv&quot;, lv)))))))
@@ -295,7 +295,7 @@ def cps(e: Exp) : CPSCont = e match {
      val dynk = freshName(freeVars(e), &quot;dynk&quot;)
      CPSCont(k, CPSContAp(k, CPSFun(a, dynk, CPSContAp(cps(body), dynk))))
    }
-   case Ap(f,a) =&gt; {
+   case Ap(f, a) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
      val fval = freshName(freeVars(a), &quot;fval&quot;)
      CPSCont(k, CPSContAp(cps(f), CPSCont(fval, CPSContAp(cps(a), CPSCont(&quot;aval&quot;, CPSFunAp(fval, &quot;aval&quot;, k))))))
@@ -316,20 +316,20 @@ recursion over the AST. Its main disadvantage is the existence of so-called &quo
 <p>An administrative redex is a function application whose operator is a &quot;continuation lambda&quot; - a lambda produced during
 CPS transformation that was not in the original program. Such function applications can be computed immediately because
 the function which is called is known.</p>
-<p>For instance, <code>cps(Add(2,3))</code> yields</p>
+<p>For instance, <code>cps(Add(2, 3))</code> yields</p>
 <pre><code class="language-scala">CPSCont(&quot;k&quot;,
         CPSContAp(
           CPSCont(&quot;k&quot;,
-                  CPSContAp(&quot;k&quot;,2)),
+                  CPSContAp(&quot;k&quot;, 2)),
           CPSCont(&quot;lv&quot;,
                   CPSContAp(
                     CPSCont(&quot;k&quot;,
-                            CPSContAp(&quot;k&quot;,3)),
+                            CPSContAp(&quot;k&quot;, 3)),
                     CPSCont(&quot;rv&quot;,
                             CPSContAp(&quot;k&quot;, CPSAdd(&quot;rv&quot;, &quot;lv&quot;)))))))
 </code></pre>
 <p>instead of</p>
-<pre><code class="language-scala">CPSCont(&quot;k&quot;, CPSContAp(&quot;k&quot;, CPSAdd(2,3)))
+<pre><code class="language-scala">CPSCont(&quot;k&quot;, CPSContAp(&quot;k&quot;, CPSAdd(2, 3)))
 </code></pre>
 <p>Many more advanced CPS transformation algorithms try to avoid as many administrative redexes as possible.</p>
 
