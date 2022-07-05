@@ -26,11 +26,11 @@ def eval(e: Exp): Exp = e match {
   case _ => e
 }
 
-val ex1 = Add(3,5)
+val ex1 = Add(3, 5)
 val ex2 = If(true, 7, 5)
 val ex2b = If(true, 7, true)
-val ex3 = If(Add(3,4), 7, true)
-val ex4 = Add(true,3)
+val ex3 = If(Add(3, 4), 7, true)
+val ex4 = Add(true, 3)
 
 enum Type:
   case BoolType()

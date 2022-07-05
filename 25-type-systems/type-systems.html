@@ -190,11 +190,11 @@ An addition where one of the operands is not a number, or an <code>if</code>-exp
 does not evaluate to a boolean.</p>
 <p>Here are a few syntactically correct programs. Only the first three execute correctly. The
 other ones yield runtime errors.</p>
-<pre><code class="language-scala">val ex1 = Add(3,5)
+<pre><code class="language-scala">val ex1 = Add(3, 5)
 val ex2 = If(true, 7, 5)
 val ex2b = If(true, 7, true)
-val ex3 = If(Add(3,4), 7, true)
-val ex4 = Add(true,3)
+val ex3 = If(Add(3, 4), 7, true)
+val ex4 = Add(true, 3)
 </code></pre>
 <p>Let's now design a type system for this language. Most type systems entail a classification of the values into different types.
 In this type system, we choose to define two types, one called <code>BoolType</code> and one called <code>IntType</code>.</p>
