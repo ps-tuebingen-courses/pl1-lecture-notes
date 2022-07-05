@@ -500,10 +500,9 @@ For instance, what if we want to have both the list monad and the option monad
 at the same time? Such situations arise very often in practical code.</p>
 <p>One solution is to have a monad transformer version of each monad, which is
 parameterized with another monad. We show this for the Option monad case.</p>
-<pre><code class="language-scala">type OptionT[M[_]] = { type x[A] = M[Option[A]] }
+<pre><code class="language-scala">type OptionT[M[_]] = [A] =&gt;&gt; M[Option[A]]
 
-
-class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]#x] {
+class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]] {
 
   override def bind[A,B](x: M[Option[A]], f: A =&gt; M[Option[B]]): M[Option[B]] =
     m.bind(x, (z: Option[A]) =&gt; z match { case Some(y) =&gt; f(y)

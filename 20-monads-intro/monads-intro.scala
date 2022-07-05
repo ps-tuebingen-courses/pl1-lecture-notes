@@ -245,10 +245,9 @@ def runExcallcc = excallcc(using new ContinuationMonad[Int]{})(x => x)
 def mapM[M[_],A,B](x: List[A], f: A => M[B])(using m: Monad[M]): M[List[B]] =
   sequence(x.map(f))
 
-type OptionT[M[_]] = { type x[A] = M[Option[A]] }
+type OptionT[M[_]] = [A] =>> M[Option[A]]
 
-
-class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]#x] {
+class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]] {
 
   override def bind[A,B](x: M[Option[A]], f: A => M[Option[B]]): M[Option[B]] =
     m.bind(x, (z: Option[A]) => z match { case Some(y) => f(y)
