@@ -176,7 +176,6 @@ object AbstractMachine {
   }
 }
 import AbstractMachine._
-import FunctionValue._
 import MachineState._
 
 val test = Ap(Fun("x", Add("x", 1)), 5)

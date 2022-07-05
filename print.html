@@ -4444,7 +4444,6 @@ the meta language (Scala).</p>
   }
 }
 import AbstractMachine._
-import FunctionValue._
 import MachineState._
 </code></pre>
 <p>Now let's try this out with a concrete example and look at the tract of transitions</p>
@@ -4687,7 +4686,7 @@ Let's look at a small toy language to illustrate type systems:</p>
   case Num(n: Int)
   case Add(lhs: Exp, rhs: Exp)
   case Bool(x: Boolean)
-  case If(cond: Exp, thenExp: Exp, els: Exp)
+  case If(cond: Exp, thn: Exp, els: Exp)
 
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
@@ -4695,14 +4694,14 @@ object Exp:
 
 import Exp._
 
-def eval(e: Exp) : Exp = e match {
-  case Add(l,r) =&gt; (eval(l), eval(r)) match {
-                     case (Num(x),Num(y)) =&gt; Num(x+y)
+def eval(e: Exp): Exp = e match {
+  case Add(l, r) =&gt; (eval(l), eval(r)) match {
+                     case (Num(x), Num(y)) =&gt; Num(x + y)
                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
-  case If(cond,thenExp,els) =&gt;
+  case If(cond, thn, els) =&gt;
     eval(cond) match {
-      case Bool(true) =&gt; eval(thenExp)
+      case Bool(true) =&gt; eval(thn)
       case Bool(false) =&gt; eval(els)
       case _ =&gt; sys.error(&quot;Condition must be boolean&quot;)
     }
@@ -4721,7 +4720,7 @@ val ex3 = If(Add(3,4), 7, true)
 val ex4 = Add(true,3)
 </code></pre>
 <p>Let's now design a type system for this language. Most type systems entail a classification of the values into different types.
-In this type system, we choose to define two types, one called BoolType and one called IntType.</p>
+In this type system, we choose to define two types, one called <code>BoolType</code> and one called <code>IntType</code>.</p>
 <pre><code class="language-scala">enum Type:
   case BoolType()
   case IntType()
@@ -4730,15 +4729,15 @@ import Type._
 <p>A type checker is a compositional assignment of types (or type errors) to expressions. Compositionality means that the type of a
 composite expression is computed from the type of its subexpressions. Compositionality is quite important for reasoning about types.
 In this case, the type checker is a rather straightforward structural recursion ( = compositionality) over expressions.</p>
-<pre><code class="language-scala">def typeCheck(e: Exp) : Type = e match {
+<pre><code class="language-scala">def typeCheck(e: Exp): Type = e match {
   case Num(n) =&gt; IntType()
   case Bool(x) =&gt; BoolType()
-  case Add(a,b) =&gt; (typeCheck(a),typeCheck(b)) match {
-    case (IntType(),IntType()) =&gt; IntType()
+  case Add(a, b) =&gt; (typeCheck(a), typeCheck(b)) match {
+    case (IntType(), IntType()) =&gt; IntType()
     case _ =&gt; sys.error(&quot;Type Error in addition&quot;)
   }
-  case If(c,t,e) =&gt; (typeCheck(c), typeCheck(t), typeCheck(e)) match {
-    case (BoolType(),t1,t2) =&gt; if (t1 == t2) t1 else sys.error(&quot;type error in if&quot;)
+  case If(c, t, e) =&gt; (typeCheck(c), typeCheck(t), typeCheck(e)) match {
+    case (BoolType(), t1, t2) =&gt; if (t1 == t2) t1 else sys.error(&quot;Type error in if&quot;)
     case _ =&gt; sys.error(&quot;Type error in If&quot;)
   }
 }
@@ -4748,12 +4747,16 @@ In this case, the type checker is a rather straightforward structural recursion 
 and it also (unfairly) rejects one program that can be executed without error. Hence the type system is conservative, as expected.
 We can now say more precisely what we mean by soundness of the type checker, namely that it correctly predicts the kind of value that
 the interpreter will produce:</p>
-<p>If <code>e</code> is an expression and <code>typeCheck(e)</code> yields a type <code>t</code>, thenExp <code>eval(e)</code> yields a value <code>v</code> such that <code>typeCheck(v) == t</code>.
-This statement of type soundness has to be changed a bit when we have a programming language with non-terminating programs.
+<blockquote>
+<p>If <code>e</code> is an expression and <code>typeCheck(e)</code> yields a type <code>t</code>, then <code>eval(e)</code> yields a value <code>v</code> such that <code>typeCheck(v) == t</code>.</p>
+</blockquote>
+<p>This statement of type soundness has to be changed a bit when we have a programming language with non-terminating programs.
 Then it will have the following form:</p>
-<p>If <code>e</code> is an expression and <code>typeCheck(e)</code> yields a type <code>t</code>, thenExp <code>eval(e)</code> either diverges, or it yields a value <code>v</code>
-such that <code>typeCheck(v) == t</code>, but it does not terminate with a runtime error.
-In the most general case, we also have runtime errors that are not captured by the type system. In this case we have to restrict
+<blockquote>
+<p>If <code>e</code> is an expression and <code>typeCheck(e)</code> yields a type <code>t</code>, then <code>eval(e)</code> either diverges, or it yields a value <code>v</code>
+such that <code>typeCheck(v) == t</code>, but it does not terminate with a runtime error.</p>
+</blockquote>
+<p>In the most general case, we also have runtime errors that are not captured by the type system. In this case we have to restrict
 the last part of the sentence to those runtime errors that are captured by the type system.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="simply-typed-lambda-calculus"><a class="header" href="#simply-typed-lambda-calculus">Simply Typed Lambda Calculus</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="26-stlc/./stlc.scala">here.</a></p>
