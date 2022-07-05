@@ -275,7 +275,6 @@ object AbstractMachine {
   }
 }
 import AbstractMachine._
-import FunctionValue._
 import MachineState._
 ```
 
