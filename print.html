@@ -4211,49 +4211,51 @@ a language feature if we choose syntactic interpretation.</p>
 <p>Today we want to discuss techniques with which we can make our interpreter so syntactic that it corresponds to an abstract machine:
 A machine with a (possibly infinite) set of states and a simple transition relation between the states. We already know the technique
 with which we can take control over the call stack management: <em>CPS transformation</em>. After CPS-transforming the interpreter, we do not
-rely on the order of evaluation and call stack management of the meta language anymore.  We replicate its definition here:</p>
+rely on the order of evaluation and call stack management of the meta language anymore. We replicate its definition here:</p>
 <pre><code class="language-scala">enum Exp:
-  case Num(n : Int)
-  case Id(name : String)
-  case Add(lhs : Exp, rhs : Exp)
-  case Fun(param : String, body : Exp)
-  case Ap (funExpr : Exp, argExpr : Exp)
-import Exp._
+  case Num(n: Int)
+  case Id(name: String)
+  case Add(lhs: Exp, rhs: Exp)
+  case Fun(param: String, body: Exp)
+  case Ap (funExpr: Exp, argExpr: Exp)
 
-implicit def num2exp(n: Int) : Exp = Num(n)
-implicit def id2exp(s: String) : Exp = Id(s)
+object Exp:
+  implicit def num2exp(n: Int): Exp = Num(n)
+  implicit def id2exp(s: String): Exp = Id(s)
+
+import Exp._
 
 sealed abstract class Value
 type Env = Map[String, Value]
-case class NumV(n : Int) extends Value
-case class ClosureV(f : Fun, env : Env) extends Value
+case class NumV(n: Int) extends Value
+case class ClosureV(f: Fun, env: Env) extends Value
 
 object CPSTransformed {
-  def eval[T](e : Exp, env : Env, k : Value =&gt; T) : T = e match {
-    case Num(n : Int) =&gt; k(NumV(n))
+  def eval[T](e: Exp, env: Env, k: Value =&gt; T): T = e match {
+    case Num(n: Int) =&gt; k(NumV(n))
     case Id(x) =&gt; k(env(x))
     case Add(l, r) =&gt;
-      eval( l, env
-          , lv =&gt; eval( r, env
-                      , rv =&gt; (lv, rv) match {
+      eval(l, env,
+           lv =&gt; eval(r, env,
+                      rv =&gt; (lv, rv) match {
                           case (NumV(v1), NumV(v2)) =&gt; k(NumV(v1 + v2))
                           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-                        } ) )
+                        }))
     case f@Fun(param, body) =&gt; k(ClosureV(f, env))
     case Ap(f, a) =&gt;
-      eval( f, env
-          , cl =&gt; cl match {
+      eval(f, env,
+           cl =&gt; cl match {
               case ClosureV(f, closureEnv) =&gt;
-                eval( a, env
-                    , av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k) )
+                eval(a, env,
+                     av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
               case _ =&gt; sys.error(&quot;can only apply functions&quot;)
-            } )
+            })
   }
 }
 </code></pre>
 <p>However, the CPS-transformed interpreter still uses high-level features of the meta-language, most notably first-class functions.
 We will now introduce one transformation that can be used to transform a function using higher-order functions into one using only
-first-order functions.  It is general program transformation technique, not restricted only to interpreters.</p>
+first-order functions. It is a general program transformation technique, not restricted only to interpreters.</p>
 <h2 id="lambda-lifting"><a class="header" href="#lambda-lifting">Lambda Lifting</a></h2>
 <p>The first of these techniques is <em>lambda lifting</em>. The goal of lambda lifting is to turn local functions into top-level functions.
 That is, all &quot;lambdas&quot; only occur at the top-level. Variables in the local environment that are normally stored in the function's
@@ -4266,95 +4268,101 @@ Thus it becomes a higher-order function that returns a function when passed thes
 <li>Replace the local function by a call to the new top-level function and pass the corresponding local context via the arguments
 created in step 3.</li>
 </ol>
-<p><strong>Example</strong>: Let's lambda-lift the functions <code>y =&gt; y + n</code> and <code>y =&gt; y*n</code> in</p>
-<pre><code class="language-scala">def map(f : Int =&gt; Int, xs : List[Int]) : List[Int] = xs match {
+<p><strong>Example</strong>: Let's lambda-lift the functions <code>y =&gt; y + n</code> and <code>y =&gt; y * n</code> in</p>
+<pre><code class="language-scala">def map(f: Int =&gt; Int, xs: List[Int]): List[Int] = xs match {
   case Nil =&gt; Nil
   case (x :: xs) =&gt; f(x) :: map(f, xs)
 }
 
-def addAndMultNToList(n : Int, xs : List[Int]) = map(y =&gt; y * n, map(y =&gt; y + n, xs))
+def addAndMultNToList(n: Int, xs: List[Int]) = map(y =&gt; y * n, map(y =&gt; y + n, xs))
 </code></pre>
-<p>We create two new top-level functions. Let's call them <code>f</code> and <code>g</code> Their bodies are respectively <code>y =&gt; y + n</code> and <code>y =&gt; y * n</code>.
+<p>We create two new top-level functions, let's call them <code>f</code> and <code>g</code>. Their bodies are respectively <code>y =&gt; y + n</code> and <code>y =&gt; y * n</code>.
 We add a parameter for each free variable. In the example, the free variable is <code>n</code> in both cases:</p>
-<pre><code class="language-scala">def fLam(n : Int) = (y : Int) =&gt; y + n
-def gLam(n : Int) = (y : Int) =&gt; y * n
+<pre><code class="language-scala">def fLam(n: Int) = (y: Int) =&gt; y + n
+def gLam(n: Int) = (y: Int) =&gt; y * n
 </code></pre>
 <p>or shorter:</p>
-<pre><code class="language-scala">def f(n : Int)(y : Int) = y + n
-def g(n : Int)(y : Int) = y * n
+<pre><code class="language-scala">def f(n: Int)(y: Int) = y + n
+def g(n: Int)(y: Int) = y * n
 </code></pre>
 <p>The local function can now be replaced by a call to the new global function.</p>
-<pre><code class="language-scala">def addAndMultNToListLifted(n : Int, xs : List[Int]) = map(g(n)(_), map(f(n)(_), xs))
+<pre><code class="language-scala">def addAndMultNToListLifted(n: Int, xs: List[Int]) = map(g(n)(_), map(f(n)(_), xs))
 </code></pre>
 <p>Let's now perform the same technique to the CPS-transformed interpreter given above. It contains local functions in four places:
 two in the <code>Add</code> branch and two in the <code>Ap</code> branch. We call the corresponding top-level functions, from left to right,
-<code>addc1</code>, <code>addc2</code>, <code>ApC1</code> and <code>ApC2</code>.</p>
-<p>An interesting novelty in the interpreter is that some local functions (corresponding to <code>addc1</code> and <code>ApC1</code>) create local
-functions themselves. This means that <code>addc1</code> must call <code>addc2</code> and <code>ApC1</code> must call <code>ApC2</code>. The rest of the transformation
+<code>addC1</code>, <code>addC2</code>, <code>apC1</code> and <code>apC2</code>.</p>
+<p>An interesting novelty in the interpreter is that some local functions (corresponding to <code>addC1</code> and <code>apC1</code>) create local
+functions themselves. This means that <code>addC1</code> must call <code>addC2</code> and <code>apC1</code> must call <code>apC2</code>. The rest of the transformation
 is a straightforward application of the transformation steps described above:</p>
 <pre><code class="language-scala">object LambdaLifted {
-  def addc1[T](r : Exp, env : Env, k : Value =&gt; T)(lv : Value) = eval(r, env, addc2(lv, k))
+  def addC1[T](r: Exp, env: Env, k: Value =&gt; T)(lv: Value) =
+    eval(r, env, addC2(lv, k))
 
-  def addc2[T](lv : Value, k : Value =&gt; T)(rv : Value) = (lv, rv) match {
+  def addC2[T](lv: Value, k: Value =&gt; T)(rv: Value) = (lv, rv) match {
     case (NumV(v1), NumV(v2)) =&gt; k(NumV(v1 + v2))
     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
   }
 
-  def ApC1[T](a : Exp, env : Env, k : Value =&gt; T)(cl : Value) = cl match {
-    case ClosureV(f, closureEnv) =&gt; eval(a, env, ApC2(f, closureEnv, k))
+  def apC1[T](a: Exp, env: Env, k: Value =&gt; T)(cl: Value) = cl match {
+    case ClosureV(f, closureEnv) =&gt; eval(a, env, apC2(f, closureEnv, k))
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
 
-  def ApC2[T](f : Fun, closureEnv : Env, k : Value =&gt; T)(av : Value) = eval(f.body, closureEnv + (f.param -&gt; av), k)
+  def apC2[T](f: Fun, closureEnv: Env, k: Value =&gt; T)(av: Value) =
+    eval(f.body, closureEnv + (f.param -&gt; av), k)
 
-  def eval[T](e : Exp, env : Env, k : Value =&gt; T) : T = e match {
-    case Num(n : Int) =&gt; k(NumV(n))
+  def eval[T](e: Exp, env: Env, k: Value =&gt; T): T = e match {
+    case Num(n: Int) =&gt; k(NumV(n))
     case Id(x) =&gt; k(env(x))
-    case Add(l, r) =&gt; eval(l, env, addc1(r, env, k))
+    case Add(l, r) =&gt; eval(l, env, addC1(r, env, k))
     case f@Fun(param, body) =&gt; k(ClosureV(f, env))
-    case Ap(f, a) =&gt; eval(f, env, ApC1(a, env, k))
+    case Ap(f, a) =&gt; eval(f, env, apC1(a, env, k))
   }
 }
 </code></pre>
-<p>The lambda-lifted interpreter contains no local functions anymore, but it still contains higher-order functions, since <code>addc1</code> etc.
+<p>The lambda-lifted interpreter contains no local functions anymore, but it still contains higher-order functions, since <code>addC1</code> etc.
 return functions that are passed as parameters to other functions.</p>
 <h2 id="defunctionalization-1"><a class="header" href="#defunctionalization-1">Defunctionalization</a></h2>
 <p><em>Defunctionalization</em> is a program transformation technique that turns higher-order programs that have already been lambda-lifted
 into first-order programs that contain no higher-order functions anymore.  Any program contains only finitely many function definitions.
-The idea of defunctionalization is to assign a unique identifier to each of these function definitions. The function <code>dispatch</code> then
+The idea of defunctionalization is to assign a unique identifier to each of these function definitions. The function-&quot;dispatch&quot; then
 happens in a function <code>apply</code>, which receives the identifier corresponding to a function definition and dispatches the identifier
 to the right function body. Every function application within the program is then replaced by a call to the <code>apply</code> function with
 the function identifier as the first argument.</p>
 <p>In addition to the unique identifier, the <code>apply</code> function also needs bindings for the free variables in the function body.
 Hence we need to store the values for these free variables along with the unique identifier. Finally, the <code>apply</code> function needs
-to know about the argument to the function. These become additional parameters of the <code>apply</code> function.
+to know about the arguments to the function. These become additional parameters of the <code>apply</code> function.
 Let's illustrate defunctionalization in the <code>addAndMultNToList</code> example from above.</p>
-<pre><code class="language-scala">sealed abstract class FunctionValue
-case class F(n : Int) extends FunctionValue
-case class G(n : Int) extends FunctionValue
+<pre><code class="language-scala">enum FunctionValue:
+  case F(n: Int)
+  case G(n: Int)
 
-def apply(f : FunctionValue, y : Int) : Int = f match {
+import FunctionValue._
+
+def apply(f: FunctionValue, y: Int): Int = f match {
   case F(n) =&gt; y + n
   case G(n) =&gt; y * n
 }
 
-def map(f : FunctionValue, xs : List[Int]) : List[Int] = xs match {
+def map(f: FunctionValue, xs: List[Int]): List[Int] = xs match {
   case Nil =&gt; Nil
   case (x :: xs) =&gt; apply(f, x) :: map(f, xs)
 }
 
-def addAndMultNToListDefun(n : Int, xs : List[Int]) = map(G(n), map(F(n), xs))
+def addAndMultNToListDefun(n: Int, xs: List[Int]) = map(G(n), map(F(n), xs))
 </code></pre>
 <p>Let's now apply defunctionalization to our CPS-transformed interpreter:</p>
 <pre><code class="language-scala">object Defunctionalized {
 
-  sealed abstract class FunctionValue[T]
-  case class AddC1[T](r : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
-  case class AddC2[T](lv : Value, k : FunctionValue[T]) extends FunctionValue[T]
-  case class ApC1[T](a : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
-  case class ApC2[T](f : Fun, closureEnv : Env, k : FunctionValue[T]) extends FunctionValue[T]
+  enum FunctionValue[T]:
+    case AddC1[T](r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC2[T](lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC1[T](a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC2[T](f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
 
-  def apply[T](fv : FunctionValue[T], v : Value) : T  = fv match {
+  import FunctionValue._
+
+  def apply[T](fv: FunctionValue[T], v: Value): T  = fv match {
     case AddC1(r, env, k) =&gt; eval(r, env, AddC2(v, k))
     case AddC2(lv, k) =&gt; (lv, v) match {
       case (NumV(v1), NumV(v2)) =&gt; apply(k, NumV(v1 + v2))
@@ -4367,8 +4375,8 @@ def addAndMultNToListDefun(n : Int, xs : List[Int]) = map(G(n), map(F(n), xs))
     case ApC2(f, closureEnv, k) =&gt; eval(f.body, closureEnv + (f.param -&gt; v), k)
   }
 
-  def eval[T](e : Exp, env : Env, k : FunctionValue[T]) : T = e match {
-    case Num(n : Int) =&gt; apply(k, NumV(n))
+  def eval[T](e: Exp, env: Env, k: FunctionValue[T]): T = e match {
+    case Num(n: Int) =&gt; apply(k, NumV(n))
     case Id(x) =&gt; apply(k, env(x))
     case Add(l, r) =&gt; eval(l, env, AddC1(r, env, k))
     case f@Fun(param, body) =&gt; apply(k, ClosureV(f, env))
@@ -4377,7 +4385,8 @@ def addAndMultNToListDefun(n : Int, xs : List[Int]) = map(G(n), map(F(n), xs))
 }
 </code></pre>
 <p>This interpreter can be seen as an abstract machine. The state space of the abstract machine is
-(<code>Exp</code> x <code>Env</code> x <code>FunctionValue</code>) U (<code>FunctionValue</code> x <code>Value</code>), where &quot;x&quot; stands for cross product and &quot;U&quot; stands for set union.
+(<code>Exp</code> \( \times \) <code>Env</code> \( \times \) <code>FunctionValue</code>) \( \union \) (<code>FunctionValue</code> \( \times \) <code>Value</code>),
+where \( \times \) stands for cross product and \( \union \) stands for set union.
 Every case in the pattern matches in <code>apply</code> and <code>eval</code> can be read as a transition in this state space.</p>
 <h2 id="from-interpreter-to-abstract-machine"><a class="header" href="#from-interpreter-to-abstract-machine">From Interpreter to Abstract Machine</a></h2>
 <p>To see that we can read the above functions as transitions of an abstract machine, let's actually
@@ -4388,59 +4397,63 @@ Its transition function is the function named <code>transition</code>.
 We can see every intermediate state of the abstract machine.
 Its state is fully described by the (first-order) state type. We are no
 longer dependent on call-stack management or higher-order functions of
-the meta language (Scala)</p>
+the meta language (Scala).</p>
 <pre><code class="language-scala">object AbstractMachine {
   sealed abstract class FunctionValue[T]
-  case class AddC1[T](r : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
-  case class AddC2[T](lv : Value, k : FunctionValue[T]) extends FunctionValue[T]
-  case class ApC1[T](a : Exp, env : Env, k : FunctionValue[T]) extends FunctionValue[T]
-  case class ApC2[T](f : Fun, closureEnv : Env, k : FunctionValue[T]) extends FunctionValue[T]
+  case class AddC1[T](r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+  case class AddC2[T](lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
+  case class ApC1[T](a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+  case class ApC2[T](f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
   case class IdentityFV() extends FunctionValue[Value]
 
-  sealed abstract class MachineState[T]
-  case class EvalState[T](e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
-  case class ApplyState[T](fv: FunctionValue[T], v: Value) extends MachineState[T]
-  case class Done(v: Value) extends MachineState[Value]
+  enum MachineState[T]:
+    case EvalState[T](e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
+    case ApplyState[T](fv: FunctionValue[T], v: Value) extends MachineState[T]
+    case Done(v: Value) extends MachineState[Value]
 
-  def transition[T](s: MachineState[T]) : MachineState[T] =  
+  import MachineState._
+
+  def transition[T](s: MachineState[T]): MachineState[T] =
     s match {
-      case EvalState(e,env,k) =&gt; transitionEval(e,env,k)
-      case ApplyState(fv,v) =&gt; transitionApply(fv,v)
+      case EvalState(e, env, k) =&gt; transitionEval(e, env, k)
+      case ApplyState(fv, v) =&gt; transitionApply(fv, v)
       case Done(v) =&gt; sys.error(&quot;already done&quot;)
     }
 
-  def transitionEval[T](e: Exp, env: Env, k: FunctionValue[T]) : MachineState[T] = e match {
+  def transitionEval[T](e: Exp, env: Env, k: FunctionValue[T]): MachineState[T] = e match {
     case Num(n: Int) =&gt; ApplyState(k, NumV(n))
-    case Id(x) =&gt; ApplyState(k,env(x))
-    case Add(l,r) =&gt;
-      EvalState(l, env,AddC1(r,env,k))
-    case f@Fun(param,body) =&gt; ApplyState(k,ClosureV(f,env))         
-    case Ap(f,a) =&gt;  EvalState(f, env, ApC1(a,env,k))
+    case Id(x) =&gt; ApplyState(k, env(x))
+    case Add(l, r) =&gt;
+      EvalState(l, env, AddC1(r, env,k))
+    case f@Fun(param, body) =&gt; ApplyState(k, ClosureV(f, env))
+    case Ap(f, a) =&gt;  EvalState(f, env, ApC1(a, env, k))
    }
 
-   def transitionApply[T](fv: FunctionValue[T], v: Value) : MachineState[T] = fv match {
+   def transitionApply[T](fv: FunctionValue[T], v: Value): MachineState[T] = fv match {
     case IdentityFV() =&gt; Done(v)
-    case AddC1(r,env,k) =&gt; EvalState(r,env,AddC2(v,k))
-    case AddC2(lv,k) =&gt; (lv,v) match {
-          case (NumV(v1),NumV(v2)) =&gt; ApplyState(k, NumV(v1+v2))
+    case AddC1(r, env, k) =&gt; EvalState(r, env, AddC2(v, k))
+    case AddC2(lv, k) =&gt; (lv, v) match {
+          case (NumV(v1), NumV(v2)) =&gt; ApplyState(k, NumV(v1 + v2))
           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
          }
-    case ApC1(a,env,k) =&gt; v match {
-        case ClosureV(f, closureEnv) =&gt; EvalState(a, env, ApC2(f,closureEnv,k))
+    case ApC1(a, env, k) =&gt; v match {
+        case ClosureV(f, closureEnv) =&gt; EvalState(a, env, ApC2(f, closureEnv, k))
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
     }
-    case ApC2(f,closureEnv,k) =&gt; EvalState(f.body, closureEnv + (f.param -&gt; v),k)
+    case ApC2(f, closureEnv, k) =&gt; EvalState(f.body, closureEnv + (f.param -&gt; v), k)
   }
 }
 import AbstractMachine._
+import FunctionValue._
+import MachineState._
 </code></pre>
 <p>Now let's try this out with a concrete example and look at the tract of transitions</p>
-<pre><code class="language-scala">val test = Ap(Fun(&quot;x&quot;,Add(&quot;x&quot;,1)),5)  
+<pre><code class="language-scala">val test = Ap(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), 5)
 // test: Exp = Ap(
 //   funExpr = Fun(param = &quot;x&quot;, body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))),
 //   argExpr = Num(n = 5)
-// )  
-val initMS : MachineState[Value] = EvalState(test,Map.empty,IdentityFV())
+// )
+val initMS: MachineState[Value] = EvalState(test, Map.empty, IdentityFV())
 // initMS: MachineState[Value] = EvalState(
 //   e = Ap(
 //     funExpr = Fun(
@@ -4458,15 +4471,15 @@ val s1 = transition(initMS)
 //   env = Map(),
 //   fv = ApC1(a = Num(n = 5), env = Map(), k = IdentityFV())
 // )
-val s2 = transition(s1)   
+val s2 = transition(s1)
 // s2: MachineState[Value] = ApplyState(
 //   fv = ApC1(a = Num(n = 5), env = Map(), k = IdentityFV()),
 //   v = ClosureV(
 //     f = Fun(param = &quot;x&quot;, body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))),
 //     env = Map()
 //   )
-// )   
-val s3 = transition(s2)   
+// )
+val s3 = transition(s2)
 // s3: MachineState[Value] = EvalState(
 //   e = Num(n = 5),
 //   env = Map(),
@@ -4475,8 +4488,8 @@ val s3 = transition(s2)
 //     closureEnv = Map(),
 //     k = IdentityFV()
 //   )
-// )   
-val s4 = transition(s3)   
+// )
+val s4 = transition(s3)
 // s4: MachineState[Value] = ApplyState(
 //   fv = ApC2(
 //     f = Fun(param = &quot;x&quot;, body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))),
@@ -4484,46 +4497,45 @@ val s4 = transition(s3)
 //     k = IdentityFV()
 //   ),
 //   v = NumV(n = 5)
-// )   
-val s5 = transition(s4)  
+// )
+val s5 = transition(s4)
 // s5: MachineState[Value] = EvalState(
 //   e = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1)),
 //   env = Map(&quot;x&quot; -&gt; NumV(n = 5)),
 //   fv = IdentityFV()
-// )  
-val s6 = transition(s5)   
+// )
+val s6 = transition(s5)
 // s6: MachineState[Value] = EvalState(
 //   e = Id(name = &quot;x&quot;),
 //   env = Map(&quot;x&quot; -&gt; NumV(n = 5)),
 //   fv = AddC1(r = Num(n = 1), env = Map(&quot;x&quot; -&gt; NumV(n = 5)), k = IdentityFV())
-// )   
-val s7 = transition(s6)   
+// )
+val s7 = transition(s6)
 // s7: MachineState[Value] = ApplyState(
 //   fv = AddC1(r = Num(n = 1), env = Map(&quot;x&quot; -&gt; NumV(n = 5)), k = IdentityFV()),
 //   v = NumV(n = 5)
-// )   
+// )
 val s8 = transition(s7)
 // s8: MachineState[Value] = EvalState(
 //   e = Num(n = 1),
 //   env = Map(&quot;x&quot; -&gt; NumV(n = 5)),
 //   fv = AddC2(lv = NumV(n = 5), k = IdentityFV())
 // )
-val s9 = transition(s8)  
+val s9 = transition(s8)
 // s9: MachineState[Value] = ApplyState(
 //   fv = AddC2(lv = NumV(n = 5), k = IdentityFV()),
 //   v = NumV(n = 1)
-// )  
-val s10 = transition(s9)  
-// s10: MachineState[Value] = ApplyState(fv = IdentityFV(), v = NumV(n = 6))  
+// )
+val s10 = transition(s9)
+// s10: MachineState[Value] = ApplyState(fv = IdentityFV(), v = NumV(n = 6))
 val s11 = transition(s10)
 // s11: MachineState[Value] = Done(v = NumV(n = 6))
 </code></pre>
 <p>We can also automate this into a function that collects the list of all states.</p>
-<pre><code class="language-scala">def evalMachine(e: Exp) : List[MachineState[Value]] =
-{
-  val initMS : MachineState[Value] = EvalState(e,Map.empty,IdentityFV())
+<pre><code class="language-scala">def evalMachine(e: Exp): List[MachineState[Value]] = {
+  val initMS: MachineState[Value] = EvalState(e, Map.empty, IdentityFV())
   List.unfold(initMS)({ case Done(v) =&gt; None
-                        case s =&gt; { val s2 = transition(s); Some((s,s2))}})
+                        case s =&gt; { val s2 = transition(s); Some((s, s2))}})
 }
 
 val q = evalMachine(test)
@@ -4588,31 +4600,31 @@ program such that a data type is replaced by a function type?</p>
 
 import MyList._
 
-def nth[T](l: MyList[T], i: Int) : T = l match {
+def nth[T](l: MyList[T], i: Int): T = l match {
   case MyEmptyList() =&gt; sys.error(&quot;index out of range&quot;)
-  case MyCons(x,xs) =&gt; if (i==0) then x  else nth(xs,i-1)
+  case MyCons(x, xs) =&gt; if (i == 0) then x else nth(xs, i - 1)
 }
 </code></pre>
 <p>Refunctionalization works smoothly when there is just one pattern match on
 a data type. In this case, we represent a list by &quot;its&quot; <code>nth</code> function:</p>
 <pre><code class="language-scala">type MyListR[T] = Int =&gt; T
 
-def myEmptyList[T] : MyListR[T] = _ =&gt; sys.error(&quot;index out of range&quot;)
-def myCons[T](x: T,  xs: MyListR[T]) : MyListR[T] =
-  i =&gt; if (i==0) then x  else xs(i-1)
+def myEmptyList[T]: MyListR[T] = _ =&gt; sys.error(&quot;index out of range&quot;)
+def myCons[T](x: T,  xs: MyListR[T]): MyListR[T] =
+  i =&gt; if (i == 0) then x else xs(i - 1)
 </code></pre>
 <p>The defunctionalized and the refunctionalized lists differ in their modular structure.
 In the defunctionalized version, it is &quot;easy&quot; (only addition of code but no modification
 of existing code necessary) to add new functions that pattern-match on lists, such
 as a <code>length</code>function.</p>
-<pre><code class="language-scala">def length[T](l: MyList[T]) : Int = l match {
+<pre><code class="language-scala">def length[T](l: MyList[T]): Int = l match {
   case MyEmptyList() =&gt; 0
-  case MyCons(x,xs) =&gt; 1 + length(xs)
+  case MyCons(x, xs) =&gt; 1 + length(xs)
 }
 </code></pre>
 <p>In the refunctionalized version, on the other hand, it is &quot;easy&quot; to add new ways to create lists.
 For instance, here is a constructor for the infinite list of numbers</p>
-<pre><code class="language-scala">def allNats : MyListR[Int] = i =&gt; i
+<pre><code class="language-scala">def allNats: MyListR[Int] = i =&gt; i
 </code></pre>
 <p>The two versions hence corresponds to the two dimensions of the aforementioned &quot;expression problem&quot;.
 These program  transformations are hence generally applicable program transformations in
@@ -4623,18 +4635,18 @@ if we view functions as special kinds of objects with a single <code>apply</code
 <p>For instance, in the case of lists with two pattern-matching functions, <code>nth</code> and <code>length</code>,
 we can represent lists as <em>objects</em> with two methods, one for each pattern match.</p>
 <pre><code class="language-scala">trait MyListRO[T] {
-  def nth(i: Int) : T
-  def length : Int  
+  def nth(i: Int): T
+  def length: Int
 }
 
-def myEmptyListO[T] : MyListRO[T] = new MyListRO[T] {
-  def nth(i: Int) : T = sys.error(&quot;index out of range&quot;)
-  def length : Int = 0
+def myEmptyListO[T]: MyListRO[T] = new MyListRO[T] {
+  def nth(i: Int): T = sys.error(&quot;index out of range&quot;)
+  def length: Int = 0
 }
 
-def myConsO[T](x: T,  xs: MyListRO[T]) : MyListRO[T] = new MyListRO[T] {
-  def nth(i: Int) : T = if (i==0) then x  else xs.nth(i-1)
-  def length : Int =  1 + xs.length
+def myConsO[T](x: T,  xs: MyListRO[T]): MyListRO[T] = new MyListRO[T] {
+  def nth(i: Int): T = if (i == 0) then x else xs.nth(i - 1)
+  def length: Int =  1 + xs.length
 }
 </code></pre>
 <p>With this generalization, we can defunctionalize any object type (the transformation
@@ -4649,9 +4661,11 @@ addressed how to reverse the lambda lifting part.</p>
 paper &quot;Definitional Interpreters for Higher-Order Programming Languages&quot;.
 Similar to these lecture notes, Reynolds applied defunctionalization to a CPS-transformed interpreter.
 The generalization of refunctionalization to use objects instead of functions was presented
-in a 2015 paper by Rendel, Trieflinger, and Ostermann entitled &quot;Automatic Refunctionalization to a Language with Copattern Matching: With Applications to the Expression Problem&quot;. A fully formal account
+in a 2015 paper by Rendel, Trieflinger, and Ostermann entitled &quot;Automatic Refunctionalization to a
+Language with Copattern Matching: With Applications to the Expression Problem&quot;. A fully formal account
 of the transformations that also addresses invertible lambda lifting and proves that the
-transformations are inverses of each other can be found in the 2020 paper &quot;Decomposition Diversity with Symmetric Data and Codata&quot; by Binder, Jabs, Skupin and Ostermann.</p>
+transformations are inverses of each other can be found in the 2020 paper
+&quot;Decomposition Diversity with Symmetric Data and Codata&quot; by Binder, Jabs, Skupin and Ostermann.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-systems"><a class="header" href="#type-systems">Type Systems</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="25-type-systems/./type-systems.scala">here.</a></p>
 <h1 id="type-systems-1"><a class="header" href="#type-systems-1">Type Systems</a></h1>
