@@ -134,7 +134,7 @@ def eval(e: Exp): Exp = e match {
     case _ => sys.error("can only add numbers")
   }
   case Ap(f, a) => eval(f) match {
-    case Fun(x, body) => eval(subst(body, x, eval(a)))  // call-by-value
+    case Fun(x, body) => eval(subst(body, x, eval(a))) // call-by-value
     case _ => sys.error("can only apply functions")
   }
   case Let(x, xdef, body) => eval(subst(body, x, eval(xdef)))

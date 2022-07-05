@@ -245,7 +245,7 @@ def eval(e: Exp): Exp = e match {
     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
   }
   case Ap(f, a) =&gt; eval(f) match {
-    case Fun(x, _, body) =&gt; eval(subst(body, x, eval(a)))  // call-by-value
+    case Fun(x, _, body) =&gt; eval(subst(body, x, eval(a))) // call-by-value
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case TypeAscription(e, _) =&gt; eval(e)

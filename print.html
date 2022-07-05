@@ -4861,7 +4861,7 @@ def eval(e: Exp): Exp = e match {
     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
   }
   case Ap(f, a) =&gt; eval(f) match {
-    case Fun(x, _, body) =&gt; eval(subst(body, x, eval(a)))  // call-by-value
+    case Fun(x, _, body) =&gt; eval(subst(body, x, eval(a))) // call-by-value
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case TypeAscription(e, _) =&gt; eval(e)
@@ -4954,7 +4954,7 @@ we need an abstraction of environments. A type environment has the form <code>Ma
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-inference"><a class="header" href="#type-inference">Type Inference</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="27-type-inference/./type-inference.scala">here.</a></p>
-<p>Hindley-Milner type inference with let-polymorphism:</p>
+<p>Hindley-Milner type inference with &quot;let-polymorphism&quot;:</p>
 <pre><code class="language-scala">enum Type:
   case FunType(from: Type, to: Type)
   case NumType()
@@ -5090,7 +5090,7 @@ def eval(e: Exp): Exp = e match {
     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
   }
   case Ap(f, a) =&gt; eval(f) match {
-    case Fun(x, body) =&gt; eval(subst(body, x, eval(a)))  // call-by-value
+    case Fun(x, body) =&gt; eval(subst(body, x, eval(a))) // call-by-value
     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case Let(x, xdef, body) =&gt; eval(subst(body, x, eval(xdef)))
@@ -5101,7 +5101,7 @@ def eval(e: Exp): Exp = e match {
 assert(doTypeCheck(42, Map.empty) == NumType())
 assert(doTypeCheck(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Map.empty) == FunType(NumType(), NumType()))
 </code></pre>
-<p>Test <code>let-polymorphism</code>: The identity function is once applied to a function and once to a number:</p>
+<p>Test &quot;let-polymorphism&quot;: The identity function is once applied to a function and once to a number:</p>
 <pre><code class="language-scala">val exId =
   doTypeCheck(
     Let(&quot;id&quot;, Fun(&quot;x&quot;, &quot;x&quot;), Ap(Ap(&quot;id&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), Ap(&quot;id&quot;, 42))),
@@ -5123,10 +5123,10 @@ assert(doTypeCheck(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Map.empty) == FunT
 <p>If there exist type annotations that make a program type-check in the STLC type checker,
 then the type inference will also be able to type-check the non-annotated version of the program.</p>
 </blockquote>
-<p>Due to <code>let-polymorphism</code>, this program also type-checks some programs that would be ill-formed in STLC</p>
+<p>Due to &quot;let-polymorphism&quot;, this program also type-checks some programs that would be ill-formed in STLC</p>
 <p>The type system is still sound:</p>
 <blockquote>
-<p>If <code>doTypeCheck(e, Map.empty) == t</code>, then <code>eval(e) == v</code> and <code>doTypeCheck(v) == t</code> (modulo ( \alpha )-renaming of type variables).</p>
+<p>If <code>doTypeCheck(e, Map.empty) == t</code>, then <code>eval(e) == v</code> and <code>doTypeCheck(v) == t</code> (modulo \( \alpha \)-renaming of type variables).</p>
 </blockquote>
 
                     </main>
