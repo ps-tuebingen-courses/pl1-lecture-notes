@@ -101,7 +101,8 @@ def subst(e1: Exp, x: String, e2: Exp): Exp = e1 match {
   case Snd(e) => Snd(subst(e, x, e2))
   case SumLeft(e, t) => SumLeft(subst(e, x, e2), t)
   case SumRight(t, e) => SumRight(t, subst(e, x, e2))
-  case EliminateSum(e, fl, fr) => EliminateSum(subst(e, x, e2), subst(fl, x, e2), subst(fr, x, e2))
+  case EliminateSum(e, fl, fr) =>
+    EliminateSum(subst(e, x, e2), subst(fl, x, e2), subst(fr, x, e2))
 }
 
 def eval(e: Exp): Exp = e match {
@@ -208,4 +209,4 @@ def typeCheck(e: Exp, gamma: Map[String, Type]): Type = e match {
 
 Soundness of Simply Typed Lambda Calculus (STLC):
 
-> If `e: Exp` und `typeCheck(e, Map.empty) == t`, then `typeCheck(eval(e), Map.empty) == t`.
+> If `e: Exp` and `typeCheck(e, Map.empty) == t`, then `typeCheck(eval(e), Map.empty) == t`.
