@@ -151,33 +151,33 @@
   case TypeVar(x: String)
 import Type._
 
-def freeTypeVars(t: Type) : Set[String] = t match {
-  case FunType(f,t) =&gt; freeTypeVars(f) ++ freeTypeVars(t)
+def freeTypeVars(t: Type): Set[String] = t match {
+  case FunType(f, t) =&gt; freeTypeVars(f) ++ freeTypeVars(t)
   case NumType() =&gt; Set.empty
   case TypeVar(x) =&gt; Set(x)
 }
 
-def substitution(x: String, s: Type) = new Function[Type,Type] {
+def substitution(x: String, s: Type) = new Function[Type, Type] {
   def apply(t: Type) = t match {
-    case FunType(from,to) =&gt; FunType(this(from),this(to))
+    case FunType(from, to) =&gt; FunType(this(from), this(to))
     case NumType() =&gt; NumType()
-    case TypeVar(y) =&gt; if (x==y) s else TypeVar(y)
+    case TypeVar(y) =&gt; if (x == y) s else TypeVar(y)
   }
 }
 </code></pre>
 <p>Robinson unification algorithm:</p>
-<pre><code class="language-scala">def unify(eq: List[(Type,Type)]) : Type =&gt; Type = eq match {
+<pre><code class="language-scala">def unify(eq: List[(Type, Type)]): Type =&gt; Type = eq match {
   case Nil =&gt; identity _
-  case (NumType(),NumType()) :: rest =&gt; unify(rest)
-  case (FunType(f1,t1),FunType(f2,t2)) :: rest =&gt; unify((f1,f2) :: (t1,t2) :: rest)
-  case (TypeVar(x),TypeVar(y)) :: rest if x == y =&gt; unify(rest)
-  case (TypeVar(x),t) :: rest =&gt; {
+  case (NumType(), NumType()) :: rest =&gt; unify(rest)
+  case (FunType(f1, t1), FunType(f2, t2)) :: rest =&gt; unify((f1, f2) :: (t1, t2) :: rest)
+  case (TypeVar(x), TypeVar(y)) :: rest if x == y =&gt; unify(rest)
+  case (TypeVar(x), t) :: rest =&gt; {
     if (freeTypeVars(t)(x)) sys.error(s&quot;Occurs check: $x occurs in $t&quot;)
-    val s = substitution(x,t)
-    s.andThen(unify(rest.map(p =&gt; (s(p._1),s(p._2)))))
+    val s = substitution(x, t)
+    s.andThen(unify(rest.map(p =&gt; (s(p._1), s(p._2)))))
   }
-  case (t,TypeVar(x)) :: rest =&gt; unify((TypeVar(x),t) :: rest)
-  case (t1,t2) :: rest =&gt; sys.error(s&quot;Cannot unify $t1 and $t2&quot;)
+  case (t, TypeVar(x)) :: rest =&gt; unify((TypeVar(x), t) :: rest)
+  case (t1, t2) :: rest =&gt; sys.error(s&quot;Cannot unify $t1 and $t2&quot;)
 }
 
 
@@ -195,111 +195,129 @@ object Exp:
 
 import Exp._
 
-def freshName(names: Set[String], default: String) : String = {
-  var last : Int = 0
+def freshName(names: Set[String], default: String): String = {
+  var last: Int = 0
   var freshName = default
-  while (names contains freshName) { freshName = default+last.toString; last += 1; }
+  while (names contains freshName) { freshName = default + last.toString; last += 1; }
   freshName
 }
 
-def freeVars(e: Exp) : Set[String] =  e match {
+def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) =&gt; Set(x)
-   case Add(l,r) =&gt; freeVars(l) ++ freeVars(r)
-   case Fun(x,body) =&gt; freeVars(body) - x
-   case Ap(f,a) =&gt; freeVars(f) ++ freeVars(a)
+   case Add(l, r) =&gt; freeVars(l) ++ freeVars(r)
+   case Fun(x, body) =&gt; freeVars(body) - x
+   case Ap(f, a) =&gt; freeVars(f) ++ freeVars(a)
    case Num(n) =&gt; Set.empty
-   case Let(x,xdef,body) =&gt; freeVars(xdef) ++ (freeVars(body) - x)
+   case Let(x, xdef, body) =&gt; freeVars(xdef) ++ (freeVars(body) - x)
 }
 
-def subst(e1 : Exp, x: String, e2: Exp) : Exp = e1 match {
+def subst(e1: Exp, x: String, e2: Exp): Exp = e1 match {
   case Num(n) =&gt; e1
-  case Add(l,r) =&gt; Add(subst(l,x,e2), subst(r,x,e2))
+  case Add(l, r) =&gt; Add(subst(l, x, e2), subst(r, x, e2))
   case Id(y) =&gt; if (x == y) e2 else Id(y)
-  case Ap(f,a) =&gt; Ap(subst(f,x,e2),subst(a,x,e2))
-  case Fun(param,body) =&gt;
+  case Ap(f, a) =&gt; Ap(subst(f, x, e2), subst(a, x, e2))
+  case Fun(param, body) =&gt;
     if (param == x) e1 else {
       val fvs = freeVars(body) ++ freeVars(e2)
       val newvar = freshName(fvs, param)
-      Fun(newvar,subst(subst(body, param, Id(newvar)), x, e2))
+      Fun(newvar, subst(subst(body, param, Id(newvar)), x, e2))
     }
-  case Let(y,ydef,body) =&gt;
-    if (x == y) Let(y,subst(ydef,x,e2),body) else {
+  case Let(y, ydef, body) =&gt;
+    if (x == y) Let(y, subst(ydef, x, e2), body) else {
       val fvs = freeVars(body) ++ freeVars(e2)
-      val newvar = freshName(fvs,y)
-      Let(newvar,subst(ydef,x,e2),subst(subst(body,y,Id(newvar)),x,e2))
+      val newvar = freshName(fvs, y)
+      Let(newvar, subst(ydef, x, e2), subst(subst(body, y, Id(newvar)), x, e2))
     }
 }
 
-var tyvCount : Int = 0
-// tyvCount: Int = 0
+var tyvCount: Int = 0
 def freshTypeVar: TypeVar = {
   tyvCount += 1
-  TypeVar(&quot;X&quot;+tyvCount.toString)
+  TypeVar(&quot;X&quot; + tyvCount.toString)
 }
 
-def typeCheck(e: Exp, gamma: Map[String,Type]) : (List[(Type,Type)],Type) = e match {
+def typeCheck(e: Exp, gamma: Map[String, Type]): (List[(Type, Type)], Type) = e match {
   case Num(n) =&gt; (List.empty, NumType())
   case Id(x) =&gt; gamma.get(x) match {
     case Some(t) =&gt; (List.empty, t)
     case _ =&gt; sys.error(&quot;free variable: &quot; ++ x.toString)
   }
-  case Add(l,r) =&gt; (typeCheck(l,gamma),typeCheck(r,gamma)) match {
-    case ((eq1,t1),(eq2,t2)) =&gt; ((t1,NumType()) :: (t2,NumType()) :: (eq1++eq2), NumType())
+  case Add(l, r) =&gt; (typeCheck(l, gamma), typeCheck(r, gamma)) match {
+    case ((eq1, t1), (eq2, t2)) =&gt;
+      ((t1, NumType()) :: (t2, NumType()) :: (eq1 ++ eq2), NumType())
   }
-  case Fun(x,body) =&gt; {
+  case Fun(x, body) =&gt; {
     val xtype = freshTypeVar
     val resbody = typeCheck(body, gamma + (x -&gt; xtype))
-    (resbody._1,FunType(xtype,resbody._2))
+    (resbody._1, FunType(xtype, resbody._2))
   }
-  case Ap(f,a) =&gt; {
+  case Ap(f, a) =&gt; {
     val toType = freshTypeVar
-    (typeCheck(f,gamma),typeCheck(a,gamma)) match {
-      case ((eqs1,ft),(eqs2,at)) =&gt; ((ft,FunType(at,toType)) :: (eqs1++eqs2),toType)
+    (typeCheck(f, gamma), typeCheck(a, gamma)) match {
+      case ((eqs1, ft), (eqs2, at)) =&gt;
+        ((ft, FunType(at, toType)) :: (eqs1 ++ eqs2), toType)
     }
   }
-  case Let(x,xdef,body) =&gt; {
-    val (constraints1, _) = typeCheck(xdef, gamma) // important if x is not used in body
-    val (constraints2, typ) = typeCheck(subst(body, x, xdef), gamma) // Let-Polymorphism!
+  case Let(x, xdef, body) =&gt; {
+    // important if x is not used in body
+    val (constraints1, _) = typeCheck(xdef, gamma)
+    // Let-Polymorphism! type check after substitution
+    val (constraints2, typ) = typeCheck(subst(body, x, xdef), gamma)
     (constraints1 ++ constraints2, typ)
   }
 
 }
 
-def doTypeCheck(e: Exp, gamma: Map[String,Type]) = {
+def doTypeCheck(e: Exp, gamma: Map[String, Type]) = {
   val (constraints, resType) = typeCheck(e, gamma)
   unify(constraints)(resType)
 }
 
-def eval(e: Exp) : Exp = e match {
+def eval(e: Exp): Exp = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
-  case Add(l,r) =&gt; (eval(l), eval(r)) match {
-                     case (Num(x),Num(y)) =&gt; Num(x+y)
-                     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-                    }
-  case Ap(f,a) =&gt; eval(f) match {
-     case Fun(x,body) =&gt; eval( subst(body,x, eval(a)))  // call-by-value
-     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+  case Add(l, r) =&gt; (eval(l), eval(r)) match {
+    case (Num(x), Num(y)) =&gt; Num(x + y)
+    case _ =&gt; sys.error(&quot;can only add numbers&quot;)
   }
-  case Let(x,xdef,body) =&gt; eval(subst(body,x,eval(xdef)))
+  case Ap(f, a) =&gt; eval(f) match {
+    case Fun(x, body) =&gt; eval(subst(body, x, eval(a)))  // call-by-value
+    case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+  }
+  case Let(x, xdef, body) =&gt; eval(subst(body, x, eval(xdef)))
   case _ =&gt; e // numbers and functions evaluate to themselves
 }
 
 
-assert(doTypeCheck(42,Map.empty) == NumType())
-assert(doTypeCheck(Fun(&quot;x&quot;,Add(&quot;x&quot;,1)),Map.empty) == FunType(NumType(),NumType()))
+assert(doTypeCheck(42, Map.empty) == NumType())
+assert(doTypeCheck(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Map.empty) == FunType(NumType(), NumType()))
 </code></pre>
 <p>Test <code>let-polymorphism</code>: The identity function is once applied to a function and once to a number:</p>
-<pre><code class="language-scala">assert(doTypeCheck(Let(&quot;id&quot;, Fun(&quot;x&quot;,&quot;x&quot;), Ap(Ap(&quot;id&quot;,Fun(&quot;x&quot;,Add(&quot;x&quot;,1))),Ap(&quot;id&quot;,42))),Map.empty) == NumType())
+<pre><code class="language-scala">val exId =
+  doTypeCheck(
+    Let(&quot;id&quot;, Fun(&quot;x&quot;, &quot;x&quot;), Ap(Ap(&quot;id&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), Ap(&quot;id&quot;, 42))),
+    Map.empty)
+// exId: Type = NumType()
 </code></pre>
-<p>This should trigger an occurs check error:
-<code>doTypeCheck(Fun(&quot;x&quot;,Ap(&quot;x&quot;,&quot;x&quot;)),Map.empty)</code>
-Hence omega cannot be type-checked in STLC.</p>
-<p>Completeness of type inference:
-If there exist type annotations that make a program type-check in the STLC type checker,
+<p>This should trigger an occurs check error:</p>
+<pre><code class="language-scala">val exOmega = doTypeCheck(Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)), Map.empty)
+// java.lang.RuntimeException: Occurs check: X9 occurs in FunType(TypeVar(X9),TypeVar(X10))
+// 	at scala.sys.package$.error(package.scala:27)
+// 	at repl.MdocSession$App.unify(type-inference.md:45)
+// 	at repl.MdocSession$App.doTypeCheck(type-inference.md:154)
+// 	at repl.MdocSession$App.$init$$$anonfun$1(type-inference.md:195)
+// 	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.scala:18)
+</code></pre>
+<p>Hence <code>omega</code> cannot be type-checked in STLC.</p>
+<p>Completeness of type inference:</p>
+<blockquote>
+<p>If there exist type annotations that make a program type-check in the STLC type checker,
 then the type inference will also be able to type-check the non-annotated version of the program.</p>
+</blockquote>
 <p>Due to <code>let-polymorphism</code>, this program also type-checks some programs that would be ill-formed in STLC</p>
-<p>The type system is still sound:
-<code>If doTypeCheck(e,Map.empty) == t, then eval(e) == v and doTypeCheck(v) == t (modulo alpha-renaming of type variables)</code></p>
+<p>The type system is still sound:</p>
+<blockquote>
+<p>If <code>doTypeCheck(e, Map.empty) == t</code>, then <code>eval(e) == v</code> and <code>doTypeCheck(v) == t</code> (modulo ( \alpha )-renaming of type variables).</p>
+</blockquote>
 
                     </main>
 

@@ -234,7 +234,8 @@ def subst(e1: Exp, x: String, e2: Exp): Exp = e1 match {
   case Snd(e) =&gt; Snd(subst(e, x, e2))
   case SumLeft(e, t) =&gt; SumLeft(subst(e, x, e2), t)
   case SumRight(t, e) =&gt; SumRight(t, subst(e, x, e2))
-  case EliminateSum(e, fl, fr) =&gt; EliminateSum(subst(e, x, e2), subst(fl, x, e2), subst(fr, x, e2))
+  case EliminateSum(e, fl, fr) =&gt;
+    EliminateSum(subst(e, x, e2), subst(fl, x, e2), subst(fr, x, e2))
 }
 
 def eval(e: Exp): Exp = e match {
@@ -333,7 +334,7 @@ we need an abstraction of environments. A type environment has the form <code>Ma
 </code></pre>
 <p>Soundness of Simply Typed Lambda Calculus (STLC):</p>
 <blockquote>
-<p>If <code>e: Exp</code> und <code>typeCheck(e, Map.empty) == t</code>, then <code>typeCheck(eval(e), Map.empty) == t</code>.</p>
+<p>If <code>e: Exp</code> and <code>typeCheck(e, Map.empty) == t</code>, then <code>typeCheck(eval(e), Map.empty) == t</code>.</p>
 </blockquote>
 
                     </main>
