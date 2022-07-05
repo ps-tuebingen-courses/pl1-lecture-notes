@@ -559,10 +559,9 @@ One solution is to have a monad transformer version of each monad, which is
 parameterized with another monad. We show this for the Option monad case.
 
 ```scala mdoc
-type OptionT[M[_]] = { type x[A] = M[Option[A]] }
+type OptionT[M[_]] = [A] =>> M[Option[A]]
 
-
-class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]#x] {
+class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]] {
 
   override def bind[A,B](x: M[Option[A]], f: A => M[Option[B]]): M[Option[B]] =
     m.bind(x, (z: Option[A]) => z match { case Some(y) => f(y)
