@@ -30,7 +30,7 @@ enum Exp:
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
-  def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+  def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 
 import Exp._
 ```
@@ -41,7 +41,7 @@ In real systems it is implemented as a bit flag, or, if the so-called "tri-color
 
 ```scala mdoc
 abstract class Value {
-  var marked : Boolean = false
+  var marked: Boolean = false
 }
 ```
 
@@ -60,9 +60,9 @@ The stack parameter in `malloc` is needed during gc to determine the root nodes 
 
 ```scala mdoc
 trait Store {
-  def malloc(stack: List[Env], v: Value) : Int
-  def update(index: Int, v: Value) : Unit
-  def apply(index: Int) : Value
+  def malloc(stack: List[Env], v: Value): Int
+  def update(index: Int, v: Value): Unit
+  def apply(index: Int): Value
 }
 ```
 
@@ -71,7 +71,7 @@ To reify the call-stack we need to make it explicit. We do so by constructing th
 The first element of the stack is the current environment; the rest is only needed for gc.
 
 ```scala mdoc
-def eval(e: Exp, stack: List[Env], store: Store) : Value = e match {
+def eval(e: Exp, stack: List[Env], store: Store): Value = e match {
 
   case Num(n) => NumV(n)
 
@@ -162,9 +162,9 @@ class NoGCStore(size: Int) extends Store {
 
   val memory = new Array[Value](size)
 
-  var nextFreeAddr : Int = 0
+  var nextFreeAddr: Int = 0
 
-  def malloc(stack: List[Env], v: Value) : Int = {
+  def malloc(stack: List[Env], v: Value): Int = {
     val x = nextFreeAddr
     if (x >= size) sys.error("out of memory")
     nextFreeAddr += 1
@@ -172,7 +172,7 @@ class NoGCStore(size: Int) extends Store {
     x
   }
 
-  def update(index: Int, v: Value) : Unit = memory.update(index, v)
+  def update(index: Int, v: Value): Unit = memory.update(index, v)
 
   def apply(index: Int) = memory(index)
 }
@@ -185,11 +185,11 @@ class MarkAndSweepStore(size: Int) extends Store {
 
   val memory = new Array[Value](size)
 
-  var free : Int = size
+  var free: Int = size
 
-  var nextFreeAddr : Int = 0
+  var nextFreeAddr: Int = 0
 
-  def malloc(stack: List[Env], v: Value) : Int = {
+  def malloc(stack: List[Env], v: Value): Int = {
     if (free <= 0) gc(stack)
     if (free <= 0) sys.error("out of memory")
 
@@ -214,20 +214,20 @@ class MarkAndSweepStore(size: Int) extends Store {
     nextFreeAddr
   }
 
-  def update(index: Int, v: Value) : Unit = memory.update(index, v)
+  def update(index: Int, v: Value): Unit = memory.update(index, v)
 
   def apply(index: Int) = memory(index)
 
-  def allAddrInVal(v: Value) : Set[Int] = v match {
+  def allAddrInVal(v: Value): Set[Int] = v match {
     case AddressV(a)      => Set(a)
     case NumV(_)          => Set.empty
     case ClosureV(f, env) => allAddrInEnv(env)
   }
 
-  def allAddrInEnv(env: Env) : Set[Int] =
+  def allAddrInEnv(env: Env): Set[Int] =
     env.values.map(allAddrInVal _).fold(Set.empty)(_ union _)
 
-  def mark(seed: Set[Int]) : Unit = {
+  def mark(seed: Set[Int]): Unit = {
     seed.foreach(memory(_).marked = true)
     val newAddresses = seed.flatMap(
                          ad => allAddrInVal(memory(ad))
@@ -240,7 +240,7 @@ class MarkAndSweepStore(size: Int) extends Store {
   /* What graph algorithm underlies the mark step as implemented here?
    * What potential problem could it cause in a "real" interpreter? */
 
-  def sweep() : Unit = {
+  def sweep(): Unit = {
     memory.indices.foreach(
       index =>   if (memory(index) == null) {
                    /* No work needed on an empty memory cell */
@@ -256,7 +256,7 @@ class MarkAndSweepStore(size: Int) extends Store {
     )
   }
 
-  def gc(stack: List[Env]) : Unit = {
+  def gc(stack: List[Env]): Unit = {
     println("\nSTARTING GC\nSTACK = " + stack + "\nSTORE = " + memory)
     mark(stack.map(allAddrInEnv _).fold(Set.empty)(_ union _))
     sweep()

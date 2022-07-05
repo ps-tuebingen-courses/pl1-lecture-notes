@@ -39,7 +39,7 @@ implicit def string2exp(x: String): Exp = Id(x)
 A first example program in WAE.
 
 ```scala mdoc:silent
-val test = With("x", 5, Add("x","x"))
+val test = With("x", 5, Add("x", "x"))
 ```
 
 Note that we deal with *two* languages here:
@@ -73,13 +73,13 @@ programs behave identically, we understand better how programs behave in general
 Hence, the implementation of the `With` case of our interpreter should be something like:
 
 ```
-case With(x, xdef, body) => eval(subst(body,x,Num(eval(xdef))))
+case With(x, xdef, body) => eval(subst(body, x, Num(eval(xdef))))
 ```
 
 for a function `subst` with signature
 
 ```
-subst: (Exp,String,Num) => Exp
+subst: (Exp, String, Num) => Exp
 ```
 
 The type of the third parameter is `Num` instead of `Exp` because it is more difficult to get substitution correct when arbitrary
@@ -88,13 +88,13 @@ Since we want to experiment with different versions of substitution, we write th
 it with a substitution function:
 
 ```scala mdoc
-def makeEval(subst: (Exp,String,Num)=>Exp) : Exp=>Int = {
-  def eval(e: Exp) : Int = e match {
+def makeEval(subst: (Exp, String, Num) => Exp): Exp => Int = {
+  def eval(e: Exp): Int = e match {
     case Num(n) => n
     case Id(x) => sys.error("unbound variable: " + x)
-    case Add(l,r) => eval(l) + eval(r)
-    case Mul(l,r) => eval(l) * eval(r)
-    case With(x, xdef, body) => eval(subst(body,x,Num(eval(xdef)))) // take the int and wrap it into a Num
+    case Add(l, r) => eval(l) + eval(r)
+    case Mul(l, r) => eval(l) * eval(r)
+    case With(x, xdef, body) => eval(subst(body, x, Num(eval(xdef)))) // take the int and wrap it into a Num
   }
   eval
 }
@@ -106,14 +106,14 @@ To substitute identifier `i` in `e` with expression `v`, replace all identifiers
 Let's try to formalize this definition:
 
 ```scala
-val subst1 : (Exp,String,Num) => Exp = (e,i,v) => e match {
+val subst1: (Exp, String, Num) => Exp = (e, i, v) => e match {
   case Num(n) => e
   case Id(x) => if (x == i) v else e
-  case Add(l,r) => Add( subst1(l,i,v), subst1(r,i,v))
-  case Mul(l,r) => Mul( subst1(l,i,v), subst1(r,i,v))
-  case With(x,xdef,body) => With( if (x == i) v else x,
-                                    subst1(xdef,i,v),
-                                    subst1(body,i,v))
+  case Add(l, r) => Add(subst1(l, i, v), subst1(r, i, v))
+  case Mul(l, r) => Mul(subst1(l, i, v), subst1(r, i, v))
+  case With(x, xdef, body) => With(if (x == i) v else x,
+                                    subst1(xdef, i, v),
+                                    subst1(body, i, v))
   }
 ```
 
@@ -148,19 +148,19 @@ instances that have the name `i` with the expression `v`.
 Here is the formalization of this definition.
 
 ```scala mdoc:silent
-val subst2 : (Exp,String,Num) => Exp = (e,i,v) => e match {
+val subst2: (Exp, String, Num) => Exp = (e, i, v) => e match {
   case Num(n) => e
 
   // Bound or free instance => substitute if names match
   case Id(x) => if (x == i) v else e
 
-  case Add(l,r) => Add( subst2(l,i,v), subst2(r,i,v))
-  case Mul(l,r) => Mul( subst2(l,i,v), subst2(r,i,v))
+  case Add(l, r) => Add(subst2(l, i, v), subst2(r, i, v))
+  case Mul(l, r) => Mul(subst2(l, i, v), subst2(r, i, v))
 
   // binding instance => do not substitute
-  case With(x,xdef,body) => With( x,
-                                  subst2(xdef,i,v),
-                                  subst2(body,i,v))
+  case With(x, xdef, body) => With(x,
+                                  subst2(xdef, i, v),
+                                  subst2(body, i, v))
 }
 ```
 
@@ -190,13 +190,13 @@ To substitute identifier `i` in `e` with expression `v`, replace all non-binding
 the name `i` with the expression `v`, unless the identifier is in a scope different from that introduced by `i`.
 
 ```scala mdoc:silent
-val subst3 : (Exp,String,Num) => Exp = (e,i,v) => e match {
+val subst3: (Exp, String, Num) => Exp = (e, i, v) => e match {
     case Num(n) => e
     case Id(x) => if (x == i) v else e
-    case Add(l,r) => Add( subst3(l,i,v), subst3(r,i,v))
-    case Mul(l,r) => Mul( subst3(l,i,v), subst3(r,i,v))
-    case With(x,xdef,body) => With( x,
-                                    subst3(xdef,i,v),
+    case Add(l, r) => Add(subst3(l, i, v), subst3(r, i, v))
+    case Mul(l, r) => Mul(subst3(l, i, v), subst3(r, i, v))
+    case With(x, xdef, body) => With(x,
+                                    subst3(xdef, i, v),
                                     // what if we forget to substitute into the body?
                                     body)
 }
@@ -209,7 +209,7 @@ assert(eval3(test2) == 15)
 
 assert(eval3(test3) == 8) // Success!
 
-val test4 = With("x", 5, Add("x", With("y", 3,"x")))
+val test4 = With("x", 5, Add("x", With("y", 3, "x")))
 
 // assert(eval3(test4) == 10) // Bang! unbound variable: "x"
 ```
@@ -230,16 +230,16 @@ Finally, we have a version of substitution that works. A different, more succinc
 
 
 ```scala mdoc:silent
-val subst4 : (Exp,String,Num) => Exp = (e,i,v) => e match {
+val subst4: (Exp, String, Num) => Exp = (e, i, v) => e match {
     case Num(n) => e
     case Id(x) => if (x == i) v else e
-    case Add(l,r) => Add( subst4(l,i,v), subst4(r,i,v))
-    case Mul(l,r) => Mul( subst4(l,i,v), subst4(r,i,v))
+    case Add(l, r) => Add(subst4(l, i, v), subst4(r, i, v))
+    case Mul(l, r) => Mul(subst4(l, i, v), subst4(r, i, v))
     // do not substitute when shadowed
-    case With(x,xdef,body) => if (x == i) e
+    case With(x, xdef, body) => if (x == i) e
                                  else With(x,
-                                           subst4(xdef,i,v),
-                                           subst4(body,i,v))
+                                           subst4(xdef, i, v),
+                                           subst4(body, i, v))
 }
 
 def eval4 = makeEval(subst4)
@@ -266,15 +266,15 @@ We finally get a valid
 programmatic definition of substitution (relative to the language we have so far):
 
 ```scala mdoc:silent
-val subst5 : (Exp,String,Num) => Exp = (e,i,v) => e match {
+val subst5: (Exp, String, Num) => Exp = (e, i, v) => e match {
     case Num(n) => e
     case Id(x) => if (x == i) v else e
-    case Add(l,r) => Add( subst5(l,i,v), subst5(r,i,v))
-    case Mul(l,r) => Mul( subst5(l,i,v), subst5(r,i,v))
+    case Add(l, r) => Add(subst5(l, i, v), subst5(r, i, v))
+    case Mul(l, r) => Mul(subst5(l, i, v), subst5(r, i, v))
     // handle shadowing correctly
-    case With(x,xdef,body) => With(x,
-                                   subst5(xdef,i,v),
-                                   if (x == i) body else subst5(body,i,v))
+    case With(x, xdef, body) => With(x,
+                                   subst5(xdef, i, v),
+                                   if (x == i) body else subst5(body, i, v))
 }
 
 def eval5 = makeEval(subst5)

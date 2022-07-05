@@ -12,7 +12,7 @@ in the previous lecture formal.
 In the previous lecture we have seen that we had to translate the following program:
 
 ```scala
-println("The sum is: "+ (inputNumber("First number:" ) + inputNumber("Second number")))
+println("The sum is: " + (inputNumber("First number:") + inputNumber("Second number")))
 ```
 
 into this program:
@@ -106,13 +106,13 @@ and more in line with our treatment of the store.
 The transformed version hence reads:
 
 ```scala
-k => k((x,dynk) => (k => k(x))(dynk))
+k => k((x, dynk) => (k => k(x))(dynk))
 ```
 
 which is equivalent (when the inner application finally happens) to:
 
 ```scala
-k => k((x,dynk) => dynk(x))
+k => k((x, dynk) => dynk(x))
 ```
 
 This is a function that accepts a value and a dynamic continuation and sends the value to that continuation.
@@ -176,7 +176,7 @@ For this reason we need our ``freshName`` machinery we introduced for
 (FAE)[../07-higher-order-functions/higher-order-functions.html].
 
 ```scala mdoc
-def freeVars(e: Exp) : Set[String] =  e match {
+def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) => Set(x)
    case Add(l, r) => freeVars(l) ++ freeVars(r)
    case Fun(x, body) => freeVars(body) - x
@@ -184,15 +184,15 @@ def freeVars(e: Exp) : Set[String] =  e match {
    case Num(n) => Set.empty
 }
 
-def freshName(names: Set[String], default: String) : String = {
-  var last : Int = 0
+def freshName(names: Set[String], default: String): String = {
+  var last: Int = 0
   var freshName = default
   while (names contains freshName) { freshName = default + last; last += 1; }
   freshName
 }
 
-def cps(e: Exp) : CPSCont = e match {
-   case Add(e1,e2) => {
+def cps(e: Exp): CPSCont = e match {
+   case Add(e1, e2) => {
      val k = freshName(freeVars(e), "k")
      val lv = freshName(freeVars(e2), "lv")
      CPSCont(k, CPSContAp(cps(e1), CPSCont(lv, CPSContAp(cps(e2), CPSCont("rv", CPSContAp(k, CPSAdd("rv", lv)))))))
@@ -202,7 +202,7 @@ def cps(e: Exp) : CPSCont = e match {
      val dynk = freshName(freeVars(e), "dynk")
      CPSCont(k, CPSContAp(k, CPSFun(a, dynk, CPSContAp(cps(body), dynk))))
    }
-   case Ap(f,a) => {
+   case Ap(f, a) => {
      val k = freshName(freeVars(e), "k")
      val fval = freshName(freeVars(a), "fval")
      CPSCont(k, CPSContAp(cps(f), CPSCont(fval, CPSContAp(cps(a), CPSCont("aval", CPSFunAp(fval, "aval", k))))))
@@ -226,17 +226,17 @@ An administrative redex is a function application whose operator is a "continuat
 CPS transformation that was not in the original program. Such function applications can be computed immediately because
 the function which is called is known.
 
-For instance, ``cps(Add(2,3))`` yields
+For instance, ``cps(Add(2, 3))`` yields
 
 ```scala
 CPSCont("k",
         CPSContAp(
           CPSCont("k",
-                  CPSContAp("k",2)),
+                  CPSContAp("k", 2)),
           CPSCont("lv",
                   CPSContAp(
                     CPSCont("k",
-                            CPSContAp("k",3)),
+                            CPSContAp("k", 3)),
                     CPSCont("rv",
                             CPSContAp("k", CPSAdd("rv", "lv")))))))
 ```
@@ -244,7 +244,7 @@ CPSCont("k",
 instead of
 
 ```scala
-CPSCont("k", CPSContAp("k", CPSAdd(2,3)))
+CPSCont("k", CPSContAp("k", CPSAdd(2, 3)))
 ```
 
 Many more advanced CPS transformation algorithms try to avoid as many administrative redexes as possible.

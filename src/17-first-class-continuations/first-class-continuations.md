@@ -70,10 +70,10 @@ Let's now study the interpreter for our new language. The branches for `Num`, `I
 CPS transformation technique we already know.
 
 ```scala mdoc
-def eval(e: Exp, env: Env, k: Value => Nothing) : Nothing = e match {
+def eval(e: Exp, env: Env, k: Value => Nothing): Nothing = e match {
   case Num(n: Int) => k(NumV(n))
   case Id(x) => k(env(x))
-  case Add(l,r) => {
+  case Add(l, r) => {
     eval(l, env, lv =>
         eval(r, env, rv =>
           (lv, rv) match {
@@ -81,14 +81,14 @@ def eval(e: Exp, env: Env, k: Value => Nothing) : Nothing = e match {
             case _ => sys.error("can only add numbers")
           }))
   }
-  case f@Fun(param,body) => k(ClosureV(f, env))
+  case f@Fun(param, body) => k(ClosureV(f, env))
 
   /* In the application case we now need to distinguish whether the first argument
    * is a closure or a continuation. If it is a continuation, we ignore the
    * current continuation k and "jump" to the stored continuation by applying the
    * evaluated continuation argument to it. */
-  case Ap(f,a) => eval(f, env, cl => cl match {
-            case ClosureV(f,closureEnv) => eval(a, env, av => eval(f.body, closureEnv + (f.param -> av), k))
+  case Ap(f, a) => eval(f, env, cl => cl match {
+            case ClosureV(f, closureEnv) => eval(a, env, av => eval(f.body, closureEnv + (f.param -> av), k))
             case ContV(f) => eval(a, env, av => f(av))
             case _ => sys.error("can only apply functions")
   })
@@ -106,9 +106,9 @@ type is a function that does indeed not return. We do so by letting this functio
 value we store it temporarily in a variable, catch the exception, and return the stored value.
 
 ```scala mdoc
-def starteval(e: Exp) : Value = {
-  var res : Value = null
-  val s : Value => Nothing = (v) => { res = v; sys.error("program terminated") }
+def starteval(e: Exp): Value = {
+  var res: Value = null
+  val s: Value => Nothing = (v) => { res = v; sys.error("program terminated") }
   try { eval(e, Map.empty, s) } catch { case e: Throwable => () }
   res
 }

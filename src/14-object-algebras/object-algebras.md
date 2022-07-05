@@ -23,7 +23,7 @@ it is the same. Let's start with booleans.
 
 ```scala mdoc
 trait Bool {
-  def ifthenelse[T](t: T, e: T) : T
+  def ifthenelse[T](t: T, e: T): T
 }
 
 case object T extends Bool {
@@ -32,7 +32,7 @@ case object T extends Bool {
 case object F extends Bool {
   def ifthenelse[T](t: T, e: T) = e
 }
-def and(a: Bool, b: Bool) : Bool = a.ifthenelse(b,a)
+def and(a: Bool, b: Bool): Bool = a.ifthenelse(b, a)
 ```
 
 In Smalltalk and related languages, booleans are actually implemented
@@ -42,20 +42,20 @@ In the same way, we can encode Church numerals.
 
 ```scala mdoc
 trait NumC {
-  def fold[T](z: T, s: T => T) : T
+  def fold[T](z: T, s: T => T): T
 }
 case object Zero extends NumC {
   def fold[T](z: T, s: T => T) = z
 }
 
 case class Succ(n: NumC) extends NumC {
-  def fold[T](z: T, s: T => T) = s(n.fold(z,s))
+  def fold[T](z: T, s: T => T) = s(n.fold(z, s))
 }
 
 def plus(a: NumC, b: NumC) = {
   new NumC {
-    def fold[T](z: T, s: T => T) : T = {
-      a.fold(b.fold(z,s), s)
+    def fold[T](z: T, s: T => T): T = {
+      a.fold(b.fold(z, s), s)
     }
   }
 }
@@ -66,7 +66,7 @@ val oneC = Succ(Zero)
 val twoC = Succ(oneC)
 val threeC = Succ(twoC)
 
-def testplusC = plus(twoC,threeC).fold[Unit]( (), _ => print("."))
+def testplusC = plus(twoC, threeC).fold[Unit]((), _ => print("."))
 ```
 
 
@@ -77,12 +77,12 @@ of Church numbers looks like in object algebra style.
 
 ```scala mdoc
 trait NumSig[T] {
-  def z : T
-  def s(p: T) : T
+  def z: T
+  def s(p: T): T
 }
 
 trait Num {
-  def apply[T](x: NumSig[T]) : T
+  def apply[T](x: NumSig[T]): T
 }
 ```
 
@@ -104,7 +104,7 @@ In this encoding, the `plus`-function looks like this:
 
 ```scala mdoc
 def plus(a: Num, b: Num) = new Num {
-  def apply[T](x: NumSig[T]) : T = a( new NumSig[T] {
+  def apply[T](x: NumSig[T]): T = a(new NumSig[T] {
     def z = b(x)
     def s(p: T) = x.s(p)
   })
@@ -114,10 +114,10 @@ def plus(a: Num, b: Num) = new Num {
 Here is the representation of some numbers.
 
 ```scala mdoc:silent
-val zero : Num = new Num { def apply[T](x: NumSig[T]) = x.z }
-val one : Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
-val two : Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
-val three : Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
+val zero: Num = new Num { def apply[T](x: NumSig[T]) = x.z }
+val one: Num = new Num { def apply[T](x: NumSig[T]) = x.s(x.z) }
+val two: Num = new Num { def apply[T](x: NumSig[T]) = x.s(one(x)) }
+val three: Num = new Num { def apply[T](x: NumSig[T]) = x.s(two(x)) }
 ```
 
 This is an interpretation of the `Num`-"language" as Scala integers:
@@ -125,7 +125,7 @@ This is an interpretation of the `Num`-"language" as Scala integers:
 ```scala mdoc
 object NumAlg extends NumSig[Int] {
   def z = 0
-  def s(x : Int) = x + 1
+  def s(x: Int) = x + 1
 }
 ```
 
@@ -138,12 +138,12 @@ expression trees as object algebras.
 
 ```scala mdoc
 trait Exp[T] {
-  implicit def id(name: String) : T
+  implicit def id(name: String): T
   def fun(param: String, body: T): T
-  def ap(funExpr: T, argExpr: T) :T
-  implicit def num(n: Int) : T
-  def add(e1: T, e2: T) : T
-  def wth(x: String, xdef: T, body: T) : T = ap(fun(x,body), xdef)
+  def ap(funExpr: T, argExpr: T):T
+  implicit def num(n: Int): T
+  def add(e1: T, e2: T): T
+  def wth(x: String, xdef: T, body: T): T = ap(fun(x, body), xdef)
 }
 ```
 
@@ -181,7 +181,7 @@ object eval extends eval
 An example program becomes a function that is parametric in the choosen interpretation:
 
 ```scala mdoc
-def test[T](semantics : Exp[T]) = {
+def test[T](semantics: Exp[T]) = {
   import semantics._
 
   ap(ap(fun("x", fun("y", add("x", "y"))), 5), 3)
@@ -199,7 +199,7 @@ add another case to the expression data type by extending the interface.
 
 ```scala mdoc
 trait ExpWithMult[T] extends Exp[T] {
-  def mult(e1: T, e2: T) : T
+  def mult(e1: T, e2: T): T
 }
 
 trait evalWithMult extends eval with ExpWithMult[Env => Value] {
@@ -210,7 +210,7 @@ trait evalWithMult extends eval with ExpWithMult[Env => Value] {
 }
 object evalWithMult extends evalWithMult
 
-def testMult[T](semantics : ExpWithMult[T]) = {
+def testMult[T](semantics: ExpWithMult[T]) = {
   import semantics._
 
   ap(ap(fun("x", fun("y", mult("x", "y"))), 5), 3)
@@ -225,7 +225,7 @@ Note that there is no danger of confusing the language variants. For instance,
 an attempt to pass `testMult` to `eval` will be a static type error.
 
 At the same time, we can add another function on expressions (such as a pretty-printer)
-without changing existing code, too: Just add a 
+without changing existing code, too: Just add a
 `trait prettyPrint extends Exp[String]` and, if pretty-printing of `ExpWithMult`
 is required, extend with `trait prettyPrintMult extends prettyPrint with ExpWithMult[String]`.
 This is the object algebra way of solving the expression problem.
@@ -237,16 +237,16 @@ Don't panic if you don't understand what is going on here.
 ```scala mdoc
 trait ExpT {
   type Rep[_]
-  def fun[S,T](f: Rep[S] => Rep[T]): Rep[S => T]
-  def ap[S,T](funExpr: Rep[S => T], argExpr: Rep[S]) : Rep[T]
-  implicit def num(n: Int) : Rep[Int]
-  def add(e1: Rep[Int], e2: Rep[Int]) : Rep[Int]
+  def fun[S, T](f: Rep[S] => Rep[T]): Rep[S => T]
+  def ap[S, T](funExpr: Rep[S => T], argExpr: Rep[S]): Rep[T]
+  implicit def num(n: Int): Rep[Int]
+  def add(e1: Rep[Int], e2: Rep[Int]): Rep[Int]
 }
 ```
 
-Instead of having the semantic domain as a type parameter `T` as above, 
+Instead of having the semantic domain as a type parameter `T` as above,
 we encode it as a higher-kinded abstract type member `Rep[_]`. This leads
-to significantly shorter type signatures and more fine-grained typing 
+to significantly shorter type signatures and more fine-grained typing
 via Scala's support for "path-dependent types".
 
 Note that, in contrast to `eval`, no dynamic checks (`match` ...) are needed
@@ -261,8 +261,8 @@ the meta language.
 ```scala mdoc
 object evalT extends ExpT {
   type Rep[X] = X
-  def fun[S,T](f: S => T) = f
-  def ap[S,T](f: S => T, a: S) = f(a)
+  def fun[S, T](f: S => T) = f
+  def ap[S, T](f: S => T, a: S) = f(a)
   def num(n: Int) = n
   def add(e1: Int, e2: Int) = e1 + e2
 }
@@ -270,12 +270,12 @@ object evalT extends ExpT {
 object prettyprintT extends ExpT {
   var counter = 0
   type Rep[X] = String
-  def fun[S,T](f: String => String) = {
+  def fun[S, T](f: String => String) = {
     val varname = "x" + counter.toString
     counter += 1
     "(" + varname + " => " +  f(varname) + ")"
   }
-  def ap[S,T](f: String, a: String) = f + "(" + a + ")"
+  def ap[S, T](f: String, a: String) = f + "(" + a + ")"
   def num(n: Int) = n.toString
   def add(e1: String, e2: String) = "(" + e1 + "+" + e2 + ")"
 }
@@ -302,9 +302,9 @@ def testilltyped(semantics: ExpT) = {
 }
 ```
 
-The type system encoded in the `ExpT` type is the so-called "simply-typed lambda calculus". 
-Encoding more expressive type system in a similar style (including, e.g., type parameters) 
-is an active area of research. 
+The type system encoded in the `ExpT` type is the so-called "simply-typed lambda calculus".
+Encoding more expressive type system in a similar style (including, e.g., type parameters)
+is an active area of research.
 
 References:
 B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with Object Algebras. Proc. ECOOP 2012.

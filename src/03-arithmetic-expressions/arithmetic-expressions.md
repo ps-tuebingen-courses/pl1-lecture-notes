@@ -7,7 +7,7 @@ import scala.language.implicitConversions
 ```
 
 Let us now consider an extension of the arithmetic expression language with variables. We do this by a new kind of expression, which we
-call Identifier, or Id.
+call Identifier, or `Id`.
 
 \\[
   \begin{array}{lclr}
@@ -34,10 +34,10 @@ import Exp._
 Here is a sample program written in this language, directly written down using case class constructors:
 
 ```scala mdoc:silent
-val test0 = Add(Mul(Id("x"),Num(2)),Add(Id("y"),Id("y")))
+val test0 = Add(Mul(Id("x"), Num(2)), Add(Id("y"), Id("y")))
 ```
 
-With a proper parser we could choose a syntax like `x*2+y+y`. We do not care much about concrete syntax and parsing, though.
+With a proper parser we could choose a syntax like `x * 2 + y + y`. We do not care much about concrete syntax and parsing, though.
 
 That said, to make writing examples less verbose, Scala's implicits come to the rescue.
 Calls to implicit functions are inserted automatically by the compiler if they help to restore well-typedness. For instance, we can define
@@ -50,25 +50,25 @@ implicit def sym2exp(x: String): Exp = Id(x)
 to lift integers and Strings to expressions. Using these implicits, the example can be written as:
 
 ```scala mdoc:silent
-val test = Add(Mul("x",2),Add("y","y"))
+val test = Add(Mul("x", 2), Add("y", "y"))
 ```
 
 To give meaning to identifiers, we use _environments_. Environments are mappings from Identifiers (which we represent as Strings) to Values.
 In our simple language the only values are integers, hence:
 
 ```scala mdoc
-type Env = Map[String,Int]
+type Env = Map[String, Int]
 ```
 
 An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
 "Int". This interpreter uses pattern matching over case classes.
 
 ```scala mdoc
-def eval(e: Exp, env: Env) : Int = e match {
+def eval(e: Exp, env: Env): Int = e match {
   case Num(n) => n
   case Id(x) => env(x)
-  case Add(l,r) => eval(l,env) + eval(r,env)
-  case Mul(l,r) => eval(l,env) * eval(r,env)
+  case Add(l, r) => eval(l, env) + eval(r, env)
+  case Mul(l, r) => eval(l, env) * eval(r, env)
 }
 ```
 
@@ -85,7 +85,7 @@ The test environment also illustrates how Scala supports direct definitions of c
 val testEnv = Map("x" -> 3, "y" -> 4)
 ```
 
-We can automatically test our evaluator using assert :
+We can automatically test our evaluator using assert:
 
 ```scala mdoc
 val exa = eval(test, testEnv)
@@ -155,15 +155,15 @@ def eval(e: ExpAE) = foldExp(evalVisitorAE, e)
 Let's test whether it works.
 
 ```scala mdoc
-val exaVisitorAE = eval(AddAE(AddAE(NumAE(1),NumAE(2)),NumAE(3)))
+val exaVisitorAE = eval(AddAE(AddAE(NumAE(1), NumAE(2)), NumAE(3)))
 assert(exaVisitorAE == 6)
 ```
 
 We can also apply other algorithms using visitors, such as counting the number of `NumAE` literals, or printing to a string:
 
 ```scala mdoc:silent
-val countVisitorAE = VisitorAE[Int]( _=>1, _+_)
-val printVisitorAE = VisitorAE[String](_.toString, "("+_+"+"+_+")")
+val countVisitorAE = VisitorAE[Int](_ => 1, _ + _)
+val printVisitorAE = VisitorAE[String](_.toString, "(" + _ + "+" + _ + ")")
 ```
 
 ```scala
@@ -180,14 +180,14 @@ import AEId._
 ```scala mdoc:silent
 case class Visitor[T](num: Int => T, add: (T, T) => T, mul: (T, T) => T, id: String => T)
 val expVisitor = Visitor[Exp](Num(_), Add(_, _), Mul(_, _), Id(_))
-val countVisitor = Visitor[Int](_=>1, _ + _, _ + _, _ => 0)
+val countVisitor = Visitor[Int](_ => 1, _ + _, _ + _, _ => 0)
 val printVisitor = Visitor[String](_.toString, "(" + _ + "+" + _ + ")", _ + "*" + _, identity)
 
-def foldExp[T](v: Visitor[T], e: Exp) : T = {
+def foldExp[T](v: Visitor[T], e: Exp): T = {
   e match {
     case Num(n) => v.num(n)
-    case Add(l,r) => v.add(foldExp(v, l), foldExp(v, r))
-    case Mul(l,r) => v.mul(foldExp(v, l), foldExp(v, r))
+    case Add(l, r) => v.add(foldExp(v, l), foldExp(v, r))
+    case Mul(l, r) => v.mul(foldExp(v, l), foldExp(v, r))
     case Id(x) => v.id(x)
   }
 }
@@ -205,7 +205,7 @@ instantiate `T` with a function type `Env => Int`! This way of transforming a mu
 higher-order function is called _currying_.
 
 ```scala mdoc:silent
-val evalVisitor = Visitor[Env=>Int](
+val evalVisitor = Visitor[Env => Int](
    env => _ ,
    (a, b) => env =>
      a(env) + b(env),

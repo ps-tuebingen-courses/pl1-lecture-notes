@@ -14,7 +14,7 @@ def inputNumber(prompt: String): Int = {
   Integer.parseInt(readLine())
 }
 def progSimple = {
-  println(inputNumber("First number:" ) + inputNumber("Second number"))
+  println(inputNumber("First number:") + inputNumber("Second number"))
 }
 ```
 
@@ -47,12 +47,12 @@ programming is sufficient to explain the problem.
 
 ```scala mdoc
 // we use the return type "Nothing" for functions that will never return (normally)
-def webdisplay(s: String) : Nothing = {
+def webdisplay(s: String): Nothing = {
   println(s)
   sys.error("program terminated")
 }
 
-def webread(prompt: String, continue: String) : Nothing = {
+def webread(prompt: String, continue: String): Nothing = {
   println(prompt)
   println("send input to: " + continue)
   sys.error("program terminated")
@@ -60,7 +60,7 @@ def webread(prompt: String, continue: String) : Nothing = {
 
 def program1 = webread("enter first number", "s2")
 def program2(n1: Int) = webread("enter second number and remind me of previoulsy entered number " + n1, "s3")
-def program3(n1: Int, n2: Int) = webdisplay("The sum of " + n1 + " and "+ n2 + " is " + (n1 + n2))
+def program3(n1: Int, n2: Int) = webdisplay("The sum of " + n1 + " and " + n2 + " is " + (n1 + n2))
 ```
 
 We could write a better `webread` and `webdisplay` procedure if we could somehow get hold of the
@@ -104,13 +104,13 @@ a single integer value.
 
 ```scala mdoc:silent
 val continuations = new scala.collection.mutable.HashMap[Symbol, Int => Nothing]()
-var nextIndex : Int = 0
+var nextIndex: Int = 0
 def getNextID = {
   nextIndex += 1
   Symbol("c" + nextIndex.toString)
 }
 
-def webread_k(prompt: String, k: Int => Nothing) : Nothing = {
+def webread_k(prompt: String, k: Int => Nothing): Nothing = {
   val id = getNextID
   continuations += (id -> k)
   println(prompt)
@@ -133,15 +133,15 @@ For instance, try:
 
 ```
 scala> webprog           -- yields some continuation id 'c1
-scala> continue('c1,5)   -- yields some continuation id 'c2
-scala> continue('c2,7)
+scala> continue('c1, 5)   -- yields some continuation id 'c2
+scala> continue('c2, 7)
 
 This should yield the result 12 as expected. But also try:
 scala> webprog           -- yields some continuation id 'c1
-scala> contine('c1,5)    -- yields some continuation id 'c2
-scala> contine('c1,6)    -- yields some continuation id 'c3
-scala> continue('c2,3)   -- should yield 8
-scala> continue('c3,3)   -- should yield 9
+scala> contine('c1, 5)    -- yields some continuation id 'c2
+scala> contine('c1, 6)    -- yields some continuation id 'c3
+scala> continue('c2, 3)   -- should yield 8
+scala> continue('c3, 3)   -- should yield 9
 ```
 
 The style of programming in `webprog`, which is obviously more complicated than the logical
@@ -157,14 +157,14 @@ numbers, the user enters n numbers, e.g., the prices of a list of n items.
 Here is the "non-web" version of the application:
 
 ```scala mdoc
-def allCosts(itemList: List[String]) : Int = itemList match {
+def allCosts(itemList: List[String]): Int = itemList match {
    case Nil => 0
    case x :: rest => inputNumber("Cost of item " + x + ":") + allCosts(rest)
 }
 ```
 
 ```scala mdoc:silent
-val testData : List[String] = List("banana", "apple", "orange")
+val testData: List[String] = List("banana", "apple", "orange")
 
 def test = println("Total sum: " + allCosts(testData))
 ```
@@ -183,9 +183,9 @@ the convention of appending `_k` to the name of the procedure and `k` to name th
 Here is a first attempt to define ``allCosts_k``.
 
 ```scala
- def allCosts_k(itemList: List[String], k: Int => Nothing) : Nothing = itemList match {
+ def allCosts_k(itemList: List[String], k: Int => Nothing): Nothing = itemList match {
    case Nil => 0
-   case x :: rest => webread_k("Cost of item " + x + ":", n => n + allCosts_k(rest,k))
+   case x :: rest => webread_k("Cost of item " + x + ":", n => n + allCosts_k(rest, k))
 }
 ```
 
@@ -195,7 +195,7 @@ terminate the program, the pending addition will be lost! Therefore, the additio
 continuation fed to ``allCosts_k``. In code:
 
 ```scala
-def allCosts_k(itemList: List[String], k: Int => Nothing) : Nothing = itemList match {
+def allCosts_k(itemList: List[String], k: Int => Nothing): Nothing = itemList match {
    case Nil => 0
    case x :: rest => webread_k("Cost of item " + x + ":", n => allCosts_k(rest, m => k(m + n)))
 }
@@ -216,7 +216,7 @@ would have been pending has now been recorded in `k`, which is expecting a value
 transformation of this procedure is:
 
 ```scala mdoc
-def allCosts_k(itemList: List[String], k: Int => Nothing) : Nothing = itemList match {
+def allCosts_k(itemList: List[String], k: Int => Nothing): Nothing = itemList match {
    case Nil => k(0)
    case x :: rest => webread_k("Cost of item " + x + ":", n => allCosts_k(rest, m => k(m + n)))
 }
@@ -228,16 +228,16 @@ Let's now consider the case that we have used a library function for the iterati
 the `map` function, which we replicate here.
 
 ```scala mdoc
-def map[S,T](c: List[S], f: S => T) : List[T] = c match {
+def map[S, T](c: List[S], f: S => T): List[T] = c match {
   case Nil => Nil
   case x :: rest => f(x) :: map(rest, f)
 }
 ```
 
-Using `map`, we can rephrase `allCosts` as follows. 
+Using `map`, we can rephrase `allCosts` as follows.
 
 ```scala mdoc
-def allCosts2(itemList: List[String]) : Int =
+def allCosts2(itemList: List[String]): Int =
   map(itemList, (x: String) => inputNumber("Cost of item " + x + ":")).sum
 ```
 
@@ -250,12 +250,12 @@ to `f`?
 __Insight__: We must perform the "web transformation" to `map` as well. We call the result ``map_k``. Here is the code:
 
 ```scala mdoc
-def map_k[S,T](c: List[S], f: (S,T => Nothing) => Nothing, k: List[T] => Nothing) : Nothing = c match {
+def map_k[S, T](c: List[S], f: (S, T => Nothing) => Nothing, k: List[T] => Nothing): Nothing = c match {
    case Nil => k(Nil)
    case x :: rest => f(x, t => map_k(rest, f, (tr: List[T]) => k(t :: tr)))
 }
 
-def allCosts2_k(itemList: List[String], k: Int => Nothing) : Nothing =
+def allCosts2_k(itemList: List[String], k: Int => Nothing): Nothing =
    map_k(itemList, (x: String, k2: Int => Nothing) => webread_k("Cost of item " + x + ":", k2), (l: List[Int]) => k(l.sum))
 
 ```

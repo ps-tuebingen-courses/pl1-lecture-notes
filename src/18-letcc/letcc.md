@@ -53,7 +53,7 @@ with first-class continuations.
       (displayln (g 1))
       (displayln (g 0))
       (displayln (g 2)))))
-```      
+```
 
 Try evaluating ``(h)`` in the read-eval-print-loop.
 

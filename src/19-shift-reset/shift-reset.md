@@ -26,19 +26,19 @@ early 1990s. One of the most common forms of delimited continuations is in the f
 proposed by Olivier Danvy and Andrzej Filinski in 1990. The first of these primitives, `reset e`, marks the
 current stack frame and continues with `e`. An invocation of the second primitive, `shift k e`, reifies the
 stack segment between the current stack frame and the closest stack frame marked by a `reset` as a function,
-binds this function to `k`, and evaluates `e` (which can then call `k` zero or more times). 
+binds this function to `k`, and evaluates `e` (which can then call `k` zero or more times).
 
 Their meaning can be understood via a code transformation.
 
 ```
-reset (...A... shift k e ...B...) 
- ; --> 
-with k = lambda x. reset (...A... x ...B...) : 
-  reset e 
-  
-reset e  ; no invocation of shift inside e 
- ; --> 
-e 
+reset (...A... shift k e ...B...)
+ ; -->
+with k = lambda x. reset (...A... x ...B...) :
+  reset e
+
+reset e  ; no invocation of shift inside e
+ ; -->
+e
 ```
 
 In class, we will look at a couple of examples of using `shift` and `reset`. `shift` and `reset` are available
@@ -73,10 +73,10 @@ case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 case class ContV(f: Value => Value) extends Value
 
-def eval(e: Exp, env: Env, k: Value => Value) : Value = e match {
+def eval(e: Exp, env: Env, k: Value => Value): Value = e match {
   case Num(n: Int) => k(NumV(n))
   case Id(x) => k(env(x))
-  case Add(l,r) => {
+  case Add(l, r) => {
     eval(l, env, lv =>
         eval(r, env, rv =>
           (lv, rv) match {
@@ -84,20 +84,20 @@ def eval(e: Exp, env: Env, k: Value => Value) : Value = e match {
             case _ => sys.error("can only add numbers")
           }))
   }
-  case f@Fun(param,body) => k(ClosureV(f, env))
+  case f@Fun(param, body) => k(ClosureV(f, env))
 
-  case Ap(f,a) => eval(f, env, cl => cl match {
+  case Ap(f, a) => eval(f, env, cl => cl match {
             case ClosureV(f, closureEnv) => eval(a, env, av => eval(f.body, closureEnv + (f.param -> av), k))
             case ContV(k2) => eval(a, env, av => k(k2(av))) // compose continuations k2 and k
             case _ => sys.error("can only apply functions")
   })
   case Reset(e) => k(eval(e, env, x => x)) // reset the continuation to the identity function
-  case Shift(param,body) => eval(body, env + (param -> ContV(k)), x => x)  // wrap current continuation and reset continuation
+  case Shift(param, body) => eval(body, env + (param -> ContV(k)), x => x)  // wrap current continuation and reset continuation
 }
 ```
 
 References:
 
-  1) Olivier Danvy and Andre Filinski, “Abstracting Control,” LISP and Functional Programming, 1990.
+  1) Olivier Danvy and Andre Filinski, “Abstracting Control, ” LISP and Functional Programming, 1990.
   2) O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html
   3) O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial

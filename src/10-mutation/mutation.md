@@ -37,7 +37,7 @@ object Syntax {
   object Exp:
     implicit def num2exp(n: Int): Exp = Num(n)
     implicit def id2exp(s: String): Exp = Id(s)
-    def wth(x: String, xdef: Exp, body: Exp) : Exp = Ap(Fun(x,body),xdef)
+    def wth(x: String, xdef: Exp, body: Exp): Exp = Ap(Fun(x, body), xdef)
 }
 import Syntax._
 import Exp._
@@ -76,7 +76,7 @@ example:
 ```scala mdoc:silent
 val test2 = wth("a", NewBox(1),
               wth("f", Fun("x", Add("x", OpenBox("a"))),
-                Seq(SetBox("a",2),
+                Seq(SetBox("a", 2),
                   Ap("f", 5))))
 ```
 
@@ -121,7 +121,7 @@ We will often need a fresh address in the store. We do so using a counter variab
 ```scala mdoc:silent
 var _nextAddress = 0
 
-def nextAddress : Address = {
+def nextAddress: Address = {
   _nextAddress += 1
   _nextAddress
 }
@@ -136,7 +136,7 @@ val test3 = wth("switch", NewBox(0),
              wth("toggle", Fun("dummy", If0(OpenBox("switch"),
                                           Seq(SetBox("switch", 1), 1),
                                           Seq(SetBox("switch", 0), 0))),
-                 Add(Ap("toggle",42), Ap("toggle",42))))
+                 Add(Ap("toggle", 42), Ap("toggle", 42))))
 ```
 
 This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
@@ -149,7 +149,7 @@ evaluation of this program.
 | C |   Add(.. |  |  |  |
 | D |    Ap("toggle") | 1 |  | 1 -> NumV(1) |
 | E |    Ap("toggle") | 0 |  | 1 -> NumV(0) |
-| F |   Add(0,1) | 1 |  |  |
+| F |   Add(0, 1) | 1 |  |  |
 
 Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
@@ -157,7 +157,7 @@ This is called _store-passing style_.  Consequently, we have to update the type 
 
 
 ```scala mdoc
-def eval(e: Exp, env: Env, s: Store) : (Value, Store) = e match {
+def eval(e: Exp, env: Env, s: Store): (Value, Store) = e match {
   /* All expressions whose evaluation does not alter the store just return s. */
   case Num(n) => (NumV(n), s)
   case Id(x) => (env(x), s)
@@ -257,18 +257,18 @@ Garbage collectors automatically reclaim memory that is no longer referenced fro
 We can model a (naive) mark-and-sweep garbage collector as follows:
 
 ```scala mdoc
-def gc(env: Env, store: Store) : Store = {
+def gc(env: Env, store: Store): Store = {
 
-  def allAddrInVal(v: Value) : Set[Address] = v match {
+  def allAddrInVal(v: Value): Set[Address] = v match {
     case AddressV(a)      => Set(a)
     case NumV(_)          => Set.empty
     case ClosureV(f, env) => allAddrInEnv(env)
   }
 
-  def allAddrInEnv(env: Env) : Set[Address] =
+  def allAddrInEnv(env: Env): Set[Address] =
     env.values.map(allAddrInVal _).fold(Set.empty)(_ union _)
 
-  def mark(seed: Set[Address]) : Set[Address] = {
+  def mark(seed: Set[Address]): Set[Address] = {
     val newAddresses = seed.flatMap(ad => allAddrInVal(store(ad)))
     if (newAddresses.subsetOf(seed)) seed
     else mark(seed union newAddresses)

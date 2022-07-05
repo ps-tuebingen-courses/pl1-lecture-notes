@@ -90,13 +90,13 @@ However, another way of adding sub is to treat it as syntactic sugar using the f
 One way of expressing the desugaring is as a syntax transformation:
 
 ```scala mdoc
-def desugarSMAE2MAE(e: SMAE.Exp) : MAE.Exp = e match {
+def desugarSMAE2MAE(e: SMAE.Exp): MAE.Exp = e match {
   case SMAE.Exp.Num(n) => MAE.Exp.Num(n)
   case SMAE.Exp.Add(lhs, rhs) => MAE.Exp.Add(desugarSMAE2MAE(lhs), desugarSMAE2MAE(rhs))
   case SMAE.Exp.Mult(lhs, rhs) => MAE.Exp.Mult(desugarSMAE2MAE(lhs), desugarSMAE2MAE(rhs))
   case SMAE.Exp.Sub(lhs, rhs) =>
     MAE.Exp.Add(desugarSMAE2MAE(lhs),
-                 MAE.Exp.Mult(MAE.Exp.Num(-1),desugarSMAE2MAE(rhs)))
+                 MAE.Exp.Mult(MAE.Exp.Num(-1), desugarSMAE2MAE(rhs)))
 }
 ```
 
@@ -121,7 +121,7 @@ object SMAE2 {
     case Add(lhs: Exp, rhs: Exp) extends Exp
     case Mult(lhs: Exp, rhs: Exp) extends Exp
   object Exp:
-    def sub(e1: Exp, e2: Exp) : Exp =
+    def sub(e1: Exp, e2: Exp): Exp =
       Add(e1, Mult(Num(-1), e2))
   import Exp._
 
@@ -155,7 +155,7 @@ object USMAE {
     case Add(lhs: Exp, rhs: Exp) extends Exp
     case Mult(lhs: Exp, rhs: Exp) extends Exp
   object Exp:
-    def sub(e1: Exp, e2: Exp) : Exp =
+    def sub(e1: Exp, e2: Exp): Exp =
       Add(e1, Mult(Num(-1), e2))
     def unaryminus(e: Exp) = sub(Num(0), e)
   import Exp._

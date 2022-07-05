@@ -60,7 +60,7 @@ instead, we pass ``x`` to the function.
 We can capture this pattern in the form of a function:
 
 ```scala mdoc
-def bindOption[A,B](a: Option[A], f: A => Option[B]): Option[B] = a match {
+def bindOption[A, B](a: Option[A], f: A => Option[B]): Option[B] = a match {
   case Some(x) => f(x)
   case None => None
 }
@@ -123,7 +123,7 @@ So here it is: The Monad interface.
 ```scala mdoc
 trait Monad[M[_]] {
   def unit[A](a: A): M[A]
-  def bind[A,B](m: M[A], f: A => M[B]): M[B]
+  def bind[A, B](m: M[A], f: A => M[B]): M[B]
   // The "monad laws":
   // 1) "unit" acts as a kind of neutral element of "bind", that is:
   //    1a) bind(unit(x), f) == f(x) and
@@ -165,15 +165,15 @@ piggy-back on the "for-comprehension" syntax instead.
 A "for-comprehension" is usually used for lists and other collections. For instance:
 
 ```scala mdoc:silent
-val l = List(List(1,2), List(3,4))
-assert((for { x <- l; y <- x } yield y + 1) == List(2,3,4,5))
+val l = List(List(1, 2), List(3, 4))
+assert((for { x <- l; y <- x } yield y + 1) == List(2, 3, 4, 5))
 ```
 
 The Scala compiler desugars the for-comprehension above into calls of the standard `map` and `flatMap` functions. That is, the above
 for-comprehension is equivalent to:
 
 ```scala mdoc:silent
-assert(l.flatMap(x => x.map(y => y + 1)) == List(2,3,4,5))
+assert(l.flatMap(x => x.map(y => y + 1)) == List(2, 3, 4, 5))
 ```
 
 We will make use of for-comprehension syntax by supporting both ``flatMap`` (which is like ``bind``) and ``map`` (which is like ``fmap``).
@@ -220,7 +220,7 @@ sometimes called the `Maybe` monad.
 
 ```scala mdoc
 object OptionMonad extends Monad[Option] {
-  override def bind[A,B](a: Option[A], f: A => Option[B]): Option[B] =
+  override def bind[A, B](a: Option[A], f: A => Option[B]): Option[B] =
     a match {
       case Some(x) => f(x)
       case None => None
@@ -242,7 +242,7 @@ enough to be useful for many different monads. Here are some of these functions:
 ``fmap`` turns every function between ``A`` and ``B`` into a function between ``M[A]`` and ``M[B]``:
 
 ```scala mdoc
-def fmap[M[_],A,B](f: A => B)(using m: Monad[M]): M[A] => M[B] =
+def fmap[M[_], A, B](f: A => B)(using m: Monad[M]): M[A] => M[B] =
   a => m.bind(a, (x: A) => m.unit(f(x)))
 ```
 
@@ -251,7 +251,7 @@ In fancy category theory terms, we can say that every monad is a functor.
 ``sequence`` composes a list of monadic values into a single monadic value which is a list.
 
 ```scala mdoc
-def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]): M[List[A]] = l match {
+def sequence[M[_], A](l: List[M[A]])(using m: Monad[M]): M[List[A]] = l match {
   case x :: xs => m.bind(x, (y: A) =>
     m.bind(sequence(xs), (ys: List[A]) =>
       m.unit(y :: ys)))
@@ -262,7 +262,7 @@ def sequence[M[_],A](l: List[M[A]])(using m: Monad[M]): M[List[A]] = l match {
 ``mapM`` composes ``sequence`` and the standard ``map`` function:
 
 ```scala mdoc
-def mapM[M[_],A,B](f: A => M[B], l: List[A])(using m: Monad[M]): M[List[B]] =
+def mapM[M[_], A, B](f: A => M[B], l: List[A])(using m: Monad[M]): M[List[B]] =
   sequence(l.map(f))
 ```
 
@@ -272,7 +272,7 @@ and ``join`` (denoted μ) instead of ``unit`` and ``bind``. There are additional
 "coherence conditions" that make the category theory definition equivalent to ours.
 
 ```scala mdoc
-def join[M[_],A](x: M[M[A]])(using m: Monad[M]): M[A] = m.bind(x, (y: M[A]) => y)
+def join[M[_], A](x: M[M[A]])(using m: Monad[M]): M[A] = m.bind(x, (y: M[A]) => y)
 ```
 
 Here are some other common monads:
@@ -286,7 +286,7 @@ with the identity monad, we get the behavior of the original non-monadic code.
 ```scala mdoc
 type Id[X] = X
 object IdentityMonad extends Monad[Id] {
-  def bind[A,B](x: A, f: A => B): B = f(x)
+  def bind[A, B](x: A, f: A => B): B = f(x)
   def unit[A](a: A): A = a
 }
 ```
@@ -305,7 +305,7 @@ The type constructor which is created here is ``M[A] = R => A``
 ```scala mdoc
 trait ReaderMonad[R] extends Monad[[A] =>> R => A] {
   // pass the "environment" r into both computations
-  override def bind[A,B](x: R => A, f: A => R => B): R => B = r => f(x(r))(r)
+  override def bind[A, B](x: R => A, f: A => R => B): R => B = r => f(x(r))(r)
   override def unit[A](a: A): R => A = (_) => a
 }
 ```
@@ -326,7 +326,7 @@ Our original code,
 def clientCode = h(!g(f(27) + "z"))
 ```
 
-becomes :
+becomes:
 
 ```scala mdoc
 def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env) + "z")(env))(env)
@@ -357,7 +357,7 @@ which is threaded through the computations, is defind as follows:
 
 ```scala mdoc
 trait StateMonad[S] extends Monad[[A] =>> S => (A, S)] {
-  override def bind[A,B](x: S => (A, S), f: A => S => (B, S)): S => (B, S) =
+  override def bind[A, B](x: S => (A, S), f: A => S => (B, S)): S => (B, S) =
     // thread the state through the computations
     s => x(s) match { case (y, s2) => f(y)(s2) }
   override def unit[A](a: A): S => (A, S) = s => (a, s)
@@ -378,7 +378,7 @@ The original code,
 def clientCode = h(!g(f(27) + "z"))
 ```
 
-becomes :
+becomes:
 
 ```scala mdoc
 def clientCodeState(s: Int) =
@@ -413,7 +413,7 @@ In the _list monad_, computations produce lists of results. The ``bind`` operato
 ```scala mdoc
 object ListMonad extends Monad[List] {
   // apply f to each element, concatenate the resulting lists
-  override def bind[A,B](x: List[A], f: A => List[B]): List[B] = x.flatMap(f)
+  override def bind[A, B](x: List[A], f: A => List[B]): List[B] = x.flatMap(f)
   override def unit[A](a: A) = List(a)
 }
 ```
@@ -429,10 +429,10 @@ def hList(b: Boolean): List[Int] = sys.error("not implemented")
 The original code,
 
 ```scala
-def clientCode = h(!g(f(27)+"z"))
+def clientCode = h(!g(f(27) + "z"))
 ```
 
-becomes :
+becomes:
 
 ```scala mdoc
 def clientCodeList =
@@ -461,15 +461,15 @@ The last monad we are going to present is the continuation monad, which stands f
 trait ContinuationMonad[R] extends Monad[[A] =>> (A => R) => R] {
   type Cont[X] = (X => R) => R
 
-  override def bind[A,B](x: Cont[A], f: A => Cont[B]): Cont[B] =
+  override def bind[A, B](x: Cont[A], f: A => Cont[B]): Cont[B] =
     // construct continuation for x that calls f with the result of x
     k => x(a => f(a)(k))
   override def unit[A](a: A): Cont[A] = k => k(a)
 
   // callcc is like letcc; the difference is that letcc binds a name,
   // whereas callcc expects a function as argument.
-  // That means that letcc(k,...) is expressed as callcc(k => ...).
-  def callcc[A,B](f: (A => Cont[B]) => Cont[A]): Cont[A] =
+  // That means that letcc(k, ...) is expressed as callcc(k => ...).
+  def callcc[A, B](f: (A => Cont[B]) => Cont[A]): Cont[A] =
     k => f((a: A) => (_: B => R) => k(a))(k)
 }
 ```
@@ -488,7 +488,7 @@ The original code,
 def clientCode = h(!g(f(27) + "z"))
 ```
 
-becomes :
+becomes:
 
 ```scala mdoc
 def clientCodeCPS[R]: (Int => R) => R =
@@ -532,7 +532,7 @@ Let's implement the ``(+ 1 (let/cc k (+ 2 (k 3))))`` example using ``callcc``
 def excallcc[R](using m: ContinuationMonad[R])  = {
   m.bind(
     m.bind(m.unit(2), (two: Int) =>
-      m.callcc[Int,Int](k => m.bind(k(3), (three: Int) => m.unit(two + three)))),
+      m.callcc[Int, Int](k => m.bind(k(3), (three: Int) => m.unit(two + three)))),
     (five: Int) => m.unit(1 + five))
 }
 
@@ -543,7 +543,7 @@ Remember how we had to CPS-transform the `map` function in the "allCosts" exampl
 Now we can define a monadic version of `map` that works for any monad, including the continuation monad:
 
 ```scala mdoc
-def mapM[M[_],A,B](x: List[A], f: A => M[B])(using m: Monad[M]): M[List[B]] =
+def mapM[M[_], A, B](x: List[A], f: A => M[B])(using m: Monad[M]): M[List[B]] =
   sequence(x.map(f))
 ```
 
@@ -563,7 +563,7 @@ type OptionT[M[_]] = [A] =>> M[Option[A]]
 
 class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]] {
 
-  override def bind[A,B](x: M[Option[A]], f: A => M[Option[B]]): M[Option[B]] =
+  override def bind[A, B](x: M[Option[A]], f: A => M[Option[B]]): M[Option[B]] =
     m.bind(x, (z: Option[A]) => z match { case Some(y) => f(y)
                                           case None => m.unit(None) })
 

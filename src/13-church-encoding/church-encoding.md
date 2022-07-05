@@ -28,13 +28,13 @@ Notice that the only values in this language are closures. This means that there
 say, a number but get in fact a closure. Hence, this language has the fascinating property that  no dynamic type errors can occur.
 
 ```scala mdoc
-def eval(e: Exp, env: Env) : Value = e match {
+def eval(e: Exp, env: Env): Value = e match {
   // We give the identity function as dummy value for PrintDot
-  case PrintDot() => print("."); ClosureV(Fun("x","x"), Map.empty)
+  case PrintDot() => print("."); ClosureV(Fun("x", "x"), Map.empty)
   case Id(x) => env(x)
-  case f@Fun(param,body) => ClosureV(f, env)
-  case Ap(f,a) => eval(f,env) match {
-    case ClosureV(f,closureEnv) => eval(f.body, closureEnv + (f.param -> eval(a,env)))
+  case f@Fun(param, body) => ClosureV(f, env)
+  case Ap(f, a) => eval(f, env) match {
+    case ClosureV(f, closureEnv) => eval(f.body, closureEnv + (f.param -> eval(a, env)))
   }
 }
 ```
@@ -49,9 +49,9 @@ Let's start with booleans and boolean arithmetic.
 ```scala mdoc:silent
 val f = Fun("t", Fun("f", "f"))  // false
 val t = Fun("t", Fun("f", "t"))  // true
-val and = Fun("a", Fun("b", Ap(Ap("a", "b"),"a")))
+val and = Fun("a", Fun("b", Ap(Ap("a", "b"), "a")))
 val or = Fun("a", Fun("b", Ap(Ap("a", "a"), "b")))
-val not = Fun("a", Fun("t", Fun("f", Ap(Ap("a","f"),"t"))))
+val not = Fun("a", Fun("t", Fun("f", Ap(Ap("a", "f"), "t"))))
 ```
 
 We can now write our own control structures, such as ``if/then/else``
@@ -70,8 +70,8 @@ val succ = Fun("n", Fun("s", Fun("z", Ap("s", Ap(Ap("n", "s"), "z")))))
 val one = Ap(succ, zero)
 val two = Ap(succ, one)
 val three = Ap(succ, two)
-val add  = Fun("a", Fun("b", Fun("s", Fun("z", Ap(Ap("a","s"), Ap(Ap("b", "s"), "z"))))))
-val mult = Fun("a", Fun("b", Fun("s", Fun("z", Ap(Ap("a", Ap("b","s")), "z")))))
+val add  = Fun("a", Fun("b", Fun("s", Fun("z", Ap(Ap("a", "s"), Ap(Ap("b", "s"), "z"))))))
+val mult = Fun("a", Fun("b", Fun("s", Fun("z", Ap(Ap("a", Ap("b", "s")), "z")))))
 val exp  = Fun("a", Fun("b", Ap(Ap("b", Ap(mult, "a")), one)))
 val iszero = Fun("a", Ap(Ap("a", Fun("x", f)), t))
 ```
@@ -90,7 +90,7 @@ as the predecessor function.
 
 ```scala mdoc:silent
 val emptylist = Fun("c", Fun("e", "e"))
-val cons = Fun("h", Fun("r", Fun("c", Fun("e", Ap(Ap("c", "h"), Ap(Ap("r","c"), "e"))))))
+val cons = Fun("h", Fun("r", Fun("c", Fun("e", Ap(Ap("c", "h"), Ap(Ap("r", "c"), "e"))))))
 val head = Fun("l", Ap(Ap("l", Fun("h", Fun("t", "h"))), f))
 ```
 
@@ -100,10 +100,10 @@ For instance, we can multiply all numbers in a list
 val multlist = Fun("l", Ap(Ap("l", mult), one))
 ```
 
-Here is the list 3,2,3:
+Here is the list 3, 2, 3:
 
 ```scala mdoc:silent
-val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons,three), emptylist)))
+val list323 = Ap(Ap(cons, three), Ap(Ap(cons, two), Ap(Ap(cons, three), emptylist)))
 
 ```
 
