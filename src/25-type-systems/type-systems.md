@@ -32,7 +32,7 @@ enum Exp:
   case Num(n: Int)
   case Add(lhs: Exp, rhs: Exp)
   case Bool(x: Boolean)
-  case If(cond: Exp, then: Exp, els: Exp)
+  case If(cond: Exp, thn: Exp, els: Exp)
 
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
@@ -45,9 +45,9 @@ def eval(e: Exp): Exp = e match {
                      case (Num(x), Num(y)) => Num(x + y)
                      case _ => sys.error("can only add numbers")
                     }
-  case If(cond, then, els) =>
+  case If(cond, thn, els) =>
     eval(cond) match {
-      case Bool(true) => eval(then)
+      case Bool(true) => eval(thn)
       case Bool(false) => eval(els)
       case _ => sys.error("Condition must be boolean")
     }
