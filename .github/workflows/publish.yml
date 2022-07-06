@@ -41,6 +41,9 @@ jobs:
     - name: Create mdBook page
       run: mdbook build
 
+    - name: Dirty fix edit-URLs
+      run: ./dirty-fix-edit-url.sh
+
     - uses: JamesIves/github-pages-deploy-action@4.1.7
       with:
           branch: gh-pages
