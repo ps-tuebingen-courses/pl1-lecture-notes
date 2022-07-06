@@ -5,8 +5,21 @@ The content of this chapter is available as a Scala file [here.](./type-inferenc
 ```scala mdoc:invisible
 import scala.language.implicitConversions
 ```
+Type inference (sometimes called type reconstruction) is the idea to avoid type annotations
+in the program and instead infer all typing-related information from the program.
+For instance, if ``+`` is an operator on numbers, then we can infer that ``x`` must have
+the number type in an expression ``x+1``.
 
-Hindley-Milner type inference with "let-polymorphism":
+The best-known type inference algorithm is Hindley-Milner type inference with so-called "let-polymorphism".
+The basic idea of this algorithm is that the type checker synthesizes fresh type variables
+whenever a type that is not yet known is needed as an input to a recursive call of the type
+checking algorithm. For instance, in a function definition, a fresh type variable is created for the type fo the function argument. In addition to producing a type as output, the type checker will also produce
+a set of equality constraints between types (containing type variables). Type checking succeeds only if these equality constraints have a solution. "Having a solution" means that there is a _substitution_ (a mapping from type variables to types) that makes all equations trivial. For instance, the substitution that
+substitutes ``X`` by ``Num`` and ``Y`` by ``Bool``is a solution for the constraints ``FunType(X,Bool) == FunType(Num,Y)``.
+
+In the above code we choose a slightly different representation of substitution, namely as a function
+that performs the substitution (with regard to our discussion of refunctionalization we could say
+  that we refunctionalize the substitution type).
 
 ```scala mdoc
 enum Type:
@@ -29,10 +42,10 @@ def substitution(x: String, s: Type) = new Function[Type, Type] {
   }
 }
 ```
+A substitution can be found (if it exists) by an algorithm called the
+"Robinson unification algorithm":
 
-Robinson unification algorithm:
-
-```scala mdoc:silent
+```scala mdoc
 def unify(eq: List[(Type, Type)]): Type => Type = eq match {
   case Nil => identity _
   case (NumType(), NumType()) :: rest => unify(rest)
@@ -46,8 +59,13 @@ def unify(eq: List[(Type, Type)]): Type => Type = eq match {
   case (t, TypeVar(x)) :: rest => unify((TypeVar(x), t) :: rest)
   case (t1, t2) :: rest => sys.error(s"Cannot unify $t1 and $t2")
 }
+```
+It is not easy to see that this algorithm terminates in all cases, but it does (ask yourself: why?).
+It is both sound and complete. It returns the so-called "most general unifier".
 
+Let us now apply this to a concrete language. Here is its definition:
 
+```scala mdoc
 enum Exp:
   case Num(n: Int)
   case Id(name: String)
@@ -97,6 +115,27 @@ def subst(e1: Exp, x: String, e2: Exp): Exp = e1 match {
     }
 }
 
+def eval(e: Exp): Exp = e match {
+  case Id(v) => sys.error("unbound identifier: " + v)
+  case Add(l, r) => (eval(l), eval(r)) match {
+    case (Num(x), Num(y)) => Num(x + y)
+    case _ => sys.error("can only add numbers")
+  }
+  case Ap(f, a) => eval(f) match {
+    case Fun(x, body) => eval(subst(body, x, eval(a))) // call-by-value
+    case _ => sys.error("can only apply functions")
+  }
+  case Let(x, xdef, body) => eval(subst(body, x, eval(xdef)))
+  case _ => e // numbers and functions evaluate to themselves
+}
+
+```
+
+The type checker returns both a type (possibly containing type variables) and a list
+of equality constraints. Note that the only way type checking can actually fail is
+when encountering a free variable.
+
+```scala mdoc
 var tyvCount: Int = 0
 def freshTypeVar: TypeVar = {
   tyvCount += 1
@@ -134,32 +173,25 @@ def typeCheck(e: Exp, gamma: Map[String, Type]): (List[(Type, Type)], Type) = e 
   }
 
 }
+```
+
+Full type checking is completed only when the constraints have a solution.
+This is captured by this definition.
+```scala mdoc
 
 def doTypeCheck(e: Exp, gamma: Map[String, Type]) = {
   val (constraints, resType) = typeCheck(e, gamma)
   unify(constraints)(resType)
 }
 
-def eval(e: Exp): Exp = e match {
-  case Id(v) => sys.error("unbound identifier: " + v)
-  case Add(l, r) => (eval(l), eval(r)) match {
-    case (Num(x), Num(y)) => Num(x + y)
-    case _ => sys.error("can only add numbers")
-  }
-  case Ap(f, a) => eval(f) match {
-    case Fun(x, body) => eval(subst(body, x, eval(a))) // call-by-value
-    case _ => sys.error("can only apply functions")
-  }
-  case Let(x, xdef, body) => eval(subst(body, x, eval(xdef)))
-  case _ => e // numbers and functions evaluate to themselves
-}
-
-
 assert(doTypeCheck(42, Map.empty) == NumType())
 assert(doTypeCheck(Fun("x", Add("x", 1)), Map.empty) == FunType(NumType(), NumType()))
 ```
 
-Test "let-polymorphism": The identity function is once applied to a function and once to a number:
+The "let"-case of the type checker implements a special extension of the type checking algorithm, which
+allows one to use the same definition type-polymorphically at multiple types.
+
+For instance, here the identity function is once applied to a function and once to a number:
 
 ```scala mdoc
 val exId =
@@ -167,14 +199,15 @@ val exId =
     Let("id", Fun("x", "x"), Ap(Ap("id", Fun("x", Add("x", 1))), Ap("id", 42))),
     Map.empty)
 ```
+This function could not be type-checked in STLC.
 
-This should trigger an occurs check error:
+This example, on the other hand, should trigger an occurs check error:
 
 ```scala mdoc:crash
 val exOmega = doTypeCheck(Fun("x", Ap("x", "x")), Map.empty)
 ```
 
-Hence `omega` cannot be type-checked in STLC.
+Hence `omega` cannot be type-checked in STLC. STLC has the remarkable property that all well-typed programs terminate.
 
 Completeness of type inference:
 
