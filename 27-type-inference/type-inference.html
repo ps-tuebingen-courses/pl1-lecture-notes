@@ -144,7 +144,19 @@
                     <main>
                         <h1 id="type-inference"><a class="header" href="#type-inference">Type Inference</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="./type-inference.scala">here.</a></p>
-<p>Hindley-Milner type inference with &quot;let-polymorphism&quot;:</p>
+<p>Type inference (sometimes called type reconstruction) is the idea to avoid type annotations
+in the program and instead infer all typing-related information from the program.
+For instance, if <code>+</code> is an operator on numbers, then we can infer that <code>x</code> must have
+the number type in an expression <code>x+1</code>.</p>
+<p>The best-known type inference algorithm is Hindley-Milner type inference with so-called &quot;let-polymorphism&quot;.
+The basic idea of this algorithm is that the type checker synthesizes fresh type variables
+whenever a type that is not yet known is needed as an input to a recursive call of the type
+checking algorithm. For instance, in a function definition, a fresh type variable is created for the type fo the function argument. In addition to producing a type as output, the type checker will also produce
+a set of equality constraints between types (containing type variables). Type checking succeeds only if these equality constraints have a solution. &quot;Having a solution&quot; means that there is a <em>substitution</em> (a mapping from type variables to types) that makes all equations trivial. For instance, the substitution that
+substitutes <code>X</code> by <code>Num</code> and <code>Y</code> by <code>Bool</code>is a solution for the constraints <code>FunType(X,Bool) == FunType(Num,Y)</code>.</p>
+<p>In the above code we choose a slightly different representation of substitution, namely as a function
+that performs the substitution (with regard to our discussion of refunctionalization we could say
+that we refunctionalize the substitution type).</p>
 <pre><code class="language-scala">enum Type:
   case FunType(from: Type, to: Type)
   case NumType()
@@ -165,7 +177,8 @@ def substitution(x: String, s: Type) = new Function[Type, Type] {
   }
 }
 </code></pre>
-<p>Robinson unification algorithm:</p>
+<p>A substitution can be found (if it exists) by an algorithm called the
+&quot;Robinson unification algorithm&quot;:</p>
 <pre><code class="language-scala">def unify(eq: List[(Type, Type)]): Type =&gt; Type = eq match {
   case Nil =&gt; identity _
   case (NumType(), NumType()) :: rest =&gt; unify(rest)
@@ -179,9 +192,11 @@ def substitution(x: String, s: Type) = new Function[Type, Type] {
   case (t, TypeVar(x)) :: rest =&gt; unify((TypeVar(x), t) :: rest)
   case (t1, t2) :: rest =&gt; sys.error(s&quot;Cannot unify $t1 and $t2&quot;)
 }
-
-
-enum Exp:
+</code></pre>
+<p>It is not easy to see that this algorithm terminates in all cases, but it does (ask yourself: why?).
+It is both sound and complete. It returns the so-called &quot;most general unifier&quot;.</p>
+<p>Let us now apply this to a concrete language. Here is its definition:</p>
+<pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
@@ -230,7 +245,25 @@ def subst(e1: Exp, x: String, e2: Exp): Exp = e1 match {
     }
 }
 
-var tyvCount: Int = 0
+def eval(e: Exp): Exp = e match {
+  case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
+  case Add(l, r) =&gt; (eval(l), eval(r)) match {
+    case (Num(x), Num(y)) =&gt; Num(x + y)
+    case _ =&gt; sys.error(&quot;can only add numbers&quot;)
+  }
+  case Ap(f, a) =&gt; eval(f) match {
+    case Fun(x, body) =&gt; eval(subst(body, x, eval(a))) // call-by-value
+    case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+  }
+  case Let(x, xdef, body) =&gt; eval(subst(body, x, eval(xdef)))
+  case _ =&gt; e // numbers and functions evaluate to themselves
+}
+</code></pre>
+<p>The type checker returns both a type (possibly containing type variables) and a list
+of equality constraints. Note that the only way type checking can actually fail is
+when encountering a free variable.</p>
+<pre><code class="language-scala">var tyvCount: Int = 0
+// tyvCount: Int = 0
 def freshTypeVar: TypeVar = {
   tyvCount += 1
   TypeVar(&quot;X&quot; + tyvCount.toString)
@@ -267,47 +300,37 @@ def typeCheck(e: Exp, gamma: Map[String, Type]): (List[(Type, Type)], Type) = e 
   }
 
 }
-
-def doTypeCheck(e: Exp, gamma: Map[String, Type]) = {
+</code></pre>
+<p>Full type checking is completed only when the constraints have a solution.
+This is captured by this definition.</p>
+<pre><code class="language-scala">def doTypeCheck(e: Exp, gamma: Map[String, Type]) = {
   val (constraints, resType) = typeCheck(e, gamma)
   unify(constraints)(resType)
 }
 
-def eval(e: Exp): Exp = e match {
-  case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
-  case Add(l, r) =&gt; (eval(l), eval(r)) match {
-    case (Num(x), Num(y)) =&gt; Num(x + y)
-    case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-  }
-  case Ap(f, a) =&gt; eval(f) match {
-    case Fun(x, body) =&gt; eval(subst(body, x, eval(a))) // call-by-value
-    case _ =&gt; sys.error(&quot;can only apply functions&quot;)
-  }
-  case Let(x, xdef, body) =&gt; eval(subst(body, x, eval(xdef)))
-  case _ =&gt; e // numbers and functions evaluate to themselves
-}
-
-
 assert(doTypeCheck(42, Map.empty) == NumType())
 assert(doTypeCheck(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Map.empty) == FunType(NumType(), NumType()))
 </code></pre>
-<p>Test &quot;let-polymorphism&quot;: The identity function is once applied to a function and once to a number:</p>
+<p>The &quot;let&quot;-case of the type checker implements a special extension of the type checking algorithm, which
+allows one to use the same definition type-polymorphically at multiple types.</p>
+<p>For instance, here the identity function is once applied to a function and once to a number:</p>
 <pre><code class="language-scala">val exId =
   doTypeCheck(
     Let(&quot;id&quot;, Fun(&quot;x&quot;, &quot;x&quot;), Ap(Ap(&quot;id&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), Ap(&quot;id&quot;, 42))),
     Map.empty)
 // exId: Type = NumType()
 </code></pre>
-<p>This should trigger an occurs check error:</p>
+<p>This function could not be type-checked in STLC.</p>
+<p>This example, on the other hand, should trigger an occurs check error:</p>
 <pre><code class="language-scala">val exOmega = doTypeCheck(Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)), Map.empty)
 // java.lang.RuntimeException: Occurs check: X9 occurs in FunType(TypeVar(X9),TypeVar(X10))
 // 	at scala.sys.package$.error(package.scala:27)
 // 	at repl.MdocSession$App.unify(type-inference.md:45)
-// 	at repl.MdocSession$App.doTypeCheck(type-inference.md:154)
-// 	at repl.MdocSession$App.$init$$$anonfun$1(type-inference.md:195)
+// 	at repl.MdocSession$App.doTypeCheck(type-inference.md:175)
+// 	at repl.MdocSession$App.$init$$$anonfun$1(type-inference.md:201)
 // 	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.scala:18)
 </code></pre>
-<p>Hence <code>omega</code> cannot be type-checked in STLC.</p>
+<p>Hence <code>omega</code> cannot be type-checked in STLC. STLC has the remarkable property that all well-typed programs terminate.</p>
 <p>Completeness of type inference:</p>
 <blockquote>
 <p>If there exist type annotations that make a program type-check in the STLC type checker,

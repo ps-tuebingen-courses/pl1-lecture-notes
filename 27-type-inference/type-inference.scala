@@ -1,5 +1,5 @@
 import scala.language.implicitConversions
-
+Type inference (sometimes called type reconstruction) is the idea to avoid type annotations
 enum Type:
   case FunType(from: Type, to: Type)
   case NumType()
@@ -19,7 +19,7 @@ def substitution(x: String, s: Type) = new Function[Type, Type] {
     case TypeVar(y) => if (x == y) s else TypeVar(y)
   }
 }
-
+A substitution can be found (if it exists) by an algorithm called the
 def unify(eq: List[(Type, Type)]): Type => Type = eq match {
   case Nil => identity _
   case (NumType(), NumType()) :: rest => unify(rest)
@@ -33,8 +33,7 @@ def unify(eq: List[(Type, Type)]): Type => Type = eq match {
   case (t, TypeVar(x)) :: rest => unify((TypeVar(x), t) :: rest)
   case (t1, t2) :: rest => sys.error(s"Cannot unify $t1 and $t2")
 }
-
-
+It is not easy to see that this algorithm terminates in all cases, but it does (ask yourself: why?).
 enum Exp:
   case Num(n: Int)
   case Id(name: String)
@@ -84,6 +83,21 @@ def subst(e1: Exp, x: String, e2: Exp): Exp = e1 match {
     }
 }
 
+def eval(e: Exp): Exp = e match {
+  case Id(v) => sys.error("unbound identifier: " + v)
+  case Add(l, r) => (eval(l), eval(r)) match {
+    case (Num(x), Num(y)) => Num(x + y)
+    case _ => sys.error("can only add numbers")
+  }
+  case Ap(f, a) => eval(f) match {
+    case Fun(x, body) => eval(subst(body, x, eval(a))) // call-by-value
+    case _ => sys.error("can only apply functions")
+  }
+  case Let(x, xdef, body) => eval(subst(body, x, eval(xdef)))
+  case _ => e // numbers and functions evaluate to themselves
+}
+
+
 var tyvCount: Int = 0
 def freshTypeVar: TypeVar = {
   tyvCount += 1
@@ -122,25 +136,11 @@ def typeCheck(e: Exp, gamma: Map[String, Type]): (List[(Type, Type)], Type) = e 
 
 }
 
+
 def doTypeCheck(e: Exp, gamma: Map[String, Type]) = {
   val (constraints, resType) = typeCheck(e, gamma)
   unify(constraints)(resType)
 }
-
-def eval(e: Exp): Exp = e match {
-  case Id(v) => sys.error("unbound identifier: " + v)
-  case Add(l, r) => (eval(l), eval(r)) match {
-    case (Num(x), Num(y)) => Num(x + y)
-    case _ => sys.error("can only add numbers")
-  }
-  case Ap(f, a) => eval(f) match {
-    case Fun(x, body) => eval(subst(body, x, eval(a))) // call-by-value
-    case _ => sys.error("can only apply functions")
-  }
-  case Let(x, xdef, body) => eval(subst(body, x, eval(xdef)))
-  case _ => e // numbers and functions evaluate to themselves
-}
-
 
 assert(doTypeCheck(42, Map.empty) == NumType())
 assert(doTypeCheck(Fun("x", Add("x", 1)), Map.empty) == FunType(NumType(), NumType()))
@@ -149,6 +149,6 @@ val exId =
   doTypeCheck(
     Let("id", Fun("x", "x"), Ap(Ap("id", Fun("x", Add("x", 1))), Ap("id", 42))),
     Map.empty)
-
+This function could not be type-checked in STLC.
 val exOmega = doTypeCheck(Fun("x", Ap("x", "x")), Map.empty)
 
