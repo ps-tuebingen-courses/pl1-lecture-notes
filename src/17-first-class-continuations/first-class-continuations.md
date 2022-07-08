@@ -114,7 +114,7 @@ def starteval(e: Exp): Value = {
 }
 ```
 
-Finally a small test of ~Letcc`.
+Finally a small test of `Letcc`.
 
 ```scala mdoc:silent
 val testprog = Add(1, Letcc("k", Add(2, Ap("k", 3))))

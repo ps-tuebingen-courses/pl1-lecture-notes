@@ -5,21 +5,25 @@ The content of this chapter is available as a Scala file [here.](./type-inferenc
 ```scala mdoc:invisible
 import scala.language.implicitConversions
 ```
+
 Type inference (sometimes called type reconstruction) is the idea to avoid type annotations
 in the program and instead infer all typing-related information from the program.
 For instance, if ``+`` is an operator on numbers, then we can infer that ``x`` must have
-the number type in an expression ``x+1``.
+the number type in an expression ``x + 1``.
 
 The best-known type inference algorithm is Hindley-Milner type inference with so-called "let-polymorphism".
 The basic idea of this algorithm is that the type checker synthesizes fresh type variables
 whenever a type that is not yet known is needed as an input to a recursive call of the type
-checking algorithm. For instance, in a function definition, a fresh type variable is created for the type fo the function argument. In addition to producing a type as output, the type checker will also produce
-a set of equality constraints between types (containing type variables). Type checking succeeds only if these equality constraints have a solution. "Having a solution" means that there is a _substitution_ (a mapping from type variables to types) that makes all equations trivial. For instance, the substitution that
-substitutes ``X`` by ``Num`` and ``Y`` by ``Bool``is a solution for the constraints ``FunType(X,Bool) == FunType(Num,Y)``.
+checking algorithm. For instance, in a function definition, a fresh type variable is created for the type of
+the function argument. In addition to producing a type as output, the type checker will also produce
+a set of equality constraints between types (containing type variables). Type checking succeeds only if these
+equality constraints have a solution. "Having a solution" means that there is a _substitution_
+(a mapping from type variables to types) that makes all equations trivial. For instance, the substitution that
+substitutes ``X`` by ``Num`` and ``Y`` by ``Bool`` is a solution for the constraints ``FunType(X, Bool) == FunType(Num, Y)``.
 
-In the above code we choose a slightly different representation of substitution, namely as a function
+In the code below we choose a slightly different representation of substitution, namely as a function
 that performs the substitution (with regard to our discussion of refunctionalization we could say
-  that we refunctionalize the substitution type).
+that we refunctionalize the substitution type).
 
 ```scala mdoc
 enum Type:
@@ -42,6 +46,7 @@ def substitution(x: String, s: Type) = new Function[Type, Type] {
   }
 }
 ```
+
 A substitution can be found (if it exists) by an algorithm called the
 "Robinson unification algorithm":
 
@@ -60,6 +65,7 @@ def unify(eq: List[(Type, Type)]): Type => Type = eq match {
   case (t1, t2) :: rest => sys.error(s"Cannot unify $t1 and $t2")
 }
 ```
+
 It is not easy to see that this algorithm terminates in all cases, but it does (ask yourself: why?).
 It is both sound and complete. It returns the so-called "most general unifier".
 
@@ -71,7 +77,7 @@ enum Exp:
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp) // No type annotation!
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
   case Let(x: String, xdef: Exp, body: Exp)
 
 object Exp:
@@ -135,7 +141,7 @@ The type checker returns both a type (possibly containing type variables) and a 
 of equality constraints. Note that the only way type checking can actually fail is
 when encountering a free variable.
 
-```scala mdoc
+```scala mdoc:silent
 var tyvCount: Int = 0
 def freshTypeVar: TypeVar = {
   tyvCount += 1
@@ -177,8 +183,8 @@ def typeCheck(e: Exp, gamma: Map[String, Type]): (List[(Type, Type)], Type) = e 
 
 Full type checking is completed only when the constraints have a solution.
 This is captured by this definition.
-```scala mdoc
 
+```scala mdoc
 def doTypeCheck(e: Exp, gamma: Map[String, Type]) = {
   val (constraints, resType) = typeCheck(e, gamma)
   unify(constraints)(resType)
@@ -199,6 +205,7 @@ val exId =
     Let("id", Fun("x", "x"), Ap(Ap("id", Fun("x", Add("x", 1))), Ap("id", 42))),
     Map.empty)
 ```
+
 This function could not be type-checked in STLC.
 
 This example, on the other hand, should trigger an occurs check error:
