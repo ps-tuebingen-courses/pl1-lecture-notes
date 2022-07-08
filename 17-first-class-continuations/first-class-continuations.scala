@@ -60,3 +60,4 @@ def starteval(e: Exp): Value = {
 val testprog = Add(1, Letcc("k", Add(2, Ap("k", 3))))
 
 assert(starteval(testprog) == NumV(4))
+

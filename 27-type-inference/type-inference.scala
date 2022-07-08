@@ -1,5 +1,5 @@
 import scala.language.implicitConversions
-Type inference (sometimes called type reconstruction) is the idea to avoid type annotations
+
 enum Type:
   case FunType(from: Type, to: Type)
   case NumType()
@@ -19,7 +19,7 @@ def substitution(x: String, s: Type) = new Function[Type, Type] {
     case TypeVar(y) => if (x == y) s else TypeVar(y)
   }
 }
-A substitution can be found (if it exists) by an algorithm called the
+
 def unify(eq: List[(Type, Type)]): Type => Type = eq match {
   case Nil => identity _
   case (NumType(), NumType()) :: rest => unify(rest)
@@ -33,13 +33,13 @@ def unify(eq: List[(Type, Type)]): Type => Type = eq match {
   case (t, TypeVar(x)) :: rest => unify((TypeVar(x), t) :: rest)
   case (t1, t2) :: rest => sys.error(s"Cannot unify $t1 and $t2")
 }
-It is not easy to see that this algorithm terminates in all cases, but it does (ask yourself: why?).
+
 enum Exp:
   case Num(n: Int)
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp) // No type annotation!
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
   case Let(x: String, xdef: Exp, body: Exp)
 
 object Exp:
@@ -136,7 +136,6 @@ def typeCheck(e: Exp, gamma: Map[String, Type]): (List[(Type, Type)], Type) = e 
 
 }
 
-
 def doTypeCheck(e: Exp, gamma: Map[String, Type]) = {
   val (constraints, resType) = typeCheck(e, gamma)
   unify(constraints)(resType)
@@ -149,6 +148,6 @@ val exId =
   doTypeCheck(
     Let("id", Fun("x", "x"), Ap(Ap("id", Fun("x", Add("x", 1))), Ap("id", 42))),
     Map.empty)
-This function could not be type-checked in STLC.
+
 val exOmega = doTypeCheck(Fun("x", Ap("x", "x")), Map.empty)
 

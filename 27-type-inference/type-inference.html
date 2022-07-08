@@ -147,14 +147,17 @@
 <p>Type inference (sometimes called type reconstruction) is the idea to avoid type annotations
 in the program and instead infer all typing-related information from the program.
 For instance, if <code>+</code> is an operator on numbers, then we can infer that <code>x</code> must have
-the number type in an expression <code>x+1</code>.</p>
+the number type in an expression <code>x + 1</code>.</p>
 <p>The best-known type inference algorithm is Hindley-Milner type inference with so-called &quot;let-polymorphism&quot;.
 The basic idea of this algorithm is that the type checker synthesizes fresh type variables
 whenever a type that is not yet known is needed as an input to a recursive call of the type
-checking algorithm. For instance, in a function definition, a fresh type variable is created for the type fo the function argument. In addition to producing a type as output, the type checker will also produce
-a set of equality constraints between types (containing type variables). Type checking succeeds only if these equality constraints have a solution. &quot;Having a solution&quot; means that there is a <em>substitution</em> (a mapping from type variables to types) that makes all equations trivial. For instance, the substitution that
-substitutes <code>X</code> by <code>Num</code> and <code>Y</code> by <code>Bool</code>is a solution for the constraints <code>FunType(X,Bool) == FunType(Num,Y)</code>.</p>
-<p>In the above code we choose a slightly different representation of substitution, namely as a function
+checking algorithm. For instance, in a function definition, a fresh type variable is created for the type of
+the function argument. In addition to producing a type as output, the type checker will also produce
+a set of equality constraints between types (containing type variables). Type checking succeeds only if these
+equality constraints have a solution. &quot;Having a solution&quot; means that there is a <em>substitution</em>
+(a mapping from type variables to types) that makes all equations trivial. For instance, the substitution that
+substitutes <code>X</code> by <code>Num</code> and <code>Y</code> by <code>Bool</code> is a solution for the constraints <code>FunType(X, Bool) == FunType(Num, Y)</code>.</p>
+<p>In the code below we choose a slightly different representation of substitution, namely as a function
 that performs the substitution (with regard to our discussion of refunctionalization we could say
 that we refunctionalize the substitution type).</p>
 <pre><code class="language-scala">enum Type:
@@ -201,7 +204,7 @@ It is both sound and complete. It returns the so-called &quot;most general unifi
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp) // No type annotation!
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
   case Let(x: String, xdef: Exp, body: Exp)
 
 object Exp:
@@ -263,7 +266,6 @@ def eval(e: Exp): Exp = e match {
 of equality constraints. Note that the only way type checking can actually fail is
 when encountering a free variable.</p>
 <pre><code class="language-scala">var tyvCount: Int = 0
-// tyvCount: Int = 0
 def freshTypeVar: TypeVar = {
   tyvCount += 1
   TypeVar(&quot;X&quot; + tyvCount.toString)
