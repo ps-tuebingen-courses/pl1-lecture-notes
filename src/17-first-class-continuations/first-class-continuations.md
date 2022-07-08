@@ -121,3 +121,51 @@ val testprog = Add(1, Letcc("k", Add(2, Ap("k", 3))))
 
 assert(starteval(testprog) == NumV(4))
 ```
+
+Here's a little quiz about `Letcc`:
+
+<!-- prevent questionnaire from showing up if there is no javascript enabled-->
+<noscript><style>questionnaire { display: none; }</style></noscript>
+<!-- warning for user - feel free to leave out or customize -->
+<noscript><div>Enable JavaScript to see the quiz</div></noscript>
+
+<questionnaire language="en">
+  <question type="singlechoice">
+    What is the result of the following expression?
+    <pre><code class="language-scala">
+    Add(Letcc("k", Add(3, Ap("k", 1))), 4)  
+    </code></pre>
+    <distractor>
+      <code>NumV(8)</code>
+      <explanation>The addition of 3 is discarded.</explanation>
+    </distractor>
+    <solution>
+      <code>NumV(5)</code>
+    </solution>
+    <distractor>
+      <code>NumV(1)</code>
+      <explanation>Don't forget the addition of 4.</explanation>
+    </distractor>
+    <distractor>
+      <code>NumV(4)</code>
+      <explanation>The captured continuation is the addition of 4.</explanation>
+    </distractor>
+  </question>
+  <question type="multiplechoice">
+    Which of the following assertions about let/cc are correct?
+    <solution>
+      let/cc captures the whole remaining computation.
+    </solution>
+    <solution>
+      If the current continuation is not used in the body, then let/cc behaves as if it was not there.
+    </solution>
+    <distractor>
+      The captured continuation is always used in the body of let/cc.
+      <explanation>It can also be discarded.</explanation>
+    </distractor>
+    <distractor>
+      let/cc is a control operator for delimited continuations.
+      <explanation>The captured continuation is undelimited.</explanation>
+    </distractor>
+  </question>
+</questionnaire>
