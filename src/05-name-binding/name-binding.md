@@ -56,15 +56,19 @@ on the blackboard or in comments.
 Instead of dealing with identifiers as external entities as in AE, identifiers can now be defined within the language. This justifies a
 new treatment of identifiers. We will explain them in terms of _substitution_, a notion well-known informally from high school algebra.
 The idea is the following: The interpreter transforms the term
+
 ```
   with (x = 5) {
     x + x
   }
 ```
+
 into
+
 ```
   5 + 5
 ```
+
 before proceeding. That is, all occurrences of ``x`` have been replaced by ``5``.
 Note that these two programs -- before and after the substitution -- are certainly not *equal*: They look quite different. However,
 they are *equivalent* in the sense that when evaluated, they will produce the same number. Such transformations between different but
@@ -94,7 +98,8 @@ def makeEval(subst: (Exp, String, Num) => Exp): Exp => Int = {
     case Id(x) => sys.error("unbound variable: " + x)
     case Add(l, r) => eval(l) + eval(r)
     case Mul(l, r) => eval(l) * eval(r)
-    case With(x, xdef, body) => eval(subst(body, x, Num(eval(xdef)))) // take the int and wrap it into a Num
+    // take the Int and wrap it into a Num for substitution
+    case With(x, xdef, body) => eval(subst(body, x, Num(eval(xdef))))
   }
   eval
 }
@@ -122,17 +127,18 @@ not even syntactically legal anymore.
 Exercise for self-study: Find an expression that would be transformed into one that is not syntactically legal.
 To see the reason for this, we need to define some terminology (the word "instance" here means "occurence"):
 
-**Definition (Binding Instance)**:
-A binding instance of an identifier is the instance of the identifier that gives it its value. In WAE, the ``x`` position of a ``With`` is the only binding instance.
+>**Definition (Binding Instance)**:
+>A binding instance of an identifier is the instance of the identifier that gives it its value. In WAE, the ``x`` position of a ``With`` is the only binding instance.
 
-**Definition (Scope)**:
-The scope of a binding instance is the region of program text in which instances of the identifier refer to the value bound by the binding instance.
+>**Definition (Scope)**:
+>The scope of a binding instance is the region of program text in which instances of the identifier refer to the value bound by the binding instance.
 
-**Definition (Bound Instance)**:
-An identifier is bound if it is contained within the scope of a binding instance of its name.
+>**Definition (Bound Instance)**:
+>An identifier is bound if it is contained within the scope of a binding instance of its name.
 
-**Definition (Free Instance)**:
-An identifier not contained in the scope of any binding instance of its name is said to be free.
+>**Definition (Free Instance)**:
+>An identifier not contained in the scope of any binding instance of its name is said to be free.
+
 Examples: In WAE, the String in ``Id("x")`` is a bound or free instance, and the String in ``With("x", ..., ...)`` is a binding instance.
 The scope of this binding instance is the third sub-term of ``With``.
 

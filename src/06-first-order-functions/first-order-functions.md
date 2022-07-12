@@ -77,9 +77,10 @@ def eval(funs: Funs, e: Exp): Int = e match {
   case Call(f, args) => {
      val fd = funs(f) // lookup function definition
      val vargs = args.map(eval(funs, _)) // evaluate function arguments
-     if (fd.args.size != vargs.size) sys.error("number of paramters in call to " + f + " does not match")
-     // We construct the function body to be evaluated by subsequently substituting all formal
-     // arguments with their respective argument values.
+     if (fd.args.size != vargs.size)
+       sys.error("number of paramters in call to " + f + " does not match")
+     // We construct the function body to be evaluated by subsequently substituting
+     // all formal arguments with their respective argument values.
      // If we have only a single argument "fd.arg" and a single argument value "varg",
      // the next line of code is equivalent to:
      // val substbody = subst(fd.body, fd.arg, Num(varg))
@@ -155,7 +156,8 @@ def evalWithEnv(funs: Funs, env: Env, e: Exp): Int = e match {
   case Call(f, args) => {
      val fd = funs(f) // lookup function definition
      val vargs = args.map(evalWithEnv(funs, env, _)) // evaluate function arguments
-     if (fd.args.size != vargs.size) sys.error("number of paramters in call to " + f + " does not match")
+     if (fd.args.size != vargs.size)
+       sys.error("number of paramters in call to " + f + " does not match")
      // We construct the environment by associating each formal argument to its actual value
      val newenv = Map() ++ fd.args.zip(vargs)
      evalWithEnv(funs, newenv, fd.body)
@@ -179,7 +181,8 @@ def evalDynScope(funs: Funs, env: Env, e: Exp): Int = e match {
   case Call(f, args) => {
      val fd = funs(f)
      val vargs = args.map(evalDynScope(funs, env, _))
-     if (fd.args.size != vargs.size) sys.error("number of paramters in call to " + f + " does not match")
+     if (fd.args.size != vargs.size)
+       sys.error("number of paramters in call to " + f + " does not match")
      val newenv = env ++ fd.args.zip(vargs) // extending env instead of Map() !!
      evalDynScope(funs, newenv, fd.body)
   }
