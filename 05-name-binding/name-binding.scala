@@ -22,7 +22,8 @@ def makeEval(subst: (Exp, String, Num) => Exp): Exp => Int = {
     case Id(x) => sys.error("unbound variable: " + x)
     case Add(l, r) => eval(l) + eval(r)
     case Mul(l, r) => eval(l) * eval(r)
-    case With(x, xdef, body) => eval(subst(body, x, Num(eval(xdef)))) // take the int and wrap it into a Num
+    // take the Int and wrap it into a Num for substitution
+    case With(x, xdef, body) => eval(subst(body, x, Num(eval(xdef))))
   }
   eval
 }

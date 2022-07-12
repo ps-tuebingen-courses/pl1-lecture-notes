@@ -205,9 +205,10 @@ We pass the map of functions as an additional parameter.</p>
   case Call(f, args) =&gt; {
      val fd = funs(f) // lookup function definition
      val vargs = args.map(eval(funs, _)) // evaluate function arguments
-     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
-     // We construct the function body to be evaluated by subsequently substituting all formal
-     // arguments with their respective argument values.
+     if (fd.args.size != vargs.size)
+       sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
+     // We construct the function body to be evaluated by subsequently substituting
+     // all formal arguments with their respective argument values.
      // If we have only a single argument &quot;fd.arg&quot; and a single argument value &quot;varg&quot;,
      // the next line of code is equivalent to:
      // val substbody = subst(fd.body, fd.arg, Num(varg))
@@ -264,7 +265,8 @@ encounter bound identifiers during interpretation.  How do we handle them?  We m
   case Call(f, args) =&gt; {
      val fd = funs(f) // lookup function definition
      val vargs = args.map(evalWithEnv(funs, env, _)) // evaluate function arguments
-     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
+     if (fd.args.size != vargs.size)
+       sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      // We construct the environment by associating each formal argument to its actual value
      val newenv = Map() ++ fd.args.zip(vargs)
      evalWithEnv(funs, newenv, fd.body)
@@ -286,7 +288,8 @@ extend <code>env</code> instead, like so:</p>
   case Call(f, args) =&gt; {
      val fd = funs(f)
      val vargs = args.map(evalDynScope(funs, env, _))
-     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
+     if (fd.args.size != vargs.size)
+       sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      val newenv = env ++ fd.args.zip(vargs) // extending env instead of Map() !!
      evalDynScope(funs, newenv, fd.body)
   }

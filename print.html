@@ -663,7 +663,8 @@ it with a substitution function:</p>
     case Id(x) =&gt; sys.error(&quot;unbound variable: &quot; + x)
     case Add(l, r) =&gt; eval(l) + eval(r)
     case Mul(l, r) =&gt; eval(l) * eval(r)
-    case With(x, xdef, body) =&gt; eval(subst(body, x, Num(eval(xdef)))) // take the int and wrap it into a Num
+    // take the Int and wrap it into a Num for substitution
+    case With(x, xdef, body) =&gt; eval(subst(body, x, Num(eval(xdef))))
   }
   eval
 }
@@ -685,15 +686,23 @@ Let's try to formalize this definition:</p>
 not even syntactically legal anymore.
 Exercise for self-study: Find an expression that would be transformed into one that is not syntactically legal.
 To see the reason for this, we need to define some terminology (the word &quot;instance&quot; here means &quot;occurence&quot;):</p>
+<blockquote>
 <p><strong>Definition (Binding Instance)</strong>:
 A binding instance of an identifier is the instance of the identifier that gives it its value. In WAE, the <code>x</code> position of a <code>With</code> is the only binding instance.</p>
+</blockquote>
+<blockquote>
 <p><strong>Definition (Scope)</strong>:
 The scope of a binding instance is the region of program text in which instances of the identifier refer to the value bound by the binding instance.</p>
+</blockquote>
+<blockquote>
 <p><strong>Definition (Bound Instance)</strong>:
 An identifier is bound if it is contained within the scope of a binding instance of its name.</p>
+</blockquote>
+<blockquote>
 <p><strong>Definition (Free Instance)</strong>:
-An identifier not contained in the scope of any binding instance of its name is said to be free.
-Examples: In WAE, the String in <code>Id(&quot;x&quot;)</code> is a bound or free instance, and the String in <code>With(&quot;x&quot;, ..., ...)</code> is a binding instance.
+An identifier not contained in the scope of any binding instance of its name is said to be free.</p>
+</blockquote>
+<p>Examples: In WAE, the String in <code>Id(&quot;x&quot;)</code> is a bound or free instance, and the String in <code>With(&quot;x&quot;, ..., ...)</code> is a binding instance.
 The scope of this binding instance is the third sub-term of <code>With</code>.</p>
 <p>Now the reason can be revealed.  Our first attempt failed because we substituted the identifier occurring in the binding position in the
 with-expression.  This renders the expression illegal because after substitution the binding position where an identifier was expected
@@ -895,9 +904,10 @@ We pass the map of functions as an additional parameter.</p>
   case Call(f, args) =&gt; {
      val fd = funs(f) // lookup function definition
      val vargs = args.map(eval(funs, _)) // evaluate function arguments
-     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
-     // We construct the function body to be evaluated by subsequently substituting all formal
-     // arguments with their respective argument values.
+     if (fd.args.size != vargs.size)
+       sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
+     // We construct the function body to be evaluated by subsequently substituting
+     // all formal arguments with their respective argument values.
      // If we have only a single argument &quot;fd.arg&quot; and a single argument value &quot;varg&quot;,
      // the next line of code is equivalent to:
      // val substbody = subst(fd.body, fd.arg, Num(varg))
@@ -954,7 +964,8 @@ encounter bound identifiers during interpretation.  How do we handle them?  We m
   case Call(f, args) =&gt; {
      val fd = funs(f) // lookup function definition
      val vargs = args.map(evalWithEnv(funs, env, _)) // evaluate function arguments
-     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
+     if (fd.args.size != vargs.size)
+       sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      // We construct the environment by associating each formal argument to its actual value
      val newenv = Map() ++ fd.args.zip(vargs)
      evalWithEnv(funs, newenv, fd.body)
@@ -976,7 +987,8 @@ extend <code>env</code> instead, like so:</p>
   case Call(f, args) =&gt; {
      val fd = funs(f)
      val vargs = args.map(evalDynScope(funs, env, _))
-     if (fd.args.size != vargs.size) sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
+     if (fd.args.size != vargs.size)
+       sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
      val newenv = env ++ fd.args.zip(vargs) // extending env instead of Map() !!
      evalDynScope(funs, newenv, fd.body)
   }
@@ -2440,7 +2452,7 @@ expression trees as object algebras.</p>
 <pre><code class="language-scala">trait Exp[T] {
   implicit def id(name: String): T
   def fun(param: String, body: T): T
-  def ap(funExpr: T, argExpr: T):T
+  def ap(funExpr: T, argExpr: T): T
   implicit def num(n: Int): T
   def add(e1: T, e2: T): T
   def wth(x: String, xdef: T, body: T): T = ap(fun(x, body), xdef)

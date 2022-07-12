@@ -68,7 +68,7 @@ val testplus = plus(two, three)(NumAlg)
 trait Exp[T] {
   implicit def id(name: String): T
   def fun(param: String, body: T): T
-  def ap(funExpr: T, argExpr: T):T
+  def ap(funExpr: T, argExpr: T): T
   implicit def num(n: Int): T
   def add(e1: T, e2: T): T
   def wth(x: String, xdef: T, body: T): T = ap(fun(x, body), xdef)
