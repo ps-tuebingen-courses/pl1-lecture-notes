@@ -156,7 +156,7 @@ object AbstractMachine {
     case Num(n: Int) => ApplyState(k, NumV(n))
     case Id(x) => ApplyState(k, env(x))
     case Add(l, r) =>
-      EvalState(l, env, AddC1(r, env,k))
+      EvalState(l, env, AddC1(r, env, k))
     case f@Fun(param, body) => ApplyState(k, ClosureV(f, env))
     case Ap(f, a) =>  EvalState(f, env, ApC1(a, env, k))
    }

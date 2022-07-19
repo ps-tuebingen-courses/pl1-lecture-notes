@@ -149,7 +149,7 @@ a language feature if we choose syntactic interpretation.</p>
 <p>Today we want to discuss techniques with which we can make our interpreter so syntactic that it corresponds to an abstract machine:
 A machine with a (possibly infinite) set of states and a simple transition relation between the states. We already know the technique
 with which we can take control over the call stack management: <em>CPS transformation</em>. After CPS-transforming the interpreter, we do not
-rely on the order of evaluation and call stack management of the meta language anymore. We replicate its definition here:</p>
+rely on the order of evaluation and call stack management of the meta-language anymore. We replicate its definition here:</p>
 <pre><code class="language-scala">enum Exp:
   case Num(n: Int)
   case Id(name: String)
@@ -201,7 +201,7 @@ closure are instead passed as parameters to the top-level function. Lambda lifti
 <ol>
 <li>Invent a new and unique name for each function that is not a top-level function.</li>
 <li>Create a function with this name. Its body is the body of the former local function. Such a function will contain free variables.</li>
-<li>Add a parameter to so-obtained top-level function for each free variable in its body.
+<li>Add a parameter to the so-obtained top-level function for each free variable in its body.
 Thus it becomes a higher-order function that returns a function when passed these arguments.</li>
 <li>Replace the local function by a call to the new top-level function and pass the corresponding local context via the arguments
 created in step 3.</li>
@@ -335,7 +335,7 @@ Its transition function is the function named <code>transition</code>.
 We can see every intermediate state of the abstract machine.
 Its state is fully described by the (first-order) state type. We are no
 longer dependent on call-stack management or higher-order functions of
-the meta language (Scala).</p>
+the meta-language (Scala).</p>
 <pre><code class="language-scala">object AbstractMachine {
   sealed abstract class FunctionValue[T]
   case class AddC1[T](r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
@@ -362,7 +362,7 @@ the meta language (Scala).</p>
     case Num(n: Int) =&gt; ApplyState(k, NumV(n))
     case Id(x) =&gt; ApplyState(k, env(x))
     case Add(l, r) =&gt;
-      EvalState(l, env, AddC1(r, env,k))
+      EvalState(l, env, AddC1(r, env, k))
     case f@Fun(param, body) =&gt; ApplyState(k, ClosureV(f, env))
     case Ap(f, a) =&gt;  EvalState(f, env, ApC1(a, env, k))
    }

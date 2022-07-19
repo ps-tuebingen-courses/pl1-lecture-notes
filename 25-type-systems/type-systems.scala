@@ -14,11 +14,10 @@ import Exp._
 
 def eval(e: Exp): Exp = e match {
   case Add(l, r) => (eval(l), eval(r)) match {
-                     case (Num(x), Num(y)) => Num(x + y)
-                     case _ => sys.error("can only add numbers")
-                    }
-  case If(cond, thn, els) =>
-    eval(cond) match {
+    case (Num(x), Num(y)) => Num(x + y)
+    case _ => sys.error("can only add numbers")
+   }
+  case If(cond, thn, els) => eval(cond) match {
       case Bool(true) => eval(thn)
       case Bool(false) => eval(els)
       case _ => sys.error("Condition must be boolean")
