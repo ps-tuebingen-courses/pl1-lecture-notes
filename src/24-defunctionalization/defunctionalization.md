@@ -8,7 +8,7 @@ a language feature if we choose syntactic interpretation.
 Today we want to discuss techniques with which we can make our interpreter so syntactic that it corresponds to an abstract machine:
 A machine with a (possibly infinite) set of states and a simple transition relation between the states. We already know the technique
 with which we can take control over the call stack management: _CPS transformation_. After CPS-transforming the interpreter, we do not
-rely on the order of evaluation and call stack management of the meta language anymore. We replicate its definition here:
+rely on the order of evaluation and call stack management of the meta-language anymore. We replicate its definition here:
 
 ```scala mdoc
 enum Exp:
@@ -65,7 +65,7 @@ closure are instead passed as parameters to the top-level function. Lambda lifti
 
  1. Invent a new and unique name for each function that is not a top-level function.
  2. Create a function with this name. Its body is the body of the former local function. Such a function will contain free variables.
- 3. Add a parameter to so-obtained top-level function for each free variable in its body.
+ 3. Add a parameter to the so-obtained top-level function for each free variable in its body.
     Thus it becomes a higher-order function that returns a function when passed these arguments.
  4. Replace the local function by a call to the new top-level function and pass the corresponding local context via the arguments
     created in step 3.
@@ -226,7 +226,7 @@ Its transition function is the function named ``transition``.
 We can see every intermediate state of the abstract machine.
 Its state is fully described by the (first-order) state type. We are no
 longer dependent on call-stack management or higher-order functions of
-the meta language (Scala).
+the meta-language (Scala).
 
 ```scala mdoc
 object AbstractMachine {
@@ -255,7 +255,7 @@ object AbstractMachine {
     case Num(n: Int) => ApplyState(k, NumV(n))
     case Id(x) => ApplyState(k, env(x))
     case Add(l, r) =>
-      EvalState(l, env, AddC1(r, env,k))
+      EvalState(l, env, AddC1(r, env, k))
     case f@Fun(param, body) => ApplyState(k, ClosureV(f, env))
     case Ap(f, a) =>  EvalState(f, env, ApC1(a, env, k))
    }
