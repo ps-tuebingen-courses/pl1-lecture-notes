@@ -305,27 +305,27 @@ namely during the construction of the AST:</p>
     sub(unaryminus(Num(1)), Num(7))  
     </code></pre>
     <distractor>
-      <pre><code class="language-scala">
+      <code class="language-scala">
       sub(unaryminus(Num(1)), Num(7))
-      </code></pre>
+      </code>
       <explanation>No desugaring was applied.</explanation>
     </distractor>
     <distractor>
-      <pre><code class="language-scala">
+      <code class="language-scala">
       Num(-8)
-      </code></pre>
+      </code>
       <explanation>Desugaring does not mean evaluation.</explanation>
     </distractor>
     <distractor>
-      <pre><code class="language-scala">
+      <code class="language-scala">
       sub(sub(Num(0), Num(1)), Num(7))
-      </code></pre>
+      </code>
       <explanation><code>sub</code> has to be desugared, too.</explanation>
     </distractor>
     <solution>
-      <pre><code class="language-scala">
+      <code class="language-scala">
       Add(Add(Num(0), Mult(Num(-1), Num(1))), Mult(Num(-1), Num(7)))
-      </code></pre>
+      </code>
     </solution>
   </question>
 </questionnaire>
