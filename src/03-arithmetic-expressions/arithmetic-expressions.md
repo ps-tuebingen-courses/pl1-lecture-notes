@@ -61,7 +61,7 @@ type Env = Map[String, Int]
 ```
 
 An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
-"Int". This interpreter uses pattern matching over case classes.
+`Int`. This interpreter uses pattern matching over case classes.
 
 ```scala mdoc
 def eval(e: Exp, env: Env): Int = e match {
@@ -72,7 +72,7 @@ def eval(e: Exp, env: Env): Int = e match {
 }
 ```
 
-A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract "eval" method to the Exp
+A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract `eval` method to an `Exp`
 class and override it in all subclasses, each implementation corresponding to its corresponding case in the pattern match. The choice
 between these alternatives matters, since they support different dimensions of extensibility.
 
