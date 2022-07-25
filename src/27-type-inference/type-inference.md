@@ -226,3 +226,51 @@ Due to "let-polymorphism", this program also type-checks some programs that woul
 The type system is still sound:
 
 > If `doTypeCheck(e, Map.empty) == t`, then `eval(e) == v` and `doTypeCheck(v) == t` (modulo \\( \alpha \\)-renaming of type variables).
+
+<!-- prevent questionnaire from showing up if there is no javascript enabled-->
+<noscript><style>questionnaire { display: none; }</style></noscript>
+<!-- warning for user - feel free to leave out or customize -->
+<noscript><div>Enable JavaScript to see the quiz</div></noscript>
+
+<questionnaire language="en">
+  <question type="multiplechoice">
+    Which of the following pairs of types can be unified?
+    <solution>
+      <code class="language-scala">
+      FunType(NumType(), NumType())
+      </code>
+      &nbsp; and
+      <code class="language-scala">
+      FunType(TypeVar("X"), TypeVar("X"))
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      FunType(TypeVar("X"), TypeVar("Y"))
+      </code>
+      &nbsp; and
+      <code class="language-scala">
+      NumType()
+      </code>
+      <explanation>A function type can never be unified with <code class="language-scala">NumType()</code>.</explanation>
+    </distractor>
+    <solution>
+      <code class="language-scala">
+      FunType(NumType(), TypeVar("X"))
+      </code>
+      &nbsp; and
+      <code class="language-scala">
+      FunType(NumType(), TypeVar("Y"))
+      </code>
+    </solution>
+    <solution>
+      <code class="language-scala">
+      FunType(NumType(), TypeVar("Y"))
+      </code>
+      &nbsp; and
+      <code class="language-scala">
+      TypeVar("X")
+      </code>
+    </solution>
+  </question>
+</questionnaire>

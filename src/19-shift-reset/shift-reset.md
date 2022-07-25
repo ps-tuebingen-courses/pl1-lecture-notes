@@ -99,6 +99,78 @@ def eval(e: Exp, env: Env, k: Value => Value): Value = e match {
 }
 ```
 
+<!-- prevent questionnaire from showing up if there is no javascript enabled-->
+<noscript><style>questionnaire { display: none; }</style></noscript>
+<!-- warning for user - feel free to leave out or customize -->
+<noscript><div>Enable JavaScript to see the quiz</div></noscript>
+
+<questionnaire language="en">
+  <question type="singlechoice">
+    What is the part of the computation captured by <code class="language-scala">Shift</code>
+    in the following expression?
+    <pre><code class="language-scala">
+  Add(3,
+    Reset(Add(1,
+      Shift("k", Add(4, Ap("k", 2))))))
+    </code></pre>
+    <solution>
+      <code class="language-scala">
+      Add(1, -)
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      Add(3, -)
+      </code>
+      <explanation>The part inside of <code class="language-scala">Reset</code> is captured.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      Add(3, Add(1, -)
+      </code>
+      <explanation>Only the part inside of <code class="language-scala">Reset</code> is captured.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      Add(4, -)
+      </code>
+      <explanation>The part outside of <code class="language-scala">Shift</code> is captured.</explanation>
+    </distractor>
+  </question>
+  <question type="singlechoice">
+    What is the result of evaluating the following expression?
+    <pre><code class="language-scala">
+  Add(
+    Reset(Add(2,
+      Shift("k", Add(Ap("k", 1), Ap("k", 3))))),  
+    5)
+    </code></pre>
+    <distractor>
+      <code class="language-scala">
+      Num(8)
+      </code>
+      <explanation>The part outside of <code class="language-scala">Reset</code> is not discarded.</explanation>
+    </distractor>
+    <solution>
+      <code class="language-scala">
+      Num(13)
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      Num(18)
+      </code>
+      <explanation>The part outside of <code class="language-scala">Reset</code> is not captured.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      sys.error("can only add numbers")
+      </code>
+      <explanation>Applying the captured continuation to a number results in a number.</explanation>
+    </distractor>
+  </question>
+</questionnaire>
+
 References:
 
   1) Olivier Danvy and Andre Filinski, [“Abstracting control”, LISP and Functional Programming, 1990.](https://dl.acm.org/doi/10.1145/91556.91622)

@@ -136,18 +136,26 @@ Here's a little quiz about `Letcc`:
     Add(Letcc("k", Add(3, Ap("k", 1))), 4)  
     </code></pre>
     <distractor>
-      <code class="language-scala">NumV(8)</code>
+      <code class="language-scala">
+      NumV(8)
+      </code>
       <explanation>The addition of 3 is discarded.</explanation>
     </distractor>
     <solution>
-      <code class="language-scala">NumV(5)</code>
+      <code class="language-scala">
+      NumV(5)
+      </code>
     </solution>
     <distractor>
-      <code class="language-scala">NumV(1)</code>
+      <code class="language-scala">
+      NumV(1)
+      </code>
       <explanation>Don't forget the addition of 4.</explanation>
     </distractor>
     <distractor>
-      <code class="language-scala">NumV(4)</code>
+      <code class="language-scala">
+      NumV(4)
+      </code>
       <explanation>The captured continuation is the addition of 4.</explanation>
     </distractor>
   </question>

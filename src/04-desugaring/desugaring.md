@@ -183,30 +183,31 @@ object USMAE {
   <question type="singlechoice">
     What is the result of desugaring the following expression in the language USMAE?
     <pre><code class="language-scala">
-    sub(unaryminus(Num(1)), Num(7))  
+  sub(unaryminus(Num(1)), Num(7))
     </code></pre>
     <distractor>
-      <code class="language-scala">
-      sub(unaryminus(Num(1)), Num(7))
-      </code>
+      <pre><code class="language-scala">
+  sub(unaryminus(Num(1)), Num(7))
+      </code></pre>
       <explanation>No desugaring was applied.</explanation>
     </distractor>
     <distractor>
-      <code class="language-scala">
-      Num(-8)
-      </code>
+      <pre><code class="language-scala">
+  Num(-8)
+      </code></pre>
       <explanation>Desugaring does not mean evaluation.</explanation>
     </distractor>
     <distractor>
-      <code class="language-scala">
-      sub(sub(Num(0), Num(1)), Num(7))
-      </code>
+      <pre><code class="language-scala">
+  sub(sub(Num(0), Num(1)), Num(7))
+      </code></pre>
       <explanation><code>sub</code> has to be desugared, too.</explanation>
     </distractor>
     <solution>
-      <code class="language-scala">
-      Add(Add(Num(0), Mult(Num(-1), Num(1))), Mult(Num(-1), Num(7)))
-      </code>
+      <pre><code class="language-scala">
+  Add(Add(Num(0), Mult(Num(-1), Num(1))),
+      Mult(Num(-1), Num(7)))
+      </code></pre>
     </solution>
   </question>
 </questionnaire>
