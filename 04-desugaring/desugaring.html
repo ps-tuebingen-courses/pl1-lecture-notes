@@ -294,6 +294,41 @@ namely during the construction of the AST:</p>
     }
 }
 </code></pre>
+<!-- prevent questionnaire from showing up if there is no javascript enabled-->
+<p><noscript><style>questionnaire { display: none; }</style></noscript></p>
+<!-- warning for user - feel free to leave out or customize -->
+<p><noscript><div>Enable JavaScript to see the quiz</div></noscript></p>
+<questionnaire language="en">
+  <question type="singlechoice">
+    What is the result of desugaring the following expression in the language USMAE?
+    <pre><code class="language-scala">
+    sub(unaryminus(Num(1)), Num(7))  
+    </code></pre>
+    <distractor>
+      <pre><code class="language-scala">
+      sub(unaryminus(Num(1)), Num(7))
+      </code></pre>
+      <explanation>No desugaring was applied.</explanation>
+    </distractor>
+    <distractor>
+      <pre><code class="language-scala">
+      Num(-8)
+      </code></pre>
+      <explanation>Desugaring does not mean evaluation.</explanation>
+    </distractor>
+    <distractor>
+      <pre><code class="language-scala">
+      sub(sub(Num(0), Num(1)), Num(7))
+      </code></pre>
+      <explanation><code>sub</code> has to be desugared, too.</explanation>
+    </distractor>
+    <solution>
+      <pre><code class="language-scala">
+      Add(Add(Num(0), Mult(Num(-1), Num(1))), Mult(Num(-1), Num(7)))
+      </code></pre>
+    </solution>
+  </question>
+</questionnaire>
 
                     </main>
 

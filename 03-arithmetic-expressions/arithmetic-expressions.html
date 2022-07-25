@@ -180,7 +180,7 @@ In our simple language the only values are integers, hence:</p>
 <pre><code class="language-scala">type Env = Map[String, Int]
 </code></pre>
 <p>An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
-&quot;Int&quot;. This interpreter uses pattern matching over case classes.</p>
+<code>Int</code>. This interpreter uses pattern matching over case classes.</p>
 <pre><code class="language-scala">def eval(e: Exp, env: Env): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x)
@@ -188,7 +188,7 @@ In our simple language the only values are integers, hence:</p>
   case Mul(l, r) =&gt; eval(l, env) * eval(r, env)
 }
 </code></pre>
-<p>A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract &quot;eval&quot; method to the Exp
+<p>A different (and arguably more 'object-oriented') way to implement this evaluator would be to add an abstract <code>eval</code> method to an <code>Exp</code>
 class and override it in all subclasses, each implementation corresponding to its corresponding case in the pattern match. The choice
 between these alternatives matters, since they support different dimensions of extensibility.</p>
 <p>We will mainly use the more functional style using pattern matching, because it matches better to the order in which we present these

@@ -116,3 +116,4 @@ object USMAE {
       case Mult(lhs, rhs) =>  eval(lhs) * eval(rhs)
     }
 }
+
