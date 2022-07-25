@@ -212,18 +212,91 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value): Value = e match {
 
   case Ap(f, a) =&gt; eval(f, env, cl =&gt; cl match {
             case ClosureV(f, closureEnv) =&gt; eval(a, env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
-            case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av))) // compose continuations k2 and k
+            // compose continuations k2 and k
+            case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av)))
             case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   })
-  case Reset(e) =&gt; k(eval(e, env, x =&gt; x)) // reset the continuation to the identity function
-  case Shift(param, body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)  // wrap current continuation and reset continuation
+  // reset the continuation to the identity function
+  case Reset(e) =&gt; k(eval(e, env, x =&gt; x))
+  // wrap current continuation and reset continuation
+  case Shift(param, body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)
 }
 </code></pre>
+<!-- prevent questionnaire from showing up if there is no javascript enabled-->
+<p><noscript><style>questionnaire { display: none; }</style></noscript></p>
+<!-- warning for user - feel free to leave out or customize -->
+<p><noscript><div>Enable JavaScript to see the quiz</div></noscript></p>
+<questionnaire language="en">
+  <question type="singlechoice">
+    What is the part of the computation captured by <code class="language-scala">Shift</code>
+    in the following expression?
+    <pre><code class="language-scala">
+  Add(3,
+    Reset(Add(1,
+      Shift("k", Add(4, Ap("k", 2))))))
+    </code></pre>
+    <solution>
+      <code class="language-scala">
+      Add(1, -)
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      Add(3, -)
+      </code>
+      <explanation>The part inside of <code class="language-scala">Reset</code> is captured.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      Add(3, Add(1, -)
+      </code>
+      <explanation>Only the part inside of <code class="language-scala">Reset</code> is captured.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      Add(4, -)
+      </code>
+      <explanation>The part outside of <code class="language-scala">Shift</code> is captured.</explanation>
+    </distractor>
+  </question>
+  <question type="singlechoice">
+    What is the result of evaluating the following expression?
+    <pre><code class="language-scala">
+  Add(
+    Reset(Add(2,
+      Shift("k", Add(Ap("k", 1), Ap("k", 3))))),  
+    5)
+    </code></pre>
+    <distractor>
+      <code class="language-scala">
+      Num(8)
+      </code>
+      <explanation>The part outside of <code class="language-scala">Reset</code> is not discarded.</explanation>
+    </distractor>
+    <solution>
+      <code class="language-scala">
+      Num(13)
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      Num(18)
+      </code>
+      <explanation>The part outside of <code class="language-scala">Reset</code> is not captured.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      sys.error("can only add numbers")
+      </code>
+      <explanation>Applying the captured continuation to a number results in a number.</explanation>
+    </distractor>
+  </question>
+</questionnaire>
 <p>References:</p>
 <ol>
-<li>Olivier Danvy and Andre Filinski, “Abstracting Control, ” LISP and Functional Programming, 1990.</li>
-<li>O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html</li>
-<li>O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial</li>
+<li>Olivier Danvy and Andre Filinski, <a href="https://dl.acm.org/doi/10.1145/91556.91622">“Abstracting control”, LISP and Functional Programming, 1990.</a></li>
+<li>O. Kiselyov, <a href="http://okmij.org/ftp/continuations/against-callcc.html">An argument against call/cc.</a></li>
+<li>O. Kiselyov, <a href="http://okmij.org/ftp/continuations/#tutorial">Introduction to programming with shift and reset.</a></li>
 </ol>
 
                     </main>

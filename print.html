@@ -601,30 +601,31 @@ namely during the construction of the AST:</p>
   <question type="singlechoice">
     What is the result of desugaring the following expression in the language USMAE?
     <pre><code class="language-scala">
-    sub(unaryminus(Num(1)), Num(7))  
+  sub(unaryminus(Num(1)), Num(7))
     </code></pre>
     <distractor>
-      <code class="language-scala">
-      sub(unaryminus(Num(1)), Num(7))
-      </code>
+      <pre><code class="language-scala">
+  sub(unaryminus(Num(1)), Num(7))
+      </code></pre>
       <explanation>No desugaring was applied.</explanation>
     </distractor>
     <distractor>
-      <code class="language-scala">
-      Num(-8)
-      </code>
+      <pre><code class="language-scala">
+  Num(-8)
+      </code></pre>
       <explanation>Desugaring does not mean evaluation.</explanation>
     </distractor>
     <distractor>
-      <code class="language-scala">
-      sub(sub(Num(0), Num(1)), Num(7))
-      </code>
+      <pre><code class="language-scala">
+  sub(sub(Num(0), Num(1)), Num(7))
+      </code></pre>
       <explanation><code>sub</code> has to be desugared, too.</explanation>
     </distractor>
     <solution>
-      <code class="language-scala">
-      Add(Add(Num(0), Mult(Num(-1), Num(1))), Mult(Num(-1), Num(7)))
-      </code>
+      <pre><code class="language-scala">
+  Add(Add(Num(0), Mult(Num(-1), Num(1))),
+      Mult(Num(-1), Num(7)))
+      </code></pre>
     </solution>
   </question>
 </questionnaire>
@@ -3147,18 +3148,26 @@ assert(starteval(testprog) == NumV(4))
     Add(Letcc("k", Add(3, Ap("k", 1))), 4)  
     </code></pre>
     <distractor>
-      <code>NumV(8)</code>
+      <code class="language-scala">
+      NumV(8)
+      </code>
       <explanation>The addition of 3 is discarded.</explanation>
     </distractor>
     <solution>
-      <code>NumV(5)</code>
+      <code class="language-scala">
+      NumV(5)
+      </code>
     </solution>
     <distractor>
-      <code>NumV(1)</code>
+      <code class="language-scala">
+      NumV(1)
+      </code>
       <explanation>Don't forget the addition of 4.</explanation>
     </distractor>
     <distractor>
-      <code>NumV(4)</code>
+      <code class="language-scala">
+      NumV(4)
+      </code>
       <explanation>The captured continuation is the addition of 4.</explanation>
     </distractor>
   </question>
@@ -3388,18 +3397,91 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value): Value = e match {
 
   case Ap(f, a) =&gt; eval(f, env, cl =&gt; cl match {
             case ClosureV(f, closureEnv) =&gt; eval(a, env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
-            case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av))) // compose continuations k2 and k
+            // compose continuations k2 and k
+            case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av)))
             case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   })
-  case Reset(e) =&gt; k(eval(e, env, x =&gt; x)) // reset the continuation to the identity function
-  case Shift(param, body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)  // wrap current continuation and reset continuation
+  // reset the continuation to the identity function
+  case Reset(e) =&gt; k(eval(e, env, x =&gt; x))
+  // wrap current continuation and reset continuation
+  case Shift(param, body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)
 }
 </code></pre>
+<!-- prevent questionnaire from showing up if there is no javascript enabled-->
+<p><noscript><style>questionnaire { display: none; }</style></noscript></p>
+<!-- warning for user - feel free to leave out or customize -->
+<p><noscript><div>Enable JavaScript to see the quiz</div></noscript></p>
+<questionnaire language="en">
+  <question type="singlechoice">
+    What is the part of the computation captured by <code class="language-scala">Shift</code>
+    in the following expression?
+    <pre><code class="language-scala">
+  Add(3,
+    Reset(Add(1,
+      Shift("k", Add(4, Ap("k", 2))))))
+    </code></pre>
+    <solution>
+      <code class="language-scala">
+      Add(1, -)
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      Add(3, -)
+      </code>
+      <explanation>The part inside of <code class="language-scala">Reset</code> is captured.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      Add(3, Add(1, -)
+      </code>
+      <explanation>Only the part inside of <code class="language-scala">Reset</code> is captured.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      Add(4, -)
+      </code>
+      <explanation>The part outside of <code class="language-scala">Shift</code> is captured.</explanation>
+    </distractor>
+  </question>
+  <question type="singlechoice">
+    What is the result of evaluating the following expression?
+    <pre><code class="language-scala">
+  Add(
+    Reset(Add(2,
+      Shift("k", Add(Ap("k", 1), Ap("k", 3))))),  
+    5)
+    </code></pre>
+    <distractor>
+      <code class="language-scala">
+      Num(8)
+      </code>
+      <explanation>The part outside of <code class="language-scala">Reset</code> is not discarded.</explanation>
+    </distractor>
+    <solution>
+      <code class="language-scala">
+      Num(13)
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      Num(18)
+      </code>
+      <explanation>The part outside of <code class="language-scala">Reset</code> is not captured.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      sys.error("can only add numbers")
+      </code>
+      <explanation>Applying the captured continuation to a number results in a number.</explanation>
+    </distractor>
+  </question>
+</questionnaire>
 <p>References:</p>
 <ol>
-<li>Olivier Danvy and Andre Filinski, “Abstracting Control, ” LISP and Functional Programming, 1990.</li>
-<li>O. Kiselyov, An argument against call/cc. http://okmij.org/ftp/continuations/against-callcc.html</li>
-<li>O. Kiselyov, Introduction to programming with shift and reset. http://okmij.org/ftp/continuations/#tutorial</li>
+<li>Olivier Danvy and Andre Filinski, <a href="https://dl.acm.org/doi/10.1145/91556.91622">“Abstracting control”, LISP and Functional Programming, 1990.</a></li>
+<li>O. Kiselyov, <a href="http://okmij.org/ftp/continuations/against-callcc.html">An argument against call/cc.</a></li>
+<li>O. Kiselyov, <a href="http://okmij.org/ftp/continuations/#tutorial">Introduction to programming with shift and reset.</a></li>
 </ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="introduction-to-monads"><a class="header" href="#introduction-to-monads">Introduction to Monads</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="20-monads-intro/./monads-intro.scala">here.</a></p>
@@ -4978,7 +5060,7 @@ def eval(e: Exp): Exp = e match {
 </code></pre>
 <p>We classify values into three types: Booleans, integers, and function types. For function types, we need some abstraction for its input
 and output; otherwise the type checker cannot be compositional. Luckily we do already have such an abstraction, namely types.
-Hence <code>Funtype</code> becomes a recursive data type.</p>
+Hence <code>FunType</code> becomes a recursive data type.</p>
 <pre><code class="language-scala">case class NumType() extends Type
 case class FunType(from: Type, to: Type) extends Type
 case class JunitType() extends Type
@@ -5043,6 +5125,73 @@ we need an abstraction of environments. A type environment has the form <code>Ma
 <blockquote>
 <p>If <code>e: Exp</code> and <code>typeCheck(e, Map.empty) == t</code>, then <code>typeCheck(eval(e), Map.empty) == t</code>.</p>
 </blockquote>
+<!-- prevent questionnaire from showing up if there is no javascript enabled-->
+<p><noscript><style>questionnaire { display: none; }</style></noscript></p>
+<!-- warning for user - feel free to leave out or customize -->
+<p><noscript><div>Enable JavaScript to see the quiz</div></noscript></p>
+<questionnaire language="en">
+  <question type="singlechoice">
+    What is the overall type of the following expression?
+    <pre><code class="language-scala">
+  Fun("x", NumType(), Product(5, Add(3, "x")))  
+    </code></pre>
+    <distractor>
+      <pre><code class="language-scala">
+  FunType(NumType(), NumType())
+      </code></pre>
+      <explanation>The return type is a product.</explanation>
+    </distractor>
+    <distractor>
+      <pre><code class="language-scala">
+  ProductType(NumType(), NumType())
+      </code></pre>
+      <explanation>This is only the return type of the function.</explanation>
+    </distractor>
+    <solution>
+      <pre><code class="language-scala">
+  FunType(NumType(),
+          ProductType(NumType(), NumType()))
+      </code></pre>
+    </solution>
+    <distractor>
+      <pre><code class="language-scala">
+  NumType()
+      </code></pre>
+      <explanation>This is only the input type of the function.</explanation>
+    </distractor>
+  </question>
+  <question type="singlechoice">
+    What is the overall type of the following expression?
+    <pre><code class="language-scala">
+  EliminateSum(SumLeft(3, JunitType()),
+               Fun("x", NumType(), "x"),
+               Fun("x", JunitType(), 0))
+    </code></pre>
+    <distractor>
+      <code class="language-scala">
+      JunitType()
+      </code>
+      <explanation>This is the type of the right-hand side of the sum type.</explanation>
+    </distractor>
+    <solution>
+      <code class="language-scala">
+      NumType()
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      SumType(NumType(), JunitType())
+      </code>
+      <explanation>This is the type of the scrutinee.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      FunType(NumType(), NumType())
+      </code>
+      <explanation>This is the type of the whole left branch. The type of the elimination is the common return type of the branches.</explanation>
+    </distractor>
+  </question>
+</questionnaire>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="type-inference"><a class="header" href="#type-inference">Type Inference</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="27-type-inference/./type-inference.scala">here.</a></p>
 <p>Type inference (sometimes called type reconstruction) is the idea to avoid type annotations
@@ -5244,6 +5393,52 @@ then the type inference will also be able to type-check the non-annotated versio
 <blockquote>
 <p>If <code>doTypeCheck(e, Map.empty) == t</code>, then <code>eval(e) == v</code> and <code>doTypeCheck(v) == t</code> (modulo \( \alpha \)-renaming of type variables).</p>
 </blockquote>
+<!-- prevent questionnaire from showing up if there is no javascript enabled-->
+<p><noscript><style>questionnaire { display: none; }</style></noscript></p>
+<!-- warning for user - feel free to leave out or customize -->
+<p><noscript><div>Enable JavaScript to see the quiz</div></noscript></p>
+<questionnaire language="en">
+  <question type="multiplechoice">
+    Which of the following pairs of types can be unified?
+    <solution>
+      <code class="language-scala">
+      FunType(NumType(), NumType())
+      </code>
+      &nbsp; and
+      <code class="language-scala">
+      FunType(TypeVar("X"), TypeVar("X"))
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      FunType(TypeVar("X"), TypeVar("Y"))
+      </code>
+      &nbsp; and
+      <code class="language-scala">
+      NumType()
+      </code>
+      <explanation>A function type can never be unified with <code class="language-scala">NumType()</code>.</explanation>
+    </distractor>
+    <solution>
+      <code class="language-scala">
+      FunType(NumType(), TypeVar("X"))
+      </code>
+      &nbsp; and
+      <code class="language-scala">
+      FunType(NumType(), TypeVar("Y"))
+      </code>
+    </solution>
+    <solution>
+      <code class="language-scala">
+      FunType(NumType(), TypeVar("Y"))
+      </code>
+      &nbsp; and
+      <code class="language-scala">
+      TypeVar("X")
+      </code>
+    </solution>
+  </question>
+</questionnaire>
 
                     </main>
 

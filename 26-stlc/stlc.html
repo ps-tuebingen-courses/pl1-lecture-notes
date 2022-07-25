@@ -271,7 +271,7 @@ def eval(e: Exp): Exp = e match {
 </code></pre>
 <p>We classify values into three types: Booleans, integers, and function types. For function types, we need some abstraction for its input
 and output; otherwise the type checker cannot be compositional. Luckily we do already have such an abstraction, namely types.
-Hence <code>Funtype</code> becomes a recursive data type.</p>
+Hence <code>FunType</code> becomes a recursive data type.</p>
 <pre><code class="language-scala">case class NumType() extends Type
 case class FunType(from: Type, to: Type) extends Type
 case class JunitType() extends Type
@@ -336,6 +336,73 @@ we need an abstraction of environments. A type environment has the form <code>Ma
 <blockquote>
 <p>If <code>e: Exp</code> and <code>typeCheck(e, Map.empty) == t</code>, then <code>typeCheck(eval(e), Map.empty) == t</code>.</p>
 </blockquote>
+<!-- prevent questionnaire from showing up if there is no javascript enabled-->
+<p><noscript><style>questionnaire { display: none; }</style></noscript></p>
+<!-- warning for user - feel free to leave out or customize -->
+<p><noscript><div>Enable JavaScript to see the quiz</div></noscript></p>
+<questionnaire language="en">
+  <question type="singlechoice">
+    What is the overall type of the following expression?
+    <pre><code class="language-scala">
+  Fun("x", NumType(), Product(5, Add(3, "x")))  
+    </code></pre>
+    <distractor>
+      <pre><code class="language-scala">
+  FunType(NumType(), NumType())
+      </code></pre>
+      <explanation>The return type is a product.</explanation>
+    </distractor>
+    <distractor>
+      <pre><code class="language-scala">
+  ProductType(NumType(), NumType())
+      </code></pre>
+      <explanation>This is only the return type of the function.</explanation>
+    </distractor>
+    <solution>
+      <pre><code class="language-scala">
+  FunType(NumType(),
+          ProductType(NumType(), NumType()))
+      </code></pre>
+    </solution>
+    <distractor>
+      <pre><code class="language-scala">
+  NumType()
+      </code></pre>
+      <explanation>This is only the input type of the function.</explanation>
+    </distractor>
+  </question>
+  <question type="singlechoice">
+    What is the overall type of the following expression?
+    <pre><code class="language-scala">
+  EliminateSum(SumLeft(3, JunitType()),
+               Fun("x", NumType(), "x"),
+               Fun("x", JunitType(), 0))
+    </code></pre>
+    <distractor>
+      <code class="language-scala">
+      JunitType()
+      </code>
+      <explanation>This is the type of the right-hand side of the sum type.</explanation>
+    </distractor>
+    <solution>
+      <code class="language-scala">
+      NumType()
+      </code>
+    </solution>
+    <distractor>
+      <code class="language-scala">
+      SumType(NumType(), JunitType())
+      </code>
+      <explanation>This is the type of the scrutinee.</explanation>
+    </distractor>
+    <distractor>
+      <code class="language-scala">
+      FunType(NumType(), NumType())
+      </code>
+      <explanation>This is the type of the whole left branch. The type of the elimination is the common return type of the branches.</explanation>
+    </distractor>
+  </question>
+</questionnaire>
 
                     </main>
 
