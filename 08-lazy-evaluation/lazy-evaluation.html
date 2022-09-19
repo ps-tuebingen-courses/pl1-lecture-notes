@@ -246,20 +246,20 @@ expression instead of values.</p>
 deferred substitutions that still have to be applied in the function argument? If we discard the environment in which the function
 argument was defined we again introduce a variant of dynamic scoping.</p>
 <p>Hence, like for closures, we need to store the environment together with the expression. We call such a  pair a <em>thunk</em>. An environment
-hence becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
+thus becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
 not use type definitions of the form</p>
 <pre><code>   type Thunk = (Exp, Env)
    type Env = Map[String, Thunk]
 </code></pre>
-<p>Instead, we use a Scala class Env to express this recursion.
+<p>Instead, we use a Scala class <code>Env</code> to express this recursion.
 Since we want to experiment with different variants of how to generate and evaluate thunks we first create a parameterizable variant
 of the evaluator that leaves open how to</p>
 <ol>
 <li>represent thunks (type <code>Thunk</code>)</li>
 <li>create thunks (method <code>delay</code>)</li>
-<li>evaluate thunks (method <code>force</code>).
-<strong>Hint</strong>: Research on the internet what abstract type members in Scala are. For instance, here: http://www.scala-lang.org/node/105</li>
+<li>evaluate thunks (method <code>force</code>).</li>
 </ol>
+<p><strong>Hint</strong>: Research on the internet what abstract type members in Scala are. For instance, <a href="http://www.scala-lang.org/node/105">here</a>.</p>
 <pre><code class="language-scala">trait CBN {
     type Thunk
 
