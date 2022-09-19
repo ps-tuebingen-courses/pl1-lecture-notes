@@ -74,7 +74,7 @@ Note that these two programs -- before and after the substitution -- are certain
 they are *equivalent* in the sense that when evaluated, they will produce the same number. Such transformations between different but
 somehow equivalent programs are an important tool for the study of programs, and of programming languages. Often, if we know which
 programs behave identically, we understand better how programs behave in general. We will see more examples of this in this lecture.
-Hence, the implementation of the `With` case of our interpreter should be something like:
+Hence, the implementation of the `With`-case of our interpreter should be something like:
 
 ```
 case With(x, xdef, body) => eval(subst(body, x, Num(eval(xdef))))
@@ -143,9 +143,9 @@ Examples: In WAE, the String in ``Id("x")`` is a bound or free instance, and the
 The scope of this binding instance is the third sub-term of ``With``.
 
 
-Now the reason can be revealed.  Our first attempt failed because we substituted the identifier occurring in the binding position in the
-with-expression.  This renders the expression illegal because after substitution the binding position where an identifier was expected
-is now occupied by a Num.
+Now the reason can be revealed. Our first attempt failed because we substituted the identifier occurring in the binding position in the
+`With`-expression. This renders the expression illegal because after substitution the binding position where an identifier was expected
+is now occupied by a `Num`.
 To correct this mistake, we make another take at substitution:
 
 ### Substitution, take 2
