@@ -263,7 +263,7 @@ deferred substitutions that still have to be applied in the function argument? I
 argument was defined we again introduce a variant of dynamic scoping.
 
 Hence, like for closures, we need to store the environment together with the expression. We call such a  pair a _thunk_. An environment
-hence becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
+thus becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
 not use type definitions of the form
 
 ```
@@ -271,13 +271,15 @@ not use type definitions of the form
    type Env = Map[String, Thunk]
 ```
 
-Instead, we use a Scala class Env to express this recursion.
+Instead, we use a Scala class `Env` to express this recursion.
 Since we want to experiment with different variants of how to generate and evaluate thunks we first create a parameterizable variant
 of the evaluator that leaves open how to
+
   1. represent thunks (type `Thunk`)
   2. create thunks (method `delay`)
   3. evaluate thunks (method `force`).
-__Hint__: Research on the internet what abstract type members in Scala are. For instance, here: http://www.scala-lang.org/node/105
+
+__Hint__: Research on the internet what abstract type members in Scala are. For instance, [here](http://www.scala-lang.org/node/105).
 
 ```scala mdoc
 trait CBN {
