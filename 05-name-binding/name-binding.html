@@ -196,7 +196,7 @@ Note that these two programs -- before and after the substitution -- are certain
 they are <em>equivalent</em> in the sense that when evaluated, they will produce the same number. Such transformations between different but
 somehow equivalent programs are an important tool for the study of programs, and of programming languages. Often, if we know which
 programs behave identically, we understand better how programs behave in general. We will see more examples of this in this lecture.
-Hence, the implementation of the <code>With</code> case of our interpreter should be something like:</p>
+Hence, the implementation of the <code>With</code>-case of our interpreter should be something like:</p>
 <pre><code>case With(x, xdef, body) =&gt; eval(subst(body, x, Num(eval(xdef))))
 </code></pre>
 <p>for a function <code>subst</code> with signature</p>
@@ -253,9 +253,9 @@ An identifier not contained in the scope of any binding instance of its name is 
 </blockquote>
 <p>Examples: In WAE, the String in <code>Id(&quot;x&quot;)</code> is a bound or free instance, and the String in <code>With(&quot;x&quot;, ..., ...)</code> is a binding instance.
 The scope of this binding instance is the third sub-term of <code>With</code>.</p>
-<p>Now the reason can be revealed.  Our first attempt failed because we substituted the identifier occurring in the binding position in the
-with-expression.  This renders the expression illegal because after substitution the binding position where an identifier was expected
-is now occupied by a Num.
+<p>Now the reason can be revealed. Our first attempt failed because we substituted the identifier occurring in the binding position in the
+<code>With</code>-expression. This renders the expression illegal because after substitution the binding position where an identifier was expected
+is now occupied by a <code>Num</code>.
 To correct this mistake, we make another take at substitution:</p>
 <h3 id="substitution-take-2"><a class="header" href="#substitution-take-2">Substitution, take 2</a></h3>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all identifiers in <code>e</code> which are not binding
