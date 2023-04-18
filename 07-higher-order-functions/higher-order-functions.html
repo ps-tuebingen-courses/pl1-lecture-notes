@@ -355,14 +355,14 @@ assert(evalTest2 == Num(8))
 <p>but</p>
 <pre><code class="language-scala">val evalEnv0Test2 = evalWithEnv0(test2, Map.empty)
 // java.util.NoSuchElementException: key not found: x
-// 	at scala.collection.immutable.Map$Map1.apply(Map.scala:245)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:208)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:210)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:216)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:216)
-// 	at repl.MdocSession$App.evalWithEnv0(higher-order-functions.md:216)
-// 	at repl.MdocSession$App.$init$$$anonfun$1(higher-order-functions.md:248)
-// 	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.scala:18)
+// 	at scala.collection.immutable.Map$Map1.apply(Map.scala:243)
+// 	at repl.MdocSession$MdocApp.evalWithEnv0(higher-order-functions.md:208)
+// 	at repl.MdocSession$MdocApp.evalWithEnv0(higher-order-functions.md:210)
+// 	at repl.MdocSession$MdocApp.evalWithEnv0(higher-order-functions.md:216)
+// 	at repl.MdocSession$MdocApp.evalWithEnv0(higher-order-functions.md:216)
+// 	at repl.MdocSession$MdocApp.evalWithEnv0(higher-order-functions.md:216)
+// 	at repl.MdocSession$MdocApp.$init$$$anonfun$1(higher-order-functions.md:248)
+// 	at repl.MdocSession$MdocApp.$init$$$anonfun$adapted$1(higher-order-functions.md:249)
 </code></pre>
 <p>yields a <code>key not found: x</code> error.
 The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.</p>

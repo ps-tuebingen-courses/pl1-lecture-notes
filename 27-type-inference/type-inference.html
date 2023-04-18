@@ -327,10 +327,10 @@ allows one to use the same definition type-polymorphically at multiple types.</p
 <pre><code class="language-scala">val exOmega = doTypeCheck(Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)), Map.empty)
 // java.lang.RuntimeException: Occurs check: X9 occurs in FunType(TypeVar(X9),TypeVar(X10))
 // 	at scala.sys.package$.error(package.scala:27)
-// 	at repl.MdocSession$App.unify(type-inference.md:45)
-// 	at repl.MdocSession$App.doTypeCheck(type-inference.md:175)
-// 	at repl.MdocSession$App.$init$$$anonfun$1(type-inference.md:201)
-// 	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.scala:18)
+// 	at repl.MdocSession$MdocApp.unify(type-inference.md:45)
+// 	at repl.MdocSession$MdocApp.doTypeCheck(type-inference.md:175)
+// 	at repl.MdocSession$MdocApp.$init$$$anonfun$1(type-inference.md:201)
+// 	at repl.MdocSession$MdocApp.$init$$$anonfun$adapted$1(type-inference.md:202)
 </code></pre>
 <p>Hence <code>omega</code> cannot be type-checked in STLC. STLC has the remarkable property that all well-typed programs terminate.</p>
 <p>Completeness of type inference:</p>
