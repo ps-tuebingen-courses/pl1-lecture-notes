@@ -1,4 +1,4 @@
-# First order functions
+# First-Order Functions
 
 The content of this chapter is available as a Scala file [here.](./first-order-functions.scala)
 

@@ -12,8 +12,8 @@
 - [Arithmetic Expressions](./03-arithmetic-expressions/arithmetic-expressions.md)
 - [Desugaring](./04-desugaring/desugaring.md)
 - [Name Binding](./05-name-binding/name-binding.md)
-- [First Order Functions](./06-first-order-functions/first-order-functions.md)
-- [Higher Order Functions](./07-higher-order-functions/higher-order-functions.md)
+- [First-Order Functions](./06-first-order-functions/first-order-functions.md)
+- [Higher-Order Functions](./07-higher-order-functions/higher-order-functions.md)
 - [Lazy Evaluation](./08-lazy-evaluation/lazy-evaluation.md)
 - [Recursive Functions](./09-recursive-functions/recursive-functions.md)
 - [Mutation](./10-mutation/mutation.md)
@@ -29,7 +29,7 @@
 
 - [Continuations: Motivation](./15-continuations-1/continuations-1.md)
 - [Continuations: Definition](./16-continuations-2/continuations-2.md)
-- [First Class Continuations](./17-first-class-continuations/first-class-continuations.md)
+- [First-Class Continuations](./17-first-class-continuations/first-class-continuations.md)
 - [Call-with-current-continuation](./18-letcc/letcc.md)
 - [Delimited Continuations](./19-shift-reset/shift-reset.md)
 

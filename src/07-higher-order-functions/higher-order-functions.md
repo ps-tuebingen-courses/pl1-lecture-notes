@@ -1,4 +1,4 @@
-# Higher order functions
+# Higher-Order Functions
 
 The content of this chapter is available as a Scala file [here.](./higher-order-functions.scala)
 

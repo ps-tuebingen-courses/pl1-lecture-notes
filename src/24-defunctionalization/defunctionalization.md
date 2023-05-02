@@ -1,4 +1,4 @@
-# Defunctionalization
+# Defunctionalization, Refunctionalization
 
 The content of this chapter is available as a Scala file [here.](./defunctionalization.scala)
 
