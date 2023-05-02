@@ -163,7 +163,7 @@ e &amp; := &amp; n &amp; \textit{Numeric Literals} \\
   case Id(x: String) extends Exp
 import Exp._
 </code></pre>
-<p>Here is a sample program written in this language, directly written down using case class constructors:</p>
+<p>Here is a sample program written in this language, directly written down using constructors of the <code>enum</code>:</p>
 <pre><code class="language-scala">val test0 = Add(Mul(Id(&quot;x&quot;), Num(2)), Add(Id(&quot;y&quot;), Id(&quot;y&quot;)))
 </code></pre>
 <p>With a proper parser we could choose a syntax like <code>x * 2 + y + y</code>. We do not care much about concrete syntax and parsing, though.</p>
@@ -172,15 +172,15 @@ Calls to implicit functions are inserted automatically by the compiler if they h
 <pre><code class="language-scala">implicit def num2exp(n: Int): Exp = Num(n)
 implicit def sym2exp(x: String): Exp = Id(x)
 </code></pre>
-<p>to lift integers and Strings to expressions. Using these implicits, the example can be written as:</p>
+<p>to lift integers and strings to expressions. Using these implicits, the example can be written as:</p>
 <pre><code class="language-scala">val test = Add(Mul(&quot;x&quot;, 2), Add(&quot;y&quot;, &quot;y&quot;))
 </code></pre>
-<p>To give meaning to identifiers, we use <em>environments</em>. Environments are mappings from Identifiers (which we represent as Strings) to Values.
+<p>To give meaning to identifiers, we use <em>environments</em>. Environments are mappings from identifiers (which we represent as strings) to values.
 In our simple language the only values are integers, hence:</p>
 <pre><code class="language-scala">type Env = Map[String, Int]
 </code></pre>
 <p>An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
-<code>Int</code>. This interpreter uses pattern matching over case classes.</p>
+<code>Int</code>. This interpreter uses pattern matching over the constructors of <code>enum Exp</code>.</p>
 <pre><code class="language-scala">def eval(e: Exp, env: Env): Int = e match {
   case Num(n) =&gt; n
   case Id(x) =&gt; env(x)
@@ -196,7 +196,7 @@ topics in the lecture. To try the example, we need a sample environment that giv
 <p>The test environment also illustrates how Scala supports direct definitions of constant maps.</p>
 <pre><code class="language-scala">val testEnv = Map(&quot;x&quot; -&gt; 3, &quot;y&quot; -&gt; 4)
 </code></pre>
-<p>We can automatically test our evaluator using assert:</p>
+<p>We can automatically test our evaluator using <code>assert</code>:</p>
 <pre><code class="language-scala">val exa = eval(test, testEnv)
 // exa: Int = 14
 assert(eval(test, testEnv) == 14)
