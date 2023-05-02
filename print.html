@@ -535,7 +535,7 @@ One way of expressing the desugaring is as a syntax transformation:</p>
 of reusing code, proofs, ... . It is important, though, that the desugared language feature is gone after desugaring. For instance,
 a pretty printer would print the desugared code. A debugger would use the desugared code. This can be an important downside to desugaring.
 There are ways to avoid or mitigate these shortcomings, but they require additional work.
-There is a second way of realizing desugaring which does not require the definition of a copy of the AST classes. We can desugar earlier,
+There is a second way of realizing desugaring which does not require the definition of a copy of the AST enums. We can desugar earlier,
 namely during the construction of the AST:</p>
 <pre><code class="language-scala">object SMAE2 {
   // Abstract Syntax Tree
@@ -563,8 +563,8 @@ namely during the construction of the AST:</p>
 </code></pre>
 <p>Let us now consider the third extension, unary minus. Here we have three choices:</p>
 <ol>
-<li>Add unary minus to the core language</li>
-<li>Treat unary minus as syntactic sugar for the core language using  <code>-x = (-1)*x</code></li>
+<li>Add unary minus to the core language.</li>
+<li>Treat unary minus as syntactic sugar for the core language using  <code>-x = (-1) * x</code>.</li>
 <li>Treat unary minus as syntactic sugar on top of the syntactic sugar using <code>-x = 0 - x</code>.</li>
 </ol>
 <p>We will use the third option to illustrate that one can build layers of syntactic sugar:</p>
