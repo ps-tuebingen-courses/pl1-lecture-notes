@@ -143,7 +143,7 @@ Initially, we have no substitutions to perform, so the repository is empty. Ever
 that requires substitution, we augment the repository with one more entry, recording the identifier’s name and the value (if eager) or
 expression (if lazy) it should eventually be substituted with. We continue to evaluate without actually performing the substitution.
 This strategy breaks a key invariant we had established earlier, which is that any identifier the interpreter could encounter must be
-free, for had it been bound, it would have already been substituted.  Now that we’re longer using the substitution-based model, we may
+free, for had it been bound, it would have already been substituted.  Now that we’re no longer using the substitution-based model, we may
 encounter bound identifiers during interpretation.  How do we handle them?  We must substitute them by consulting the repository.
 
 ```scala mdoc
