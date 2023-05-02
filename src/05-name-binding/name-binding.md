@@ -12,8 +12,8 @@ We want, step by step, to develop our primitive calculator language into a full-
 One important milestone on this way is the ability to deal with names. While our previous language allowed expressions with identifiers
 in them, it had no _binders_: Constructs that allow to give meaning to a new name.
 In this variant of the language, called WAE, we introduce such a binder called "with" with which we can give an expression a name that
-can be used in the body of the "with" expression. This intuition is captured in the  definition of the `With` case class below,
-which extends our previous  language.
+can be used in the body of the "with" expression. This intuition is captured in the  definition of the `With` case below,
+which extends our previous language.
 We study this WAE language to better understand what names mean in  programming languages, and how they can be implemented.
 
 ```scala mdoc

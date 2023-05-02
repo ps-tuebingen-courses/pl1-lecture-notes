@@ -31,7 +31,7 @@ enum Exp:
 import Exp._
 ```
 
-Here is a sample program written in this language, directly written down using case class constructors:
+Here is a sample program written in this language, directly written down using constructors of the `enum`:
 
 ```scala mdoc:silent
 val test0 = Add(Mul(Id("x"), Num(2)), Add(Id("y"), Id("y")))
@@ -47,13 +47,13 @@ implicit def num2exp(n: Int): Exp = Num(n)
 implicit def sym2exp(x: String): Exp = Id(x)
 ```
 
-to lift integers and Strings to expressions. Using these implicits, the example can be written as:
+to lift integers and strings to expressions. Using these implicits, the example can be written as:
 
 ```scala mdoc:silent
 val test = Add(Mul("x", 2), Add("y", "y"))
 ```
 
-To give meaning to identifiers, we use _environments_. Environments are mappings from Identifiers (which we represent as Strings) to Values.
+To give meaning to identifiers, we use _environments_. Environments are mappings from identifiers (which we represent as strings) to values.
 In our simple language the only values are integers, hence:
 
 ```scala mdoc
@@ -61,7 +61,7 @@ type Env = Map[String, Int]
 ```
 
 An evaluator (or interpreter) for this language takes an expression and an environment as parameter and produces a value - in this case
-`Int`. This interpreter uses pattern matching over case classes.
+`Int`. This interpreter uses pattern matching over the constructors of `enum Exp`.
 
 ```scala mdoc
 def eval(e: Exp, env: Env): Int = e match {
@@ -85,7 +85,7 @@ The test environment also illustrates how Scala supports direct definitions of c
 val testEnv = Map("x" -> 3, "y" -> 4)
 ```
 
-We can automatically test our evaluator using assert:
+We can automatically test our evaluator using `assert`:
 
 ```scala mdoc
 val exa = eval(test, testEnv)
