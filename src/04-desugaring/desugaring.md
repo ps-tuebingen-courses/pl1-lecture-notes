@@ -110,8 +110,9 @@ If we had written other algorithms on MAE, or had proven properties of MAE, they
 of reusing code, proofs, ... . It is important, though, that the desugared language feature is gone after desugaring. For instance,
 a pretty printer would print the desugared code. A debugger would use the desugared code. This can be an important downside to desugaring.
 There are ways to avoid or mitigate these shortcomings, but they require additional work.
-There is a second way of realizing desugaring which does not require the definition of a copy of the AST enums. We can desugar earlier,
-namely during the construction of the AST:
+
+There is a second way of realizing desugaring which does not require the definition of a copy of the AST enums.
+We can desugar earlier, namely during the construction of the AST:
 
 ```scala mdoc
 object SMAE2 {
