@@ -264,7 +264,7 @@ val test5 = With("x", 5, With("x", "x", "x"))
 ```
 
 This program should evaluate to `5`, but it too halts with an error. This is because we prematurely stopped substituting for `x` occuring in
-a bound position. We should substitute in the named expression of a `With` even if the with in question defines a new scope for the identifier
+a bound position. We should substitute in the named expression of a `With` even if the `With` in question defines a new scope for the identifier
 being substituted, because its named expression is still in the scope of the enclosing binding of the identifier.
 
 ### Substitution, take 5

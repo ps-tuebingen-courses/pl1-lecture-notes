@@ -64,7 +64,7 @@ The ``with`` construct is not needed anymore since it can be encoded using ``Ap`
 translation. Remember that such translations are often called "desugaring".
 
 
-Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.
+As for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.
 
 ```scala mdoc
 def subst0(e1: Exp, x: String, e2: Exp): Exp = e1 match {
@@ -209,7 +209,7 @@ val test = Ap(Fun("x", Add("x", 5)), 7)
 assert(eval(test) == Num(12))
 ```
 
-FAE is a computationally (Turing)-complete language. For instance, we can define  a non-terminating program. This program is commonly
+FAE is a computationally (Turing-)complete language. For instance, we can define  a non-terminating program. This program is commonly
 called Omega:
 
 ```scala mdoc:silent
@@ -217,7 +217,7 @@ val omega = Ap(Fun("x", Ap("x", "x")), Fun("x", Ap("x", "x")))
 // try eval(omega) to crash the interpreter ;-)
 ```
 
-Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
+Omega can be extended to yield a fixed-point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
 this topic later.
 
 Let's now discuss what an environment-based version of this interpreter looks like.
