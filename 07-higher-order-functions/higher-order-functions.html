@@ -192,7 +192,7 @@ latter.</p>
 <code>Fun</code>. For instance, <code>with x = 7 in x + 3</code> can be encoded (using Scala syntax) as
 <code>((x) =&gt; x + 3)(7)</code>. We have made this idea explicit above by giving a constructive
 translation. Remember that such translations are often called &quot;desugaring&quot;.</p>
-<p>Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
+<p>As for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
 <pre><code class="language-scala">def subst0(e1: Exp, x: String, e2: Exp): Exp = e1 match {
   case Num(n) =&gt; e1
   case Add(l, r) =&gt; Add(subst0(l, x, e2), subst0(r, x, e2))
@@ -316,12 +316,12 @@ Such errors are called <em>type errors</em>, and we will talk about them in much
 <pre><code class="language-scala">val test = Ap(Fun(&quot;x&quot;, Add(&quot;x&quot;, 5)), 7)
 assert(eval(test) == Num(12))
 </code></pre>
-<p>FAE is a computationally (Turing)-complete language. For instance, we can define  a non-terminating program. This program is commonly
+<p>FAE is a computationally (Turing-)complete language. For instance, we can define  a non-terminating program. This program is commonly
 called Omega:</p>
 <pre><code class="language-scala">val omega = Ap(Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)), Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)))
 // try eval(omega) to crash the interpreter ;-)
 </code></pre>
-<p>Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
+<p>Omega can be extended to yield a fixed-point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
 this topic later.</p>
 <p>Let's now discuss what an environment-based version of this interpreter looks like.
 Here is a first attempt:</p>

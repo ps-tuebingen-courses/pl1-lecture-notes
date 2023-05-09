@@ -357,7 +357,7 @@ val test5 = With(&quot;x&quot;, 5, With(&quot;x&quot;, &quot;x&quot;, &quot;x&qu
 // assert(eval4(test5) == 5) // Bang! unbound variable &quot;x&quot;
 </code></pre>
 <p>This program should evaluate to <code>5</code>, but it too halts with an error. This is because we prematurely stopped substituting for <code>x</code> occuring in
-a bound position. We should substitute in the named expression of a <code>With</code> even if the with in question defines a new scope for the identifier
+a bound position. We should substitute in the named expression of a <code>With</code> even if the <code>With</code> in question defines a new scope for the identifier
 being substituted, because its named expression is still in the scope of the enclosing binding of the identifier.</p>
 <h3 id="substitution-take-5"><a class="header" href="#substitution-take-5">Substitution, take 5</a></h3>
 <p>We finally get a valid

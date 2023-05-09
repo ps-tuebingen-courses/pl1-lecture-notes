@@ -844,7 +844,7 @@ val test5 = With(&quot;x&quot;, 5, With(&quot;x&quot;, &quot;x&quot;, &quot;x&qu
 // assert(eval4(test5) == 5) // Bang! unbound variable &quot;x&quot;
 </code></pre>
 <p>This program should evaluate to <code>5</code>, but it too halts with an error. This is because we prematurely stopped substituting for <code>x</code> occuring in
-a bound position. We should substitute in the named expression of a <code>With</code> even if the with in question defines a new scope for the identifier
+a bound position. We should substitute in the named expression of a <code>With</code> even if the <code>With</code> in question defines a new scope for the identifier
 being substituted, because its named expression is still in the scope of the enclosing binding of the identifier.</p>
 <h3 id="substitution-take-5"><a class="header" href="#substitution-take-5">Substitution, take 5</a></h3>
 <p>We finally get a valid
@@ -1112,7 +1112,7 @@ latter.</p>
 <code>Fun</code>. For instance, <code>with x = 7 in x + 3</code> can be encoded (using Scala syntax) as
 <code>((x) =&gt; x + 3)(7)</code>. We have made this idea explicit above by giving a constructive
 translation. Remember that such translations are often called &quot;desugaring&quot;.</p>
-<p>Like for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
+<p>As for F1WAE, we will at first define the meaning of FAE in terms of substitution. Here is the substitution function for FAE.</p>
 <pre><code class="language-scala">def subst0(e1: Exp, x: String, e2: Exp): Exp = e1 match {
   case Num(n) =&gt; e1
   case Add(l, r) =&gt; Add(subst0(l, x, e2), subst0(r, x, e2))
@@ -1236,12 +1236,12 @@ Such errors are called <em>type errors</em>, and we will talk about them in much
 <pre><code class="language-scala">val test = Ap(Fun(&quot;x&quot;, Add(&quot;x&quot;, 5)), 7)
 assert(eval(test) == Num(12))
 </code></pre>
-<p>FAE is a computationally (Turing)-complete language. For instance, we can define  a non-terminating program. This program is commonly
+<p>FAE is a computationally (Turing-)complete language. For instance, we can define  a non-terminating program. This program is commonly
 called Omega:</p>
 <pre><code class="language-scala">val omega = Ap(Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)), Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)))
 // try eval(omega) to crash the interpreter ;-)
 </code></pre>
-<p>Omega can be extended to yield a fixed point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
+<p>Omega can be extended to yield a fixed-point combinator, which can be used to encode arbitrary recursive functions. We'll come back to
 this topic later.</p>
 <p>Let's now discuss what an environment-based version of this interpreter looks like.
 Here is a first attempt:</p>
