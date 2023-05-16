@@ -1518,8 +1518,9 @@ called <em>call-by-need</em>.</p>
     if (t.cache == null) {
       println(&quot;Forcing evaluation of expression: &quot; + t.e)
       t.cache = evalCBN(t.e, t.env)
-      t.cache
-    } else println (&quot;Reusing cached value &quot; + t.cache + &quot; for expression &quot; + t.e)
+    } else {
+      println (&quot;Reusing cached value &quot; + t.cache + &quot; for expression &quot; + t.e)
+    }
     t.cache
   }
 }
