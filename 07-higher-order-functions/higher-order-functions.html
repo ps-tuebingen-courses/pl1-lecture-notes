@@ -146,7 +146,7 @@
 <p>The content of this chapter is available as a Scala file <a href="./higher-order-functions.scala">here.</a></p>
 <h1 id="higher-order-functions-1"><a class="header" href="#higher-order-functions-1">Higher-Order Functions</a></h1>
 <p>F1WAE, the language with first-order functions, lets us abstract over patterns that involve numbers. But what if we want to abstract
-over patterns that involve functions, such as the &quot;list fold&quot; pattern, whose instantiations include summing or multiplying a list of
+over patterns that involve functions, such as the &quot;list-fold&quot; pattern, whose instantiations include summing or multiplying a list of
 integers?</p>
 <p>To enable this kind of abstraction, we need to make functions &quot;first-class&quot;, which means that they become values that can be passed to
 or returned from functions or stored in data structures. Languages with first-class functions enable so-called &quot;higher-order functions&quot;,
@@ -367,7 +367,7 @@ assert(evalTest2 == Num(8))
 <p>yields a <code>key not found: x</code> error.
 The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.</p>
 <p>What can we do to fix this problem?
-We could try to replace the second line in the &quot;Ap&quot; case by</p>
+We could try to replace the second line in the <code>Ap</code> case by</p>
 <pre><code>case Fun(x, body) =&gt; evalWithEnv0(body, env + (x -&gt; evalWithEnv0(a, env)))
 </code></pre>
 <p>but this would again introduce dynamic scoping.</p>

@@ -145,9 +145,9 @@
                         <h1 id="lazy-evaluation"><a class="header" href="#lazy-evaluation">Lazy Evaluation</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="./lazy-evaluation.scala">here.</a></p>
 <h2 id="motivation-for-lazy-evaluation"><a class="header" href="#motivation-for-lazy-evaluation">Motivation for Lazy Evaluation</a></h2>
-<p>Read &quot;Why Functional Programming Matters&quot; by John Hughes available at http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html</p>
+<p>Read &quot;Why Functional Programming Matters&quot; by John Hughes available at <a href="https://www.cse.chalmers.se/%7Erjmh/Papers/whyfp.html">https://www.cse.chalmers.se/~rjmh/Papers/whyfp.html</a>.</p>
 <p>What lazy evaluation means:</p>
-<p>The choice of evaluation strategy is a purely semantic change that requires no change to the syntax.
+<p>The choice of evaluation strategy is a purely semantic change that requires no change of the syntax.
 For this reason we reuse the syntactic definitions of FAE, hence load
 <a href="../07-higher-order-functions/higher-order-functions.scala">higher-order-functions.scala</a>
 before executing this script.
@@ -241,7 +241,7 @@ Use it to display that the first 3 list elements of <code>list2toinfty</code> ar
 <h2 id="environment-based-lazy-evaluation"><a class="header" href="#environment-based-lazy-evaluation">Environment-based lazy evaluation</a></h2>
 <p>Let us now consider the question how we can implement call-by-name in the environment-based interpreter. Translating the idea of not
 evaluating the function argument to the environment-based version seems to  suggest that the environment should map identifiers to
-expression instead of values.</p>
+expressions instead of values.</p>
 <p>However, we run into the same problems that we had with first-class functions before we introduced closures: What happens to the
 deferred substitutions that still have to be applied in the function argument? If we discard the environment in which the function
 argument was defined we again introduce a variant of dynamic scoping.</p>
@@ -310,7 +310,7 @@ assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.Nu
 // Forcing evaluation of expression: Num(7)
 </code></pre>
 <h2 id="call-by-need"><a class="header" href="#call-by-need">Call-by-need</a></h2>
-<p>Call-by-name is rather wasteful: If an argument is used <em>n</em> times in the body, the argument expression is re-evaluated <em>n</em>-times.
+<p>Call-by-name is rather wasteful: If an argument is used <em>n</em> times in the body, the argument expression is re-evaluated <em>n</em> times.
 For instance, in</p>
 <pre><code class="language-scala">val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;x&quot;)),
                Ap(&quot;double&quot;, Add(2, 3)))
@@ -351,7 +351,7 @@ Luckily, call-by-need agrees with call-by-name with regard to produced values an
 necessary to reason about programs with the call-by-need semantics. If, however, one wants to reason about the performance of a
 program in a call-by-need setting, one has to take these additional complications into account.
 In practice, it is even worse, since languages like Haskell perform additional optimizations that, for instance, switch to call-by-value if an analysis can
-determine that an argument will definitely be used (lookup &quot;strictness analysis&quot;).</p>
+determine that an argument will definitely be used (look up &quot;strictness analysis&quot;).</p>
 <p>Topics for class discussion:</p>
 <ul>
 <li>Is it a good idea to mix a language with implicit mutation (such as Java, Scala, C++, Python, ...) with lazy evaluation?</li>
