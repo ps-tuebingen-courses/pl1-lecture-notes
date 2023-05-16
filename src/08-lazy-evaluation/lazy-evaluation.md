@@ -112,11 +112,11 @@ def evalWithEnv(e: Exp, env: Env): Value = e match {
 ```
 ## Motivation for Lazy Evaluation
 
-Read "Why Functional Programming Matters" by John Hughes available at http://www.cse.chalmers.se/~rjmh/Papers/whyfp.html
+Read "Why Functional Programming Matters" by John Hughes available at [https://www.cse.chalmers.se/~rjmh/Papers/whyfp.html](https://www.cse.chalmers.se/~rjmh/Papers/whyfp.html).
 
 What lazy evaluation means:
 
-The choice of evaluation strategy is a purely semantic change that requires no change to the syntax.
+The choice of evaluation strategy is a purely semantic change that requires no change of the syntax.
 For this reason we reuse the syntactic definitions of FAE, hence load
 [higher-order-functions.scala](../07-higher-order-functions/higher-order-functions.scala)
 before executing this script.
@@ -256,7 +256,7 @@ _end of extra material_
 
 Let us now consider the question how we can implement call-by-name in the environment-based interpreter. Translating the idea of not
 evaluating the function argument to the environment-based version seems to  suggest that the environment should map identifiers to
-expression instead of values.
+expressions instead of values.
 
 However, we run into the same problems that we had with first-class functions before we introduced closures: What happens to the
 deferred substitutions that still have to be applied in the function argument? If we discard the environment in which the function
@@ -336,7 +336,7 @@ assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.Nu
 
 ## Call-by-need
 
-Call-by-name is rather wasteful: If an argument is used _n_ times in the body, the argument expression is re-evaluated _n_-times.
+Call-by-name is rather wasteful: If an argument is used _n_ times in the body, the argument expression is re-evaluated _n_ times.
 For instance, in
 
 ```scala mdoc:silent
@@ -387,7 +387,7 @@ Luckily, call-by-need agrees with call-by-name with regard to produced values an
 necessary to reason about programs with the call-by-need semantics. If, however, one wants to reason about the performance of a
 program in a call-by-need setting, one has to take these additional complications into account.
 In practice, it is even worse, since languages like Haskell perform additional optimizations that, for instance, switch to call-by-value if an analysis can
-determine that an argument will definitely be used (lookup "strictness analysis").
+determine that an argument will definitely be used (look up "strictness analysis").
 
 Topics for class discussion:
  - Is it a good idea to mix a language with implicit mutation (such as Java, Scala, C++, Python, ...) with lazy evaluation?

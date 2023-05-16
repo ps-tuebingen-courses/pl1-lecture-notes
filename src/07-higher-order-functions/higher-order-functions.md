@@ -7,7 +7,7 @@ The content of this chapter is available as a Scala file [here.](./higher-order-
 # Higher-Order Functions
 
 F1WAE, the language with first-order functions, lets us abstract over patterns that involve numbers. But what if we want to abstract
-over patterns that involve functions, such as the "list fold" pattern, whose instantiations include summing or multiplying a list of
+over patterns that involve functions, such as the "list-fold" pattern, whose instantiations include summing or multiplying a list of
 integers?
 
 To enable this kind of abstraction, we need to make functions "first-class", which means that they become values that can be passed to
@@ -265,7 +265,7 @@ yields a `key not found: x` error.
 The problem is that we have forgotten the deferred substitutions to be performed in the body of the function.
 
 What can we do to fix this problem?
-We could try to replace the second line in the "Ap" case by
+We could try to replace the second line in the `Ap` case by
 
 ```
 case Fun(x, body) => evalWithEnv0(body, env + (x -> evalWithEnv0(a, env)))
