@@ -285,13 +285,13 @@ __Hint__: Research on the internet what abstract type members in Scala are. For 
 trait CBN {
     type Thunk
 
-    case class EnvThunk(map: Map[String, Thunk]) {
-      def apply(key: String) = map.apply(key)
-      def +(other: (String, Thunk)): EnvThunk = EnvThunk(map + other)
-    }
-
     def delay(e: Exp, env: EnvThunk): Thunk
     def force(t: Thunk): ValueCBN
+
+    case class EnvThunk(map: Map[String, Thunk]) {
+      def apply(key: String): Thunk = map.apply(key)
+      def +(other: (String, Thunk)): EnvThunk = EnvThunk(map + other)
+    }
 
     // since values also depend on EnvThunk and hence on Thunk they need to
     // be defined within this trait
