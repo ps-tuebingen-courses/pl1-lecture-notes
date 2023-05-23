@@ -46,7 +46,7 @@ abstract class Value {
 ```
 
 We will also use a mutable map instead of a map for environments. This is not needed for mark-and-sweep,
-but for copying garbage collectors such as Cheney"s" semi-space garbage collection algorithm.
+but for copying garbage collectors such as Cheney's semi-space garbage collection algorithm.
 
 ```scala mdoc
 type Env = scala.collection.mutable.Map[String, Value]

@@ -149,7 +149,7 @@ evaluation of this program.
 | C |   Add(.. |  |  |  |
 | D |    Ap("toggle") | 1 |  | 1 -> NumV(1) |
 | E |    Ap("toggle") | 0 |  | 1 -> NumV(0) |
-| F |   Add(0, 1) | 1 |  |  |
+| F |   Add(1, 0) | 1 |  |  |
 
 Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
@@ -252,7 +252,7 @@ From an implementation point of view, our interpreter has the problem that nothi
 One possibility would be to add an operation "removeBox" or the like to the language, but this would lead to dangling pointers
 and all the problems associated with manual memory management.
 
-Our model of stores is sufficient to illustrate how modern languages deal with memory management: by garbage collection.
+Our model of stores is sufficient to illustrate how modern languages often deal with memory management: by garbage collection.
 Garbage collectors automatically reclaim memory that is no longer referenced from within the active part of the computation.
 We can model a (naive) mark-and-sweep garbage collector as follows:
 
