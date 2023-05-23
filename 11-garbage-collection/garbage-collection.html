@@ -175,7 +175,7 @@ In real systems it is implemented as a bit flag, or, if the so-called &quot;tri-
 }
 </code></pre>
 <p>We will also use a mutable map instead of a map for environments. This is not needed for mark-and-sweep,
-but for copying garbage collectors such as Cheney&quot;s&quot; semi-space garbage collection algorithm.</p>
+but for copying garbage collectors such as Cheney's semi-space garbage collection algorithm.</p>
 <pre><code class="language-scala">type Env = scala.collection.mutable.Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value

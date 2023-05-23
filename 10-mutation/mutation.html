@@ -258,7 +258,7 @@ evaluation of this program.</p>
 <tr><td>C</td><td>Add(..</td><td></td><td></td><td></td></tr>
 <tr><td>D</td><td>Ap(&quot;toggle&quot;)</td><td>1</td><td></td><td>1 -&gt; NumV(1)</td></tr>
 <tr><td>E</td><td>Ap(&quot;toggle&quot;)</td><td>0</td><td></td><td>1 -&gt; NumV(0)</td></tr>
-<tr><td>F</td><td>Add(0, 1)</td><td>1</td><td></td><td></td></tr>
+<tr><td>F</td><td>Add(1, 0)</td><td>1</td><td></td><td></td></tr>
 </tbody></table>
 <p>Insight:
 We must pass the current store in to evaluate every expression and pass the possibly updated store out after the evaluation.
@@ -356,7 +356,7 @@ This is called <em>store-passing style</em>.  Consequently, we have to update th
 <p>From an implementation point of view, our interpreter has the problem that nothing is ever removed from the store.
 One possibility would be to add an operation &quot;removeBox&quot; or the like to the language, but this would lead to dangling pointers
 and all the problems associated with manual memory management.</p>
-<p>Our model of stores is sufficient to illustrate how modern languages deal with memory management: by garbage collection.
+<p>Our model of stores is sufficient to illustrate how modern languages often deal with memory management: by garbage collection.
 Garbage collectors automatically reclaim memory that is no longer referenced from within the active part of the computation.
 We can model a (naive) mark-and-sweep garbage collector as follows:</p>
 <pre><code class="language-scala">def gc(env: Env, store: Store): Store = {
