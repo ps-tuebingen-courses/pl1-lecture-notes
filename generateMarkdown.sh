@@ -3,7 +3,7 @@
 if ! [ -f ./cs ]
 then
   echo "Downloading coursier"
-  curl -fLo cs https://git.io/coursier-cli-"$(uname | tr LD ld)"
+  curl -fL "https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux.gz" | gzip -d > cs
   chmod +x cs
 fi
 
