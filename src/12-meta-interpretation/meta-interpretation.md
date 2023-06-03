@@ -66,7 +66,7 @@ in the object-language in terms of program equivalence in the meta-language: Two
 Compositionality is the cornerstone of denotational semantics.  A denotational semantics can be thought of as a
 compositional interpreter in which the meta-language is mathematics.
 Compositionality also has a rather practical side-effect: It means that we can implement the interpreter in the internal visitor style
-that  we learned about in the first lecture (recall that the internal visitor  style enforces compositionality).
+that  we learned about [at the beginning](../03-arithmetic-expressions/arithmetic-expressions.md) (recall that the internal visitor  style enforces compositionality).
 Recommended exercise: Re-implement the interpreter as an internal visitor.
 
 ```scala mdoc

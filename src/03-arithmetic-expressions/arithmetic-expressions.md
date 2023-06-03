@@ -96,6 +96,9 @@ assert(eval(test, testEnv) == 14)
 }
 ```
 
+
+## Internal Visitors
+
 We will now learn a different way to encode algorithms that operate on expressions (like the evaluator). To this end, we will now use
 so-called "folds". Folds are well-known for lists, but the concept is more general and applies to arbitrary algebraic data types.
 We will present folds in such a style that they resemble visitors as known from the OO design pattern literature. They correspond to
