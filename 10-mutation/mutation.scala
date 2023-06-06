@@ -8,7 +8,7 @@ object Syntax {
     case Mul(lhs: Exp, rhs: Exp)
     case If0(cond: Exp, thenExp: Exp, elseExp: Exp)
     case Fun(param: String, body: Exp)
-    case Ap (funExpr: Exp, argExpr: Exp)
+    case Ap(funExpr: Exp, argExpr: Exp)
 
     /** To add mutation to FAE, we add four language constructs: */
     case NewBox(e: Exp) // create a new box

@@ -160,7 +160,7 @@ We will add boxes to our base language, FAE.</p>
     case Mul(lhs: Exp, rhs: Exp)
     case If0(cond: Exp, thenExp: Exp, elseExp: Exp)
     case Fun(param: String, body: Exp)
-    case Ap (funExpr: Exp, argExpr: Exp)
+    case Ap(funExpr: Exp, argExpr: Exp)
 
     /** To add mutation to FAE, we add four language constructs: */
     case NewBox(e: Exp) // create a new box
@@ -353,6 +353,7 @@ This is called <em>store-passing style</em>.  Consequently, we have to update th
        }
 }
 </code></pre>
+<h2 id="freeing-memory"><a class="header" href="#freeing-memory">Freeing Memory</a></h2>
 <p>From an implementation point of view, our interpreter has the problem that nothing is ever removed from the store.
 One possibility would be to add an operation &quot;removeBox&quot; or the like to the language, but this would lead to dangling pointers
 and all the problems associated with manual memory management.</p>
