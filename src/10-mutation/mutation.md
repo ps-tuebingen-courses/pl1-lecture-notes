@@ -26,7 +26,7 @@ object Syntax {
     case Mul(lhs: Exp, rhs: Exp)
     case If0(cond: Exp, thenExp: Exp, elseExp: Exp)
     case Fun(param: String, body: Exp)
-    case Ap (funExpr: Exp, argExpr: Exp)
+    case Ap(funExpr: Exp, argExpr: Exp)
 
     /** To add mutation to FAE, we add four language constructs: */
     case NewBox(e: Exp) // create a new box
@@ -247,6 +247,9 @@ def eval(e: Exp, env: Env, s: Store): (Value, Store) = e match {
        }
 }
 ```
+
+
+## Freeing Memory
 
 From an implementation point of view, our interpreter has the problem that nothing is ever removed from the store.
 One possibility would be to add an operation "removeBox" or the like to the language, but this would lead to dangling pointers
