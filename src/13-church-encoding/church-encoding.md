@@ -21,7 +21,7 @@ import Exp._
 abstract class Value
 type Env = Map[String, Value]
 // the only values are closures
-case class ClosureV(f:Fun, env:Env) extends Value
+case class ClosureV(f: Fun, env: Env) extends Value
 ```
 
 Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,

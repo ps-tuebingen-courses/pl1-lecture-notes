@@ -72,7 +72,7 @@ def testplusC = plus(twoC, threeC).fold[Unit]((), _ => print("."))
 
 Object algebras are a different way to do Church encodings
 in object-oriented languages. This is what the encoding
-of Church numbers looks like in object algebra style.
+of Church numbers looks like in object-algebra style.
 
 
 ```scala mdoc
@@ -178,7 +178,7 @@ trait eval extends Exp[Env => Value] {
 object eval extends eval
 ```
 
-An example program becomes a function that is parametric in the choosen interpretation:
+An example program becomes a function that is parametric in the chosen interpretation:
 
 ```scala mdoc
 def test[T](semantics: Exp[T]) = {
