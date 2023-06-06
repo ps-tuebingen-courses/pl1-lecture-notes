@@ -12,7 +12,7 @@ import Exp._
 abstract class Value
 type Env = Map[String, Value]
 // the only values are closures
-case class ClosureV(f:Fun, env:Env) extends Value
+case class ClosureV(f: Fun, env: Env) extends Value
 
 def eval(e: Exp, env: Env): Value = e match {
   // We give the identity function as dummy value for PrintDot

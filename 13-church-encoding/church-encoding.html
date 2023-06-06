@@ -161,7 +161,7 @@ import Exp._
 abstract class Value
 type Env = Map[String, Value]
 // the only values are closures
-case class ClosureV(f:Fun, env:Env) extends Value
+case class ClosureV(f: Fun, env: Env) extends Value
 </code></pre>
 <p>Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,
 say, a number but get in fact a closure. Hence, this language has the fascinating property that  no dynamic type errors can occur.</p>

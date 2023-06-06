@@ -2318,7 +2318,7 @@ import Exp._
 abstract class Value
 type Env = Map[String, Value]
 // the only values are closures
-case class ClosureV(f:Fun, env:Env) extends Value
+case class ClosureV(f: Fun, env: Env) extends Value
 </code></pre>
 <p>Notice that the only values in this language are closures. This means that there cannot be the situation anymore that we expect,
 say, a number but get in fact a closure. Hence, this language has the fascinating property that  no dynamic type errors can occur.</p>
@@ -2442,7 +2442,7 @@ def testplusC = plus(twoC, threeC).fold[Unit]((), _ =&gt; print(&quot;.&quot;))
 </code></pre>
 <p>Object algebras are a different way to do Church encodings
 in object-oriented languages. This is what the encoding
-of Church numbers looks like in object algebra style.</p>
+of Church numbers looks like in object-algebra style.</p>
 <pre><code class="language-scala">trait NumSig[T] {
   def z: T
   def s(p: T): T
@@ -2522,7 +2522,7 @@ case class NumV(n: Int) extends Value
 
 object eval extends eval
 </code></pre>
-<p>An example program becomes a function that is parametric in the choosen interpretation:</p>
+<p>An example program becomes a function that is parametric in the chosen interpretation:</p>
 <pre><code class="language-scala">def test[T](semantics: Exp[T]) = {
   import semantics._
 
