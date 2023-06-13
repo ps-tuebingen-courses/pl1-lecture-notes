@@ -2192,8 +2192,9 @@ Of course, if the meta-language has no corresponding feature, then we have no ch
 <li>how the call stack is managed, e.g. the maximum depth of recursion supported by the interpreter</li>
 <li>whether/how memory management for closures works (they are objects on the heap!)</li>
 </ul>
-<p>That said, it is possible to make the FAE interpreters still more &quot;meta&quot;. Here are two examples.
-The first one is a version of FAE that uses a different representation of the program syntax, namely one using
+<p>That said, it is possible to make the FAE interpreters still more &quot;meta&quot;. Here are two examples.</p>
+<h2 id="hoas"><a class="header" href="#hoas">HOAS</a></h2>
+<p>The first one is a version of FAE that uses a different representation of the program syntax, namely one using
 meta-language functions to represent object-language functions. This technique is called higher-order abstract syntax, or HOAS.
 For instance, the function <code>Fun(&quot;x&quot;, Add(&quot;x&quot;, 5))</code> is now represented as <code>Fun(x =&gt; Add(x, 5))</code>.
 The interpreter becomes rather short, because substitution and lexical scoping are now being dealt with by the
@@ -2222,6 +2223,7 @@ corresponding meta-level construct.</p>
     }
 }
 </code></pre>
+<h2 id="meta-level-closures"><a class="header" href="#meta-level-closures">Meta-Level Closures</a></h2>
 <p>A different way to use meta-level functions in the interpreter is to represent object-level closures by meta-level closures.
 Notice that this interpreter then has no control anymore about scoping; rather, it is completely inherited from the meta-language.</p>
 <p>A particularly pleasing and important property of this interpreter below is that it is <em>compositional</em>, meaning that all recursive calls
@@ -2983,7 +2985,7 @@ case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp
 There is one technical issue: We need to introduce new names for binders into our program, such as <code>&quot;k&quot;</code>.
 We need to make sure that we do not accidentially capture existing names in the program.
 For this reason we need our <code>freshName</code> machinery we introduced for
-(FAE)[../07-higher-order-functions/higher-order-functions.html].</p>
+<a href="16-continuations-2/../07-higher-order-functions/higher-order-functions.html">FAE</a>.</p>
 <pre><code class="language-scala">def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) =&gt; Set(x)
    case Add(l, r) =&gt; freeVars(l) ++ freeVars(r)

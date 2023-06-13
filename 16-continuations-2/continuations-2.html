@@ -268,7 +268,7 @@ case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp
 There is one technical issue: We need to introduce new names for binders into our program, such as <code>&quot;k&quot;</code>.
 We need to make sure that we do not accidentially capture existing names in the program.
 For this reason we need our <code>freshName</code> machinery we introduced for
-(FAE)[../07-higher-order-functions/higher-order-functions.html].</p>
+<a href="../07-higher-order-functions/higher-order-functions.html">FAE</a>.</p>
 <pre><code class="language-scala">def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) =&gt; Set(x)
    case Add(l, r) =&gt; freeVars(l) ++ freeVars(r)
