@@ -173,7 +173,7 @@ With these definitions, we are now ready to formalize the transformation describ
 There is one technical issue: We need to introduce new names for binders into our program, such as `"k"`.
 We need to make sure that we do not accidentially capture existing names in the program.
 For this reason we need our ``freshName`` machinery we introduced for
-(FAE)[../07-higher-order-functions/higher-order-functions.html].
+[FAE](../07-higher-order-functions/higher-order-functions.html).
 
 ```scala mdoc
 def freeVars(e: Exp): Set[String] =  e match {

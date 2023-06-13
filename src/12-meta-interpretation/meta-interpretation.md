@@ -23,6 +23,10 @@ Our FAE interpreter is a meta-interpreter with respect to many features. For ins
  - whether/how memory management for closures works (they are objects on the heap!)
 
 That said, it is possible to make the FAE interpreters still more "meta". Here are two examples.
+
+
+## HOAS
+
 The first one is a version of FAE that uses a different representation of the program syntax, namely one using
 meta-language functions to represent object-language functions. This technique is called higher-order abstract syntax, or HOAS.
 For instance, the function ``Fun("x", Add("x", 5))`` is now represented as ``Fun(x => Add(x, 5))``.
@@ -54,6 +58,9 @@ object HOAS {
     }
 }
 ```
+
+
+## Meta-Level Closures
 
 A different way to use meta-level functions in the interpreter is to represent object-level closures by meta-level closures.
 Notice that this interpreter then has no control anymore about scoping; rather, it is completely inherited from the meta-language.
