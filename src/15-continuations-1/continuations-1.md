@@ -1,4 +1,4 @@
-# Continuations 1
+# Continuations: Motivation
 
 The content of this chapter is available as a Scala file [here.](./continuations-1.scala)
 
@@ -103,22 +103,22 @@ Here is code illustrating the idea. For simplicity we assume that all web forms 
 a single integer value.
 
 ```scala mdoc:silent
-val continuations = new scala.collection.mutable.HashMap[Symbol, Int => Nothing]()
+val continuations = new scala.collection.mutable.HashMap[String, Int => Nothing]()
 var nextIndex: Int = 0
 def getNextID = {
   nextIndex += 1
-  Symbol("c" + nextIndex.toString)
+  "c" + nextIndex
 }
 
 def webread_k(prompt: String, k: Int => Nothing): Nothing = {
   val id = getNextID
   continuations += (id -> k)
   println(prompt)
-  println("to continue, invoke continuation: " + id.toString)
+  println("to continue, invoke continuation: " + id)
   sys.error("program terminated")
 }
 
-def continue(kid: Symbol, result: Int) = continuations(kid)(result)
+def continue(kid: String, result: Int) = continuations(kid)(result)
 ```
 
 Using `webread_k`, we can now define our addition server as follows.
@@ -132,16 +132,16 @@ def webprog = webread_k("enter first number", (n) =>
 For instance, try:
 
 ```
-scala> webprog           -- yields some continuation id 'c1
-scala> continue('c1, 5)   -- yields some continuation id 'c2
-scala> continue('c2, 7)
+scala> webprog            -- yields some continuation id "c1"
+scala> continue("c1", 5)  -- yields some continuation id "c2"
+scala> continue("c2", 7)
 
 This should yield the result 12 as expected. But also try:
-scala> webprog           -- yields some continuation id 'c1
-scala> contine('c1, 5)    -- yields some continuation id 'c2
-scala> contine('c1, 6)    -- yields some continuation id 'c3
-scala> continue('c2, 3)   -- should yield 8
-scala> continue('c3, 3)   -- should yield 9
+scala> webprog            -- yields some continuation id "c1"
+scala> continue("c1", 5)  -- yields some continuation id "c2"
+scala> continue("c1", 6)  -- yields some continuation id "c3"
+scala> continue("c2", 3)  -- should yield 8
+scala> continue("c3", 3)  -- should yield 9
 ```
 
 The style of programming in `webprog`, which is obviously more complicated than the logical

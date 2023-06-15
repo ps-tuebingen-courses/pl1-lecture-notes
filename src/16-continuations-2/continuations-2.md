@@ -1,4 +1,4 @@
-# Continuations 2
+# Continuations: Definition
 
 The content of this chapter is available as a Scala file [here.](./continuations-2.scala)
 
