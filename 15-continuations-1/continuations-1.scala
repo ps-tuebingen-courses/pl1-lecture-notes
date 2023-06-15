@@ -26,22 +26,22 @@ def program3(n1: Int, n2: Int) = webdisplay("The sum of " + n1 + " and " + n2 + 
 
 val cont1 = (n: Int) => println(n + inputNumber("Second number"))
 
-val continuations = new scala.collection.mutable.HashMap[Symbol, Int => Nothing]()
+val continuations = new scala.collection.mutable.HashMap[String, Int => Nothing]()
 var nextIndex: Int = 0
 def getNextID = {
   nextIndex += 1
-  Symbol("c" + nextIndex.toString)
+  "c" + nextIndex
 }
 
 def webread_k(prompt: String, k: Int => Nothing): Nothing = {
   val id = getNextID
   continuations += (id -> k)
   println(prompt)
-  println("to continue, invoke continuation: " + id.toString)
+  println("to continue, invoke continuation: " + id)
   sys.error("program terminated")
 }
 
-def continue(kid: Symbol, result: Int) = continuations(kid)(result)
+def continue(kid: String, result: Int) = continuations(kid)(result)
 
 def webprog = webread_k("enter first number", (n) =>
               webread_k("enter second number", (m) => webdisplay("The sum of " + n + " and " + m + " is " + (n + m))))

@@ -2637,7 +2637,7 @@ Encoding more expressive type system in a similar style (including, e.g., type p
 is an active area of research.</p>
 <p>References:
 B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with Object Algebras. Proc. ECOOP 2012.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-1"><a class="header" href="#continuations-1">Continuations 1</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-motivation"><a class="header" href="#continuations-motivation">Continuations: Motivation</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="15-continuations-1/./continuations-1.scala">here.</a></p>
 <p>Consider the following very simple program:</p>
 <pre><code class="language-scala">def inputNumber(prompt: String): Int = {
@@ -2714,22 +2714,22 @@ in a hashmap on the server using this ID, and storing the ID in the form such th
 submitted back to the server once the client presses the submit button.</p>
 <p>Here is code illustrating the idea. For simplicity we assume that all web forms return
 a single integer value.</p>
-<pre><code class="language-scala">val continuations = new scala.collection.mutable.HashMap[Symbol, Int =&gt; Nothing]()
+<pre><code class="language-scala">val continuations = new scala.collection.mutable.HashMap[String, Int =&gt; Nothing]()
 var nextIndex: Int = 0
 def getNextID = {
   nextIndex += 1
-  Symbol(&quot;c&quot; + nextIndex.toString)
+  &quot;c&quot; + nextIndex
 }
 
 def webread_k(prompt: String, k: Int =&gt; Nothing): Nothing = {
   val id = getNextID
   continuations += (id -&gt; k)
   println(prompt)
-  println(&quot;to continue, invoke continuation: &quot; + id.toString)
+  println(&quot;to continue, invoke continuation: &quot; + id)
   sys.error(&quot;program terminated&quot;)
 }
 
-def continue(kid: Symbol, result: Int) = continuations(kid)(result)
+def continue(kid: String, result: Int) = continuations(kid)(result)
 </code></pre>
 <p>Using <code>webread_k</code>, we can now define our addition server as follows.
 If you try <code>webprog</code>, ignore the stack traces.</p>
@@ -2737,16 +2737,16 @@ If you try <code>webprog</code>, ignore the stack traces.</p>
               webread_k(&quot;enter second number&quot;, (m) =&gt; webdisplay(&quot;The sum of &quot; + n + &quot; and &quot; + m + &quot; is &quot; + (n + m))))
 </code></pre>
 <p>For instance, try:</p>
-<pre><code>scala&gt; webprog           -- yields some continuation id 'c1
-scala&gt; continue('c1, 5)   -- yields some continuation id 'c2
-scala&gt; continue('c2, 7)
+<pre><code>scala&gt; webprog            -- yields some continuation id &quot;c1&quot;
+scala&gt; continue(&quot;c1&quot;, 5)  -- yields some continuation id &quot;c2&quot;
+scala&gt; continue(&quot;c2&quot;, 7)
 
 This should yield the result 12 as expected. But also try:
-scala&gt; webprog           -- yields some continuation id 'c1
-scala&gt; contine('c1, 5)    -- yields some continuation id 'c2
-scala&gt; contine('c1, 6)    -- yields some continuation id 'c3
-scala&gt; continue('c2, 3)   -- should yield 8
-scala&gt; continue('c3, 3)   -- should yield 9
+scala&gt; webprog            -- yields some continuation id &quot;c1&quot;
+scala&gt; continue(&quot;c1&quot;, 5)  -- yields some continuation id &quot;c2&quot;
+scala&gt; continue(&quot;c1&quot;, 6)  -- yields some continuation id &quot;c3&quot;
+scala&gt; continue(&quot;c2&quot;, 3)  -- should yield 8
+scala&gt; continue(&quot;c3&quot;, 3)  -- should yield 9
 </code></pre>
 <p>The style of programming in <code>webprog</code>, which is obviously more complicated than the logical
 structure of <code>progSimple</code>, shows up in many practical programming scenarios - server-side web programming
@@ -2859,7 +2859,7 @@ like a traditional procedural program. This suggests that this series of transfo
 compile a program in a language like Scheme into one in a language like C!</p>
 </li>
 </ol>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-2"><a class="header" href="#continuations-2">Continuations 2</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-definition"><a class="header" href="#continuations-definition">Continuations: Definition</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="16-continuations-2/./continuations-2.scala">here.</a></p>
 <p>Today's goal is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
 in the previous lecture formal.</p>
