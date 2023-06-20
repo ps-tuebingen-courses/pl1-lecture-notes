@@ -33,7 +33,7 @@ the Web developer must turn this application into three programs:
   3) The third program consumes the form values from the second form, computes the output, and generates the result.
 
 Because the value entered in the first form is needed by the third program to compute its output, this
-value must somehow be transmitted between from the first program to the third. This is typically done
+value must somehow be transmitted from the first program to the third. This is typically done
 by using the hidden field mechanism of HTML.
 
 Suppose, instead of using a hidden field, the application developer used a Java Servlet session object,
@@ -126,7 +126,8 @@ If you try `webprog`, ignore the stack traces.
 
 ```scala mdoc
 def webprog = webread_k("enter first number", (n) =>
-              webread_k("enter second number", (m) => webdisplay("The sum of " + n + " and " + m + " is " + (n + m))))
+                webread_k("enter second number", (m) =>
+                  webdisplay("The sum of " + n + " and " + m + " is " + (n + m))))
 ```
 
 For instance, try:
@@ -135,8 +136,11 @@ For instance, try:
 scala> webprog            -- yields some continuation id "c1"
 scala> continue("c1", 5)  -- yields some continuation id "c2"
 scala> continue("c2", 7)
+```
 
 This should yield the result 12 as expected. But also try:
+
+```
 scala> webprog            -- yields some continuation id "c1"
 scala> continue("c1", 5)  -- yields some continuation id "c2"
 scala> continue("c1", 6)  -- yields some continuation id "c3"
@@ -151,7 +155,7 @@ such as httprequest in AJAX require to pass a callback function, which leads to 
 as the one in `webprog` above.
 
 Let's consider this "web transformation" - the transformation from `progSimple` to `webprog` - in more detail.
-To this purpose, let's make our application a bit more sophisticated. Instead of entering only two
+To this end, let's make our application a bit more sophisticated. Instead of entering only two
 numbers, the user enters n numbers, e.g., the prices of a list of n items.
 
 Here is the "non-web" version of the application:
@@ -173,7 +177,7 @@ This version of `allCosts` is clearly not web-friendly, because it uses `inputNu
 which we do not know how to implement for the web.
 
 The first thing to observe is that on its own, `allCosts` is not a complete program: it doesn't do anything unless
-it is called with actual parameters!
+it is called with actual arguments!
 Instead, it is a library procedure that may be used in many different contexts. Because it has a web interaction,
 however, there is the danger that at the point of interaction, the rest of the computation -- that is, the
 computation that invoked `allCosts` -- will be lost. To prevent this, `allCosts` must consume an extra argument,
@@ -205,7 +209,7 @@ That is, the receiver of the web interaction is invoked with the cost of the fir
 recursively, it is applied to the rest of the list. Its receiver must therefore receive the tally of costs of the
 remaining items. That explains the pattern in the receiver.
 
-The only problem is, where does a continuation ever get a value? We create larger-and-larger continuation on
+The only problem is, where does a continuation ever get a value? We create larger-and-larger continuations on
 each recursive invocation, but what ever invokes them?
 
 Here is the same problem from a different angle (that also answers the question above). Notice that each
@@ -256,8 +260,10 @@ def map_k[S, T](c: List[S], f: (S, T => Nothing) => Nothing, k: List[T] => Nothi
 }
 
 def allCosts2_k(itemList: List[String], k: Int => Nothing): Nothing =
-   map_k(itemList, (x: String, k2: Int => Nothing) => webread_k("Cost of item " + x + ":", k2), (l: List[Int]) => k(l.sum))
-
+   map_k(itemList,
+         (x: String, k2: Int => Nothing) =>
+           webread_k("Cost of item " + x + ":", k2),
+         (l: List[Int]) => k(l.sum))
 ```
 
 ## Implications of the "web transformation":

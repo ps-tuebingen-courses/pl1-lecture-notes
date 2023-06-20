@@ -19,7 +19,8 @@ into this program:
 
 ```scala
 webread_k("First number", (n) =>
-  webread_k("Second number:", (m) => webdisplay("The sum is: " + (n + m))))
+  webread_k("Second number:", (m) =>
+    webdisplay("The sum is: " + (n + m))))
 ```
 
 This hand-translation is sufficient if this expression is the entire program.
@@ -29,7 +30,8 @@ reason, the program has to send its result to a continuation instead of returnin
 
 ```scala
 k => webread_k("First number", (n) =>
-       webread_k("Second number:", (m) => webdisplay("The sum is: " + k(n + m))))
+       webread_k("Second number:", (m) =>
+         webdisplay("The sum is: " + k(n + m))))
 ```
 
 This version can be employed in the transformation of a larger program. In the special
@@ -48,6 +50,8 @@ In general, every term, when converted to CPS, will be have the following proper
      a lambda abstraction whose application to intermediate values yields the final result
      of the whole evaluation.
 
+### Function application
+
 Let us now look at the transformation of a function application. For instance, let us
 consider the term
 
@@ -64,29 +68,33 @@ f_k(a, fval => ...)
 Similarly, the transformation of the argument position would be:
 
 ```scala
-g_k(b, aval => ...)
+g_k(b, arg => ...)
 ```
 
-Given these two values, `fval` and `aval`, we can now perform the application, like so:
+Given these two values, `fval` and `arg`, we can now perform the application, like so:
 
 ```scala
-k(fval(aval))
+k(fval(arg))
 ```
 
-However, this will not work, because if ``fval`` makes a web interaction itself, it will not return.
+However, this will not work, because if ``fval`` is in CPS itself, it will not return.
 Instead, `k` must be given as an argument to the function, like so:
 
 ```scala
-k => f_k(a, fval => g_k(b, aval => fval(aval, k)))
+k => f_k(a, fval => g_k(b, arg => fval(arg, k)))
 ```
 
 Reading this sequentially, it says to evaluate the function expression, store its value in `fval`,
-then evaluate the argument, store its value in `aval`, and finally invoke the function on the argument.
-This function's continuation is the same as that of the function application itself.
+then evaluate the argument, store its value in `arg`, and finally invoke the function value on the argument.
+This function's continuation is the outer continuation of the function application itself.
+
+### Variables and constants
 
 What about variables and constants? Since every term in CPS must be a function that consumes a continuation,
 the constant is simply sent to the continuation.
 For instance, the CPS transformation of the number 3 is ``k => k(3)``.
+
+### Function definitions
 
 What about function definitions, such as ``x => x``? Since every lambda expression is also a constant,
 we might be tempted to use the same rule as above, i.e.,
@@ -116,6 +124,10 @@ k => k((x, dynk) => dynk(x))
 ```
 
 This is a function that accepts a value and a dynamic continuation and sends the value to that continuation.
+
+
+## Formal Definition of the CPS Transformation
+
 We are now ready to write this transformation formally, as a source-to-source transformation. This transformation
 could have the type `cps(e: Exp): Exp`, but we choose a different type for two reasons:
 
@@ -195,7 +207,9 @@ def cps(e: Exp): CPSCont = e match {
    case Add(e1, e2) => {
      val k = freshName(freeVars(e), "k")
      val lv = freshName(freeVars(e2), "lv")
-     CPSCont(k, CPSContAp(cps(e1), CPSCont(lv, CPSContAp(cps(e2), CPSCont("rv", CPSContAp(k, CPSAdd("rv", lv)))))))
+     CPSCont(k, CPSContAp(cps(e1), CPSCont(lv,
+       CPSContAp(cps(e2), CPSCont("rv",
+         CPSContAp(k, CPSAdd("rv", lv)))))))
    }
    case Fun(a, body) => {
      val k = freshName(freeVars(e), "k")
@@ -205,7 +219,9 @@ def cps(e: Exp): CPSCont = e match {
    case Ap(f, a) => {
      val k = freshName(freeVars(e), "k")
      val fval = freshName(freeVars(a), "fval")
-     CPSCont(k, CPSContAp(cps(f), CPSCont(fval, CPSContAp(cps(a), CPSCont("aval", CPSFunAp(fval, "aval", k))))))
+     CPSCont(k, CPSContAp(cps(f), CPSCont(fval,
+       CPSContAp(cps(a), CPSCont("aval",
+         CPSFunAp(fval, "aval", k))))))
    }
    case Id(x) => {
      val k = freshName(freeVars(e), "k")
