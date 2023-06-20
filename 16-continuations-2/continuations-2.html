@@ -151,14 +151,16 @@ in the previous lecture formal.</p>
 </code></pre>
 <p>into this program:</p>
 <pre><code class="language-scala">webread_k(&quot;First number&quot;, (n) =&gt;
-  webread_k(&quot;Second number:&quot;, (m) =&gt; webdisplay(&quot;The sum is: &quot; + (n + m))))
+  webread_k(&quot;Second number:&quot;, (m) =&gt;
+    webdisplay(&quot;The sum is: &quot; + (n + m))))
 </code></pre>
 <p>This hand-translation is sufficient if this expression is the entire program.
 If we wish to use it as a sub-expression in a larger program, this does not suffice,
 because there may be a pending computation outside its own evaluation. For that
 reason, the program has to send its result to a continuation instead of returning it:</p>
 <pre><code class="language-scala">k =&gt; webread_k(&quot;First number&quot;, (n) =&gt;
-       webread_k(&quot;Second number:&quot;, (m) =&gt; webdisplay(&quot;The sum is: &quot; + k(n + m))))
+       webread_k(&quot;Second number:&quot;, (m) =&gt;
+         webdisplay(&quot;The sum is: &quot; + k(n + m))))
 </code></pre>
 <p>This version can be employed in the transformation of a larger program. In the special
 case where this is the entire program we can apply the transformed term to the identity
@@ -179,6 +181,7 @@ a lambda abstraction whose application to intermediate values yields the final r
 of the whole evaluation.</p>
 </li>
 </ol>
+<h3 id="function-application"><a class="header" href="#function-application">Function application</a></h3>
 <p>Let us now look at the transformation of a function application. For instance, let us
 consider the term</p>
 <pre><code class="language-scala">f(a)(g(b))
@@ -187,21 +190,23 @@ consider the term</p>
 <pre><code class="language-scala">f_k(a, fval =&gt; ...)
 </code></pre>
 <p>Similarly, the transformation of the argument position would be:</p>
-<pre><code class="language-scala">g_k(b, aval =&gt; ...)
+<pre><code class="language-scala">g_k(b, arg =&gt; ...)
 </code></pre>
-<p>Given these two values, <code>fval</code> and <code>aval</code>, we can now perform the application, like so:</p>
-<pre><code class="language-scala">k(fval(aval))
+<p>Given these two values, <code>fval</code> and <code>arg</code>, we can now perform the application, like so:</p>
+<pre><code class="language-scala">k(fval(arg))
 </code></pre>
-<p>However, this will not work, because if <code>fval</code> makes a web interaction itself, it will not return.
+<p>However, this will not work, because if <code>fval</code> is in CPS itself, it will not return.
 Instead, <code>k</code> must be given as an argument to the function, like so:</p>
-<pre><code class="language-scala">k =&gt; f_k(a, fval =&gt; g_k(b, aval =&gt; fval(aval, k)))
+<pre><code class="language-scala">k =&gt; f_k(a, fval =&gt; g_k(b, arg =&gt; fval(arg, k)))
 </code></pre>
 <p>Reading this sequentially, it says to evaluate the function expression, store its value in <code>fval</code>,
-then evaluate the argument, store its value in <code>aval</code>, and finally invoke the function on the argument.
-This function's continuation is the same as that of the function application itself.</p>
+then evaluate the argument, store its value in <code>arg</code>, and finally invoke the function value on the argument.
+This function's continuation is the outer continuation of the function application itself.</p>
+<h3 id="variables-and-constants"><a class="header" href="#variables-and-constants">Variables and constants</a></h3>
 <p>What about variables and constants? Since every term in CPS must be a function that consumes a continuation,
 the constant is simply sent to the continuation.
 For instance, the CPS transformation of the number 3 is <code>k =&gt; k(3)</code>.</p>
+<h3 id="function-definitions"><a class="header" href="#function-definitions">Function definitions</a></h3>
 <p>What about function definitions, such as <code>x =&gt; x</code>? Since every lambda expression is also a constant,
 we might be tempted to use the same rule as above, i.e.,</p>
 <pre><code class="language-scala">k =&gt; k(x =&gt; x)
@@ -218,8 +223,9 @@ and more in line with our treatment of the store.</p>
 <p>which is equivalent (when the inner application finally happens) to:</p>
 <pre><code class="language-scala">k =&gt; k((x, dynk) =&gt; dynk(x))
 </code></pre>
-<p>This is a function that accepts a value and a dynamic continuation and sends the value to that continuation.
-We are now ready to write this transformation formally, as a source-to-source transformation. This transformation
+<p>This is a function that accepts a value and a dynamic continuation and sends the value to that continuation.</p>
+<h2 id="formal-definition-of-the-cps-transformation"><a class="header" href="#formal-definition-of-the-cps-transformation">Formal Definition of the CPS Transformation</a></h2>
+<p>We are now ready to write this transformation formally, as a source-to-source transformation. This transformation
 could have the type <code>cps(e: Exp): Exp</code>, but we choose a different type for two reasons:</p>
 <ol>
 <li>
@@ -288,7 +294,9 @@ def cps(e: Exp): CPSCont = e match {
    case Add(e1, e2) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
      val lv = freshName(freeVars(e2), &quot;lv&quot;)
-     CPSCont(k, CPSContAp(cps(e1), CPSCont(lv, CPSContAp(cps(e2), CPSCont(&quot;rv&quot;, CPSContAp(k, CPSAdd(&quot;rv&quot;, lv)))))))
+     CPSCont(k, CPSContAp(cps(e1), CPSCont(lv,
+       CPSContAp(cps(e2), CPSCont(&quot;rv&quot;,
+         CPSContAp(k, CPSAdd(&quot;rv&quot;, lv)))))))
    }
    case Fun(a, body) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
@@ -298,7 +306,9 @@ def cps(e: Exp): CPSCont = e match {
    case Ap(f, a) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)
      val fval = freshName(freeVars(a), &quot;fval&quot;)
-     CPSCont(k, CPSContAp(cps(f), CPSCont(fval, CPSContAp(cps(a), CPSCont(&quot;aval&quot;, CPSFunAp(fval, &quot;aval&quot;, k))))))
+     CPSCont(k, CPSContAp(cps(f), CPSCont(fval,
+       CPSContAp(cps(a), CPSCont(&quot;aval&quot;,
+         CPSFunAp(fval, &quot;aval&quot;, k))))))
    }
    case Id(x) =&gt; {
      val k = freshName(freeVars(e), &quot;k&quot;)

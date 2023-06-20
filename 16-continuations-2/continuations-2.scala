@@ -45,7 +45,9 @@ def cps(e: Exp): CPSCont = e match {
    case Add(e1, e2) => {
      val k = freshName(freeVars(e), "k")
      val lv = freshName(freeVars(e2), "lv")
-     CPSCont(k, CPSContAp(cps(e1), CPSCont(lv, CPSContAp(cps(e2), CPSCont("rv", CPSContAp(k, CPSAdd("rv", lv)))))))
+     CPSCont(k, CPSContAp(cps(e1), CPSCont(lv,
+       CPSContAp(cps(e2), CPSCont("rv",
+         CPSContAp(k, CPSAdd("rv", lv)))))))
    }
    case Fun(a, body) => {
      val k = freshName(freeVars(e), "k")
@@ -55,7 +57,9 @@ def cps(e: Exp): CPSCont = e match {
    case Ap(f, a) => {
      val k = freshName(freeVars(e), "k")
      val fval = freshName(freeVars(a), "fval")
-     CPSCont(k, CPSContAp(cps(f), CPSCont(fval, CPSContAp(cps(a), CPSCont("aval", CPSFunAp(fval, "aval", k))))))
+     CPSCont(k, CPSContAp(cps(f), CPSCont(fval,
+       CPSContAp(cps(a), CPSCont("aval",
+         CPSFunAp(fval, "aval", k))))))
    }
    case Id(x) => {
      val k = freshName(freeVars(e), "k")

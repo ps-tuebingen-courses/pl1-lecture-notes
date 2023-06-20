@@ -168,7 +168,7 @@ the Web developer must turn this application into three programs:</p>
 <li>The third program consumes the form values from the second form, computes the output, and generates the result.</li>
 </ol>
 <p>Because the value entered in the first form is needed by the third program to compute its output, this
-value must somehow be transmitted between from the first program to the third. This is typically done
+value must somehow be transmitted from the first program to the third. This is typically done
 by using the hidden field mechanism of HTML.</p>
 <p>Suppose, instead of using a hidden field, the application developer used a Java Servlet session object,
 or a database field, to store the first number. (Application developers are often pushed to do this
@@ -239,15 +239,16 @@ def continue(kid: String, result: Int) = continuations(kid)(result)
 <p>Using <code>webread_k</code>, we can now define our addition server as follows.
 If you try <code>webprog</code>, ignore the stack traces.</p>
 <pre><code class="language-scala">def webprog = webread_k(&quot;enter first number&quot;, (n) =&gt;
-              webread_k(&quot;enter second number&quot;, (m) =&gt; webdisplay(&quot;The sum of &quot; + n + &quot; and &quot; + m + &quot; is &quot; + (n + m))))
+                webread_k(&quot;enter second number&quot;, (m) =&gt;
+                  webdisplay(&quot;The sum of &quot; + n + &quot; and &quot; + m + &quot; is &quot; + (n + m))))
 </code></pre>
 <p>For instance, try:</p>
 <pre><code>scala&gt; webprog            -- yields some continuation id &quot;c1&quot;
 scala&gt; continue(&quot;c1&quot;, 5)  -- yields some continuation id &quot;c2&quot;
 scala&gt; continue(&quot;c2&quot;, 7)
-
-This should yield the result 12 as expected. But also try:
-scala&gt; webprog            -- yields some continuation id &quot;c1&quot;
+</code></pre>
+<p>This should yield the result 12 as expected. But also try:</p>
+<pre><code>scala&gt; webprog            -- yields some continuation id &quot;c1&quot;
 scala&gt; continue(&quot;c1&quot;, 5)  -- yields some continuation id &quot;c2&quot;
 scala&gt; continue(&quot;c1&quot;, 6)  -- yields some continuation id &quot;c3&quot;
 scala&gt; continue(&quot;c2&quot;, 3)  -- should yield 8
@@ -259,7 +260,7 @@ is just one of them. For instance, in JavaScript many API functions for asynchro
 such as httprequest in AJAX require to pass a callback function, which leads to similar code
 as the one in <code>webprog</code> above.</p>
 <p>Let's consider this &quot;web transformation&quot; - the transformation from <code>progSimple</code> to <code>webprog</code> - in more detail.
-To this purpose, let's make our application a bit more sophisticated. Instead of entering only two
+To this end, let's make our application a bit more sophisticated. Instead of entering only two
 numbers, the user enters n numbers, e.g., the prices of a list of n items.</p>
 <p>Here is the &quot;non-web&quot; version of the application:</p>
 <pre><code class="language-scala">def allCosts(itemList: List[String]): Int = itemList match {
@@ -274,7 +275,7 @@ def test = println(&quot;Total sum: &quot; + allCosts(testData))
 <p>This version of <code>allCosts</code> is clearly not web-friendly, because it uses <code>inputNumber</code>,
 which we do not know how to implement for the web.</p>
 <p>The first thing to observe is that on its own, <code>allCosts</code> is not a complete program: it doesn't do anything unless
-it is called with actual parameters!
+it is called with actual arguments!
 Instead, it is a library procedure that may be used in many different contexts. Because it has a web interaction,
 however, there is the danger that at the point of interaction, the rest of the computation -- that is, the
 computation that invoked <code>allCosts</code> -- will be lost. To prevent this, <code>allCosts</code> must consume an extra argument,
@@ -298,7 +299,7 @@ continuation fed to <code>allCosts_k</code>. In code:</p>
 <p>That is, the receiver of the web interaction is invoked with the cost of the first item. When <code>allCosts_k</code> is invoked
 recursively, it is applied to the rest of the list. Its receiver must therefore receive the tally of costs of the
 remaining items. That explains the pattern in the receiver.</p>
-<p>The only problem is, where does a continuation ever get a value? We create larger-and-larger continuation on
+<p>The only problem is, where does a continuation ever get a value? We create larger-and-larger continuations on
 each recursive invocation, but what ever invokes them?</p>
 <p>Here is the same problem from a different angle (that also answers the question above). Notice that each
 recursive invocation of <code>allCosts_k</code> takes place in the aftermath of a web interaction. We have already seen how
@@ -335,7 +336,10 @@ to <code>f</code>?</p>
 }
 
 def allCosts2_k(itemList: List[String], k: Int =&gt; Nothing): Nothing =
-   map_k(itemList, (x: String, k2: Int =&gt; Nothing) =&gt; webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, k2), (l: List[Int]) =&gt; k(l.sum))
+   map_k(itemList,
+         (x: String, k2: Int =&gt; Nothing) =&gt;
+           webread_k(&quot;Cost of item &quot; + x + &quot;:&quot;, k2),
+         (l: List[Int]) =&gt; k(l.sum))
 </code></pre>
 <h2 id="implications-of-the-web-transformation"><a class="header" href="#implications-of-the-web-transformation">Implications of the &quot;web transformation&quot;:</a></h2>
 <ol>

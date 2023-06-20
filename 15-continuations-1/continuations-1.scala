@@ -44,7 +44,8 @@ def webread_k(prompt: String, k: Int => Nothing): Nothing = {
 def continue(kid: String, result: Int) = continuations(kid)(result)
 
 def webprog = webread_k("enter first number", (n) =>
-              webread_k("enter second number", (m) => webdisplay("The sum of " + n + " and " + m + " is " + (n + m))))
+                webread_k("enter second number", (m) =>
+                  webdisplay("The sum of " + n + " and " + m + " is " + (n + m))))
 
 def allCosts(itemList: List[String]): Int = itemList match {
    case Nil => 0
@@ -76,6 +77,8 @@ def map_k[S, T](c: List[S], f: (S, T => Nothing) => Nothing, k: List[T] => Nothi
 }
 
 def allCosts2_k(itemList: List[String], k: Int => Nothing): Nothing =
-   map_k(itemList, (x: String, k2: Int => Nothing) => webread_k("Cost of item " + x + ":", k2), (l: List[Int]) => k(l.sum))
-
+   map_k(itemList,
+         (x: String, k2: Int => Nothing) =>
+           webread_k("Cost of item " + x + ":", k2),
+         (l: List[Int]) => k(l.sum))
 
