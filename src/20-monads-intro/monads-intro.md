@@ -10,9 +10,9 @@ import scala.language.reflectiveCalls
 
 We have seen various patterns of function composition:
 
-- The environment passing style, in which an environment is passed down in recursive calls.
-- The store passing style, in which a store is threaded in and out of every computation.
-- The continuation passing style, in which every function call is a tail call.
+- The environment-passing style, in which an environment is passed down in recursive calls.
+- The store-passing style, in which a store is threaded in and out of every computation.
+- The continuation-passing style, in which every function call is a tail call.
 
 Monads are way to abstract over such patterns of function composition.
 
@@ -109,7 +109,7 @@ def clientCode2OpUnit =
 ```
 
 This looks better, but the types of `unit` and `bindOption` (and also the name, but we can of course change that) still
-reveal that we are dealing with the ``Option`` function composition pattern. Let's abstract over the `Option` type constructor
+reveal that we are dealing with the ``Option`` function-composition pattern. Let's abstract over the `Option` type constructor
 by turning the type constructor into a parameter. The resulting triple (type constructor, `unit` function, `bind` function) is
 called a _monad_. Certain conditions (the "monad laws") on ``unit`` and ``bind`` also need to hold to make it a true monad,
 but we'll defer a discussion of these conditions until later.
@@ -235,6 +235,8 @@ We can now parameterize `clientCode` with `OptionMonad`.
 def v: Option[Boolean] = clientCode2Op(OptionMonad)
 ```
 
+Generic Functions for Monads
+----------------------------
 There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
 enough to be useful for many different monads. Here are some of these functions:
 
@@ -295,7 +297,7 @@ object IdentityMonad extends Monad[Id] {
 The Reader Monad
 ----------------
 
-This is the _reader monad_, a.k.a. _environment monad_. It captures the essence of "environment passing style".
+This is the _reader monad_, a.k.a. _environment monad_. It captures the essence of "environment-passing style".
 
 The type parameter ``[A] =>> R => A`` may look a bit complicated, but
 it is merely "currying" the function arrow type constructor.

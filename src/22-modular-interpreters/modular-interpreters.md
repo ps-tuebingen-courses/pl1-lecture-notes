@@ -80,9 +80,9 @@ object ReaderExample extends ReaderMonadImp {
 
 A more useful example where we use the reader monad
 to propagate a mapping from identifiers to boolean values
-in an interpreter for boolean formulas. note that the signature of
+in an interpreter for boolean formulas. Note that the signature of
 `eval` is identical to `def eval(e: Exp): Map[String, Boolean] => Boolean`,
-that is, we curry `eval` to make it applicable to the reader monad.
+that is, we curry `eval` to make it applicable to the Reader monad.
 
 ```scala mdoc
 object ReaderExample2 extends ReaderMonadImp {

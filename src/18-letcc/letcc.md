@@ -12,7 +12,7 @@ continuation involves copying the stack, but there are less and more efficient w
 obtaining the same effect.
 
 Adding continuations to a language makes it easy to create a better web programming protocol,
-as we shall see. But first-class continuations are much more general and give programmers
+as we have seen. But first-class continuations are much more general and give programmers
 immense power in numerous contexts.
 
 In Racket (and the related programming language Scheme), a continuation is created with

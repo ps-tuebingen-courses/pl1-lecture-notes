@@ -39,7 +39,7 @@ __Insight__: If we CPS-transform the interpreter, the continuation of the interp
 of the object program. The difference is that it represents what's left to do in the interpreter and not in the object program.
 However, what is left in the interpreter _is_ what is left in the object program.
 
-Hence we are faced with two tasks:
+Hence, we are faced with two tasks:
 
   1. CPS-transform the interpreter
   2. add a branch for ``Letcc`` to the interpreter.
@@ -53,16 +53,16 @@ case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 ```
 
-How do we represent values that represent continuations? Since we want to represent an object language continuation by a meta language
-continuation, we need to be able to wrap a meta language continuation as an object language value. This continuation will always accept
-some other object language value:
+How do we represent values that represent continuations? Since we want to represent an object-language continuation by a meta-language
+continuation, we need to be able to wrap a meta-language continuation as an object-language value. This continuation will always accept
+some other object-language value:
 
 ```scala mdoc
 case class ContV(f: Value => Nothing) extends Value
 ```
 
 We also need a syntactic construct to apply continuations. One way to provide such a construct would be to add a new syntactic category
-of continuation application. We will instead do what Scheme and other languages also do: We overload the normal function applicaton
+of continuation application. We will instead do what Scheme and other languages also do: We overload the normal function-applicaton
 construct and also use it for application of continuations.
 
 This means that we will need a case distinction in our interpreter whether the function argument is a closure or a continuation.
