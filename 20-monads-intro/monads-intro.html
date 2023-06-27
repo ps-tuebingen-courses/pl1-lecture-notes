@@ -146,9 +146,9 @@
 <p>The content of this chapter is available as a Scala file <a href="./monads-intro.scala">here.</a></p>
 <p>We have seen various patterns of function composition:</p>
 <ul>
-<li>The environment passing style, in which an environment is passed down in recursive calls.</li>
-<li>The store passing style, in which a store is threaded in and out of every computation.</li>
-<li>The continuation passing style, in which every function call is a tail call.</li>
+<li>The environment-passing style, in which an environment is passed down in recursive calls.</li>
+<li>The store-passing style, in which a store is threaded in and out of every computation.</li>
+<li>The continuation-passing style, in which every function call is a tail call.</li>
 </ul>
 <p>Monads are way to abstract over such patterns of function composition.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
@@ -217,7 +217,7 @@ def clientCode2OpUnit =
       unit(!y)))
 </code></pre>
 <p>This looks better, but the types of <code>unit</code> and <code>bindOption</code> (and also the name, but we can of course change that) still
-reveal that we are dealing with the <code>Option</code> function composition pattern. Let's abstract over the <code>Option</code> type constructor
+reveal that we are dealing with the <code>Option</code> function-composition pattern. Let's abstract over the <code>Option</code> type constructor
 by turning the type constructor into a parameter. The resulting triple (type constructor, <code>unit</code> function, <code>bind</code> function) is
 called a <em>monad</em>. Certain conditions (the &quot;monad laws&quot;) on <code>unit</code> and <code>bind</code> also need to hold to make it a true monad,
 but we'll defer a discussion of these conditions until later.</p>
@@ -302,6 +302,7 @@ sometimes called the <code>Maybe</code> monad.</p>
 <p>We can now parameterize <code>clientCode</code> with <code>OptionMonad</code>.</p>
 <pre><code class="language-scala">def v: Option[Boolean] = clientCode2Op(OptionMonad)
 </code></pre>
+<h2 id="generic-functions-for-monads"><a class="header" href="#generic-functions-for-monads">Generic Functions for Monads</a></h2>
 <p>There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
 enough to be useful for many different monads. Here are some of these functions:</p>
 <p><code>fmap</code> turns every function between <code>A</code> and <code>B</code> into a function between <code>M[A]</code> and <code>M[B]</code>:</p>
@@ -338,7 +339,7 @@ object IdentityMonad extends Monad[Id] {
 }
 </code></pre>
 <h2 id="the-reader-monad"><a class="header" href="#the-reader-monad">The Reader Monad</a></h2>
-<p>This is the <em>reader monad</em>, a.k.a. <em>environment monad</em>. It captures the essence of &quot;environment passing style&quot;.</p>
+<p>This is the <em>reader monad</em>, a.k.a. <em>environment monad</em>. It captures the essence of &quot;environment-passing style&quot;.</p>
 <p>The type parameter <code>[A] =&gt;&gt; R =&gt; A</code> may look a bit complicated, but
 it is merely &quot;currying&quot; the function arrow type constructor.</p>
 <p>The type constructor which is created here is <code>M[A] = R =&gt; A</code></p>

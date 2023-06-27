@@ -151,7 +151,7 @@ current continuation automatically and on the fly. As you may imagine, creating 
 continuation involves copying the stack, but there are less and more efficient ways of
 obtaining the same effect.</p>
 <p>Adding continuations to a language makes it easy to create a better web programming protocol,
-as we shall see. But first-class continuations are much more general and give programmers
+as we have seen. But first-class continuations are much more general and give programmers
 immense power in numerous contexts.</p>
 <p>In Racket (and the related programming language Scheme), a continuation is created with
 <code>let/cc</code>. It can be used to give the current continuation a name: <code>(let/cc k ... k ...)</code></p>

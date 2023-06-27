@@ -198,9 +198,9 @@ of type <code>Int</code> through a computation.</p>
 </code></pre>
 <p>A more useful example where we use the reader monad
 to propagate a mapping from identifiers to boolean values
-in an interpreter for boolean formulas. note that the signature of
+in an interpreter for boolean formulas. Note that the signature of
 <code>eval</code> is identical to <code>def eval(e: Exp): Map[String, Boolean] =&gt; Boolean</code>,
-that is, we curry <code>eval</code> to make it applicable to the reader monad.</p>
+that is, we curry <code>eval</code> to make it applicable to the Reader monad.</p>
 <pre><code class="language-scala">object ReaderExample2 extends ReaderMonadImp {
   enum Exp:
     case Id(x: String)

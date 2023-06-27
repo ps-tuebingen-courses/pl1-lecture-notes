@@ -3088,7 +3088,7 @@ However, we want to give a direct semantics to first-class continuations, withou
 <p><strong>Insight</strong>: If we CPS-transform the interpreter, the continuation of the interpreter also represents, in some way, the continuation
 of the object program. The difference is that it represents what's left to do in the interpreter and not in the object program.
 However, what is left in the interpreter <em>is</em> what is left in the object program.</p>
-<p>Hence we are faced with two tasks:</p>
+<p>Hence, we are faced with two tasks:</p>
 <ol>
 <li>CPS-transform the interpreter</li>
 <li>add a branch for <code>Letcc</code> to the interpreter.</li>
@@ -3099,13 +3099,13 @@ type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 </code></pre>
-<p>How do we represent values that represent continuations? Since we want to represent an object language continuation by a meta language
-continuation, we need to be able to wrap a meta language continuation as an object language value. This continuation will always accept
-some other object language value:</p>
+<p>How do we represent values that represent continuations? Since we want to represent an object-language continuation by a meta-language
+continuation, we need to be able to wrap a meta-language continuation as an object-language value. This continuation will always accept
+some other object-language value:</p>
 <pre><code class="language-scala">case class ContV(f: Value =&gt; Nothing) extends Value
 </code></pre>
 <p>We also need a syntactic construct to apply continuations. One way to provide such a construct would be to add a new syntactic category
-of continuation application. We will instead do what Scheme and other languages also do: We overload the normal function applicaton
+of continuation application. We will instead do what Scheme and other languages also do: We overload the normal function-applicaton
 construct and also use it for application of continuations.</p>
 <p>This means that we will need a case distinction in our interpreter whether the function argument is a closure or a continuation.
 Let's now study the interpreter for our new language. The branches for <code>Num</code>, <code>Id</code>, <code>Add</code>, and <code>Fun</code> are straightforward applications of the
@@ -3217,7 +3217,7 @@ current continuation automatically and on the fly. As you may imagine, creating 
 continuation involves copying the stack, but there are less and more efficient ways of
 obtaining the same effect.</p>
 <p>Adding continuations to a language makes it easy to create a better web programming protocol,
-as we shall see. But first-class continuations are much more general and give programmers
+as we have seen. But first-class continuations are much more general and give programmers
 immense power in numerous contexts.</p>
 <p>In Racket (and the related programming language Scheme), a continuation is created with
 <code>let/cc</code>. It can be used to give the current continuation a name: <code>(let/cc k ... k ...)</code></p>
@@ -3506,9 +3506,9 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value): Value = e match {
 <p>The content of this chapter is available as a Scala file <a href="20-monads-intro/./monads-intro.scala">here.</a></p>
 <p>We have seen various patterns of function composition:</p>
 <ul>
-<li>The environment passing style, in which an environment is passed down in recursive calls.</li>
-<li>The store passing style, in which a store is threaded in and out of every computation.</li>
-<li>The continuation passing style, in which every function call is a tail call.</li>
+<li>The environment-passing style, in which an environment is passed down in recursive calls.</li>
+<li>The store-passing style, in which a store is threaded in and out of every computation.</li>
+<li>The continuation-passing style, in which every function call is a tail call.</li>
 </ul>
 <p>Monads are way to abstract over such patterns of function composition.</p>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
@@ -3577,7 +3577,7 @@ def clientCode2OpUnit =
       unit(!y)))
 </code></pre>
 <p>This looks better, but the types of <code>unit</code> and <code>bindOption</code> (and also the name, but we can of course change that) still
-reveal that we are dealing with the <code>Option</code> function composition pattern. Let's abstract over the <code>Option</code> type constructor
+reveal that we are dealing with the <code>Option</code> function-composition pattern. Let's abstract over the <code>Option</code> type constructor
 by turning the type constructor into a parameter. The resulting triple (type constructor, <code>unit</code> function, <code>bind</code> function) is
 called a <em>monad</em>. Certain conditions (the &quot;monad laws&quot;) on <code>unit</code> and <code>bind</code> also need to hold to make it a true monad,
 but we'll defer a discussion of these conditions until later.</p>
@@ -3662,6 +3662,7 @@ sometimes called the <code>Maybe</code> monad.</p>
 <p>We can now parameterize <code>clientCode</code> with <code>OptionMonad</code>.</p>
 <pre><code class="language-scala">def v: Option[Boolean] = clientCode2Op(OptionMonad)
 </code></pre>
+<h2 id="generic-functions-for-monads"><a class="header" href="#generic-functions-for-monads">Generic Functions for Monads</a></h2>
 <p>There are many other sensible monads. Before we discuss those, let us discuss whether there are useful functions that are generic
 enough to be useful for many different monads. Here are some of these functions:</p>
 <p><code>fmap</code> turns every function between <code>A</code> and <code>B</code> into a function between <code>M[A]</code> and <code>M[B]</code>:</p>
@@ -3698,7 +3699,7 @@ object IdentityMonad extends Monad[Id] {
 }
 </code></pre>
 <h2 id="the-reader-monad"><a class="header" href="#the-reader-monad">The Reader Monad</a></h2>
-<p>This is the <em>reader monad</em>, a.k.a. <em>environment monad</em>. It captures the essence of &quot;environment passing style&quot;.</p>
+<p>This is the <em>reader monad</em>, a.k.a. <em>environment monad</em>. It captures the essence of &quot;environment-passing style&quot;.</p>
 <p>The type parameter <code>[A] =&gt;&gt; R =&gt; A</code> may look a bit complicated, but
 it is merely &quot;currying&quot; the function arrow type constructor.</p>
 <p>The type constructor which is created here is <code>M[A] = R =&gt; A</code></p>
@@ -3992,9 +3993,9 @@ of type <code>Int</code> through a computation.</p>
 </code></pre>
 <p>A more useful example where we use the reader monad
 to propagate a mapping from identifiers to boolean values
-in an interpreter for boolean formulas. note that the signature of
+in an interpreter for boolean formulas. Note that the signature of
 <code>eval</code> is identical to <code>def eval(e: Exp): Map[String, Boolean] =&gt; Boolean</code>,
-that is, we curry <code>eval</code> to make it applicable to the reader monad.</p>
+that is, we curry <code>eval</code> to make it applicable to the Reader monad.</p>
 <pre><code class="language-scala">object ReaderExample2 extends ReaderMonadImp {
   enum Exp:
     case Id(x: String)

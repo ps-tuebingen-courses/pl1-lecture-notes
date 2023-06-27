@@ -167,7 +167,7 @@ However, we want to give a direct semantics to first-class continuations, withou
 <p><strong>Insight</strong>: If we CPS-transform the interpreter, the continuation of the interpreter also represents, in some way, the continuation
 of the object program. The difference is that it represents what's left to do in the interpreter and not in the object program.
 However, what is left in the interpreter <em>is</em> what is left in the object program.</p>
-<p>Hence we are faced with two tasks:</p>
+<p>Hence, we are faced with two tasks:</p>
 <ol>
 <li>CPS-transform the interpreter</li>
 <li>add a branch for <code>Letcc</code> to the interpreter.</li>
@@ -178,13 +178,13 @@ type Env = Map[String, Value]
 case class NumV(n: Int) extends Value
 case class ClosureV(f: Fun, env: Env) extends Value
 </code></pre>
-<p>How do we represent values that represent continuations? Since we want to represent an object language continuation by a meta language
-continuation, we need to be able to wrap a meta language continuation as an object language value. This continuation will always accept
-some other object language value:</p>
+<p>How do we represent values that represent continuations? Since we want to represent an object-language continuation by a meta-language
+continuation, we need to be able to wrap a meta-language continuation as an object-language value. This continuation will always accept
+some other object-language value:</p>
 <pre><code class="language-scala">case class ContV(f: Value =&gt; Nothing) extends Value
 </code></pre>
 <p>We also need a syntactic construct to apply continuations. One way to provide such a construct would be to add a new syntactic category
-of continuation application. We will instead do what Scheme and other languages also do: We overload the normal function applicaton
+of continuation application. We will instead do what Scheme and other languages also do: We overload the normal function-applicaton
 construct and also use it for application of continuations.</p>
 <p>This means that we will need a case distinction in our interpreter whether the function argument is a closure or a continuation.
 Let's now study the interpreter for our new language. The branches for <code>Num</code>, <code>Id</code>, <code>Add</code>, and <code>Fun</code> are straightforward applications of the
