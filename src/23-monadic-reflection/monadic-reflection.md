@@ -51,8 +51,7 @@ Now we can write direct-style programs (in this case: a direct-style + function)
 (reify (+ (reflect (list 1 2)) (reflect (list 3 4))))
 ```
 
-More information in "Representing Monads" by A. Filinski:
-https://doi.org/10.1145/174675.178047
+More information in ["Representing Monads" by A. Filinski](https://doi.org/10.1145/174675.178047).
 
 
 

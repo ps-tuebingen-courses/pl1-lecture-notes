@@ -10,10 +10,8 @@ import scala.language.reflectiveCalls
 
 # A Monad Library
 
-A Monad library in Scala. Monad libraries like
-in scalaz and cats (for Scala) or the Haskell
-standard library look similar.
-
+We define a Monad library in Scala. Monad libraries like
+in scalaz and cats (for Scala) or the Haskell standard library look similar.
 
 ```scala mdoc
 trait Monad {
@@ -39,6 +37,7 @@ when composing the list monad and the option monad, then
 By keeping `M` abstract and using it only via the interfaces, "client code"
 does not need to depend on the particular composition of monads.
 
+### Reader Monad
 
 The Reader (or Environment) monad captures computations that depend
 on an environment of type `R`.
@@ -55,7 +54,7 @@ trait ReaderMonad extends Monad {
 }
 ```
 
-The standard implementation of the reader monad:
+The standard implementation of the Reader monad:
 
 ```scala mdoc
 trait ReaderMonadImp extends ReaderMonad {
@@ -67,7 +66,7 @@ trait ReaderMonadImp extends ReaderMonad {
 }
 ```
 
-An example of using the reader monad to propagate an environment
+An example of using the Reader monad to propagate an environment
 of type `Int` through a computation.
 
 ```scala mdoc
@@ -78,7 +77,7 @@ object ReaderExample extends ReaderMonadImp {
 }
 ```
 
-A more useful example where we use the reader monad
+A more useful example where we use the Reader monad
 to propagate a mapping from identifiers to boolean values
 in an interpreter for boolean formulas. Note that the signature of
 `eval` is identical to `def eval(e: Exp): Map[String, Boolean] => Boolean`,
@@ -120,7 +119,9 @@ case And(l, r) => env => {
 However, the monadic code is more abstract (and hence
 more reusable) because it is not coupled to the concrete `M`.
 
-This is the interface and standard implementation for the state monad:
+### State Monad
+
+This is the interface and standard implementation for the State monad:
 
 ```scala mdoc
 trait StateMonad extends Monad {
@@ -141,8 +142,10 @@ trait StateMonadImp extends StateMonad {
 }
 ```
 
-And here is the interface for the continuation monad. The continuation monad provides
-a method ``callcc``, which reifies the current continuation ``k: A => M[B]``.
+### Continuation Monad
+
+And here is the interface for the Continuation monad. The Continuation monad provides
+a method ``callcc``, which reifies the current Continuation ``k: A => M[B]``.
 
 ```scala mdoc
 trait ContinuationMonad extends Monad {
@@ -150,12 +153,12 @@ trait ContinuationMonad extends Monad {
 }
 ```
 
-_End of Monad Interfaces_
 
+## Implementaions
 
 Now we provide implementations of the monad interfaces.
 
-The identity monad, which is the end of each transformer chain:
+The identity monad, which is the end of each transformer chain reads:
 
 ```scala mdoc
 trait IdentityMonad extends Monad {
@@ -177,10 +180,12 @@ trait MonadTransformer extends Monad {
 }
 ```
 
-The reader monad transformer. We provide some convenient
+### Reader Monad Transformer
+
+The Reader monad transformer. We provide some convenient
 functions ``lift``, ``lift2`` etc. to lift functions from the inner monad.
 Note that ``M[X] = R => m.M[X]`` instead of ``M[X] = R => X`` (as for
-the non-transformer version of the reader monad).
+the non-transformer version of the Reader monad).
 The correct implementation of the interface methods follows from
 this type equation.
 
@@ -201,7 +206,7 @@ trait ReaderT extends MonadTransformer with ReaderMonad {
     f => r => x((a: A => m.M[B]) => f(lift2(a))(r))
 }
 
-// The original reader monad can be reconstructed by composing ReaderT with the identity monad.
+// The original Reader monad can be reconstructed by composing ReaderT with the identity monad.
 
 trait ReaderMonadImpl extends ReaderT {
   val m: IdentityMonad = IdentityMonad
@@ -220,6 +225,8 @@ trait ReaderMonadImpl extends ReaderMonad {
 }
 ```
 
+### State Monad Transformer
+
 The design of ``StateT`` is similar to that of ``ReaderT``:
 
 ```scala mdoc
@@ -233,7 +240,7 @@ trait StateT extends MonadTransformer with StateMonad {
   override def putState(s: S): M[Unit] = _ => m.unit(((), s))
 }
 
-// and again we can reconstruct the ordinary state monad.
+// and again we can reconstruct the ordinary State monad.
 
 trait StateMonadImpl extends StateT {
   val m: IdentityMonad = IdentityMonad
@@ -255,9 +262,11 @@ trait StateMonadImpl extends StateMonad {
 }
 ```
 
+### Continuation Monad
+
 We could also synthesize ``ContinuationMonadImpl`` from a ``ContT``
 just as we did for ``ReaderMonadImpl`` and ``StateMonadImpl``,
-but for simplicity we only present the ordinary continuation monad here.
+but for simplicity we only present the ordinary Continuation monad here.
 
 ```scala mdoc
 trait ContinuationMonadImpl extends ContinuationMonad {
@@ -269,9 +278,12 @@ trait ContinuationMonadImpl extends ContinuationMonad {
 }
 ```
 
+
+## Compositions
+
 Let's compose some monads.
 
-The composition of the reader monad and some continuation monad.
+The composition of the Reader monad and some Continuation monad.
 
 ```scala mdoc
 trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
@@ -281,7 +293,7 @@ trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
 }
 ```
 
-The composition of the reader monad and the continuation monad implementation.
+Fro the implementation, we use the Continuation-monad implementation.
 
 ```scala mdoc
 trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
@@ -291,7 +303,7 @@ trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
 }
 ```
 
-Composition of reader monad with some state monad.
+Composition of the Reader monad with some State monad.
 
 ```scala mdoc
 trait ReaderStateMonadForwarder extends ReaderT with StateMonad {
@@ -301,7 +313,7 @@ trait ReaderStateMonadForwarder extends ReaderT with StateMonad {
 }
 ```
 
-Composition of reader monad with StateMonadImpl.
+And the implementation with StateMonadImpl.
 
 ```scala mdoc
 trait ReaderStateMonadImpl extends ReaderStateMonadForwarder {
@@ -309,6 +321,9 @@ trait ReaderStateMonadImpl extends ReaderStateMonadForwarder {
     new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
 }
 ```
+
+
+## A Modular Interpreter
 
 Now we use the monad library to modularize the interpreters of
 the various language variants we have seen so far.
