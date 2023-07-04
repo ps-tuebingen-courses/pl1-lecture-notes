@@ -12,13 +12,21 @@ val iomonad: IOMonad = new IOMonad {
   type World = String
   type IO[A] = World => (A, World)
   def unit[A](a: A): IO[A] = w => (a, w)
-  def bind[A, B](m: IO[A], f: A => IO[B]): IO[B] = w => m(w) match { case (a, w2) => f(a)(w2) }
-  def printString(s: String): IO[Unit] = w => { println(s); ((), w + s + " was printed and then ...\n") }
-  def inputString: IO[String] = w => { val input = scala.io.StdIn.readLine(); (input, w + input + " was entered and then ...\n") }
+  def bind[A, B](m: IO[A], f: A => IO[B]): IO[B] =
+    w => m(w) match { case (a, w2) => f(a)(w2) }
+  def printString(s: String): IO[Unit] =
+    w => { println(s); ((), w + s + " was printed and then ...\n") }
+  def inputString: IO[String] =
+    w => {
+      val input = scala.io.StdIn.readLine();
+      (input, w + input + " was entered and then ...\n")
+    }
 
-  def performIO[A](action: IO[A]): A = action("The world in which nothing has happened yet, but then ...\n") match {
-    case (a, w) => println("Peformed all actions. The world in which all this happened is: \n" + w); a
-  }
+  def performIO[A](action: IO[A]): A =
+    action("The world in which nothing has happened yet, but then ...\n") match {
+      case (a, w) =>
+        println("Peformed all actions. The world in which all this happened is: \n" + w); a
+    }
 }
 
 def someIOActions(implicit m: IOMonad): m.IO[Unit] =

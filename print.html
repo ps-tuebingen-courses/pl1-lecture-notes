@@ -3919,13 +3919,21 @@ There are a number of alternative proposals to monad transformers, such as
   type World = String
   type IO[A] = World =&gt; (A, World)
   def unit[A](a: A): IO[A] = w =&gt; (a, w)
-  def bind[A, B](m: IO[A], f: A =&gt; IO[B]): IO[B] = w =&gt; m(w) match { case (a, w2) =&gt; f(a)(w2) }
-  def printString(s: String): IO[Unit] = w =&gt; { println(s); ((), w + s + &quot; was printed and then ...\n&quot;) }
-  def inputString: IO[String] = w =&gt; { val input = scala.io.StdIn.readLine(); (input, w + input + &quot; was entered and then ...\n&quot;) }
+  def bind[A, B](m: IO[A], f: A =&gt; IO[B]): IO[B] =
+    w =&gt; m(w) match { case (a, w2) =&gt; f(a)(w2) }
+  def printString(s: String): IO[Unit] =
+    w =&gt; { println(s); ((), w + s + &quot; was printed and then ...\n&quot;) }
+  def inputString: IO[String] =
+    w =&gt; {
+      val input = scala.io.StdIn.readLine();
+      (input, w + input + &quot; was entered and then ...\n&quot;)
+    }
 
-  def performIO[A](action: IO[A]): A = action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
-    case (a, w) =&gt; println(&quot;Peformed all actions. The world in which all this happened is: \n&quot; + w); a
-  }
+  def performIO[A](action: IO[A]): A =
+    action(&quot;The world in which nothing has happened yet, but then ...\n&quot;) match {
+      case (a, w) =&gt;
+        println(&quot;Peformed all actions. The world in which all this happened is: \n&quot; + w); a
+    }
 }
 </code></pre>
 <pre><code class="language-scala">def someIOActions(implicit m: IOMonad): m.IO[Unit] =
@@ -3940,9 +3948,8 @@ def test = iomonad.performIO(someIOActions(iomonad))
 <div style="break-before: page; page-break-before: always;"></div><h1 id="modular-interpreters"><a class="header" href="#modular-interpreters">Modular Interpreters</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="22-modular-interpreters/./modular-interpreters.scala">here.</a></p>
 <h1 id="a-monad-library"><a class="header" href="#a-monad-library">A Monad Library</a></h1>
-<p>A Monad library in Scala. Monad libraries like
-in scalaz and cats (for Scala) or the Haskell
-standard library look similar.</p>
+<p>We define a Monad library in Scala. Monad libraries like
+in scalaz and cats (for Scala) or the Haskell standard library look similar.</p>
 <pre><code class="language-scala">trait Monad {
   type M[_] // this time we treat M as a type member and not as type parameter
             // because it leads to shorter type signatures
@@ -3963,6 +3970,7 @@ when composing the list monad and the option monad, then
 <code>M[X] = Option[List[X]]</code> or <code>M[X] = List[Option[X]]</code>.</p>
 <p>By keeping <code>M</code> abstract and using it only via the interfaces, &quot;client code&quot;
 does not need to depend on the particular composition of monads.</p>
+<h3 id="reader-monad"><a class="header" href="#reader-monad">Reader Monad</a></h3>
 <p>The Reader (or Environment) monad captures computations that depend
 on an environment of type <code>R</code>.</p>
 <p>The <code>ask</code> function yields the current environment, the <code>local</code> function
@@ -3974,7 +3982,7 @@ environment transformer <code>f</code>.</p>
   def local[A](f: R =&gt; R, a: M[A]): M[A]
 }
 </code></pre>
-<p>The standard implementation of the reader monad:</p>
+<p>The standard implementation of the Reader monad:</p>
 <pre><code class="language-scala">trait ReaderMonadImp extends ReaderMonad {
   type M[X] = R =&gt; X
   def unit[A](a: A): M[A] = r =&gt; a
@@ -3983,7 +3991,7 @@ environment transformer <code>f</code>.</p>
   def local[A](f: R =&gt; R, a: M[A]): M[A] = r =&gt; a(f(r))
 }
 </code></pre>
-<p>An example of using the reader monad to propagate an environment
+<p>An example of using the Reader monad to propagate an environment
 of type <code>Int</code> through a computation.</p>
 <pre><code class="language-scala">object ReaderExample extends ReaderMonadImp {
   type R = Int
@@ -3991,7 +3999,7 @@ of type <code>Int</code> through a computation.</p>
   def example2: M[Int] = local(r =&gt; 99, example)
 }
 </code></pre>
-<p>A more useful example where we use the reader monad
+<p>A more useful example where we use the Reader monad
 to propagate a mapping from identifiers to boolean values
 in an interpreter for boolean formulas. Note that the signature of
 <code>eval</code> is identical to <code>def eval(e: Exp): Map[String, Boolean] =&gt; Boolean</code>,
@@ -4026,7 +4034,8 @@ that is, we curry <code>eval</code> to make it applicable to the Reader monad.</
 </code></pre>
 <p>However, the monadic code is more abstract (and hence
 more reusable) because it is not coupled to the concrete <code>M</code>.</p>
-<p>This is the interface and standard implementation for the state monad:</p>
+<h3 id="state-monad"><a class="header" href="#state-monad">State Monad</a></h3>
+<p>This is the interface and standard implementation for the State monad:</p>
 <pre><code class="language-scala">trait StateMonad extends Monad {
   type S
   def getState: M[S]
@@ -4044,15 +4053,16 @@ trait StateMonadImp extends StateMonad {
   def putState(s: S): M[Unit] = _ =&gt; ((), s)
 }
 </code></pre>
-<p>And here is the interface for the continuation monad. The continuation monad provides
-a method <code>callcc</code>, which reifies the current continuation <code>k: A =&gt; M[B]</code>.</p>
+<h3 id="continuation-monad"><a class="header" href="#continuation-monad">Continuation Monad</a></h3>
+<p>And here is the interface for the Continuation monad. The Continuation monad provides
+a method <code>callcc</code>, which reifies the current Continuation <code>k: A =&gt; M[B]</code>.</p>
 <pre><code class="language-scala">trait ContinuationMonad extends Monad {
   def callcc[A, B](f: (A =&gt; M[B]) =&gt; M[A]): M[A]
 }
 </code></pre>
-<p><em>End of Monad Interfaces</em></p>
+<h2 id="implementaions"><a class="header" href="#implementaions">Implementaions</a></h2>
 <p>Now we provide implementations of the monad interfaces.</p>
-<p>The identity monad, which is the end of each transformer chain:</p>
+<p>The identity monad, which is the end of each transformer chain reads:</p>
 <pre><code class="language-scala">trait IdentityMonad extends Monad {
   type M[A] = A
   def unit[A](a: A): M[A] = a
@@ -4068,10 +4078,11 @@ The monads are organized in a chain. Operations of &quot;inner&quot; monads must
   val m: Monad
 }
 </code></pre>
-<p>The reader monad transformer. We provide some convenient
+<h3 id="reader-monad-transformer"><a class="header" href="#reader-monad-transformer">Reader Monad Transformer</a></h3>
+<p>The Reader monad transformer. We provide some convenient
 functions <code>lift</code>, <code>lift2</code> etc. to lift functions from the inner monad.
 Note that <code>M[X] = R =&gt; m.M[X]</code> instead of <code>M[X] = R =&gt; X</code> (as for
-the non-transformer version of the reader monad).
+the non-transformer version of the Reader monad).
 The correct implementation of the interface methods follows from
 this type equation.</p>
 <pre><code class="language-scala">trait ReaderT extends MonadTransformer with ReaderMonad {
@@ -4090,7 +4101,7 @@ this type equation.</p>
     f =&gt; r =&gt; x((a: A =&gt; m.M[B]) =&gt; f(lift2(a))(r))
 }
 
-// The original reader monad can be reconstructed by composing ReaderT with the identity monad.
+// The original Reader monad can be reconstructed by composing ReaderT with the identity monad.
 
 trait ReaderMonadImpl extends ReaderT {
   val m: IdentityMonad = IdentityMonad
@@ -4105,6 +4116,7 @@ trait ReaderMonadImpl extends ReaderT {
   def local[A](f: R =&gt; R, a: M[A]): M[A] = (r) =&gt; a(f(r))
 }
 </code></pre>
+<h3 id="state-monad-transformer"><a class="header" href="#state-monad-transformer">State Monad Transformer</a></h3>
 <p>The design of <code>StateT</code> is similar to that of <code>ReaderT</code>:</p>
 <pre><code class="language-scala">trait StateT extends MonadTransformer with StateMonad {
   type M[A] = S =&gt; m.M[(A, S)]
@@ -4116,7 +4128,7 @@ trait ReaderMonadImpl extends ReaderT {
   override def putState(s: S): M[Unit] = _ =&gt; m.unit(((), s))
 }
 
-// and again we can reconstruct the ordinary state monad.
+// and again we can reconstruct the ordinary State monad.
 
 trait StateMonadImpl extends StateT {
   val m: IdentityMonad = IdentityMonad
@@ -4134,9 +4146,10 @@ trait StateMonadImpl extends StateT {
   def putState(s: S): M[Unit] = _ =&gt; ((), s)
 }
 </code></pre>
+<h3 id="continuation-monad-1"><a class="header" href="#continuation-monad-1">Continuation Monad</a></h3>
 <p>We could also synthesize <code>ContinuationMonadImpl</code> from a <code>ContT</code>
 just as we did for <code>ReaderMonadImpl</code> and <code>StateMonadImpl</code>,
-but for simplicity we only present the ordinary continuation monad here.</p>
+but for simplicity we only present the ordinary Continuation monad here.</p>
 <pre><code class="language-scala">trait ContinuationMonadImpl extends ContinuationMonad {
   type T
   type M[A] = (A =&gt; T) =&gt; T
@@ -4145,34 +4158,36 @@ but for simplicity we only present the ordinary continuation monad here.</p>
   override def callcc[A, B](f: (A =&gt; M[B]) =&gt; M[A]): M[A] = k =&gt; f(a =&gt; _ =&gt; k(a))(k)
 }
 </code></pre>
+<h2 id="compositions"><a class="header" href="#compositions">Compositions</a></h2>
 <p>Let's compose some monads.</p>
-<p>The composition of the reader monad and some continuation monad.</p>
+<p>The composition of the Reader monad and some Continuation monad.</p>
 <pre><code class="language-scala">trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
   val m: ContinuationMonad
   // call to lift4 inserted automatically
   override def callcc[A, B](f: (A =&gt; M[B]) =&gt; M[A]): M[A] = (m.callcc[A, B] _)(f)
 }
 </code></pre>
-<p>The composition of the reader monad and the continuation monad implementation.</p>
+<p>Fro the implementation, we use the Continuation-monad implementation.</p>
 <pre><code class="language-scala">trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
   type T
   val m: ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T } =
     new ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T }
 }
 </code></pre>
-<p>Composition of reader monad with some state monad.</p>
+<p>Composition of the Reader monad with some State monad.</p>
 <pre><code class="language-scala">trait ReaderStateMonadForwarder extends ReaderT with StateMonad {
   val m: StateMonad { type S = ReaderStateMonadForwarder.this.S }
   override def getState: M[S] = m.getState
   override def putState(s: S): M[Unit] = m.putState(s)
 }
 </code></pre>
-<p>Composition of reader monad with StateMonadImpl.</p>
+<p>And the implementation with StateMonadImpl.</p>
 <pre><code class="language-scala">trait ReaderStateMonadImpl extends ReaderStateMonadForwarder {
   val m: StateMonadImpl { type S = ReaderStateMonadImpl.this.S } =
     new StateMonadImpl { type S = ReaderStateMonadImpl.this.S }
 }
 </code></pre>
+<h2 id="a-modular-interpreter"><a class="header" href="#a-modular-interpreter">A Modular Interpreter</a></h2>
 <p>Now we use the monad library to modularize the interpreters of
 the various language variants we have seen so far.</p>
 <pre><code class="language-scala">trait Expressions extends Monad {
@@ -4372,8 +4387,7 @@ for every monad.</p>
 <p>Now we can write direct-style programs (in this case: a direct-style + function), yet use monadic features.</p>
 <pre><code class="language-racket">(reify (+ (reflect (list 1 2)) (reflect (list 3 4))))
 </code></pre>
-<p>More information in &quot;Representing Monads&quot; by A. Filinski:
-https://doi.org/10.1145/174675.178047</p>
+<p>More information in <a href="https://doi.org/10.1145/174675.178047">&quot;Representing Monads&quot; by A. Filinski</a>.</p>
 <p><strong>Example</strong>: Backtracking using monadic reflection: The <code>n</code>-queens problem.
 If partial results are desired, lists should be replaced by streams.</p>
 <pre><code class="language-racket">(define (fail) (reflect empty))

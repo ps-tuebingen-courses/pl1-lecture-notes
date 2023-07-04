@@ -103,7 +103,7 @@ trait ReaderT extends MonadTransformer with ReaderMonad {
     f => r => x((a: A => m.M[B]) => f(lift2(a))(r))
 }
 
-// The original reader monad can be reconstructed by composing ReaderT with the identity monad.
+// The original Reader monad can be reconstructed by composing ReaderT with the identity monad.
 
 trait ReaderMonadImpl extends ReaderT {
   val m: IdentityMonad = IdentityMonad
@@ -119,7 +119,7 @@ trait StateT extends MonadTransformer with StateMonad {
   override def putState(s: S): M[Unit] = _ => m.unit(((), s))
 }
 
-// and again we can reconstruct the ordinary state monad.
+// and again we can reconstruct the ordinary State monad.
 
 trait StateMonadImpl extends StateT {
   val m: IdentityMonad = IdentityMonad
