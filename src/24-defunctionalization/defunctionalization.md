@@ -16,7 +16,7 @@ enum Exp:
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
 
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
@@ -54,7 +54,7 @@ object CPSTransformed {
 ```
 
 However, the CPS-transformed interpreter still uses high-level features of the meta-language, most notably first-class functions.
-We will now introduce one transformation that can be used to transform a function using higher-order functions into one using only
+We will now introduce one transformation that can be used to transform a program using higher-order functions into one using only
 first-order functions. It is a general program transformation technique, not restricted only to interpreters.
 
 ## Lambda Lifting
@@ -66,7 +66,7 @@ closure are instead passed as parameters to the top-level function. Lambda lifti
  1. Invent a new and unique name for each function that is not a top-level function.
  2. Create a function with this name. Its body is the body of the former local function. Such a function will contain free variables.
  3. Add a parameter to the so-obtained top-level function for each free variable in its body.
-    Thus it becomes a higher-order function that returns a function when passed these arguments.
+    Hence, it becomes a higher-order function that returns a function when passed these arguments.
  4. Replace the local function by a call to the new top-level function and pass the corresponding local context via the arguments
     created in step 3.
 
@@ -181,10 +181,10 @@ Let's now apply defunctionalization to our CPS-transformed interpreter:
 object Defunctionalized {
 
   enum FunctionValue[T]:
-    case AddC1[T](r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-    case AddC2[T](lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
-    case ApC1[T](a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-    case ApC2[T](f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC1(r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC2(lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC1(a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC2(f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
 
   import FunctionValue._
 
@@ -230,12 +230,14 @@ the meta-language (Scala).
 
 ```scala mdoc
 object AbstractMachine {
-  sealed abstract class FunctionValue[T]
-  case class AddC1[T](r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-  case class AddC2[T](lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
-  case class ApC1[T](a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-  case class ApC2[T](f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
-  case class IdentityFV() extends FunctionValue[Value]
+  enum FunctionValue[T]:
+    case AddC1(r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC2(lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC1(a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC2(f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case IdentityFV() extends FunctionValue[Value]
+
+  import FunctionValue._
 
   enum MachineState[T]:
     case EvalState[T](e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
@@ -275,6 +277,7 @@ object AbstractMachine {
   }
 }
 import AbstractMachine._
+import FunctionValue._
 import MachineState._
 ```
 
@@ -317,8 +320,8 @@ Let's look at an example.
 
 ```scala mdoc
 enum MyList[T]:
-  case MyEmptyList[T]() extends MyList[T]
-  case MyCons[T](x: T, xs: MyList[T]) extends MyList[T]
+  case MyEmptyList() extends MyList[T]
+  case MyCons(x: T, xs: MyList[T]) extends MyList[T]
 
 import MyList._
 
