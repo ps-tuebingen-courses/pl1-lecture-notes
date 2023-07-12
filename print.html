@@ -4663,7 +4663,9 @@ import MachineState._
 //   funExpr = Fun(param = &quot;x&quot;, body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))),
 //   argExpr = Num(n = 5)
 // )
-val initMS: MachineState[Value] = EvalState(test, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
+val initMS: MachineState[Value] = EvalState(test,
+                                            Map.empty,
+                                            AbstractMachine.FunctionValue.IdentityFV())
 // initMS: MachineState[Value] = EvalState(
 //   e = Ap(
 //     funExpr = Fun(
@@ -4743,7 +4745,9 @@ val s11 = transition(s10)
 </code></pre>
 <p>We can also automate this into a function that collects the list of all states.</p>
 <pre><code class="language-scala">def evalMachine(e: Exp): List[MachineState[Value]] = {
-  val initMS: MachineState[Value] = EvalState(e, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
+  val initMS: MachineState[Value] = EvalState(e,
+                                              Map.empty,
+                                              AbstractMachine.FunctionValue.IdentityFV())
   List.unfold(initMS)({ case Done(v) =&gt; None
                         case s =&gt; { val s2 = transition(s); Some((s, s2))}})
 }

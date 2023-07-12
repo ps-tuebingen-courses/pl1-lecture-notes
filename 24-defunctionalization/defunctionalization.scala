@@ -182,7 +182,9 @@ import FunctionValue._
 import MachineState._
 
 val test = Ap(Fun("x", Add("x", 1)), 5)
-val initMS: MachineState[Value] = EvalState(test, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
+val initMS: MachineState[Value] = EvalState(test,
+                                            Map.empty,
+                                            AbstractMachine.FunctionValue.IdentityFV())
 val s1 = transition(initMS)
 val s2 = transition(s1)
 val s3 = transition(s2)
@@ -196,7 +198,9 @@ val s10 = transition(s9)
 val s11 = transition(s10)
 
 def evalMachine(e: Exp): List[MachineState[Value]] = {
-  val initMS: MachineState[Value] = EvalState(e, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
+  val initMS: MachineState[Value] = EvalState(e,
+                                              Map.empty,
+                                              AbstractMachine.FunctionValue.IdentityFV())
   List.unfold(initMS)({ case Done(v) => None
                         case s => { val s2 = transition(s); Some((s, s2))}})
 }
