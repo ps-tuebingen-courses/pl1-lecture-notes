@@ -9,6 +9,7 @@ import scala.language.implicitConversions
 The Simply Typed Lambda Calculus
 ================================
 
+We will now consider the so-called _Simply Typed Lambda Calculus_ (STLC).
 We start with the untyped substitution-based lambda calculus augmented by the possibility to add type annotations to function definitions.
 The type annotation is ignored by the interpreter.
 Why are we using the substitution-based interpreter? Because it is simpler to state the type soundness
@@ -149,7 +150,7 @@ case class ProductType(fst: Type, snd: Type) extends Type
 case class SumType(left: Type, right: Type) extends Type
 ```
 
-Let's look at the type checker for the so-called _Simply Typed Lambda Calculus_ (STLC). To deal with identifiers,
+Let's look at the type checker for the simply typed lambda calculus. To deal with identifiers,
 we need an abstraction of environments. A type environment has the form ``Map[String, Type]``.
 
 The type checker for the STLC is as follows:
