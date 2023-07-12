@@ -141,8 +141,8 @@ object AbstractMachine {
   import FunctionValue._
 
   enum MachineState[T]:
-    case EvalState[T](e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
-    case ApplyState[T](fv: FunctionValue[T], v: Value) extends MachineState[T]
+    case EvalState(e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
+    case ApplyState(fv: FunctionValue[T], v: Value) extends MachineState[T]
     case Done(v: Value) extends MachineState[Value]
 
   import MachineState._

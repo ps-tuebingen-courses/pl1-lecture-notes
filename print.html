@@ -4617,8 +4617,8 @@ the meta-language (Scala).</p>
   import FunctionValue._
 
   enum MachineState[T]:
-    case EvalState[T](e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
-    case ApplyState[T](fv: FunctionValue[T], v: Value) extends MachineState[T]
+    case EvalState(e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
+    case ApplyState(fv: FunctionValue[T], v: Value) extends MachineState[T]
     case Done(v: Value) extends MachineState[Value]
 
   import MachineState._
@@ -4975,7 +4975,8 @@ the last part of the sentence to those runtime errors that are captured by the t
 <div style="break-before: page; page-break-before: always;"></div><h1 id="simply-typed-lambda-calculus"><a class="header" href="#simply-typed-lambda-calculus">Simply Typed Lambda Calculus</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="26-stlc/./stlc.scala">here.</a></p>
 <h1 id="the-simply-typed-lambda-calculus"><a class="header" href="#the-simply-typed-lambda-calculus">The Simply Typed Lambda Calculus</a></h1>
-<p>We start with the untyped substitution-based lambda calculus augmented by the possibility to add type annotations to function definitions.
+<p>We will now consider the so-called <em>Simply Typed Lambda Calculus</em> (STLC).
+We start with the untyped substitution-based lambda calculus augmented by the possibility to add type annotations to function definitions.
 The type annotation is ignored by the interpreter.
 Why are we using the substitution-based interpreter? Because it is simpler to state the type soundness
 theorem. If we had values that are separate from expressions, we would need to define a type system for
@@ -5108,7 +5109,7 @@ case class JunitType() extends Type
 case class ProductType(fst: Type, snd: Type) extends Type
 case class SumType(left: Type, right: Type) extends Type
 </code></pre>
-<p>Let's look at the type checker for the so-called <em>Simply Typed Lambda Calculus</em> (STLC). To deal with identifiers,
+<p>Let's look at the type checker for the simply typed lambda calculus. To deal with identifiers,
 we need an abstraction of environments. A type environment has the form <code>Map[String, Type]</code>.</p>
 <p>The type checker for the STLC is as follows:</p>
 <pre><code class="language-scala">def typeCheck(e: Exp, gamma: Map[String, Type]): Type = e match {
