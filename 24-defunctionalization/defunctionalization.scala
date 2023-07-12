@@ -3,7 +3,7 @@ enum Exp:
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
 
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
@@ -101,10 +101,10 @@ def addAndMultNToListDefun(n: Int, xs: List[Int]) = map(G(n), map(F(n), xs))
 object Defunctionalized {
 
   enum FunctionValue[T]:
-    case AddC1[T](r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-    case AddC2[T](lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
-    case ApC1[T](a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-    case ApC2[T](f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC1(r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC2(lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC1(a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC2(f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
 
   import FunctionValue._
 
@@ -131,12 +131,14 @@ object Defunctionalized {
 }
 
 object AbstractMachine {
-  sealed abstract class FunctionValue[T]
-  case class AddC1[T](r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-  case class AddC2[T](lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
-  case class ApC1[T](a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-  case class ApC2[T](f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
-  case class IdentityFV() extends FunctionValue[Value]
+  enum FunctionValue[T]:
+    case AddC1(r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC2(lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC1(a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC2(f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case IdentityFV() extends FunctionValue[Value]
+
+  import FunctionValue._
 
   enum MachineState[T]:
     case EvalState[T](e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
@@ -176,10 +178,11 @@ object AbstractMachine {
   }
 }
 import AbstractMachine._
+import FunctionValue._
 import MachineState._
 
 val test = Ap(Fun("x", Add("x", 1)), 5)
-val initMS: MachineState[Value] = EvalState(test, Map.empty, IdentityFV())
+val initMS: MachineState[Value] = EvalState(test, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
 val s1 = transition(initMS)
 val s2 = transition(s1)
 val s3 = transition(s2)
@@ -193,7 +196,7 @@ val s10 = transition(s9)
 val s11 = transition(s10)
 
 def evalMachine(e: Exp): List[MachineState[Value]] = {
-  val initMS: MachineState[Value] = EvalState(e, Map.empty, IdentityFV())
+  val initMS: MachineState[Value] = EvalState(e, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
   List.unfold(initMS)({ case Done(v) => None
                         case s => { val s2 = transition(s); Some((s, s2))}})
 }
@@ -201,8 +204,8 @@ def evalMachine(e: Exp): List[MachineState[Value]] = {
 val q = evalMachine(test)
 
 enum MyList[T]:
-  case MyEmptyList[T]() extends MyList[T]
-  case MyCons[T](x: T, xs: MyList[T]) extends MyList[T]
+  case MyEmptyList() extends MyList[T]
+  case MyCons(x: T, xs: MyList[T]) extends MyList[T]
 
 import MyList._
 

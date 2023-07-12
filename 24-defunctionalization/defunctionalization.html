@@ -155,7 +155,7 @@ rely on the order of evaluation and call stack management of the meta-language a
   case Id(name: String)
   case Add(lhs: Exp, rhs: Exp)
   case Fun(param: String, body: Exp)
-  case Ap (funExpr: Exp, argExpr: Exp)
+  case Ap(funExpr: Exp, argExpr: Exp)
 
 object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
@@ -192,7 +192,7 @@ object CPSTransformed {
 }
 </code></pre>
 <p>However, the CPS-transformed interpreter still uses high-level features of the meta-language, most notably first-class functions.
-We will now introduce one transformation that can be used to transform a function using higher-order functions into one using only
+We will now introduce one transformation that can be used to transform a program using higher-order functions into one using only
 first-order functions. It is a general program transformation technique, not restricted only to interpreters.</p>
 <h2 id="lambda-lifting"><a class="header" href="#lambda-lifting">Lambda Lifting</a></h2>
 <p>The first of these techniques is <em>lambda lifting</em>. The goal of lambda lifting is to turn local functions into top-level functions.
@@ -202,7 +202,7 @@ closure are instead passed as parameters to the top-level function. Lambda lifti
 <li>Invent a new and unique name for each function that is not a top-level function.</li>
 <li>Create a function with this name. Its body is the body of the former local function. Such a function will contain free variables.</li>
 <li>Add a parameter to the so-obtained top-level function for each free variable in its body.
-Thus it becomes a higher-order function that returns a function when passed these arguments.</li>
+Hence, it becomes a higher-order function that returns a function when passed these arguments.</li>
 <li>Replace the local function by a call to the new top-level function and pass the corresponding local context via the arguments
 created in step 3.</li>
 </ol>
@@ -293,10 +293,10 @@ def addAndMultNToListDefun(n: Int, xs: List[Int]) = map(G(n), map(F(n), xs))
 <pre><code class="language-scala">object Defunctionalized {
 
   enum FunctionValue[T]:
-    case AddC1[T](r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-    case AddC2[T](lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
-    case ApC1[T](a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-    case ApC2[T](f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC1(r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC2(lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC1(a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC2(f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
 
   import FunctionValue._
 
@@ -337,12 +337,14 @@ Its state is fully described by the (first-order) state type. We are no
 longer dependent on call-stack management or higher-order functions of
 the meta-language (Scala).</p>
 <pre><code class="language-scala">object AbstractMachine {
-  sealed abstract class FunctionValue[T]
-  case class AddC1[T](r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-  case class AddC2[T](lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
-  case class ApC1[T](a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
-  case class ApC2[T](f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
-  case class IdentityFV() extends FunctionValue[Value]
+  enum FunctionValue[T]:
+    case AddC1(r: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case AddC2(lv: Value, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC1(a: Exp, env: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case ApC2(f: Fun, closureEnv: Env, k: FunctionValue[T]) extends FunctionValue[T]
+    case IdentityFV() extends FunctionValue[Value]
+
+  import FunctionValue._
 
   enum MachineState[T]:
     case EvalState[T](e: Exp, env: Env, fv: FunctionValue[T]) extends MachineState[T]
@@ -382,6 +384,7 @@ the meta-language (Scala).</p>
   }
 }
 import AbstractMachine._
+import FunctionValue._
 import MachineState._
 </code></pre>
 <p>Now let's try this out with a concrete example and look at the tract of transitions</p>
@@ -390,7 +393,7 @@ import MachineState._
 //   funExpr = Fun(param = &quot;x&quot;, body = Add(lhs = Id(name = &quot;x&quot;), rhs = Num(n = 1))),
 //   argExpr = Num(n = 5)
 // )
-val initMS: MachineState[Value] = EvalState(test, Map.empty, IdentityFV())
+val initMS: MachineState[Value] = EvalState(test, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
 // initMS: MachineState[Value] = EvalState(
 //   e = Ap(
 //     funExpr = Fun(
@@ -470,7 +473,7 @@ val s11 = transition(s10)
 </code></pre>
 <p>We can also automate this into a function that collects the list of all states.</p>
 <pre><code class="language-scala">def evalMachine(e: Exp): List[MachineState[Value]] = {
-  val initMS: MachineState[Value] = EvalState(e, Map.empty, IdentityFV())
+  val initMS: MachineState[Value] = EvalState(e, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
   List.unfold(initMS)({ case Done(v) =&gt; None
                         case s =&gt; { val s2 = transition(s); Some((s, s2))}})
 }
@@ -532,8 +535,8 @@ val q = evalMachine(test)
 program such that a data type is replaced by a function type?</p>
 <p>Let's look at an example.</p>
 <pre><code class="language-scala">enum MyList[T]:
-  case MyEmptyList[T]() extends MyList[T]
-  case MyCons[T](x: T, xs: MyList[T]) extends MyList[T]
+  case MyEmptyList() extends MyList[T]
+  case MyCons(x: T, xs: MyList[T]) extends MyList[T]
 
 import MyList._
 
