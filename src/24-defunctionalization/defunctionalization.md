@@ -285,7 +285,7 @@ Now let's try this out with a concrete example and look at the tract of transiti
 
 ```scala mdoc
 val test = Ap(Fun("x", Add("x", 1)), 5)
-val initMS: MachineState[Value] = EvalState(test, Map.empty, IdentityFV())
+val initMS: MachineState[Value] = EvalState(test, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
 val s1 = transition(initMS)
 val s2 = transition(s1)
 val s3 = transition(s2)
@@ -303,7 +303,7 @@ We can also automate this into a function that collects the list of all states.
 
 ```scala mdoc
 def evalMachine(e: Exp): List[MachineState[Value]] = {
-  val initMS: MachineState[Value] = EvalState(e, Map.empty, IdentityFV())
+  val initMS: MachineState[Value] = EvalState(e, Map.empty, AbstractMachine.FunctionValue.IdentityFV())
   List.unfold(initMS)({ case Done(v) => None
                         case s => { val s2 = transition(s); Some((s, s2))}})
 }
