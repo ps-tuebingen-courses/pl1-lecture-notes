@@ -47,6 +47,8 @@ def substitution(x: String, s: Type) = new Function[Type, Type] {
 }
 ```
 
+Note that in the `FunType`-case `this` is the substitution itself which is simply applied to the input and output type.
+
 A substitution can be found (if it exists) by an algorithm called the
 "Robinson unification algorithm":
 
@@ -59,6 +61,7 @@ def unify(eq: List[(Type, Type)]): Type => Type = eq match {
   case (TypeVar(x), t) :: rest => {
     if (freeTypeVars(t)(x)) sys.error(s"Occurs check: $x occurs in $t")
     val s = substitution(x, t)
+    // andThen is just function composition with the first function (here s) applied first
     s.andThen(unify(rest.map(p => (s(p._1), s(p._2)))))
   }
   case (t, TypeVar(x)) :: rest => unify((TypeVar(x), t) :: rest)
@@ -181,8 +184,16 @@ def typeCheck(e: Exp, gamma: Map[String, Type]): (List[(Type, Type)], Type) = e 
 }
 ```
 
+The `Let`-case of the type checker implements a special extension of the type checking algorithm, which
+allows one to use the same definition type-polymorphically at multiple types. This is achieved by first
+substituting the binding into the body and only then type check the latter. This way, any occurrence of
+the binding in the body can have a different type. Note further, that we still type check the definition
+of the binding explicitly, in order to gather the generated constraints also in the case that the binding
+is not used in the body.
+
 Full type checking is completed only when the constraints have a solution.
-This is captured by this definition.
+The resulting substitution is then applied to the returned type to give the overall inferred type.
+This is captured by the following definition.
 
 ```scala mdoc
 def doTypeCheck(e: Exp, gamma: Map[String, Type]) = {
@@ -194,10 +205,11 @@ assert(doTypeCheck(42, Map.empty) == NumType())
 assert(doTypeCheck(Fun("x", Add("x", 1)), Map.empty) == FunType(NumType(), NumType()))
 ```
 
-The "let"-case of the type checker implements a special extension of the type checking algorithm, which
-allows one to use the same definition type-polymorphically at multiple types.
 
-For instance, here the identity function is once applied to a function and once to a number:
+### Properties of type inference
+
+As an instance of let-polymorphism, consider the following example where the identity function
+is once applied to a function and once to a number:
 
 ```scala mdoc
 val exId =
@@ -206,7 +218,7 @@ val exId =
     Map.empty)
 ```
 
-This function could not be type-checked in STLC.
+This function could not be type checked in STLC.
 
 This example, on the other hand, should trigger an occurs check error:
 
@@ -214,18 +226,20 @@ This example, on the other hand, should trigger an occurs check error:
 val exOmega = doTypeCheck(Fun("x", Ap("x", "x")), Map.empty)
 ```
 
-Hence `omega` cannot be type-checked in STLC. STLC has the remarkable property that all well-typed programs terminate.
+Hence `omega` cannot be type checked in STLC (and not even with let-polymorphism).
+STLC has the remarkable property that all well-typed programs terminate.
 
-Completeness of type inference:
+Type inference satisfies the following completeness property:
 
-> If there exist type annotations that make a program type-check in the STLC type checker,
-> then the type inference will also be able to type-check the non-annotated version of the program.
+> If there exist type annotations that make a program type check in the STLC type checker,
+> then the type inference will also be able to type check the non-annotated version of the program.
 
-Due to "let-polymorphism", this program also type-checks some programs that would be ill-formed in STLC
+Further, due to let-polymorphism, with type inference we can also type check some programs that would be ill-formed in STLC.
 
-The type system is still sound:
+Moreover, the type system is still sound:
 
 > If `doTypeCheck(e, Map.empty) == t`, then `eval(e) == v` and `doTypeCheck(v) == t` (modulo \\( \alpha \\)-renaming of type variables).
+
 
 <!-- prevent questionnaire from showing up if there is no javascript enabled-->
 <noscript><style>questionnaire { display: none; }</style></noscript>
