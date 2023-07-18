@@ -180,6 +180,7 @@ def substitution(x: String, s: Type) = new Function[Type, Type] {
   }
 }
 </code></pre>
+<p>Note that in the <code>FunType</code>-case <code>this</code> is the substitution itself which is simply applied to the input and output type.</p>
 <p>A substitution can be found (if it exists) by an algorithm called the
 &quot;Robinson unification algorithm&quot;:</p>
 <pre><code class="language-scala">def unify(eq: List[(Type, Type)]): Type =&gt; Type = eq match {
@@ -190,6 +191,7 @@ def substitution(x: String, s: Type) = new Function[Type, Type] {
   case (TypeVar(x), t) :: rest =&gt; {
     if (freeTypeVars(t)(x)) sys.error(s&quot;Occurs check: $x occurs in $t&quot;)
     val s = substitution(x, t)
+    // andThen is just function composition with the first function (here s) applied first
     s.andThen(unify(rest.map(p =&gt; (s(p._1), s(p._2)))))
   }
   case (t, TypeVar(x)) :: rest =&gt; unify((TypeVar(x), t) :: rest)
@@ -303,8 +305,15 @@ def typeCheck(e: Exp, gamma: Map[String, Type]): (List[(Type, Type)], Type) = e 
 
 }
 </code></pre>
+<p>The <code>Let</code>-case of the type checker implements a special extension of the type checking algorithm, which
+allows one to use the same definition type-polymorphically at multiple types. This is achieved by first
+substituting the binding into the body and only then type check the latter. This way, any occurrence of
+the binding in the body can have a different type. Note further, that we still type check the definition
+of the binding explicitly, in order to gather the generated constraints also in the case that the binding
+is not used in the body.</p>
 <p>Full type checking is completed only when the constraints have a solution.
-This is captured by this definition.</p>
+The resulting substitution is then applied to the returned type to give the overall inferred type.
+This is captured by the following definition.</p>
 <pre><code class="language-scala">def doTypeCheck(e: Exp, gamma: Map[String, Type]) = {
   val (constraints, resType) = typeCheck(e, gamma)
   unify(constraints)(resType)
@@ -313,33 +322,34 @@ This is captured by this definition.</p>
 assert(doTypeCheck(42, Map.empty) == NumType())
 assert(doTypeCheck(Fun(&quot;x&quot;, Add(&quot;x&quot;, 1)), Map.empty) == FunType(NumType(), NumType()))
 </code></pre>
-<p>The &quot;let&quot;-case of the type checker implements a special extension of the type checking algorithm, which
-allows one to use the same definition type-polymorphically at multiple types.</p>
-<p>For instance, here the identity function is once applied to a function and once to a number:</p>
+<h3 id="properties-of-type-inference"><a class="header" href="#properties-of-type-inference">Properties of type inference</a></h3>
+<p>As an instance of let-polymorphism, consider the following example where the identity function
+is once applied to a function and once to a number:</p>
 <pre><code class="language-scala">val exId =
   doTypeCheck(
     Let(&quot;id&quot;, Fun(&quot;x&quot;, &quot;x&quot;), Ap(Ap(&quot;id&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), Ap(&quot;id&quot;, 42))),
     Map.empty)
 // exId: Type = NumType()
 </code></pre>
-<p>This function could not be type-checked in STLC.</p>
+<p>This function could not be type checked in STLC.</p>
 <p>This example, on the other hand, should trigger an occurs check error:</p>
 <pre><code class="language-scala">val exOmega = doTypeCheck(Fun(&quot;x&quot;, Ap(&quot;x&quot;, &quot;x&quot;)), Map.empty)
 // java.lang.RuntimeException: Occurs check: X9 occurs in FunType(TypeVar(X9),TypeVar(X10))
 // 	at scala.sys.package$.error(package.scala:27)
 // 	at repl.MdocSession$MdocApp.unify(type-inference.md:45)
-// 	at repl.MdocSession$MdocApp.doTypeCheck(type-inference.md:175)
-// 	at repl.MdocSession$MdocApp.$init$$$anonfun$1(type-inference.md:201)
-// 	at repl.MdocSession$MdocApp.$init$$$anonfun$adapted$1(type-inference.md:202)
+// 	at repl.MdocSession$MdocApp.doTypeCheck(type-inference.md:176)
+// 	at repl.MdocSession$MdocApp.$init$$$anonfun$1(type-inference.md:202)
+// 	at repl.MdocSession$MdocApp.$init$$$anonfun$adapted$1(type-inference.md:203)
 </code></pre>
-<p>Hence <code>omega</code> cannot be type-checked in STLC. STLC has the remarkable property that all well-typed programs terminate.</p>
-<p>Completeness of type inference:</p>
+<p>Hence <code>omega</code> cannot be type checked in STLC (and not even with let-polymorphism).
+STLC has the remarkable property that all well-typed programs terminate.</p>
+<p>Type inference satisfies the following completeness property:</p>
 <blockquote>
-<p>If there exist type annotations that make a program type-check in the STLC type checker,
-then the type inference will also be able to type-check the non-annotated version of the program.</p>
+<p>If there exist type annotations that make a program type check in the STLC type checker,
+then the type inference will also be able to type check the non-annotated version of the program.</p>
 </blockquote>
-<p>Due to &quot;let-polymorphism&quot;, this program also type-checks some programs that would be ill-formed in STLC</p>
-<p>The type system is still sound:</p>
+<p>Further, due to let-polymorphism, with type inference we can also type check some programs that would be ill-formed in STLC.</p>
+<p>Moreover, the type system is still sound:</p>
 <blockquote>
 <p>If <code>doTypeCheck(e, Map.empty) == t</code>, then <code>eval(e) == v</code> and <code>doTypeCheck(v) == t</code> (modulo \( \alpha \)-renaming of type variables).</p>
 </blockquote>

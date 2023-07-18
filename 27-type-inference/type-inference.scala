@@ -28,6 +28,7 @@ def unify(eq: List[(Type, Type)]): Type => Type = eq match {
   case (TypeVar(x), t) :: rest => {
     if (freeTypeVars(t)(x)) sys.error(s"Occurs check: $x occurs in $t")
     val s = substitution(x, t)
+    // andThen is just function composition with the first function (here s) applied first
     s.andThen(unify(rest.map(p => (s(p._1), s(p._2)))))
   }
   case (t, TypeVar(x)) :: rest => unify((TypeVar(x), t) :: rest)
