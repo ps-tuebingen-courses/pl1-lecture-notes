@@ -13,18 +13,18 @@ object Exp:
 
 import Exp._
 
-sealed abstract class CPSExp
-abstract class CPSVal extends CPSExp
-case class CPSNum(n: Int) extends CPSVal
-case class CPSAdd(l: CPSVar, r: CPSVar) extends CPSVal
-case class CPSCont(v: String, body: CPSExp) extends CPSVal
-case class CPSFun(x: String, k: String, body: CPSExp) extends CPSVal
-case class CPSVar(x: String) extends CPSVal { override def toString = x.toString }
+sealed abstract class SeriousExp
+abstract class TrivExp extends SeriousExp
+case class CPSNum(n: Int) extends TrivExp
+case class CPSAdd(l: CPSVar, r: CPSVar) extends TrivExp
+case class CPSCont(v: String, body: SeriousExp) extends TrivExp
+case class CPSFun(x: String, k: String, body: SeriousExp) extends TrivExp
+case class CPSVar(x: String) extends TrivExp { override def toString = x.toString }
 implicit def id2cpsexp(x: String): CPSVar = CPSVar(x)
 
-case class CPSContAp(k: CPSVal, a: CPSVal) extends CPSExp
-// the arguments are even CPSVar and not only CPSVal!
-case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp
+case class CPSContAp(k: TrivExp, a: TrivExp) extends SeriousExp
+// the arguments are even CPSVar and not only TrivExp!
+case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends SeriousExp
 
 def freeVars(e: Exp): Set[String] =  e match {
    case Id(x) => Set(x)

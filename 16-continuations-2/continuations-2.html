@@ -248,27 +248,28 @@ object Exp:
   implicit def num2exp(n: Int): Exp = Num(n)
   implicit def id2exp(s: String): Exp = Id(s)
 </code></pre>
-<p>For CPS transformed terms, we define two different syntactic categories: Values (<code>CPSVal</code>) and Expressions (<code>CPSExp</code>).
-By &quot;values&quot;, we mean terms that &quot;return&quot;, that is, terms that are different from applications of functions
+<p>For CPS transformed terms, we define two different syntactic categories: Serious expressions (<code>SeriousExp</code>) and trivial expressions (<code>TrivExp</code>).
+By &quot;trivial&quot;, we mean terms that &quot;return&quot; and have no control effect - in our language these are terms that are different from applications of functions
 or continuations (neither of which returns). Additions (<code>CPSAdd</code>) are also values in this regard: We assume addition
 to be built-in and not requiring CPS-transformations.</p>
-<p>The syntax makes clear that all arguments of a function application are values - hence no nesting of applications
+<p>The terminology of serious and trivial expressions was introduced by John C. Reynolds in his seminal 1972 paper on &quot;Definitional interpreters for higher-order programming languages&quot;.</p>
+<p>The syntax makes clear that all arguments of a function application are trivial - hence no nesting of applications
 can occur. Furthermore, the syntax differentiates between defining an ordinary function (<code>CPSFun</code>) which, when translated,
 gets an additional continuation parameter, and Continuation Functions (<code>CPSCont</code>), which are the result of the CPS
 transformation. Correspondingly, we have two different forms of applications, <code>CPSContAp</code> and <code>CPSFunAp</code>.</p>
 <p>Here is the formal definition:</p>
-<pre><code class="language-scala">sealed abstract class CPSExp
-abstract class CPSVal extends CPSExp
-case class CPSNum(n: Int) extends CPSVal
-case class CPSAdd(l: CPSVar, r: CPSVar) extends CPSVal
-case class CPSCont(v: String, body: CPSExp) extends CPSVal
-case class CPSFun(x: String, k: String, body: CPSExp) extends CPSVal
-case class CPSVar(x: String) extends CPSVal { override def toString = x.toString }
+<pre><code class="language-scala">sealed abstract class SeriousExp
+abstract class TrivExp extends SeriousExp
+case class CPSNum(n: Int) extends TrivExp
+case class CPSAdd(l: CPSVar, r: CPSVar) extends TrivExp
+case class CPSCont(v: String, body: SeriousExp) extends TrivExp
+case class CPSFun(x: String, k: String, body: SeriousExp) extends TrivExp
+case class CPSVar(x: String) extends TrivExp { override def toString = x.toString }
 implicit def id2cpsexp(x: String): CPSVar = CPSVar(x)
 
-case class CPSContAp(k: CPSVal, a: CPSVal) extends CPSExp
-// the arguments are even CPSVar and not only CPSVal!
-case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp
+case class CPSContAp(k: TrivExp, a: TrivExp) extends SeriousExp
+// the arguments are even CPSVar and not only TrivExp!
+case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends SeriousExp
 </code></pre>
 <p>With these definitions, we are now ready to formalize the transformation described above.
 There is one technical issue: We need to introduce new names for binders into our program, such as <code>&quot;k&quot;</code>.
