@@ -154,12 +154,14 @@ object Exp:
 import Exp._
 ```
 
-For CPS transformed terms, we define two different syntactic categories: Values (`CPSVal`) and Expressions (`CPSExp`).
-By "values", we mean terms that "return", that is, terms that are different from applications of functions
+For CPS transformed terms, we define two different syntactic categories: Serious expressions (`SeriousExp`) and trivial expressions (`TrivExp`).
+By "trivial", we mean terms that "return" and have no control effect - in our language these are terms that are different from applications of functions
 or continuations (neither of which returns). Additions (`CPSAdd`) are also values in this regard: We assume addition
 to be built-in and not requiring CPS-transformations.
 
-The syntax makes clear that all arguments of a function application are values - hence no nesting of applications
+The terminology of serious and trivial expressions was introduced by John C. Reynolds in his seminal 1972 paper on "Definitional interpreters for higher-order programming languages".
+
+The syntax makes clear that all arguments of a function application are trivial - hence no nesting of applications
 can occur. Furthermore, the syntax differentiates between defining an ordinary function (`CPSFun`) which, when translated,
 gets an additional continuation parameter, and Continuation Functions (`CPSCont`), which are the result of the CPS
 transformation. Correspondingly, we have two different forms of applications, `CPSContAp` and `CPSFunAp`.
@@ -167,18 +169,18 @@ transformation. Correspondingly, we have two different forms of applications, `C
 Here is the formal definition:
 
 ```scala mdoc
-sealed abstract class CPSExp
-abstract class CPSVal extends CPSExp
-case class CPSNum(n: Int) extends CPSVal
-case class CPSAdd(l: CPSVar, r: CPSVar) extends CPSVal
-case class CPSCont(v: String, body: CPSExp) extends CPSVal
-case class CPSFun(x: String, k: String, body: CPSExp) extends CPSVal
-case class CPSVar(x: String) extends CPSVal { override def toString = x.toString }
+sealed abstract class SeriousExp
+abstract class TrivExp extends SeriousExp
+case class CPSNum(n: Int) extends TrivExp
+case class CPSAdd(l: CPSVar, r: CPSVar) extends TrivExp
+case class CPSCont(v: String, body: SeriousExp) extends TrivExp
+case class CPSFun(x: String, k: String, body: SeriousExp) extends TrivExp
+case class CPSVar(x: String) extends TrivExp { override def toString = x.toString }
 implicit def id2cpsexp(x: String): CPSVar = CPSVar(x)
 
-case class CPSContAp(k: CPSVal, a: CPSVal) extends CPSExp
-// the arguments are even CPSVar and not only CPSVal!
-case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends CPSExp
+case class CPSContAp(k: TrivExp, a: TrivExp) extends SeriousExp
+// the arguments are even CPSVar and not only TrivExp!
+case class CPSFunAp(f: CPSVar, a: CPSVar, k: CPSVar) extends SeriousExp
 ```
 
 With these definitions, we are now ready to formalize the transformation described above.
