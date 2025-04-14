@@ -19,6 +19,10 @@ sh download_questionnaire_module.sh
 
 ./generateMarkdown.sh
 
+./create_rkt_files.sh
+
+./copy_rkt_files.sh
+
 ./create_scala_files.sh
 
 ./copy_scala_files.sh
