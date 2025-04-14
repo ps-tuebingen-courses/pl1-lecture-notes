@@ -174,7 +174,7 @@ a core language and syntactic sugar.</p>
 <li>Unary Negation</li>
 </ol>
 <p>Extension number 1 is a good example for a core language extension. We have no way of expressing <code>Mult</code> in terms of the existing constructs
-(if we had some looping construct we could express <code>Mult</code> as repeated <code>Add</code> but we do not have loops).</p>
+(if we had some looping construct, we could express <code>Mult</code> as repeated <code>Add</code>, but we do not have loops).</p>
 <p>Hence we add this language construct to the (core) language:</p>
 <pre><code class="language-scala">object MAE {
   // Abstract Syntax Tree
@@ -183,6 +183,7 @@ a core language and syntactic sugar.</p>
     case Add(lhs: Exp, rhs: Exp) extends Exp
     case Mult(lhs: Exp, rhs: Exp) extends Exp
   import Exp._
+
   // Example
   val ex = Add(Num(1), Mult(Num(5), Num(3)))
 
@@ -195,7 +196,7 @@ a core language and syntactic sugar.</p>
     }
 }
 </code></pre>
-<p>Let us now consider extension #2, <code>Sub</code>. One way to support sub is to add it to the core language, just like <code>Mult</code>:</p>
+<p>Let us now consider extension #2, <code>Sub</code>. One way to support <code>Sub</code> is to add it to the core language, just like <code>Mult</code>:</p>
 <pre><code class="language-scala">object SMAE {
   // Abstract Syntax Tree
   enum Exp:
@@ -204,6 +205,7 @@ a core language and syntactic sugar.</p>
     case Mult(lhs: Exp, rhs: Exp) extends Exp
     case Sub(lhs: Exp, rhs: Exp) extends Exp
   import Exp._
+
   // Example
   val ex = Sub(Num(1), Mult(Num(5), Num(3)))
 
@@ -217,7 +219,7 @@ a core language and syntactic sugar.</p>
     }
 }
 </code></pre>
-<p>However, another way of adding sub is to treat it as syntactic sugar using the fact that <code>a - b = a + (-1 * b)</code>
+<p>However, another way of adding <code>Sub</code> is to treat it as syntactic sugar, using the fact that <code>a - b = a + (-1 * b)</code>.
 One way of expressing the desugaring is as a syntax transformation:</p>
 <pre><code class="language-scala">def desugarSMAE2MAE(e: SMAE.Exp): MAE.Exp = e match {
   case SMAE.Exp.Num(n) =&gt; MAE.Exp.Num(n)
@@ -232,9 +234,9 @@ One way of expressing the desugaring is as a syntax transformation:</p>
 <pre><code class="language-scala">val res = MAE.eval(desugarSMAE2MAE(SMAE.ex))
 // res: Int = -14
 </code></pre>
-<p>If we had written other algorithms on MAE, or had proven properties of MAE, they'd be applicable to SMAE, too. Hence desugaring is a way
+<p>If we had written other algorithms on MAE, or had proven properties of MAE, they'd be applicable to SMAE, too. Hence, desugaring is a way
 of reusing code, proofs, ... . It is important, though, that the desugared language feature is gone after desugaring. For instance,
-a pretty printer would print the desugared code. A debugger would use the desugared code. This can be an important downside to desugaring.
+a pretty-printer would print the desugared code. A debugger would use the desugared code. This can be an important downside to desugaring.
 There are ways to avoid or mitigate these shortcomings, but they require additional work.</p>
 <p>There is a second way of realizing desugaring which does not require the definition of a copy of the AST enums.
 We can desugar earlier, namely during the construction of the AST:</p>

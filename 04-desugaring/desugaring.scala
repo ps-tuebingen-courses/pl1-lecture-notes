@@ -24,6 +24,7 @@ object MAE {
     case Add(lhs: Exp, rhs: Exp) extends Exp
     case Mult(lhs: Exp, rhs: Exp) extends Exp
   import Exp._
+
   // Example
   val ex = Add(Num(1), Mult(Num(5), Num(3)))
 
@@ -44,6 +45,7 @@ object SMAE {
     case Mult(lhs: Exp, rhs: Exp) extends Exp
     case Sub(lhs: Exp, rhs: Exp) extends Exp
   import Exp._
+
   // Example
   val ex = Sub(Num(1), Mult(Num(5), Num(3)))
 
