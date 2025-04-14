@@ -36,7 +36,7 @@ For illustration, consider the following proposed extensions to the language:
   3. Unary Negation
 
 Extension number 1 is a good example for a core language extension. We have no way of expressing `Mult` in terms of the existing constructs
-(if we had some looping construct we could express `Mult` as repeated `Add` but we do not have loops).
+(if we had some looping construct, we could express `Mult` as repeated `Add`, but we do not have loops).
 
 Hence we add this language construct to the (core) language:
 
@@ -48,6 +48,7 @@ object MAE {
     case Add(lhs: Exp, rhs: Exp) extends Exp
     case Mult(lhs: Exp, rhs: Exp) extends Exp
   import Exp._
+
   // Example
   val ex = Add(Num(1), Mult(Num(5), Num(3)))
 
@@ -61,7 +62,7 @@ object MAE {
 }
 ```
 
-Let us now consider extension #2, `Sub`. One way to support sub is to add it to the core language, just like `Mult`:
+Let us now consider extension #2, `Sub`. One way to support `Sub` is to add it to the core language, just like `Mult`:
 
 ```scala mdoc
 object SMAE {
@@ -72,6 +73,7 @@ object SMAE {
     case Mult(lhs: Exp, rhs: Exp) extends Exp
     case Sub(lhs: Exp, rhs: Exp) extends Exp
   import Exp._
+
   // Example
   val ex = Sub(Num(1), Mult(Num(5), Num(3)))
 
@@ -86,7 +88,7 @@ object SMAE {
 }
 ```
 
-However, another way of adding sub is to treat it as syntactic sugar using the fact that ``a - b = a + (-1 * b)``
+However, another way of adding `Sub` is to treat it as syntactic sugar, using the fact that ``a - b = a + (-1 * b)``.
 One way of expressing the desugaring is as a syntax transformation:
 
 ```scala mdoc
@@ -106,9 +108,9 @@ With this desugaring in place, we do not need an interpreter for SMAE anymore; r
 val res = MAE.eval(desugarSMAE2MAE(SMAE.ex))
 ```
 
-If we had written other algorithms on MAE, or had proven properties of MAE, they'd be applicable to SMAE, too. Hence desugaring is a way
+If we had written other algorithms on MAE, or had proven properties of MAE, they'd be applicable to SMAE, too. Hence, desugaring is a way
 of reusing code, proofs, ... . It is important, though, that the desugared language feature is gone after desugaring. For instance,
-a pretty printer would print the desugared code. A debugger would use the desugared code. This can be an important downside to desugaring.
+a pretty-printer would print the desugared code. A debugger would use the desugared code. This can be an important downside to desugaring.
 There are ways to avoid or mitigate these shortcomings, but they require additional work.
 
 There is a second way of realizing desugaring which does not require the definition of a copy of the AST enums.
