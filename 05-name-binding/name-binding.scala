@@ -39,8 +39,8 @@ val subst2: (Exp, String, Num) => Exp = (e, i, v) => e match {
 
   // binding instance => do not substitute
   case With(x, xdef, body) => With(x,
-                                  subst2(xdef, i, v),
-                                  subst2(body, i, v))
+                                   subst2(xdef, i, v),
+                                   subst2(body, i, v))
 }
 
 def eval2 = makeEval(subst2)
@@ -61,9 +61,9 @@ val subst3: (Exp, String, Num) => Exp = (e, i, v) => e match {
     case Add(l, r) => Add(subst3(l, i, v), subst3(r, i, v))
     case Mul(l, r) => Mul(subst3(l, i, v), subst3(r, i, v))
     case With(x, xdef, body) => With(x,
-                                    subst3(xdef, i, v),
-                                    // what if we forget to substitute into the body?
-                                    body)
+                                     subst3(xdef, i, v),
+                                     // what if we forget to substitute into the body?
+                                     body)
 }
 
 def eval3 = makeEval(subst3)
@@ -111,8 +111,8 @@ val subst5: (Exp, String, Num) => Exp = (e, i, v) => e match {
     case Mul(l, r) => Mul(subst5(l, i, v), subst5(r, i, v))
     // handle shadowing correctly
     case With(x, xdef, body) => With(x,
-                                   subst5(xdef, i, v),
-                                   if (x == i) body else subst5(body, i, v))
+                                     subst5(xdef, i, v),
+                                     if (x == i) body else subst5(body, i, v))
 }
 
 def eval5 = makeEval(subst5)

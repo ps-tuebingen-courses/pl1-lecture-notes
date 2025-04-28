@@ -717,8 +717,8 @@ Let's try to formalize this definition:</p>
   case Add(l, r) =&gt; Add(subst1(l, i, v), subst1(r, i, v))
   case Mul(l, r) =&gt; Mul(subst1(l, i, v), subst1(r, i, v))
   case With(x, xdef, body) =&gt; With(if (x == i) v else x,
-                                    subst1(xdef, i, v),
-                                    subst1(body, i, v))
+                                   subst1(xdef, i, v),
+                                   subst1(body, i, v))
   }
 </code></pre>
 <p>Unfortunately this does not even type-check! And rightly so, because it might otherwise turn reasonable programs into programs that are
@@ -743,13 +743,13 @@ An identifier not contained in the scope of any binding instance of its name is 
 </blockquote>
 <p>Examples: In WAE, the String in <code>Id(&quot;x&quot;)</code> is a bound or free instance, and the String in <code>With(&quot;x&quot;, ..., ...)</code> is a binding instance.
 The scope of this binding instance is the third sub-term of <code>With</code>.</p>
-<p>Now the reason can be revealed. Our first attempt failed because we substituted the identifier occurring in the binding position in the
+<p>Now the reason can be revealed: Our first attempt failed because we substituted the identifier occurring in the binding position in the
 <code>With</code>-expression. This renders the expression illegal because after substitution the binding position where an identifier was expected
 is now occupied by a <code>Num</code>.
 To correct this mistake, we make another take at substitution:</p>
 <h3 id="substitution-take-2"><a class="header" href="#substitution-take-2">Substitution, take 2</a></h3>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all identifiers in <code>e</code> which are not binding
-instances that have the name <code>i</code> with the expression <code>v</code>.
+instances and which have the name <code>i</code> with the expression <code>v</code>.
 Here is the formalization of this definition.</p>
 <pre><code class="language-scala">val subst2: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
   case Num(n) =&gt; e
@@ -762,8 +762,8 @@ Here is the formalization of this definition.</p>
 
   // binding instance =&gt; do not substitute
   case With(x, xdef, body) =&gt; With(x,
-                                  subst2(xdef, i, v),
-                                  subst2(body, i, v))
+                                   subst2(xdef, i, v),
+                                   subst2(body, i, v))
 }
 </code></pre>
 <p>Let's create an interpreter that uses this substitution function.</p>
@@ -784,16 +784,16 @@ introduces a new scope for the inner <code>x</code>. The scope of the outer <cod
 doesn’t recognize this possibility, it incorrectly substitutes the inner <code>x</code>.</p>
 <h3 id="substitution-take-3"><a class="header" href="#substitution-take-3">Substitution, take 3</a></h3>
 <p>To substitute identifier <code>i</code> in <code>e</code> with expression <code>v</code>, replace all non-binding identifiers in <code>e</code> having
-the name <code>i</code> with the expression <code>v</code>, unless the identifier is in a scope different from that introduced by <code>i</code>.</p>
+the name <code>i</code> with the expression <code>v</code>, unless the identifier is in a scope different from the one introduced by <code>i</code>.</p>
 <pre><code class="language-scala">val subst3: (Exp, String, Num) =&gt; Exp = (e, i, v) =&gt; e match {
     case Num(n) =&gt; e
     case Id(x) =&gt; if (x == i) v else e
     case Add(l, r) =&gt; Add(subst3(l, i, v), subst3(r, i, v))
     case Mul(l, r) =&gt; Mul(subst3(l, i, v), subst3(r, i, v))
     case With(x, xdef, body) =&gt; With(x,
-                                    subst3(xdef, i, v),
-                                    // what if we forget to substitute into the body?
-                                    body)
+                                     subst3(xdef, i, v),
+                                     // what if we forget to substitute into the body?
+                                     body)
 }
 
 def eval3 = makeEval(subst3)
@@ -859,8 +859,8 @@ programmatic definition of substitution (relative to the language we have so far
     case Mul(l, r) =&gt; Mul(subst5(l, i, v), subst5(r, i, v))
     // handle shadowing correctly
     case With(x, xdef, body) =&gt; With(x,
-                                   subst5(xdef, i, v),
-                                   if (x == i) body else subst5(body, i, v))
+                                     subst5(xdef, i, v),
+                                     if (x == i) body else subst5(body, i, v))
 }
 
 def eval5 = makeEval(subst5)
@@ -919,7 +919,7 @@ import Exp._
 <p>A function has a number of formal args and a body. Note that a first-order function also
 has a name. To make the invariant that there can only be one function for each
 name explicit, we have stored functions in the form of a map from function names to
-<code>FunDefs</code> above.</p>
+<code>FunDef</code>s above.</p>
 <p>The substitution for the new language is a straightforward extension of the former one.</p>
 <pre><code class="language-scala">def subst(e: Exp, i: String, v: Num): Exp =  e match {
     case Num(n) =&gt; e
@@ -927,8 +927,8 @@ name explicit, we have stored functions in the form of a map from function names
     case Add(l, r) =&gt; Add(subst(l, i, v), subst(r, i, v))
     case Mul(l, r) =&gt; Mul(subst(l, i, v), subst(r, i, v))
     case With(x, xdef, body) =&gt; With(x,
-                                   subst(xdef, i, v),
-                                   if (x == i) body else subst(body, i, v))
+                                     subst(xdef, i, v),
+                                     if (x == i) body else subst(body, i, v))
     case Call(f, args) =&gt; Call(f, args.map(subst(_, i, v)))
 }
 </code></pre>
@@ -944,7 +944,7 @@ We pass the map of functions as an additional parameter.</p>
      val fd = funs(f) // lookup function definition
      val vargs = args.map(eval(funs, _)) // evaluate function arguments
      if (fd.args.size != vargs.size)
-       sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
+       sys.error(&quot;number of parameters in call to &quot; + f + &quot; does not match&quot;)
      // We construct the function body to be evaluated by subsequently substituting
      // all formal arguments with their respective argument values.
      // If we have only a single argument &quot;fd.arg&quot; and a single argument value &quot;varg&quot;,
@@ -963,7 +963,9 @@ An alternative would be to have them share one namespace. As an exercise, think 
 to support a common namespace for function names and variable names.</p>
 <p>A test case:</p>
 <pre><code class="language-scala">val someFuns: Funs = Map(&quot;adder&quot; -&gt; FunDef(List(&quot;a&quot;, &quot;b&quot;), Add(&quot;a&quot;, &quot;b&quot;)),
-                     &quot;doubleadder&quot; -&gt; FunDef(List(&quot;a&quot;, &quot;x&quot;), Add(Call(&quot;adder&quot;, List(&quot;a&quot;, 5)), Call(&quot;adder&quot;, List(&quot;x&quot;, 7)))))
+                         &quot;doubleadder&quot; -&gt; FunDef(List(&quot;a&quot;, &quot;x&quot;),
+                                                 Add(Call(&quot;adder&quot;, List(&quot;a&quot;, 5)),
+                                                     Call(&quot;adder&quot;, List(&quot;x&quot;, 7)))))
 </code></pre>
 <pre><code class="language-scala">val callSomeFuns = eval(someFuns, Call(&quot;doubleadder&quot;, List(2, 3)))
 // callSomeFuns: Int = 17
@@ -1004,7 +1006,7 @@ encounter bound identifiers during interpretation.  How do we handle them?  We m
      val fd = funs(f) // lookup function definition
      val vargs = args.map(evalWithEnv(funs, env, _)) // evaluate function arguments
      if (fd.args.size != vargs.size)
-       sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
+       sys.error(&quot;number of parameters in call to &quot; + f + &quot; does not match&quot;)
      // We construct the environment by associating each formal argument to its actual value
      val newenv = Map() ++ fd.args.zip(vargs)
      evalWithEnv(funs, newenv, fd.body)
@@ -1027,7 +1029,7 @@ extend <code>env</code> instead, like so:</p>
      val fd = funs(f)
      val vargs = args.map(evalDynScope(funs, env, _))
      if (fd.args.size != vargs.size)
-       sys.error(&quot;number of paramters in call to &quot; + f + &quot; does not match&quot;)
+       sys.error(&quot;number of parameters in call to &quot; + f + &quot; does not match&quot;)
      val newenv = env ++ fd.args.zip(vargs) // extending env instead of Map() !!
      evalDynScope(funs, newenv, fd.body)
   }
