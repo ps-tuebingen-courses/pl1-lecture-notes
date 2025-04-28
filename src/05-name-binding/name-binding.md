@@ -117,8 +117,8 @@ val subst1: (Exp, String, Num) => Exp = (e, i, v) => e match {
   case Add(l, r) => Add(subst1(l, i, v), subst1(r, i, v))
   case Mul(l, r) => Mul(subst1(l, i, v), subst1(r, i, v))
   case With(x, xdef, body) => With(if (x == i) v else x,
-                                    subst1(xdef, i, v),
-                                    subst1(body, i, v))
+                                   subst1(xdef, i, v),
+                                   subst1(body, i, v))
   }
 ```
 
@@ -143,14 +143,14 @@ Examples: In WAE, the String in ``Id("x")`` is a bound or free instance, and the
 The scope of this binding instance is the third sub-term of ``With``.
 
 
-Now the reason can be revealed. Our first attempt failed because we substituted the identifier occurring in the binding position in the
+Now the reason can be revealed: Our first attempt failed because we substituted the identifier occurring in the binding position in the
 `With`-expression. This renders the expression illegal because after substitution the binding position where an identifier was expected
 is now occupied by a `Num`.
 To correct this mistake, we make another take at substitution:
 
 ### Substitution, take 2
 To substitute identifier `i` in `e` with expression `v`, replace all identifiers in `e` which are not binding
-instances that have the name `i` with the expression `v`.
+instances and which have the name `i` with the expression `v`.
 Here is the formalization of this definition.
 
 ```scala mdoc:silent
@@ -165,8 +165,8 @@ val subst2: (Exp, String, Num) => Exp = (e, i, v) => e match {
 
   // binding instance => do not substitute
   case With(x, xdef, body) => With(x,
-                                  subst2(xdef, i, v),
-                                  subst2(body, i, v))
+                                   subst2(xdef, i, v),
+                                   subst2(body, i, v))
 }
 ```
 
@@ -193,7 +193,7 @@ doesn’t recognize this possibility, it incorrectly substitutes the inner `x`.
 ### Substitution, take 3
 
 To substitute identifier `i` in `e` with expression `v`, replace all non-binding identifiers in `e` having
-the name `i` with the expression `v`, unless the identifier is in a scope different from that introduced by `i`.
+the name `i` with the expression `v`, unless the identifier is in a scope different from the one introduced by `i`.
 
 ```scala mdoc:silent
 val subst3: (Exp, String, Num) => Exp = (e, i, v) => e match {
@@ -202,9 +202,9 @@ val subst3: (Exp, String, Num) => Exp = (e, i, v) => e match {
     case Add(l, r) => Add(subst3(l, i, v), subst3(r, i, v))
     case Mul(l, r) => Mul(subst3(l, i, v), subst3(r, i, v))
     case With(x, xdef, body) => With(x,
-                                    subst3(xdef, i, v),
-                                    // what if we forget to substitute into the body?
-                                    body)
+                                     subst3(xdef, i, v),
+                                     // what if we forget to substitute into the body?
+                                     body)
 }
 
 def eval3 = makeEval(subst3)
@@ -279,8 +279,8 @@ val subst5: (Exp, String, Num) => Exp = (e, i, v) => e match {
     case Mul(l, r) => Mul(subst5(l, i, v), subst5(r, i, v))
     // handle shadowing correctly
     case With(x, xdef, body) => With(x,
-                                   subst5(xdef, i, v),
-                                   if (x == i) body else subst5(body, i, v))
+                                     subst5(xdef, i, v),
+                                     if (x == i) body else subst5(body, i, v))
 }
 
 def eval5 = makeEval(subst5)

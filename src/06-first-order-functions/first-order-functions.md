@@ -47,7 +47,7 @@ import Exp._
 A function has a number of formal args and a body. Note that a first-order function also
 has a name. To make the invariant that there can only be one function for each
 name explicit, we have stored functions in the form of a map from function names to
-`FunDefs` above.
+`FunDef`s above.
 
 The substitution for the new language is a straightforward extension of the former one.
 
@@ -58,8 +58,8 @@ def subst(e: Exp, i: String, v: Num): Exp =  e match {
     case Add(l, r) => Add(subst(l, i, v), subst(r, i, v))
     case Mul(l, r) => Mul(subst(l, i, v), subst(r, i, v))
     case With(x, xdef, body) => With(x,
-                                   subst(xdef, i, v),
-                                   if (x == i) body else subst(body, i, v))
+                                     subst(xdef, i, v),
+                                     if (x == i) body else subst(body, i, v))
     case Call(f, args) => Call(f, args.map(subst(_, i, v)))
 }
 ```
@@ -78,7 +78,7 @@ def eval(funs: Funs, e: Exp): Int = e match {
      val fd = funs(f) // lookup function definition
      val vargs = args.map(eval(funs, _)) // evaluate function arguments
      if (fd.args.size != vargs.size)
-       sys.error("number of paramters in call to " + f + " does not match")
+       sys.error("number of parameters in call to " + f + " does not match")
      // We construct the function body to be evaluated by subsequently substituting
      // all formal arguments with their respective argument values.
      // If we have only a single argument "fd.arg" and a single argument value "varg",
@@ -101,7 +101,9 @@ A test case:
 
 ```scala mdoc:silent
 val someFuns: Funs = Map("adder" -> FunDef(List("a", "b"), Add("a", "b")),
-                     "doubleadder" -> FunDef(List("a", "x"), Add(Call("adder", List("a", 5)), Call("adder", List("x", 7)))))
+                         "doubleadder" -> FunDef(List("a", "x"),
+                                                 Add(Call("adder", List("a", 5)),
+                                                     Call("adder", List("x", 7)))))
 ```
 
 ```scala mdoc
@@ -157,7 +159,7 @@ def evalWithEnv(funs: Funs, env: Env, e: Exp): Int = e match {
      val fd = funs(f) // lookup function definition
      val vargs = args.map(evalWithEnv(funs, env, _)) // evaluate function arguments
      if (fd.args.size != vargs.size)
-       sys.error("number of paramters in call to " + f + " does not match")
+       sys.error("number of parameters in call to " + f + " does not match")
      // We construct the environment by associating each formal argument to its actual value
      val newenv = Map() ++ fd.args.zip(vargs)
      evalWithEnv(funs, newenv, fd.body)
@@ -182,7 +184,7 @@ def evalDynScope(funs: Funs, env: Env, e: Exp): Int = e match {
      val fd = funs(f)
      val vargs = args.map(evalDynScope(funs, env, _))
      if (fd.args.size != vargs.size)
-       sys.error("number of paramters in call to " + f + " does not match")
+       sys.error("number of parameters in call to " + f + " does not match")
      val newenv = env ++ fd.args.zip(vargs) // extending env instead of Map() !!
      evalDynScope(funs, newenv, fd.body)
   }
