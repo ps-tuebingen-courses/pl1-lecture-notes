@@ -1360,10 +1360,10 @@ assert(evalcbn(test2) == eval(test2))
 <p>One can formally prove that if <code>eval</code> and <code>evalcbn</code> both produce a number then the numbers are equal. Do they also agree if they produce
 a function?
 Not necessarily. Consider:</p>
-<pre><code class="language-scala">val test3 = Ap(Fun(&quot;f&quot;, Fun(&quot;x&quot;, Ap(&quot;f&quot;, &quot;x&quot;))), Add(1, 2))
+<pre><code class="language-scala">val test3 = Ap(Fun(&quot;a&quot;, Fun(&quot;x&quot;, Add(&quot;a&quot;, &quot;x&quot;))), Add(1, 2))
 
-assert(eval(test3) == Fun(&quot;x&quot;, Ap(Num(3), Id(&quot;x&quot;))))
-assert(evalcbn(test3) == Fun(&quot;x&quot;, Ap(Add(Num(1), Num(2)), Id(&quot;x&quot;))))
+assert(eval(test3) == Fun(&quot;x&quot;, Add(3, &quot;x&quot;)))
+assert(evalcbn(test3) == Fun(&quot;x&quot;, Add(Add(1, 2), &quot;x&quot;)))
 </code></pre>
 <p>However, if both produce a function, then the functions &quot;behave&quot; the same. More specifically, the function bodies produced by <code>eval</code>
 may be &quot;more evaluated&quot; than those produced by <code>evalcbn</code> since for the latter the evaluation of the arguments substituted for the parameters
@@ -1431,7 +1431,7 @@ expressions instead of values.</p>
 deferred substitutions that still have to be applied in the function argument? If we discard the environment in which the function
 argument was defined we again introduce a variant of dynamic scoping.</p>
 <p>Hence, like for closures, we need to store the environment together with the expression. We call such a  pair a <em>thunk</em>. An environment
-thus becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
+thus becomes a mapping from symbols to thunks. Note that this makes environments and thunks mutually recursive. In Scala, we can therefore
 not use type definitions of the form</p>
 <pre><code>   type Thunk = (Exp, Env)
    type Env = Map[String, Thunk]
@@ -1446,37 +1446,37 @@ of the evaluator that leaves open how to</p>
 </ol>
 <p><strong>Hint</strong>: Research on the internet what abstract type members in Scala are. For instance, <a href="http://www.scala-lang.org/node/105">here</a>.</p>
 <pre><code class="language-scala">trait CBN {
-    type Thunk
+  type Thunk
 
-    def delay(e: Exp, env: EnvThunk): Thunk
-    def force(t: Thunk): ValueCBN
+  def delay(e: Exp, env: EnvThunk): Thunk
+  def force(t: Thunk): ValueCBN
 
-    case class EnvThunk(map: Map[String, Thunk]) {
-      def apply(key: String): Thunk = map.apply(key)
-      def +(other: (String, Thunk)): EnvThunk = EnvThunk(map + other)
-    }
+  case class EnvThunk(map: Map[String, Thunk]) {
+    def apply(key: String): Thunk = map.apply(key)
+    def +(other: (String, Thunk)): EnvThunk = EnvThunk(map + other)
+  }
 
-    // since values also depend on EnvThunk and hence on Thunk they need to
-    // be defined within this trait
-    sealed abstract class ValueCBN
-    case class NumV(n: Int) extends ValueCBN
-    case class ClosureV(f: Fun, env: EnvThunk) extends ValueCBN
-    def evalCBN(e: Exp, env: EnvThunk): ValueCBN = e match {
-      case Id(x) =&gt; force(env(x)) // force evaluation of thunk if identifier is evaluated
-      case Add(l, r) =&gt; {
-        (evalCBN(l, env), evalCBN(r, env)) match {
-          case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
-          case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-        }
+  // since values also depend on EnvThunk and hence on Thunk they need to
+  // be defined within this trait
+  sealed abstract class ValueCBN
+  case class NumV(n: Int) extends ValueCBN
+  case class ClosureV(f: Fun, env: EnvThunk) extends ValueCBN
+  def evalCBN(e: Exp, env: EnvThunk): ValueCBN = e match {
+    case Id(x) =&gt; force(env(x)) // force evaluation of thunk if identifier is evaluated
+    case Add(l, r) =&gt; {
+      (evalCBN(l, env), evalCBN(r, env)) match {
+        case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
+        case _ =&gt; sys.error(&quot;can only add numbers&quot;)
       }
-      case Ap(f, a) =&gt; evalCBN(f, env) match {
-        // delay argument expression and add it to environment of the closure
-        case ClosureV(f, cenv) =&gt; evalCBN(f.body, cenv + (f.param -&gt; delay(a, env)))
-        case _ =&gt; sys.error(&quot;can only apply functions&quot;)
-      }
-      case Num(n) =&gt; NumV(n)
-      case f@Fun(x, body) =&gt; ClosureV(f, env)
     }
+    case Ap(f, a) =&gt; evalCBN(f, env) match {
+      // delay argument expression and add it to environment of the closure
+      case ClosureV(f, cenv) =&gt; evalCBN(f.body, cenv + (f.param -&gt; delay(a, env)))
+      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+    }
+    case Num(n) =&gt; NumV(n)
+    case f@Fun(x, body) =&gt; ClosureV(f, env)
+  }
 }
 </code></pre>
 <p>Let's now create an instance of CBN that corresponds to the substitution-based call-by-name interpreter. A thunk is just a pair
@@ -1498,17 +1498,17 @@ assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.Nu
 <p>Call-by-name is rather wasteful: If an argument is used <em>n</em> times in the body, the argument expression is re-evaluated <em>n</em> times.
 For instance, in</p>
 <pre><code class="language-scala">val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;x&quot;)),
-               Ap(&quot;double&quot;, Add(2, 3)))
+              Ap(&quot;double&quot;, Add(2, 3)))
 </code></pre>
-<p>the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blow-up.</p>
+<p>the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blowup.</p>
 <p>Example:</p>
-<pre><code class="language-mdoc:silent">val blowup  = wth(&quot;a&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;x&quot;)),
-              wth(&quot;b&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;a&quot;, &quot;x&quot;), Ap(&quot;a&quot;, &quot;x&quot;))),
-              wth(&quot;c&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;b&quot;, &quot;x&quot;), Ap(&quot;b&quot;, &quot;x&quot;))),
-              wth(&quot;d&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;c&quot;, &quot;x&quot;), Ap(&quot;c&quot;, &quot;x&quot;))),
-              wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;d&quot;, &quot;x&quot;), Ap(&quot;d&quot;, &quot;x&quot;))),
-              wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;e&quot;, &quot;x&quot;), Ap(&quot;e&quot;, &quot;x&quot;))),
-              Ap(&quot;f&quot;, Add(2, 3))))))))
+<pre><code class="language-scala">val blowup = wth(&quot;a&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;x&quot;)),
+             wth(&quot;b&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;a&quot;, &quot;x&quot;), Ap(&quot;a&quot;, &quot;x&quot;))),
+             wth(&quot;c&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;b&quot;, &quot;x&quot;), Ap(&quot;b&quot;, &quot;x&quot;))),
+             wth(&quot;d&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;c&quot;, &quot;x&quot;), Ap(&quot;c&quot;, &quot;x&quot;))),
+             wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;d&quot;, &quot;x&quot;), Ap(&quot;d&quot;, &quot;x&quot;))),
+             wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;e&quot;, &quot;x&quot;), Ap(&quot;e&quot;, &quot;x&quot;))),
+             Ap(&quot;f&quot;, Add(2, 3))))))))
 </code></pre>
 <p>Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is
 called <em>call-by-need</em>.</p>

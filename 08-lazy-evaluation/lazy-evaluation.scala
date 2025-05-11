@@ -103,7 +103,7 @@ def evalWithEnv(e: Exp, env: Env): Value = e match {
     case _ => sys.error("can only apply functions")
   }
 }
-## Motivation for Lazy Evaluation
+
 def evalcbn(e: Exp): Exp = e match {
   case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l, r) => (evalcbn(l), evalcbn(r)) match {
@@ -120,10 +120,10 @@ def evalcbn(e: Exp): Exp = e match {
 assert(evalcbn(test) == eval(test))
 assert(evalcbn(test2) == eval(test2))
 
-val test3 = Ap(Fun("f", Fun("x", Ap("f", "x"))), Add(1, 2))
+val test3 = Ap(Fun("a", Fun("x", Add("a", "x"))), Add(1, 2))
 
-assert(eval(test3) == Fun("x", Ap(Num(3), Id("x"))))
-assert(evalcbn(test3) == Fun("x", Ap(Add(Num(1), Num(2)), Id("x"))))
+assert(eval(test3) == Fun("x", Add(3, "x")))
+assert(evalcbn(test3) == Fun("x", Add(Add(1, 2), "x")))
 
  val test4 = Ap(Fun("x", 5), omega)
 
@@ -157,37 +157,37 @@ val list2toinfty = wth("cons", cons,
                       Ap(Ap("maplist", Fun("x", Add("x", 1))), allnats)))))
 
 trait CBN {
-    type Thunk
+  type Thunk
 
-    def delay(e: Exp, env: EnvThunk): Thunk
-    def force(t: Thunk): ValueCBN
+  def delay(e: Exp, env: EnvThunk): Thunk
+  def force(t: Thunk): ValueCBN
 
-    case class EnvThunk(map: Map[String, Thunk]) {
-      def apply(key: String): Thunk = map.apply(key)
-      def +(other: (String, Thunk)): EnvThunk = EnvThunk(map + other)
-    }
+  case class EnvThunk(map: Map[String, Thunk]) {
+    def apply(key: String): Thunk = map.apply(key)
+    def +(other: (String, Thunk)): EnvThunk = EnvThunk(map + other)
+  }
 
-    // since values also depend on EnvThunk and hence on Thunk they need to
-    // be defined within this trait
-    sealed abstract class ValueCBN
-    case class NumV(n: Int) extends ValueCBN
-    case class ClosureV(f: Fun, env: EnvThunk) extends ValueCBN
-    def evalCBN(e: Exp, env: EnvThunk): ValueCBN = e match {
-      case Id(x) => force(env(x)) // force evaluation of thunk if identifier is evaluated
-      case Add(l, r) => {
-        (evalCBN(l, env), evalCBN(r, env)) match {
-          case (NumV(v1), NumV(v2)) => NumV(v1 + v2)
-          case _ => sys.error("can only add numbers")
-        }
+  // since values also depend on EnvThunk and hence on Thunk they need to
+  // be defined within this trait
+  sealed abstract class ValueCBN
+  case class NumV(n: Int) extends ValueCBN
+  case class ClosureV(f: Fun, env: EnvThunk) extends ValueCBN
+  def evalCBN(e: Exp, env: EnvThunk): ValueCBN = e match {
+    case Id(x) => force(env(x)) // force evaluation of thunk if identifier is evaluated
+    case Add(l, r) => {
+      (evalCBN(l, env), evalCBN(r, env)) match {
+        case (NumV(v1), NumV(v2)) => NumV(v1 + v2)
+        case _ => sys.error("can only add numbers")
       }
-      case Ap(f, a) => evalCBN(f, env) match {
-        // delay argument expression and add it to environment of the closure
-        case ClosureV(f, cenv) => evalCBN(f.body, cenv + (f.param -> delay(a, env)))
-        case _ => sys.error("can only apply functions")
-      }
-      case Num(n) => NumV(n)
-      case f@Fun(x, body) => ClosureV(f, env)
     }
+    case Ap(f, a) => evalCBN(f, env) match {
+      // delay argument expression and add it to environment of the closure
+      case ClosureV(f, cenv) => evalCBN(f.body, cenv + (f.param -> delay(a, env)))
+      case _ => sys.error("can only apply functions")
+    }
+    case Num(n) => NumV(n)
+    case f@Fun(x, body) => ClosureV(f, env)
+  }
 }
 
 object CallByName extends CBN {
@@ -202,7 +202,15 @@ object CallByName extends CBN {
 assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.NumV(12))
 
 val cbntest = wth("double", Fun("x", Add("x", "x")),
-               Ap("double", Add(2, 3)))
+              Ap("double", Add(2, 3)))
+
+val blowup = wth("a", Fun("x", Add("x", "x")),
+             wth("b", Fun("x", Add(Ap("a", "x"), Ap("a", "x"))),
+             wth("c", Fun("x", Add(Ap("b", "x"), Ap("b", "x"))),
+             wth("d", Fun("x", Add(Ap("c", "x"), Ap("c", "x"))),
+             wth("e", Fun("x", Add(Ap("d", "x"), Ap("d", "x"))),
+             wth("f", Fun("x", Add(Ap("e", "x"), Ap("e", "x"))),
+             Ap("f", Add(2, 3))))))))
 
 object CallByNeed extends CBN {
   case class MemoThunk(e: Exp, env: EnvThunk) {
