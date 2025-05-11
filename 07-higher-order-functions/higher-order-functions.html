@@ -271,8 +271,8 @@ assert(subst(Add(5, &quot;x&quot;), &quot;x&quot;, 7) == Add(5, 7))
 assert(subst(Add(5, &quot;x&quot;), &quot;y&quot;, 7) == Add(5, &quot;x&quot;))
 assert(subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;x&quot;, 7) == Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)))
 // test capture-avoiding substitution
-assert(subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5)) == Fun(&quot;x0&quot;, Add(Id(&quot;x0&quot;), Add(Id(&quot;x&quot;), Num(5)))))
-assert(subst(Fun(&quot;x&quot;, Add(Id(&quot;x0&quot;), Id(&quot;y&quot;))), &quot;y&quot;, Add(Id(&quot;x&quot;), 5)) == Fun(&quot;x1&quot;, Add(Id(&quot;x0&quot;), Add(Id(&quot;x&quot;), Num(5)))))
+assert(subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5)) == Fun(&quot;x0&quot;, Add(&quot;x0&quot;, Add(&quot;x&quot;, Num(5)))))
+assert(subst(Fun(&quot;x&quot;, Add(&quot;x0&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5)) == Fun(&quot;x1&quot;, Add(&quot;x0&quot;, Add(&quot;x&quot;, Num(5)))))
 </code></pre>
 <p>OK, equipped with this new version of substitution we can now define the interpreter for this language.
 But how do we evaluate a function abstraction? Obviously we cannot return a number.</p>
@@ -281,18 +281,18 @@ For simplicity, we use <code>Exp</code> as our return type since it allows us to
 sophisticated.</p>
 <p>This means that a new class of errors can occur: A subexpression evaluates to a number where a function is expected, or vice versa.
 Such errors are called <em>type errors</em>, and we will talk about them in much more detail later.</p>
-<p>For now, it means that we need to analyze (typically by pattern matching) the result of recursive invocations of eval to check whether the result has the right type.</p>
+<p>For now, it means that we need to analyze (typically by pattern matching) the result of recursive invocations of <code>eval</code> to check whether the result has the right type.</p>
 <p>The remainder of the interpreter is unsurprising:</p>
 <pre><code class="language-scala">def eval(e: Exp): Exp = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
   case Add(l, r) =&gt; (eval(l), eval(r)) match {
-                     case (Num(x), Num(y)) =&gt; Num(x + y)
-                     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
+                      case (Num(x), Num(y)) =&gt; Num(x + y)
+                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
   case Ap(f, a) =&gt; eval(f) match {
-     case Fun(x, body) =&gt; eval(subst(body, x, eval(a)))  // call-by-value
-     // case Fun(x, body) =&gt; eval(subst(body, x, a))        // call-by-name
-     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+    case Fun(x, body) =&gt; eval(subst(body, x, eval(a)))  // call-by-value
+    //case Fun(x, body) =&gt; eval(subst(body, x, a))        // call-by-name
+    case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case _ =&gt; e // numbers and functions evaluate to themselves
 }
@@ -301,12 +301,12 @@ Such errors are called <em>type errors</em>, and we will talk about them in much
 <pre><code class="language-scala">def eval2(e: Exp): Either[Num, Fun] = e match {
   case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
   case Add(l, r) =&gt; (eval2(l), eval2(r)) match {
-                     case (Left(Num(x)), Left(Num(y))) =&gt; Left(Num(x + y))
-                     case _ =&gt; sys.error(&quot;can only add numbers&quot;)
+                      case (Left(Num(x)), Left(Num(y))) =&gt; Left(Num(x + y))
+                      case _ =&gt; sys.error(&quot;can only add numbers&quot;)
                     }
   case Ap(f, a) =&gt; eval2(f) match {
-     case Right(Fun(x, body)) =&gt; eval2(subst(body, x, eval(a)))
-     case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+    case Right(Fun(x, body)) =&gt; eval2(subst(body, x, eval(a)))
+    case _ =&gt; sys.error(&quot;can only apply functions&quot;)
   }
   case f@Fun(_, _) =&gt; Right(f)
   case n@Num(_) =&gt; Left(n)
@@ -374,8 +374,8 @@ We could try to replace the second line in the <code>Ap</code> case by</p>
 <p>Hence, when we evaluate a function, we do not only have to store the function, but also the environment active when the function was
 created. This pair of function and environment is called a <em>closure</em>. The environment stored in the closure is used when the function
 is eventually applied.</p>
-<p>Hint: If you cannot answer what a closure is and how it is used in the  interpreter, you will be toast in the exam!
-Since closures are not expressible in the language syntax, we now come to the point where we need a separate category of <em>values</em>.
+<p>Hint: If you cannot answer what a closure is and how it is used in the  interpreter, you will be toast in the exam!</p>
+<p>Since closures are not expressible in the language syntax, we now come to the point where we need a separate category of <em>values</em>.
 The values in FAE can be either numbers or closures.</p>
 <pre><code class="language-scala">sealed abstract class Value
 type Env = Map[String, Value]

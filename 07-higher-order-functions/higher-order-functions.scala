@@ -73,19 +73,19 @@ assert(subst(Add(5, "x"), "x", 7) == Add(5, 7))
 assert(subst(Add(5, "x"), "y", 7) == Add(5, "x"))
 assert(subst(Fun("x", Add("x", "y")), "x", 7) == Fun("x", Add("x", "y")))
 // test capture-avoiding substitution
-assert(subst(Fun("x", Add("x", "y")), "y", Add("x", 5)) == Fun("x0", Add(Id("x0"), Add(Id("x"), Num(5)))))
-assert(subst(Fun("x", Add(Id("x0"), Id("y"))), "y", Add(Id("x"), 5)) == Fun("x1", Add(Id("x0"), Add(Id("x"), Num(5)))))
+assert(subst(Fun("x", Add("x", "y")), "y", Add("x", 5)) == Fun("x0", Add("x0", Add("x", Num(5)))))
+assert(subst(Fun("x", Add("x0", "y")), "y", Add("x", 5)) == Fun("x1", Add("x0", Add("x", Num(5)))))
 
 def eval(e: Exp): Exp = e match {
   case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l, r) => (eval(l), eval(r)) match {
-                     case (Num(x), Num(y)) => Num(x + y)
-                     case _ => sys.error("can only add numbers")
+                      case (Num(x), Num(y)) => Num(x + y)
+                      case _ => sys.error("can only add numbers")
                     }
   case Ap(f, a) => eval(f) match {
-     case Fun(x, body) => eval(subst(body, x, eval(a)))  // call-by-value
-     // case Fun(x, body) => eval(subst(body, x, a))        // call-by-name
-     case _ => sys.error("can only apply functions")
+    case Fun(x, body) => eval(subst(body, x, eval(a)))  // call-by-value
+    //case Fun(x, body) => eval(subst(body, x, a))        // call-by-name
+    case _ => sys.error("can only apply functions")
   }
   case _ => e // numbers and functions evaluate to themselves
 }
@@ -93,12 +93,12 @@ def eval(e: Exp): Exp = e match {
 def eval2(e: Exp): Either[Num, Fun] = e match {
   case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l, r) => (eval2(l), eval2(r)) match {
-                     case (Left(Num(x)), Left(Num(y))) => Left(Num(x + y))
-                     case _ => sys.error("can only add numbers")
+                      case (Left(Num(x)), Left(Num(y))) => Left(Num(x + y))
+                      case _ => sys.error("can only add numbers")
                     }
   case Ap(f, a) => eval2(f) match {
-     case Right(Fun(x, body)) => eval2(subst(body, x, eval(a)))
-     case _ => sys.error("can only apply functions")
+    case Right(Fun(x, body)) => eval2(subst(body, x, eval(a)))
+    case _ => sys.error("can only apply functions")
   }
   case f@Fun(_, _) => Right(f)
   case n@Num(_) => Left(n)
