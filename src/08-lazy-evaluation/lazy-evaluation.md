@@ -2,7 +2,6 @@
 
 The content of this chapter is available as a Scala file [here.](./lazy-evaluation.scala)
 
-
 ```scala mdoc:invisible
 object Syntax {
   enum Exp:
@@ -110,6 +109,7 @@ def evalWithEnv(e: Exp, env: Env): Value = e match {
   }
 }
 ```
+
 ## Motivation for Lazy Evaluation
 
 Read "Why Functional Programming Matters" by John Hughes available at [https://www.cse.chalmers.se/~rjmh/Papers/whyfp.html](https://www.cse.chalmers.se/~rjmh/Papers/whyfp.html).
@@ -153,10 +153,10 @@ a function?
 Not necessarily. Consider:
 
 ```scala mdoc:silent
-val test3 = Ap(Fun("f", Fun("x", Ap("f", "x"))), Add(1, 2))
+val test3 = Ap(Fun("a", Fun("x", Add("a", "x"))), Add(1, 2))
 
-assert(eval(test3) == Fun("x", Ap(Num(3), Id("x"))))
-assert(evalcbn(test3) == Fun("x", Ap(Add(Num(1), Num(2)), Id("x"))))
+assert(eval(test3) == Fun("x", Add(3, "x")))
+assert(evalcbn(test3) == Fun("x", Add(Add(1, 2), "x")))
 ```
 
 However, if both produce a function, then the functions "behave" the same. More specifically, the function bodies produced by `eval`
@@ -263,7 +263,7 @@ deferred substitutions that still have to be applied in the function argument? I
 argument was defined we again introduce a variant of dynamic scoping.
 
 Hence, like for closures, we need to store the environment together with the expression. We call such a  pair a _thunk_. An environment
-thus becomes a mapping from symbols to thunks. Note that environments and thunks are hence mutually recursive. In Scala, we can hence
+thus becomes a mapping from symbols to thunks. Note that this makes environments and thunks mutually recursive. In Scala, we can therefore
 not use type definitions of the form
 
 ```
@@ -283,37 +283,37 @@ __Hint__: Research on the internet what abstract type members in Scala are. For 
 
 ```scala mdoc
 trait CBN {
-    type Thunk
+  type Thunk
 
-    def delay(e: Exp, env: EnvThunk): Thunk
-    def force(t: Thunk): ValueCBN
+  def delay(e: Exp, env: EnvThunk): Thunk
+  def force(t: Thunk): ValueCBN
 
-    case class EnvThunk(map: Map[String, Thunk]) {
-      def apply(key: String): Thunk = map.apply(key)
-      def +(other: (String, Thunk)): EnvThunk = EnvThunk(map + other)
-    }
+  case class EnvThunk(map: Map[String, Thunk]) {
+    def apply(key: String): Thunk = map.apply(key)
+    def +(other: (String, Thunk)): EnvThunk = EnvThunk(map + other)
+  }
 
-    // since values also depend on EnvThunk and hence on Thunk they need to
-    // be defined within this trait
-    sealed abstract class ValueCBN
-    case class NumV(n: Int) extends ValueCBN
-    case class ClosureV(f: Fun, env: EnvThunk) extends ValueCBN
-    def evalCBN(e: Exp, env: EnvThunk): ValueCBN = e match {
-      case Id(x) => force(env(x)) // force evaluation of thunk if identifier is evaluated
-      case Add(l, r) => {
-        (evalCBN(l, env), evalCBN(r, env)) match {
-          case (NumV(v1), NumV(v2)) => NumV(v1 + v2)
-          case _ => sys.error("can only add numbers")
-        }
+  // since values also depend on EnvThunk and hence on Thunk they need to
+  // be defined within this trait
+  sealed abstract class ValueCBN
+  case class NumV(n: Int) extends ValueCBN
+  case class ClosureV(f: Fun, env: EnvThunk) extends ValueCBN
+  def evalCBN(e: Exp, env: EnvThunk): ValueCBN = e match {
+    case Id(x) => force(env(x)) // force evaluation of thunk if identifier is evaluated
+    case Add(l, r) => {
+      (evalCBN(l, env), evalCBN(r, env)) match {
+        case (NumV(v1), NumV(v2)) => NumV(v1 + v2)
+        case _ => sys.error("can only add numbers")
       }
-      case Ap(f, a) => evalCBN(f, env) match {
-        // delay argument expression and add it to environment of the closure
-        case ClosureV(f, cenv) => evalCBN(f.body, cenv + (f.param -> delay(a, env)))
-        case _ => sys.error("can only apply functions")
-      }
-      case Num(n) => NumV(n)
-      case f@Fun(x, body) => ClosureV(f, env)
     }
+    case Ap(f, a) => evalCBN(f, env) match {
+      // delay argument expression and add it to environment of the closure
+      case ClosureV(f, cenv) => evalCBN(f.body, cenv + (f.param -> delay(a, env)))
+      case _ => sys.error("can only apply functions")
+    }
+    case Num(n) => NumV(n)
+    case f@Fun(x, body) => ClosureV(f, env)
+  }
 }
 ```
 
@@ -341,21 +341,23 @@ For instance, in
 
 ```scala mdoc:silent
 val cbntest = wth("double", Fun("x", Add("x", "x")),
-               Ap("double", Add(2, 3)))
+              Ap("double", Add(2, 3)))
 ```
 
-the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blow-up.
+the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blowup.
 
 Example:
-```mdoc:silent
-val blowup  = wth("a", Fun("x", Add("x", "x")),
-              wth("b", Fun("x", Add(Ap("a", "x"), Ap("a", "x"))),
-              wth("c", Fun("x", Add(Ap("b", "x"), Ap("b", "x"))),
-              wth("d", Fun("x", Add(Ap("c", "x"), Ap("c", "x"))),
-              wth("e", Fun("x", Add(Ap("d", "x"), Ap("d", "x"))),
-              wth("f", Fun("x", Add(Ap("e", "x"), Ap("e", "x"))),
-              Ap("f", Add(2, 3))))))))
+
+```scala mdoc:silent
+val blowup = wth("a", Fun("x", Add("x", "x")),
+             wth("b", Fun("x", Add(Ap("a", "x"), Ap("a", "x"))),
+             wth("c", Fun("x", Add(Ap("b", "x"), Ap("b", "x"))),
+             wth("d", Fun("x", Add(Ap("c", "x"), Ap("c", "x"))),
+             wth("e", Fun("x", Add(Ap("d", "x"), Ap("d", "x"))),
+             wth("f", Fun("x", Add(Ap("e", "x"), Ap("e", "x"))),
+             Ap("f", Add(2, 3))))))))
 ```
+
 Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is
 called _call-by-need_.
 
