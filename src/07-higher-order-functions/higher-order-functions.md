@@ -149,8 +149,8 @@ assert(subst(Add(5, "x"), "x", 7) == Add(5, 7))
 assert(subst(Add(5, "x"), "y", 7) == Add(5, "x"))
 assert(subst(Fun("x", Add("x", "y")), "x", 7) == Fun("x", Add("x", "y")))
 // test capture-avoiding substitution
-assert(subst(Fun("x", Add("x", "y")), "y", Add("x", 5)) == Fun("x0", Add(Id("x0"), Add(Id("x"), Num(5)))))
-assert(subst(Fun("x", Add(Id("x0"), Id("y"))), "y", Add(Id("x"), 5)) == Fun("x1", Add(Id("x0"), Add(Id("x"), Num(5)))))
+assert(subst(Fun("x", Add("x", "y")), "y", Add("x", 5)) == Fun("x0", Add("x0", Add("x", Num(5)))))
+assert(subst(Fun("x", Add("x0", "y")), "y", Add("x", 5)) == Fun("x1", Add("x0", Add("x", Num(5)))))
 ```
 
 OK, equipped with this new version of substitution we can now define the interpreter for this language.
@@ -163,7 +163,7 @@ sophisticated.
 This means that a new class of errors can occur: A subexpression evaluates to a number where a function is expected, or vice versa.
 Such errors are called _type errors_, and we will talk about them in much more detail later.
 
-For now, it means that we need to analyze (typically by pattern matching) the result of recursive invocations of eval to check whether the result has the right type.
+For now, it means that we need to analyze (typically by pattern matching) the result of recursive invocations of `eval` to check whether the result has the right type.
 
 The remainder of the interpreter is unsurprising:
 
@@ -171,13 +171,13 @@ The remainder of the interpreter is unsurprising:
 def eval(e: Exp): Exp = e match {
   case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l, r) => (eval(l), eval(r)) match {
-                     case (Num(x), Num(y)) => Num(x + y)
-                     case _ => sys.error("can only add numbers")
+                      case (Num(x), Num(y)) => Num(x + y)
+                      case _ => sys.error("can only add numbers")
                     }
   case Ap(f, a) => eval(f) match {
-     case Fun(x, body) => eval(subst(body, x, eval(a)))  // call-by-value
-     // case Fun(x, body) => eval(subst(body, x, a))        // call-by-name
-     case _ => sys.error("can only apply functions")
+    case Fun(x, body) => eval(subst(body, x, eval(a)))  // call-by-value
+    //case Fun(x, body) => eval(subst(body, x, a))        // call-by-name
+    case _ => sys.error("can only apply functions")
   }
   case _ => e // numbers and functions evaluate to themselves
 }
@@ -190,12 +190,12 @@ We can also make the return type more precise to verify the invariant  that numb
 def eval2(e: Exp): Either[Num, Fun] = e match {
   case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l, r) => (eval2(l), eval2(r)) match {
-                     case (Left(Num(x)), Left(Num(y))) => Left(Num(x + y))
-                     case _ => sys.error("can only add numbers")
+                      case (Left(Num(x)), Left(Num(y))) => Left(Num(x + y))
+                      case _ => sys.error("can only add numbers")
                     }
   case Ap(f, a) => eval2(f) match {
-     case Right(Fun(x, body)) => eval2(subst(body, x, eval(a)))
-     case _ => sys.error("can only apply functions")
+    case Right(Fun(x, body)) => eval2(subst(body, x, eval(a)))
+    case _ => sys.error("can only apply functions")
   }
   case f@Fun(_, _) => Right(f)
   case n@Num(_) => Left(n)
@@ -278,6 +278,7 @@ created. This pair of function and environment is called a _closure_. The enviro
 is eventually applied.
 
 Hint: If you cannot answer what a closure is and how it is used in the  interpreter, you will be toast in the exam!
+
 Since closures are not expressible in the language syntax, we now come to the point where we need a separate category of _values_.
 The values in FAE can be either numbers or closures.
 
