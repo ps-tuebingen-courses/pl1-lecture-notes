@@ -52,10 +52,10 @@ def nextAddress: Address = {
 }
 
 val test3 = wth("switch", NewBox(0),
-             wth("toggle", Fun("dummy", If0(OpenBox("switch"),
-                                          Seq(SetBox("switch", 1), 1),
-                                          Seq(SetBox("switch", 0), 0))),
-                 Add(Ap("toggle", 42), Ap("toggle", 42))))
+            wth("toggle", Fun("dummy", If0(OpenBox("switch"),
+                                         Seq(SetBox("switch", 1), 1),
+                                         Seq(SetBox("switch", 0), 0))),
+              Add(Ap("toggle", 42), Ap("toggle", 42))))
 
 def eval(e: Exp, env: Env, s: Store): (Value, Store) = e match {
   /* All expressions whose evaluation does not alter the store just return s. */
@@ -125,7 +125,7 @@ def eval(e: Exp, env: Env, s: Store): (Value, Store) = e match {
        }
 
 // Setting a box is now a two-step process: First evaluate b to an
-// address, then lookup and update the value associated to the
+// address, then look up and update the value associated with the
 // address in the store. Note that "updated" is a functional method.
 
   case SetBox(b: Exp, e: Exp)

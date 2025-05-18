@@ -223,13 +223,10 @@ class MarkAndSweepStore(size: Int) extends Store {
 val test4 = wth("makedata", Fun("x", NewBox(NewBox(NewBox("x")))),
                 Seq(Ap("makedata", 1),
                 Seq(Ap("makedata", 2),
-                Seq(wth("s", Ap("makedata", 3),
-                            Ap("makedata", "s")),
+                Seq(wth("s", Ap("makedata", 3), Ap("makedata", "s")),
                     Ap("makedata", 4)))))
 
-def runTest4 = eval(
-                 test4,
-                 List(scala.collection.mutable.Map.empty),
-                 new MarkAndSweepStore(5)
-               )
+def runTest4 = eval(test4,
+                    List(scala.collection.mutable.Map.empty),
+                    new MarkAndSweepStore(5))
 

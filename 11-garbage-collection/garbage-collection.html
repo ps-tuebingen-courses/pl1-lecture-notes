@@ -381,15 +381,12 @@ The first element of the stack is the current environment; the rest is only need
 <pre><code class="language-scala">val test4 = wth(&quot;makedata&quot;, Fun(&quot;x&quot;, NewBox(NewBox(NewBox(&quot;x&quot;)))),
                 Seq(Ap(&quot;makedata&quot;, 1),
                 Seq(Ap(&quot;makedata&quot;, 2),
-                Seq(wth(&quot;s&quot;, Ap(&quot;makedata&quot;, 3),
-                            Ap(&quot;makedata&quot;, &quot;s&quot;)),
+                Seq(wth(&quot;s&quot;, Ap(&quot;makedata&quot;, 3), Ap(&quot;makedata&quot;, &quot;s&quot;)),
                     Ap(&quot;makedata&quot;, 4)))))
 </code></pre>
-<pre><code class="language-scala">def runTest4 = eval(
-                 test4,
-                 List(scala.collection.mutable.Map.empty),
-                 new MarkAndSweepStore(5)
-               )
+<pre><code class="language-scala">def runTest4 = eval(test4,
+                    List(scala.collection.mutable.Map.empty),
+                    new MarkAndSweepStore(5))
 </code></pre>
 <p>This model of garbage collection does not illustrate the difficulty of memory management. In most languages, the size of
 the allocated memory regions on the heap vary, and hence one needs an algorithm to find a free and large-enough spot on the heap.
@@ -408,7 +405,7 @@ the total throughput but increase responsiveness and real-time behavior.</p>
 (in our case, each box) maintains a counter which says how many pointers currently point to that object. The counter is adjusted
 whenever a pointer variable is assigned to this object (incremented), or moved from this object to another object (decremented).
 When the counter is 0, the object can be reclaimed.</p>
-<p>The obvious disadvantage of reference counting is that it cannot detect cycles on the heap. Hence reference counting algorithm
+<p>The obvious disadvantage of reference counting is that it cannot detect cycles on the heap. Hence reference counting algorithms
 must be augmented with some means to detect cycles.
 Topic for class discussion: What are the pros and cons of reference counting vs. tracing garbage collectors such as mark-and-sweep
 or semi-space?</p>
