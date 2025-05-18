@@ -1382,13 +1382,17 @@ expression. In <code>eval</code>, the term</p>
 infinite lists.</p>
 <p>We do not have direct support for lists, but we can encode lists. This kind of encoding is called <em>Church encoding</em>.</p>
 <pre><code class="language-scala">val nil = Fun(&quot;c&quot;, Fun(&quot;e&quot;, &quot;e&quot;))
-val cons  = Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;x&quot;), Ap(Ap(&quot;xs&quot;, &quot;c&quot;), &quot;e&quot;))))))
+val cons = Fun(&quot;x&quot;, Fun(&quot;xs&quot;,
+             Fun(&quot;c&quot;, Fun(&quot;e&quot;, Ap(Ap(&quot;c&quot;, &quot;x&quot;), Ap(Ap(&quot;xs&quot;, &quot;c&quot;), &quot;e&quot;))))))
 </code></pre>
 <p>For instance, the list 1, 2, 3 is encoded as:</p>
 <pre><code class="language-scala">val list123 = Ap(Ap(&quot;cons&quot;, 1), Ap(Ap(&quot;cons&quot;, 2), Ap(Ap(&quot;cons&quot;, 3), &quot;nil&quot;)))
 </code></pre>
 <p>The map function on lists becomes:</p>
-<pre><code class="language-scala">val maplist = Fun(&quot;f&quot;, Fun(&quot;l&quot;, Ap(Ap(&quot;l&quot;, Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Ap(Ap(&quot;cons&quot;, Ap(&quot;f&quot;, &quot;x&quot;)), &quot;xs&quot;)))), &quot;nil&quot;)))
+<pre><code class="language-scala">val maplist = Fun(&quot;f&quot;, Fun(&quot;l&quot;,
+                Ap(Ap(&quot;l&quot;,
+                   Fun(&quot;x&quot;, Fun(&quot;xs&quot;, Ap(Ap(&quot;cons&quot;, Ap(&quot;f&quot;, &quot;x&quot;)), &quot;xs&quot;)))),
+                   &quot;nil&quot;)))
 </code></pre>
 <p>For instance, we can map the successor function over the 1, 2, 3 list.</p>
 <pre><code class="language-scala">val test5 = wth(&quot;cons&quot;, cons,
@@ -1408,7 +1412,9 @@ This operator only works under call-by-name or other so-called &quot;non-strict&
 <pre><code class="language-scala">val y = Fun(&quot;f&quot;, Ap(Fun(&quot;x&quot;, Ap(&quot;f&quot;, Ap(&quot;x&quot;, &quot;x&quot;))), Fun(&quot;x&quot;, Ap(&quot;f&quot;, Ap(&quot;x&quot;, &quot;x&quot;)))))
 </code></pre>
 <p>Using Y, we can construct infinite lists, such as the list of all natural numbers.</p>
-<pre><code class="language-scala">val allnats = Ap(Ap(&quot;y&quot;, Fun(&quot;nats&quot;, Fun(&quot;n&quot;, Ap(Ap(&quot;cons&quot;, &quot;n&quot;), Ap(&quot;nats&quot;, Add(&quot;n&quot;, 1)))))), 1)
+<pre><code class="language-scala">val allnats = Ap(Ap(&quot;y&quot;,
+                 Fun(&quot;nats&quot;, Fun(&quot;n&quot;, Ap(Ap(&quot;cons&quot;, &quot;n&quot;), Ap(&quot;nats&quot;, Add(&quot;n&quot;, 1)))))),
+              1)
 </code></pre>
 <p>We can also perform standard computations on infinite lists, such as mapping the successor function over it.</p>
 <pre><code class="language-scala">val list2toinfty = wth(&quot;cons&quot;, cons,
@@ -1531,8 +1537,8 @@ called <em>call-by-need</em>.</p>
 }
 </code></pre>
 <p>For instance, compare call-by-need and call-by-name in <code>cbntest</code> or <code>blowup</code>.
-However, the meta-language (i.e., the subset of Scala features) used in the interpreter has become more complicated:</p>
-<p>Since we are using mutation, the order of evaluation and aliasing of object references becomes important.
+However, the meta-language (i.e., the subset of Scala features) used in the interpreter has become more complicated:
+Since we are using mutation, the order of evaluation and aliasing of object references becomes important.
 Luckily, call-by-need agrees with call-by-name with regard to produced values and termination behavior, hence it is usually not
 necessary to reason about programs with the call-by-need semantics. If, however, one wants to reason about the performance of a
 program in a call-by-need setting, one has to take these additional complications into account.

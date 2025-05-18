@@ -130,11 +130,15 @@ assert(evalcbn(test3) == Fun("x", Add(Add(1, 2), "x")))
 assert(evalcbn(test4) == Num(5))
 
 val nil = Fun("c", Fun("e", "e"))
-val cons  = Fun("x", Fun("xs", Fun("c", Fun("e", Ap(Ap("c", "x"), Ap(Ap("xs", "c"), "e"))))))
+val cons = Fun("x", Fun("xs",
+             Fun("c", Fun("e", Ap(Ap("c", "x"), Ap(Ap("xs", "c"), "e"))))))
 
 val list123 = Ap(Ap("cons", 1), Ap(Ap("cons", 2), Ap(Ap("cons", 3), "nil")))
 
-val maplist = Fun("f", Fun("l", Ap(Ap("l", Fun("x", Fun("xs", Ap(Ap("cons", Ap("f", "x")), "xs")))), "nil")))
+val maplist = Fun("f", Fun("l",
+                Ap(Ap("l",
+                   Fun("x", Fun("xs", Ap(Ap("cons", Ap("f", "x")), "xs")))),
+                   "nil")))
 
 val test5 = wth("cons", cons,
             wth("nil", nil,
@@ -148,7 +152,9 @@ assert(eval(test5) == eval(test5res))
 
 val y = Fun("f", Ap(Fun("x", Ap("f", Ap("x", "x"))), Fun("x", Ap("f", Ap("x", "x")))))
 
-val allnats = Ap(Ap("y", Fun("nats", Fun("n", Ap(Ap("cons", "n"), Ap("nats", Add("n", 1)))))), 1)
+val allnats = Ap(Ap("y",
+                 Fun("nats", Fun("n", Ap(Ap("cons", "n"), Ap("nats", Add("n", 1)))))),
+              1)
 
 val list2toinfty = wth("cons", cons,
                    wth("nil", nil,
