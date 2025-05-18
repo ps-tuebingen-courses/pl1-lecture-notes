@@ -270,17 +270,14 @@ class MarkAndSweepStore(size: Int) extends Store {
 val test4 = wth("makedata", Fun("x", NewBox(NewBox(NewBox("x")))),
                 Seq(Ap("makedata", 1),
                 Seq(Ap("makedata", 2),
-                Seq(wth("s", Ap("makedata", 3),
-                            Ap("makedata", "s")),
+                Seq(wth("s", Ap("makedata", 3), Ap("makedata", "s")),
                     Ap("makedata", 4)))))
 ```
 
 ```scala mdoc
-def runTest4 = eval(
-                 test4,
-                 List(scala.collection.mutable.Map.empty),
-                 new MarkAndSweepStore(5)
-               )
+def runTest4 = eval(test4,
+                    List(scala.collection.mutable.Map.empty),
+                    new MarkAndSweepStore(5))
 ```
 
 This model of garbage collection does not illustrate the difficulty of memory management. In most languages, the size of
@@ -306,7 +303,7 @@ A completely different approach to memory management is _reference counting_. In
 whenever a pointer variable is assigned to this object (incremented), or moved from this object to another object (decremented).
 When the counter is 0, the object can be reclaimed.
 
-The obvious disadvantage of reference counting is that it cannot detect cycles on the heap. Hence reference counting algorithm
+The obvious disadvantage of reference counting is that it cannot detect cycles on the heap. Hence reference counting algorithms
 must be augmented with some means to detect cycles.
 Topic for class discussion: What are the pros and cons of reference counting vs. tracing garbage collectors such as mark-and-sweep
 or semi-space?

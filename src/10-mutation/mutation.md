@@ -14,7 +14,7 @@ a single field that can be mutated. Despite their simplicity, boxes already illu
 mutable state to a language.
 
 A different and less interesting form of mutation is the mutability of _variables_, such as the possibility to assign something
-to a 'local' variable bound via a lambda or ``with``. We will not talk about mutable variables today.
+to a 'local' variable bound via a lambda or ``With``. We will not talk about mutable variables today.
 We will add boxes to our base language, FAE.
 
 ```scala mdoc
@@ -70,7 +70,7 @@ hence there is no way the evaluation of `e1` could have any effect on the evalua
 In order to demostrate the actual nature of mutation, we will not use mutation in our meta-language to implement mutation
 in our object language. Thus, we will not use a mutable data structure to implement the environment in our interpreter.
 Instead, one may turn to the so-called environment-passing style, in which the interpreter returns also a possibly updated environment
-together with the computed value when it evaluates an expression.  However, this solution does not always work.  Consider the following
+together with the computed value when it evaluates an expression.  However, this solution does not always work. Consider the following
 example:
 
 ```scala mdoc:silent
@@ -80,7 +80,7 @@ val test2 = wth("a", NewBox(1),
                   Ap("f", 5))))
 ```
 
-The mutation should affect the box stored in the closure bound to ``f``.  But with the implementation strategy described above it would not.
+The mutation should affect the box stored in the closure bound to ``f``. But with the implementation strategy described above it would not.
 Note that changing the value of `a` in the example is not a vialation of static scope. Scoping only says where an identifier is bound;
 it does not say to what an identifier is bound, in particular, whether whatever bound to the identifier is fixed.
 
@@ -107,7 +107,7 @@ case class ClosureV(f: Fun, env: Env) extends Value
 
 The other, which we call _store_, is tracking dynamic changes.
 Determining the value inside a box will become a two-step process: We first evaluate the box expression to an _address_,
-and then use the store to lookup the value stored at that address. We choose to represent addresses by integers.
+and then use the store to look up the value stored at that address. We choose to represent addresses by integers.
 
 ```scala mdoc
 type Address = Int
@@ -129,14 +129,15 @@ def nextAddress: Address = {
 
 Note: We promised to implement the interpreter without using mutation. Here we did use mutation, but this usage of mutation
 is not essential: we could instead just search for the largest address in the present store and add one to it.
+
 Let's now discuss the evaluation of FAE with conditionals and boxes, BCFAE. To this end, consider the following sample program:
 
 ```scala mdoc:silent
 val test3 = wth("switch", NewBox(0),
-             wth("toggle", Fun("dummy", If0(OpenBox("switch"),
-                                          Seq(SetBox("switch", 1), 1),
-                                          Seq(SetBox("switch", 0), 0))),
-                 Add(Ap("toggle", 42), Ap("toggle", 42))))
+            wth("toggle", Fun("dummy", If0(OpenBox("switch"),
+                                         Seq(SetBox("switch", 1), 1),
+                                         Seq(SetBox("switch", 0), 0))),
+              Add(Ap("toggle", 42), Ap("toggle", 42))))
 ```
 
 This program should return 1. Let's discuss on the blackboard what the environment and store should look like during the
@@ -225,7 +226,7 @@ def eval(e: Exp, env: Env, s: Store): (Value, Store) = e match {
        }
 
 // Setting a box is now a two-step process: First evaluate b to an
-// address, then lookup and update the value associated to the
+// address, then look up and update the value associated with the
 // address in the store. Note that "updated" is a functional method.
 
   case SetBox(b: Exp, e: Exp)
