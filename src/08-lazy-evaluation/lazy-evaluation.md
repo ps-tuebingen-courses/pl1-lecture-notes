@@ -169,7 +169,7 @@ Most importantly, however, `eval` and `evalcbn` differ with regard to their term
 expression. In `eval`, the term
 
 ```scala mdoc:silent
- val test4 = Ap(Fun("x", 5), omega)
+val test4 = Ap(Fun("x", 5), omega)
 ```
 
 is hence also diverging. In contrast:
@@ -212,7 +212,7 @@ For instance, we can map the successor function over the 1, 2, 3 list.
 val test5 = wth("cons", cons,
             wth("nil", nil,
             wth("maplist", maplist,
-            Ap(Ap("maplist", Fun("x", Add("x", 1))), list123))))
+              Ap(Ap("maplist", Fun("x", Add("x", 1))), list123))))
 ```
 
 Since it is somewhat difficult to print out the resulting list in our primitive language we construct the result we expect explicitly.
@@ -247,7 +247,7 @@ val list2toinfty = wth("cons", cons,
                    wth("nil", nil,
                    wth("y", y,
                    wth("maplist", maplist,
-                      Ap(Ap("maplist", Fun("x", Add("x", 1))), allnats)))))
+                     Ap(Ap("maplist", Fun("x", Add("x", 1))), allnats)))))
 ```
 
 Of course, ``list2toinfty`` diverges when we use ``eval``, but it works fine with ``evalcbn``. It is hard to verify the result due to
@@ -348,7 +348,7 @@ For instance, in
 
 ```scala mdoc:silent
 val cbntest = wth("double", Fun("x", Add("x", "x")),
-              Ap("double", Add(2, 3)))
+                Ap("double", Add(2, 3)))
 ```
 
 the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blowup.
@@ -362,7 +362,7 @@ val blowup = wth("a", Fun("x", Add("x", "x")),
              wth("d", Fun("x", Add(Ap("c", "x"), Ap("c", "x"))),
              wth("e", Fun("x", Add(Ap("d", "x"), Ap("d", "x"))),
              wth("f", Fun("x", Add(Ap("e", "x"), Ap("e", "x"))),
-             Ap("f", Add(2, 3))))))))
+               Ap("f", Add(2, 3))))))))
 ```
 
 Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is

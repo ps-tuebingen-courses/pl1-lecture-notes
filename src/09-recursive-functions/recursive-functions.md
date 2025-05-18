@@ -12,11 +12,12 @@ Let's try to write a function that computes the sum of the first \\( n \\) integ
 first \\( n \\) integers is \\( n * (n + 1) / 2 \\) and instead compute the sum in a loop. Let's try to do this in FAE (with `If0`):
 
 ```scala
-val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n", -1))))), Ap("sum", 10))
+val sumattempt = wth("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n", -1))))),
+                   Ap("sum", 10))
 ```
 
 `sumattempt` won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
-_y_ combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
+_Y_ combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
 we want a language construct `Letrec` that is similar to `with`, except that the bound String can be used in the expression
 the String is bound to:
 
@@ -50,7 +51,8 @@ import Exp._
 Using `Letrec`, our example can be expressed as follows.
 
 ```scala mdoc:silent
-val sum = Letrec("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n", -1))))), Ap("sum", 10))
+val sum = Letrec("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n", -1))))),
+            Ap("sum", 10))
 ```
 
 Let's now consider the semantics of `Letrec`. Consider the evaluation of ``Letrec(x, e, body)`` in an environment ``env``.
@@ -58,7 +60,7 @@ What environment should we use to evaluate `e` and `body`, respectively? Using `
 and hence the environment when evaluating body will be ``envbody = env + (x -> ClosureV(Fun("n", ..."sum"...), env))``.
 
 This is bad, because the ``env`` in the closure does not contain a binding for ``"sum"`` and hence the recursive invocation will fail.
-The environment in the closure must contain a mapping for ``"sum"``. Hence envbody should look like
+The environment in the closure must contain a mapping for ``"sum"``. Hence `envbody` should look like
 
 ```
   envbody = env + (x -> ClosureV(Fun("n", ..."sum"...),
@@ -72,7 +74,7 @@ that satisfies the equation:
   envbody == env + (x -> ClosureV(Fun("n", ..."sum"..), envbody))
 ```
 
-Obviously envbody must be `circular`. There are different ways to create such a circular environment. We will choose mutation to create
+Obviously, `envbody` must be `circular`. There are different ways to create such a circular environment. We will choose mutation to create
 a circle. More specifically, we introduce a mutable pointer to a value ``class ValuePointer`` which will be initialized with a null pointer.
 
 In the `Letrec` case, we put such a `ValuePointer` in the environment and evaluate the (recursive) expression in that environment.
@@ -121,9 +123,9 @@ def eval(e: Exp, env: Env): Value = e match {
   }
   case Letrec(x, e, body) => {
     val vp = ValuePointer(null)  // initialize pointer with null
-    val newenv = env + (x -> vp)  // evaluate e in the environment extended with the placeholder
-    vp.v = eval(e, newenv)         // create the circle in the environment
-    eval(body, newenv) // evaluate body in circular environment
+    val newenv = env + (x -> vp) // environment extended with the placeholder for evaluating e
+    vp.v = eval(e, newenv)       // create the circle in the environment
+    eval(body, newenv)           // evaluate body in circular environment
   }
 }
 ```
@@ -134,9 +136,9 @@ The sum of numbers from 1 to 10 should be 55.
 assert(eval(sum, Map.empty) == NumV(55))
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
-var func = Fun("n", If0("n", 0, Ap("func", Add("n", -1))))
-var test1 = Letrec("func", func, Ap("func", 1))
-var test2 = Letrec("func", Ap(Fun("notUsed", func), 0), Ap("func", 1))
+val func = Fun("n", If0("n", 0, Ap("func", Add("n", -1))))
+val test1 = Letrec("func", func, Ap("func", 1))
+val test2 = Letrec("func", Ap(Fun("notUsed", func), 0), Ap("func", 1))
 assert(eval(test1, Map()) == NumV(0))
 assert(eval(test2, Map()) == NumV(0))
 ```
