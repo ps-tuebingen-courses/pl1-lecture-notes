@@ -187,7 +187,8 @@ We do not have direct support for lists, but we can encode lists. This kind of e
 
 ```scala mdoc:silent
 val nil = Fun("c", Fun("e", "e"))
-val cons  = Fun("x", Fun("xs", Fun("c", Fun("e", Ap(Ap("c", "x"), Ap(Ap("xs", "c"), "e"))))))
+val cons = Fun("x", Fun("xs",
+             Fun("c", Fun("e", Ap(Ap("c", "x"), Ap(Ap("xs", "c"), "e"))))))
 ```
 
 For instance, the list 1, 2, 3 is encoded as:
@@ -197,8 +198,12 @@ val list123 = Ap(Ap("cons", 1), Ap(Ap("cons", 2), Ap(Ap("cons", 3), "nil")))
 ```
 
 The map function on lists becomes:
+
 ```scala mdoc:silent
-val maplist = Fun("f", Fun("l", Ap(Ap("l", Fun("x", Fun("xs", Ap(Ap("cons", Ap("f", "x")), "xs")))), "nil")))
+val maplist = Fun("f", Fun("l",
+                Ap(Ap("l",
+                   Fun("x", Fun("xs", Ap(Ap("cons", Ap("f", "x")), "xs")))),
+                   "nil")))
 ```
 
 For instance, we can map the successor function over the 1, 2, 3 list.
@@ -230,7 +235,9 @@ val y = Fun("f", Ap(Fun("x", Ap("f", Ap("x", "x"))), Fun("x", Ap("f", Ap("x", "x
 Using Y, we can construct infinite lists, such as the list of all natural numbers.
 
 ```scala mdoc:silent
-val allnats = Ap(Ap("y", Fun("nats", Fun("n", Ap(Ap("cons", "n"), Ap("nats", Add("n", 1)))))), 1)
+val allnats = Ap(Ap("y",
+                 Fun("nats", Fun("n", Ap(Ap("cons", "n"), Ap("nats", Add("n", 1)))))),
+              1)
 ```
 
 We can also perform standard computations on infinite lists, such as mapping the successor function over it.
@@ -384,7 +391,6 @@ object CallByNeed extends CBN {
 
 For instance, compare call-by-need and call-by-name in `cbntest` or `blowup`.
 However, the meta-language (i.e., the subset of Scala features) used in the interpreter has become more complicated:
-
 Since we are using mutation, the order of evaluation and aliasing of object references becomes important.
 Luckily, call-by-need agrees with call-by-name with regard to produced values and termination behavior, hence it is usually not
 necessary to reason about programs with the call-by-need semantics. If, however, one wants to reason about the performance of a
