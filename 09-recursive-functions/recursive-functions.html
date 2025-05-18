@@ -147,10 +147,11 @@
 <h2 id="recursion"><a class="header" href="#recursion">Recursion</a></h2>
 <p>Let's try to write a function that computes the sum of the first \( n \) integers. Let's pretend we do not know that the sum of the
 first \( n \) integers is \( n * (n + 1) / 2 \) and instead compute the sum in a loop. Let's try to do this in FAE (with <code>If0</code>):</p>
-<pre><code class="language-scala">val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))), Ap(&quot;sum&quot;, 10))
+<pre><code class="language-scala">val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))),
+                   Ap(&quot;sum&quot;, 10))
 </code></pre>
 <p><code>sumattempt</code> won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
-<em>y</em> combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
+<em>Y</em> combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
 we want a language construct <code>Letrec</code> that is similar to <code>with</code>, except that the bound String can be used in the expression
 the String is bound to:</p>
 <pre><code class="language-scala">Letrec(x: String, e: Exp, body: Exp)
@@ -176,13 +177,14 @@ import Syntax._
 import Exp._
 </code></pre>
 <p>Using <code>Letrec</code>, our example can be expressed as follows.</p>
-<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))), Ap(&quot;sum&quot;, 10))
+<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))),
+            Ap(&quot;sum&quot;, 10))
 </code></pre>
 <p>Let's now consider the semantics of <code>Letrec</code>. Consider the evaluation of <code>Letrec(x, e, body)</code> in an environment <code>env</code>.
 What environment should we use to evaluate <code>e</code> and <code>body</code>, respectively? Using <code>env</code> for <code>e</code> will produce a <code>ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;'...), env)</code>,
 and hence the environment when evaluating body will be <code>envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...), env))</code>.</p>
 <p>This is bad, because the <code>env</code> in the closure does not contain a binding for <code>&quot;sum&quot;</code> and hence the recursive invocation will fail.
-The environment in the closure must contain a mapping for <code>&quot;sum&quot;</code>. Hence envbody should look like</p>
+The environment in the closure must contain a mapping for <code>&quot;sum&quot;</code>. Hence <code>envbody</code> should look like</p>
 <pre><code>  envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...),
                                  env + (&quot;sum&quot; -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...), env)))
 </code></pre>
@@ -190,7 +192,7 @@ The environment in the closure must contain a mapping for <code>&quot;sum&quot;<
 that satisfies the equation:</p>
 <pre><code>  envbody == env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;..), envbody))
 </code></pre>
-<p>Obviously envbody must be <code>circular</code>. There are different ways to create such a circular environment. We will choose mutation to create
+<p>Obviously, <code>envbody</code> must be <code>circular</code>. There are different ways to create such a circular environment. We will choose mutation to create
 a circle. More specifically, we introduce a mutable pointer to a value <code>class ValuePointer</code> which will be initialized with a null pointer.</p>
 <p>In the <code>Letrec</code> case, we put such a <code>ValuePointer</code> in the environment and evaluate the (recursive) expression in that environment.
 Then we update the pointer with the result of evaluating that expression.</p>
@@ -231,9 +233,9 @@ import Values._  // such that we do not have to write Values.ValueHolder etc.
   }
   case Letrec(x, e, body) =&gt; {
     val vp = ValuePointer(null)  // initialize pointer with null
-    val newenv = env + (x -&gt; vp)  // evaluate e in the environment extended with the placeholder
-    vp.v = eval(e, newenv)         // create the circle in the environment
-    eval(body, newenv) // evaluate body in circular environment
+    val newenv = env + (x -&gt; vp) // environment extended with the placeholder for evaluating e
+    vp.v = eval(e, newenv)       // create the circle in the environment
+    eval(body, newenv)           // evaluate body in circular environment
   }
 }
 </code></pre>
@@ -241,9 +243,9 @@ import Values._  // such that we do not have to write Values.ValueHolder etc.
 <pre><code class="language-scala">assert(eval(sum, Map.empty) == NumV(55))
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
-var func = Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Ap(&quot;func&quot;, Add(&quot;n&quot;, -1))))
-var test1 = Letrec(&quot;func&quot;, func, Ap(&quot;func&quot;, 1))
-var test2 = Letrec(&quot;func&quot;, Ap(Fun(&quot;notUsed&quot;, func), 0), Ap(&quot;func&quot;, 1))
+val func = Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Ap(&quot;func&quot;, Add(&quot;n&quot;, -1))))
+val test1 = Letrec(&quot;func&quot;, func, Ap(&quot;func&quot;, 1))
+val test2 = Letrec(&quot;func&quot;, Ap(Fun(&quot;notUsed&quot;, func), 0), Ap(&quot;func&quot;, 1))
 assert(eval(test1, Map()) == NumV(0))
 assert(eval(test2, Map()) == NumV(0))
 </code></pre>

@@ -125,7 +125,7 @@ val test3 = Ap(Fun("a", Fun("x", Add("a", "x"))), Add(1, 2))
 assert(eval(test3) == Fun("x", Add(3, "x")))
 assert(evalcbn(test3) == Fun("x", Add(Add(1, 2), "x")))
 
- val test4 = Ap(Fun("x", 5), omega)
+val test4 = Ap(Fun("x", 5), omega)
 
 assert(evalcbn(test4) == Num(5))
 
@@ -143,7 +143,7 @@ val maplist = Fun("f", Fun("l",
 val test5 = wth("cons", cons,
             wth("nil", nil,
             wth("maplist", maplist,
-            Ap(Ap("maplist", Fun("x", Add("x", 1))), list123))))
+              Ap(Ap("maplist", Fun("x", Add("x", 1))), list123))))
 
 val test5res = wth("cons", cons,
                wth("nil", nil,
@@ -160,7 +160,7 @@ val list2toinfty = wth("cons", cons,
                    wth("nil", nil,
                    wth("y", y,
                    wth("maplist", maplist,
-                      Ap(Ap("maplist", Fun("x", Add("x", 1))), allnats)))))
+                     Ap(Ap("maplist", Fun("x", Add("x", 1))), allnats)))))
 
 trait CBN {
   type Thunk
@@ -208,7 +208,7 @@ object CallByName extends CBN {
 assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.NumV(12))
 
 val cbntest = wth("double", Fun("x", Add("x", "x")),
-              Ap("double", Add(2, 3)))
+                Ap("double", Add(2, 3)))
 
 val blowup = wth("a", Fun("x", Add("x", "x")),
              wth("b", Fun("x", Add(Ap("a", "x"), Ap("a", "x"))),
@@ -216,7 +216,7 @@ val blowup = wth("a", Fun("x", Add("x", "x")),
              wth("d", Fun("x", Add(Ap("c", "x"), Ap("c", "x"))),
              wth("e", Fun("x", Add(Ap("d", "x"), Ap("d", "x"))),
              wth("f", Fun("x", Add(Ap("e", "x"), Ap("e", "x"))),
-             Ap("f", Add(2, 3))))))))
+               Ap("f", Add(2, 3))))))))
 
 object CallByNeed extends CBN {
   case class MemoThunk(e: Exp, env: EnvThunk) {

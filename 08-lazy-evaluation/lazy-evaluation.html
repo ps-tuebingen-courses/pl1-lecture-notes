@@ -187,7 +187,7 @@ lambda&quot;) - which our interpreters do not do - we could produce the expressi
 This kind of equivalence is also called &quot;beta-equivalence&quot;.</p>
 <p>Most importantly, however, <code>eval</code> and <code>evalcbn</code> differ with regard to their termination behavior. We have seen that <code>omega</code> is a diverging
 expression. In <code>eval</code>, the term</p>
-<pre><code class="language-scala"> val test4 = Ap(Fun(&quot;x&quot;, 5), omega)
+<pre><code class="language-scala">val test4 = Ap(Fun(&quot;x&quot;, 5), omega)
 </code></pre>
 <p>is hence also diverging. In contrast:</p>
 <pre><code class="language-scala">assert(evalcbn(test4) == Num(5))
@@ -213,7 +213,7 @@ val cons = Fun(&quot;x&quot;, Fun(&quot;xs&quot;,
 <pre><code class="language-scala">val test5 = wth(&quot;cons&quot;, cons,
             wth(&quot;nil&quot;, nil,
             wth(&quot;maplist&quot;, maplist,
-            Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), list123))))
+              Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), list123))))
 </code></pre>
 <p>Since it is somewhat difficult to print out the resulting list in our primitive language we construct the result we expect explicitly.</p>
 <pre><code class="language-scala">val test5res = wth(&quot;cons&quot;, cons,
@@ -236,7 +236,7 @@ This operator only works under call-by-name or other so-called &quot;non-strict&
                    wth(&quot;nil&quot;, nil,
                    wth(&quot;y&quot;, y,
                    wth(&quot;maplist&quot;, maplist,
-                      Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), allnats)))))
+                     Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), allnats)))))
 </code></pre>
 <p>Of course, <code>list2toinfty</code> diverges when we use <code>eval</code>, but it works fine with <code>evalcbn</code>. It is hard to verify the result due to
 an almost unreadable output. Hence we propose the following</p>
@@ -319,7 +319,7 @@ assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.Nu
 <p>Call-by-name is rather wasteful: If an argument is used <em>n</em> times in the body, the argument expression is re-evaluated <em>n</em> times.
 For instance, in</p>
 <pre><code class="language-scala">val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;x&quot;)),
-              Ap(&quot;double&quot;, Add(2, 3)))
+                Ap(&quot;double&quot;, Add(2, 3)))
 </code></pre>
 <p>the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blowup.</p>
 <p>Example:</p>
@@ -329,7 +329,7 @@ For instance, in</p>
              wth(&quot;d&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;c&quot;, &quot;x&quot;), Ap(&quot;c&quot;, &quot;x&quot;))),
              wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;d&quot;, &quot;x&quot;), Ap(&quot;d&quot;, &quot;x&quot;))),
              wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;e&quot;, &quot;x&quot;), Ap(&quot;e&quot;, &quot;x&quot;))),
-             Ap(&quot;f&quot;, Add(2, 3))))))))
+               Ap(&quot;f&quot;, Add(2, 3))))))))
 </code></pre>
 <p>Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is
 called <em>call-by-need</em>.</p>

@@ -19,7 +19,8 @@ object Syntax {
 import Syntax._
 import Exp._
 
-val sum = Letrec("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n", -1))))), Ap("sum", 10))
+val sum = Letrec("sum", Fun("n", If0("n", 0, Add("n", Ap("sum", Add("n", -1))))),
+            Ap("sum", 10))
 
 object Values {
   trait ValueHolder {
@@ -54,17 +55,17 @@ def eval(e: Exp, env: Env): Value = e match {
   }
   case Letrec(x, e, body) => {
     val vp = ValuePointer(null)  // initialize pointer with null
-    val newenv = env + (x -> vp)  // evaluate e in the environment extended with the placeholder
-    vp.v = eval(e, newenv)         // create the circle in the environment
-    eval(body, newenv) // evaluate body in circular environment
+    val newenv = env + (x -> vp) // environment extended with the placeholder for evaluating e
+    vp.v = eval(e, newenv)       // create the circle in the environment
+    eval(body, newenv)           // evaluate body in circular environment
   }
 }
 
 assert(eval(sum, Map.empty) == NumV(55))
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
-var func = Fun("n", If0("n", 0, Ap("func", Add("n", -1))))
-var test1 = Letrec("func", func, Ap("func", 1))
-var test2 = Letrec("func", Ap(Fun("notUsed", func), 0), Ap("func", 1))
+val func = Fun("n", If0("n", 0, Ap("func", Add("n", -1))))
+val test1 = Letrec("func", func, Ap("func", 1))
+val test2 = Letrec("func", Ap(Fun("notUsed", func), 0), Ap("func", 1))
 assert(eval(test1, Map()) == NumV(0))
 assert(eval(test2, Map()) == NumV(0))

@@ -1372,7 +1372,7 @@ lambda&quot;) - which our interpreters do not do - we could produce the expressi
 This kind of equivalence is also called &quot;beta-equivalence&quot;.</p>
 <p>Most importantly, however, <code>eval</code> and <code>evalcbn</code> differ with regard to their termination behavior. We have seen that <code>omega</code> is a diverging
 expression. In <code>eval</code>, the term</p>
-<pre><code class="language-scala"> val test4 = Ap(Fun(&quot;x&quot;, 5), omega)
+<pre><code class="language-scala">val test4 = Ap(Fun(&quot;x&quot;, 5), omega)
 </code></pre>
 <p>is hence also diverging. In contrast:</p>
 <pre><code class="language-scala">assert(evalcbn(test4) == Num(5))
@@ -1398,7 +1398,7 @@ val cons = Fun(&quot;x&quot;, Fun(&quot;xs&quot;,
 <pre><code class="language-scala">val test5 = wth(&quot;cons&quot;, cons,
             wth(&quot;nil&quot;, nil,
             wth(&quot;maplist&quot;, maplist,
-            Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), list123))))
+              Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), list123))))
 </code></pre>
 <p>Since it is somewhat difficult to print out the resulting list in our primitive language we construct the result we expect explicitly.</p>
 <pre><code class="language-scala">val test5res = wth(&quot;cons&quot;, cons,
@@ -1421,7 +1421,7 @@ This operator only works under call-by-name or other so-called &quot;non-strict&
                    wth(&quot;nil&quot;, nil,
                    wth(&quot;y&quot;, y,
                    wth(&quot;maplist&quot;, maplist,
-                      Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), allnats)))))
+                     Ap(Ap(&quot;maplist&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, 1))), allnats)))))
 </code></pre>
 <p>Of course, <code>list2toinfty</code> diverges when we use <code>eval</code>, but it works fine with <code>evalcbn</code>. It is hard to verify the result due to
 an almost unreadable output. Hence we propose the following</p>
@@ -1504,7 +1504,7 @@ assert(CallByName.evalCBN(test, CallByName.EnvThunk(Map.empty)) == CallByName.Nu
 <p>Call-by-name is rather wasteful: If an argument is used <em>n</em> times in the body, the argument expression is re-evaluated <em>n</em> times.
 For instance, in</p>
 <pre><code class="language-scala">val cbntest = wth(&quot;double&quot;, Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;x&quot;)),
-              Ap(&quot;double&quot;, Add(2, 3)))
+                Ap(&quot;double&quot;, Add(2, 3)))
 </code></pre>
 <p>the sum of 2 and 3 is computed twice.  If the argument is passed again to another function, this may lead to an exponential blowup.</p>
 <p>Example:</p>
@@ -1514,7 +1514,7 @@ For instance, in</p>
              wth(&quot;d&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;c&quot;, &quot;x&quot;), Ap(&quot;c&quot;, &quot;x&quot;))),
              wth(&quot;e&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;d&quot;, &quot;x&quot;), Ap(&quot;d&quot;, &quot;x&quot;))),
              wth(&quot;f&quot;, Fun(&quot;x&quot;, Add(Ap(&quot;e&quot;, &quot;x&quot;), Ap(&quot;e&quot;, &quot;x&quot;))),
-             Ap(&quot;f&quot;, Add(2, 3))))))))
+               Ap(&quot;f&quot;, Add(2, 3))))))))
 </code></pre>
 <p>Can we do better? Yes, by caching the value when the argument expression is evaluated for the first time. This evaluation strategy is
 called <em>call-by-need</em>.</p>
@@ -1554,10 +1554,11 @@ determine that an argument will definitely be used (look up &quot;strictness ana
 <h2 id="recursion"><a class="header" href="#recursion">Recursion</a></h2>
 <p>Let's try to write a function that computes the sum of the first \( n \) integers. Let's pretend we do not know that the sum of the
 first \( n \) integers is \( n * (n + 1) / 2 \) and instead compute the sum in a loop. Let's try to do this in FAE (with <code>If0</code>):</p>
-<pre><code class="language-scala">val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))), Ap(&quot;sum&quot;, 10))
+<pre><code class="language-scala">val sumattempt = wth(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))),
+                   Ap(&quot;sum&quot;, 10))
 </code></pre>
 <p><code>sumattempt</code> won't work and yield an unbound identifier error (why?). An alternative would be to use a variant of the
-<em>y</em> combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
+<em>Y</em> combinator to support recursion properly, but today we want to talk about direct support for recursion. More specifically,
 we want a language construct <code>Letrec</code> that is similar to <code>with</code>, except that the bound String can be used in the expression
 the String is bound to:</p>
 <pre><code class="language-scala">Letrec(x: String, e: Exp, body: Exp)
@@ -1583,13 +1584,14 @@ import Syntax._
 import Exp._
 </code></pre>
 <p>Using <code>Letrec</code>, our example can be expressed as follows.</p>
-<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))), Ap(&quot;sum&quot;, 10))
+<pre><code class="language-scala">val sum = Letrec(&quot;sum&quot;, Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Add(&quot;n&quot;, Ap(&quot;sum&quot;, Add(&quot;n&quot;, -1))))),
+            Ap(&quot;sum&quot;, 10))
 </code></pre>
 <p>Let's now consider the semantics of <code>Letrec</code>. Consider the evaluation of <code>Letrec(x, e, body)</code> in an environment <code>env</code>.
 What environment should we use to evaluate <code>e</code> and <code>body</code>, respectively? Using <code>env</code> for <code>e</code> will produce a <code>ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;'...), env)</code>,
 and hence the environment when evaluating body will be <code>envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...), env))</code>.</p>
 <p>This is bad, because the <code>env</code> in the closure does not contain a binding for <code>&quot;sum&quot;</code> and hence the recursive invocation will fail.
-The environment in the closure must contain a mapping for <code>&quot;sum&quot;</code>. Hence envbody should look like</p>
+The environment in the closure must contain a mapping for <code>&quot;sum&quot;</code>. Hence <code>envbody</code> should look like</p>
 <pre><code>  envbody = env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...),
                                  env + (&quot;sum&quot; -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;...), env)))
 </code></pre>
@@ -1597,7 +1599,7 @@ The environment in the closure must contain a mapping for <code>&quot;sum&quot;<
 that satisfies the equation:</p>
 <pre><code>  envbody == env + (x -&gt; ClosureV(Fun(&quot;n&quot;, ...&quot;sum&quot;..), envbody))
 </code></pre>
-<p>Obviously envbody must be <code>circular</code>. There are different ways to create such a circular environment. We will choose mutation to create
+<p>Obviously, <code>envbody</code> must be <code>circular</code>. There are different ways to create such a circular environment. We will choose mutation to create
 a circle. More specifically, we introduce a mutable pointer to a value <code>class ValuePointer</code> which will be initialized with a null pointer.</p>
 <p>In the <code>Letrec</code> case, we put such a <code>ValuePointer</code> in the environment and evaluate the (recursive) expression in that environment.
 Then we update the pointer with the result of evaluating that expression.</p>
@@ -1638,9 +1640,9 @@ import Values._  // such that we do not have to write Values.ValueHolder etc.
   }
   case Letrec(x, e, body) =&gt; {
     val vp = ValuePointer(null)  // initialize pointer with null
-    val newenv = env + (x -&gt; vp)  // evaluate e in the environment extended with the placeholder
-    vp.v = eval(e, newenv)         // create the circle in the environment
-    eval(body, newenv) // evaluate body in circular environment
+    val newenv = env + (x -&gt; vp) // environment extended with the placeholder for evaluating e
+    vp.v = eval(e, newenv)       // create the circle in the environment
+    eval(body, newenv)           // evaluate body in circular environment
   }
 }
 </code></pre>
@@ -1648,9 +1650,9 @@ import Values._  // such that we do not have to write Values.ValueHolder etc.
 <pre><code class="language-scala">assert(eval(sum, Map.empty) == NumV(55))
 
 // These test cases were contributed by rzhxeo (Sebastian Py)
-var func = Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Ap(&quot;func&quot;, Add(&quot;n&quot;, -1))))
-var test1 = Letrec(&quot;func&quot;, func, Ap(&quot;func&quot;, 1))
-var test2 = Letrec(&quot;func&quot;, Ap(Fun(&quot;notUsed&quot;, func), 0), Ap(&quot;func&quot;, 1))
+val func = Fun(&quot;n&quot;, If0(&quot;n&quot;, 0, Ap(&quot;func&quot;, Add(&quot;n&quot;, -1))))
+val test1 = Letrec(&quot;func&quot;, func, Ap(&quot;func&quot;, 1))
+val test2 = Letrec(&quot;func&quot;, Ap(Fun(&quot;notUsed&quot;, func), 0), Ap(&quot;func&quot;, 1))
 assert(eval(test1, Map()) == NumV(0))
 assert(eval(test2, Map()) == NumV(0))
 </code></pre>
