@@ -270,8 +270,8 @@ This is called <em>store-passing style</em>.  Consequently, we have to update th
   case f@Fun(_, _) =&gt; (ClosureV(f, env), s)
 
 
-// In recursive cases we have to thread the store through the evaluation. In particular, we define the order of evaluation
-// explicitly through data flow dependencies.
+// In recursive cases we have to thread the store through the evaluation. In particular,
+// we define the order of evaluation explicitly through data flow dependencies.
 
   case If0(cond, thenExp, elseExp)
     =&gt; eval(cond, env, s) match {

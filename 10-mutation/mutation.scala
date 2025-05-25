@@ -64,8 +64,8 @@ def eval(e: Exp, env: Env, s: Store): (Value, Store) = e match {
   case f@Fun(_, _) => (ClosureV(f, env), s)
 
 
-// In recursive cases we have to thread the store through the evaluation. In particular, we define the order of evaluation
-// explicitly through data flow dependencies.
+// In recursive cases we have to thread the store through the evaluation. In particular,
+// we define the order of evaluation explicitly through data flow dependencies.
 
   case If0(cond, thenExp, elseExp)
     => eval(cond, env, s) match {
