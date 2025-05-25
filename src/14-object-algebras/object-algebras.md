@@ -32,6 +32,7 @@ case object T extends Bool {
 case object F extends Bool {
   def ifthenelse[T](t: T, e: T) = e
 }
+
 def and(a: Bool, b: Bool): Bool = a.ifthenelse(b, a)
 ```
 
@@ -44,6 +45,7 @@ In the same way, we can encode Church numerals.
 trait NumC {
   def fold[T](z: T, s: T => T): T
 }
+
 case object Zero extends NumC {
   def fold[T](z: T, s: T => T) = z
 }
@@ -228,7 +230,7 @@ At the same time, we can add another function on expressions (such as a pretty-p
 without changing existing code, too: Just add a
 `trait prettyPrint extends Exp[String]` and, if pretty-printing of `ExpWithMult`
 is required, extend with `trait prettyPrintMult extends prettyPrint with ExpWithMult[String]`.
-This is the object algebra way of solving the expression problem.
+This is the object-algebra way of solving the expression problem.
 
 We can also go one step further and combine object algebras with
 typed higher-order abstract syntax, using higher-kinded type members.

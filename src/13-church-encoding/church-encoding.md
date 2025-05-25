@@ -2,7 +2,7 @@
 
 The content of this chapter is available as a Scala file [here.](./church-encoding.scala)
 
-Today we shrink our language. It does not seem to be big, but today we want to  illustrate how powerful our core language,
+Now we shrink our language. It does not seem to be big, but here we want to illustrate how powerful our core language,
 the lambda calculus, is. Here is a shrinked version of FAE that does not even have numbers anymore. For testing purposes,
 we introduce a new expression ``PrintDot`` whose semantics is to print a dot on the screen.
 
