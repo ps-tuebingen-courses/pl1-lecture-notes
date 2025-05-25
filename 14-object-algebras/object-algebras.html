@@ -166,6 +166,7 @@ case object T extends Bool {
 case object F extends Bool {
   def ifthenelse[T](t: T, e: T) = e
 }
+
 def and(a: Bool, b: Bool): Bool = a.ifthenelse(b, a)
 </code></pre>
 <p>In Smalltalk and related languages, booleans are actually implemented
@@ -174,6 +175,7 @@ like that (at least conceptually).</p>
 <pre><code class="language-scala">trait NumC {
   def fold[T](z: T, s: T =&gt; T): T
 }
+
 case object Zero extends NumC {
   def fold[T](z: T, s: T =&gt; T) = z
 }
@@ -318,7 +320,7 @@ an attempt to pass <code>testMult</code> to <code>eval</code> will be a static t
 without changing existing code, too: Just add a
 <code>trait prettyPrint extends Exp[String]</code> and, if pretty-printing of <code>ExpWithMult</code>
 is required, extend with <code>trait prettyPrintMult extends prettyPrint with ExpWithMult[String]</code>.
-This is the object algebra way of solving the expression problem.</p>
+This is the object-algebra way of solving the expression problem.</p>
 <p>We can also go one step further and combine object algebras with
 typed higher-order abstract syntax, using higher-kinded type members.
 Don't panic if you don't understand what is going on here.</p>

@@ -10,11 +10,13 @@ case object T extends Bool {
 case object F extends Bool {
   def ifthenelse[T](t: T, e: T) = e
 }
+
 def and(a: Bool, b: Bool): Bool = a.ifthenelse(b, a)
 
 trait NumC {
   def fold[T](z: T, s: T => T): T
 }
+
 case object Zero extends NumC {
   def fold[T](z: T, s: T => T) = z
 }

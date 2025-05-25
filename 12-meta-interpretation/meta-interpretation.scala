@@ -38,16 +38,16 @@ object Compositional {
     case class FunV(f: Value => Value) extends Value
 
     def eval(e: Exp): Env => Value = e match {
-      case Num(n: Int) => (env) => NumV(n)
-      case Id(x) => (env) => env(x)
-      case Add(l, r) => { (env) =>
+      case Num(n: Int) => env => NumV(n)
+      case Id(x) => env => env(x)
+      case Add(l, r) => { env =>
         (eval(l)(env), eval(r)(env)) match {
           case (NumV(v1), NumV(v2)) => NumV(v1 + v2)
           case _ => sys.error("can only add numbers")
         }
       }
-      case Fun(param, body) => (env) => FunV((v) => eval(body)(env + (param -> v)))
-      case Ap(f, a) => (env) => (eval(f)(env), eval(a)(env)) match {
+      case Fun(param, body) => env => FunV((v) => eval(body)(env + (param -> v)))
+      case Ap(f, a) => env => (eval(f)(env), eval(a)(env)) match {
         // Use environment stored in (meta-level) closure to realize proper lexical scoping!
         case (FunV(g), arg) => g(arg)
         case _ => sys.error("can only apply functions")

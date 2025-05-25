@@ -2260,16 +2260,16 @@ object Compositional {
     case class FunV(f: Value =&gt; Value) extends Value
 
     def eval(e: Exp): Env =&gt; Value = e match {
-      case Num(n: Int) =&gt; (env) =&gt; NumV(n)
-      case Id(x) =&gt; (env) =&gt; env(x)
-      case Add(l, r) =&gt; { (env) =&gt;
+      case Num(n: Int) =&gt; env =&gt; NumV(n)
+      case Id(x) =&gt; env =&gt; env(x)
+      case Add(l, r) =&gt; { env =&gt;
         (eval(l)(env), eval(r)(env)) match {
           case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
           case _ =&gt; sys.error(&quot;can only add numbers&quot;)
         }
       }
-      case Fun(param, body) =&gt; (env) =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
-      case Ap(f, a) =&gt; (env) =&gt; (eval(f)(env), eval(a)(env)) match {
+      case Fun(param, body) =&gt; env =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
+      case Ap(f, a) =&gt; env =&gt; (eval(f)(env), eval(a)(env)) match {
         // Use environment stored in (meta-level) closure to realize proper lexical scoping!
         case (FunV(g), arg) =&gt; g(arg)
         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
@@ -2312,7 +2312,7 @@ and hence need memory management. Since we are using Scala references to refer t
 needed are collected by the Scala (or rather, Java) virtual machine.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="church-encodings"><a class="header" href="#church-encodings">Church Encodings</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="13-church-encoding/./church-encoding.scala">here.</a></p>
-<p>Today we shrink our language. It does not seem to be big, but today we want to  illustrate how powerful our core language,
+<p>Now we shrink our language. It does not seem to be big, but here we want to illustrate how powerful our core language,
 the lambda calculus, is. Here is a shrinked version of FAE that does not even have numbers anymore. For testing purposes,
 we introduce a new expression <code>PrintDot</code> whose semantics is to print a dot on the screen.</p>
 <pre><code class="language-scala">enum Exp:
@@ -2421,6 +2421,7 @@ case object T extends Bool {
 case object F extends Bool {
   def ifthenelse[T](t: T, e: T) = e
 }
+
 def and(a: Bool, b: Bool): Bool = a.ifthenelse(b, a)
 </code></pre>
 <p>In Smalltalk and related languages, booleans are actually implemented
@@ -2429,6 +2430,7 @@ like that (at least conceptually).</p>
 <pre><code class="language-scala">trait NumC {
   def fold[T](z: T, s: T =&gt; T): T
 }
+
 case object Zero extends NumC {
   def fold[T](z: T, s: T =&gt; T) = z
 }
@@ -2573,7 +2575,7 @@ an attempt to pass <code>testMult</code> to <code>eval</code> will be a static t
 without changing existing code, too: Just add a
 <code>trait prettyPrint extends Exp[String]</code> and, if pretty-printing of <code>ExpWithMult</code>
 is required, extend with <code>trait prettyPrintMult extends prettyPrint with ExpWithMult[String]</code>.
-This is the object algebra way of solving the expression problem.</p>
+This is the object-algebra way of solving the expression problem.</p>
 <p>We can also go one step further and combine object algebras with
 typed higher-order abstract syntax, using higher-kinded type members.
 Don't panic if you don't understand what is going on here.</p>
