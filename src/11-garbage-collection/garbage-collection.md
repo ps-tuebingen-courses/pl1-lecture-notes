@@ -37,7 +37,7 @@ import Exp._
 
 
 We will equip our values with a mutable flag that is useful for mark-and-sweep garbage collection.
-In real systems it is implemented as a bit flag, or, if the so-called "tri-color algorithm" is used, with two bit flags.
+In real systems it is implemented as a bit flag, or, if the so-called "tri-color abstraction" is used, with two bit flags.
 
 ```scala mdoc
 abstract class Value {
