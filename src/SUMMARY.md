@@ -21,7 +21,7 @@
 # Miscellaneous
 
 - [Garbage Collection](./11-garbage-collection/garbage-collection.md)
-- [Syntactic and Meta Interpretation](./12-meta-interpretation/meta-interpretation.md)
+- [Syntactic and Meta-Interpretation](./12-meta-interpretation/meta-interpretation.md)
 - [Church Encodings](./13-church-encoding/church-encoding.md)
 - [Object Algebras](./14-object-algebras/object-algebras.md)
 

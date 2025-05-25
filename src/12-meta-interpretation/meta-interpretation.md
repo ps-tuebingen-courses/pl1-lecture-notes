@@ -11,7 +11,7 @@ language feature of the meta-language, or whether it is implemented using more p
 The first case is called meta-interpretation, the second case syntactic interpretation.
 
 Meta-interpretation can be convenient if we are not interested in having control over the exact meaning of the construct,
-or if the way the meta-language handles this construct is just what we want for our object-language.
+or if the way the meta-language handles this construct is just what we want for our object language.
 
 Syntactic interpretation is required if we want to understand what the language feature really means in terms
 of more primitive constructs, or if we want to implement the language feature differently than the meta-language.
@@ -19,7 +19,7 @@ Of course, if the meta-language has no corresponding feature, then we have no ch
 
 Our FAE interpreter is a meta-interpreter with respect to many features. For instance, it does not tell us
  - the precision of numbers, or the algorithm for addition
- - how the call stack is managed, e.g. the maximum depth of recursion supported by the interpreter
+ - how the call stack is managed, e.g., the maximum depth of recursion supported by the interpreter
  - whether/how memory management for closures works (they are objects on the heap!)
 
 That said, it is possible to make the FAE interpreters still more "meta". Here are two examples.
@@ -67,14 +67,14 @@ Notice that this interpreter then has no control anymore about scoping; rather, 
 
 A particularly pleasing and important property of this interpreter below is that it is _compositional_, meaning that all recursive calls
 of `eval` are only on subparts of the original expression. This means that it becomes particularly easy to reason about program equivalence
-in the object-language in terms of program equivalence in the meta-language: Two object-language expressions are equivalent if their
-"denotations" as meta-level expressions are equivalent in the meta-level.
+in the object language in terms of program equivalence in the meta-language: Two object-language expressions are equivalent if their
+"denotations" as meta-level expressions are equivalent on the meta-level.
 
 Compositionality is the cornerstone of denotational semantics.  A denotational semantics can be thought of as a
 compositional interpreter in which the meta-language is mathematics.
-Compositionality also has a rather practical side-effect: It means that we can implement the interpreter in the internal visitor style
-that  we learned about [at the beginning of the course](../03-arithmetic-expressions/arithmetic-expressions.md) (recall that the internal visitor  style enforces compositionality).
-Recommended exercise: Re-implement the interpreter as an internal visitor.
+Compositionality also has a rather practical side effect: It means that we can implement the interpreter in the internal-visitor style
+that  we learned about [at the beginning of the course](../03-arithmetic-expressions/arithmetic-expressions.md) (recall that the internal visitor-style enforces compositionality).
+Recommended exercise: Reimplement the interpreter as an internal visitor.
 
 ```scala mdoc
 enum Exp:
@@ -94,9 +94,9 @@ object Compositional {
 
     def eval(e: Exp): Env => Value = e match {
       case Num(n: Int) => (env) => NumV(n)
-      case Id(x) => env => env(x)
+      case Id(x) => (env) => env(x)
       case Add(l, r) => { (env) =>
-        (eval(l)(env),  eval(r)(env)) match {
+        (eval(l)(env), eval(r)(env)) match {
           case (NumV(v1), NumV(v2)) => NumV(v1 + v2)
           case _ => sys.error("can only add numbers")
         }
