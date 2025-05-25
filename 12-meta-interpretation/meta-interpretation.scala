@@ -39,9 +39,9 @@ object Compositional {
 
     def eval(e: Exp): Env => Value = e match {
       case Num(n: Int) => (env) => NumV(n)
-      case Id(x) => env => env(x)
+      case Id(x) => (env) => env(x)
       case Add(l, r) => { (env) =>
-        (eval(l)(env),  eval(r)(env)) match {
+        (eval(l)(env), eval(r)(env)) match {
           case (NumV(v1), NumV(v2)) => NumV(v1 + v2)
           case _ => sys.error("can only add numbers")
         }
