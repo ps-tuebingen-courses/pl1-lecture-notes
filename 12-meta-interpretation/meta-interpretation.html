@@ -178,17 +178,17 @@ corresponding meta-level construct.</p>
   import Exp._
 
   def eval(e: Exp): Exp = e match {
-      case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
-      case Add(l, r) =&gt; (eval(l), eval(r)) match {
-                         case (Num(x), Num(y)) =&gt; Num(x + y)
-                         case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-                        }
-      case Ap(f, a) =&gt; eval(f) match {
-         case Fun(f) =&gt; eval(f(eval(a)))
-         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
-      }
-      case _ =&gt; e // numbers and functions evaluate to themselves
+    case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
+    case Add(l, r) =&gt; (eval(l), eval(r)) match {
+                       case (Num(x), Num(y)) =&gt; Num(x + y)
+                       case _ =&gt; sys.error(&quot;can only add numbers&quot;)
+                      }
+    case Ap(f, a) =&gt; eval(f) match {
+       case Fun(f) =&gt; eval(f(eval(a)))
+       case _ =&gt; sys.error(&quot;can only apply functions&quot;)
     }
+    case _ =&gt; e // numbers and functions evaluate to themselves
+  }
 }
 </code></pre>
 <h2 id="meta-level-closures"><a class="header" href="#meta-level-closures">Meta-Level Closures</a></h2>
@@ -201,7 +201,7 @@ in the object language in terms of program equivalence in the meta-language: Two
 <p>Compositionality is the cornerstone of denotational semantics.  A denotational semantics can be thought of as a
 compositional interpreter in which the meta-language is mathematics.
 Compositionality also has a rather practical side effect: It means that we can implement the interpreter in the internal-visitor style
-that  we learned about <a href="../03-arithmetic-expressions/arithmetic-expressions.html">at the beginning of the course</a> (recall that the internal visitor-style enforces compositionality).
+that  we learned about <a href="../03-arithmetic-expressions/arithmetic-expressions.html">at the beginning of the course</a> (recall that the internal-visitor style enforces compositionality).
 Recommended exercise: Reimplement the interpreter as an internal visitor.</p>
 <pre><code class="language-scala">enum Exp:
   case Num(n: Int)
@@ -213,52 +213,52 @@ Recommended exercise: Reimplement the interpreter as an internal visitor.</p>
 import Exp._
 
 object Compositional {
-    sealed abstract class Value
-    type Env = Map[String, Value]
-    case class NumV(n: Int) extends Value
-    case class FunV(f: Value =&gt; Value) extends Value
+  sealed abstract class Value
+  type Env = Map[String, Value]
+  case class NumV(n: Int) extends Value
+  case class FunV(f: Value =&gt; Value) extends Value
 
-    def eval(e: Exp): Env =&gt; Value = e match {
-      case Num(n: Int) =&gt; env =&gt; NumV(n)
-      case Id(x) =&gt; env =&gt; env(x)
-      case Add(l, r) =&gt; { env =&gt;
-        (eval(l)(env), eval(r)(env)) match {
-          case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
-          case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-        }
-      }
-      case Fun(param, body) =&gt; env =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
-      case Ap(f, a) =&gt; env =&gt; (eval(f)(env), eval(a)(env)) match {
-        // Use environment stored in (meta-level) closure to realize proper lexical scoping!
-        case (FunV(g), arg) =&gt; g(arg)
-        case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+  def eval(e: Exp): Env =&gt; Value = e match {
+    case Num(n: Int) =&gt; env =&gt; NumV(n)
+    case Id(x) =&gt; env =&gt; env(x)
+    case Add(l, r) =&gt; { env =&gt;
+      (eval(l)(env), eval(r)(env)) match {
+        case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
+        case _ =&gt; sys.error(&quot;can only add numbers&quot;)
       }
     }
+    case Fun(param, body) =&gt; env =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
+    case Ap(f, a) =&gt; env =&gt; (eval(f)(env), eval(a)(env)) match {
+      // Use environment stored in (meta-level) closure to realize proper lexical scoping!
+      case (FunV(g), arg) =&gt; g(arg)
+      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+    }
+  }
 }
 </code></pre>
 <p>For comparison, here is our original FAE interpreter.</p>
 <pre><code class="language-scala">object FAE {
-    sealed abstract class Value
-    type Env = Map[String, Value]
-    case class NumV(n: Int) extends Value
-    case class ClosureV(f: Fun, env: Env) extends Value
+  sealed abstract class Value
+  type Env = Map[String, Value]
+  case class NumV(n: Int) extends Value
+  case class ClosureV(f: Fun, env: Env) extends Value
 
-    def eval(e: Exp, env: Env): Value = e match {
-      case Num(n: Int) =&gt; NumV(n)
-      case Id(x) =&gt; env(x)
-      case Add(l, r) =&gt; {
-        (eval(l, env), eval(r, env)) match {
-          case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
-          case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-        }
-      }
-      case f@Fun(param, body) =&gt; ClosureV(f, env)
-      case Ap(f, a) =&gt; eval(f, env) match {
-        // Use environment stored in closure to realize proper lexical scoping!
-        case ClosureV(f, closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a, env)))
-        case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+  def eval(e: Exp, env: Env): Value = e match {
+    case Num(n: Int) =&gt; NumV(n)
+    case Id(x) =&gt; env(x)
+    case Add(l, r) =&gt; {
+      (eval(l, env), eval(r, env)) match {
+        case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
+        case _ =&gt; sys.error(&quot;can only add numbers&quot;)
       }
     }
+    case f@Fun(param, body) =&gt; ClosureV(f, env)
+    case Ap(f, a) =&gt; eval(f, env) match {
+      // Use environment stored in closure to realize proper lexical scoping!
+      case ClosureV(f, closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a, env)))
+      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+    }
+  }
 }
 </code></pre>
 <p>We will soon learn about ways to make FAE more syntactic in various ways. For instance, we will no longer rely on call-stack management

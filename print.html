@@ -2219,17 +2219,17 @@ corresponding meta-level construct.</p>
   import Exp._
 
   def eval(e: Exp): Exp = e match {
-      case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
-      case Add(l, r) =&gt; (eval(l), eval(r)) match {
-                         case (Num(x), Num(y)) =&gt; Num(x + y)
-                         case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-                        }
-      case Ap(f, a) =&gt; eval(f) match {
-         case Fun(f) =&gt; eval(f(eval(a)))
-         case _ =&gt; sys.error(&quot;can only apply functions&quot;)
-      }
-      case _ =&gt; e // numbers and functions evaluate to themselves
+    case Id(v) =&gt; sys.error(&quot;unbound identifier: &quot; + v)
+    case Add(l, r) =&gt; (eval(l), eval(r)) match {
+                       case (Num(x), Num(y)) =&gt; Num(x + y)
+                       case _ =&gt; sys.error(&quot;can only add numbers&quot;)
+                      }
+    case Ap(f, a) =&gt; eval(f) match {
+       case Fun(f) =&gt; eval(f(eval(a)))
+       case _ =&gt; sys.error(&quot;can only apply functions&quot;)
     }
+    case _ =&gt; e // numbers and functions evaluate to themselves
+  }
 }
 </code></pre>
 <h2 id="meta-level-closures"><a class="header" href="#meta-level-closures">Meta-Level Closures</a></h2>
@@ -2242,7 +2242,7 @@ in the object language in terms of program equivalence in the meta-language: Two
 <p>Compositionality is the cornerstone of denotational semantics.  A denotational semantics can be thought of as a
 compositional interpreter in which the meta-language is mathematics.
 Compositionality also has a rather practical side effect: It means that we can implement the interpreter in the internal-visitor style
-that  we learned about <a href="12-meta-interpretation/../03-arithmetic-expressions/arithmetic-expressions.html">at the beginning of the course</a> (recall that the internal visitor-style enforces compositionality).
+that  we learned about <a href="12-meta-interpretation/../03-arithmetic-expressions/arithmetic-expressions.html">at the beginning of the course</a> (recall that the internal-visitor style enforces compositionality).
 Recommended exercise: Reimplement the interpreter as an internal visitor.</p>
 <pre><code class="language-scala">enum Exp:
   case Num(n: Int)
@@ -2254,52 +2254,52 @@ Recommended exercise: Reimplement the interpreter as an internal visitor.</p>
 import Exp._
 
 object Compositional {
-    sealed abstract class Value
-    type Env = Map[String, Value]
-    case class NumV(n: Int) extends Value
-    case class FunV(f: Value =&gt; Value) extends Value
+  sealed abstract class Value
+  type Env = Map[String, Value]
+  case class NumV(n: Int) extends Value
+  case class FunV(f: Value =&gt; Value) extends Value
 
-    def eval(e: Exp): Env =&gt; Value = e match {
-      case Num(n: Int) =&gt; env =&gt; NumV(n)
-      case Id(x) =&gt; env =&gt; env(x)
-      case Add(l, r) =&gt; { env =&gt;
-        (eval(l)(env), eval(r)(env)) match {
-          case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
-          case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-        }
-      }
-      case Fun(param, body) =&gt; env =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
-      case Ap(f, a) =&gt; env =&gt; (eval(f)(env), eval(a)(env)) match {
-        // Use environment stored in (meta-level) closure to realize proper lexical scoping!
-        case (FunV(g), arg) =&gt; g(arg)
-        case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+  def eval(e: Exp): Env =&gt; Value = e match {
+    case Num(n: Int) =&gt; env =&gt; NumV(n)
+    case Id(x) =&gt; env =&gt; env(x)
+    case Add(l, r) =&gt; { env =&gt;
+      (eval(l)(env), eval(r)(env)) match {
+        case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
+        case _ =&gt; sys.error(&quot;can only add numbers&quot;)
       }
     }
+    case Fun(param, body) =&gt; env =&gt; FunV((v) =&gt; eval(body)(env + (param -&gt; v)))
+    case Ap(f, a) =&gt; env =&gt; (eval(f)(env), eval(a)(env)) match {
+      // Use environment stored in (meta-level) closure to realize proper lexical scoping!
+      case (FunV(g), arg) =&gt; g(arg)
+      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+    }
+  }
 }
 </code></pre>
 <p>For comparison, here is our original FAE interpreter.</p>
 <pre><code class="language-scala">object FAE {
-    sealed abstract class Value
-    type Env = Map[String, Value]
-    case class NumV(n: Int) extends Value
-    case class ClosureV(f: Fun, env: Env) extends Value
+  sealed abstract class Value
+  type Env = Map[String, Value]
+  case class NumV(n: Int) extends Value
+  case class ClosureV(f: Fun, env: Env) extends Value
 
-    def eval(e: Exp, env: Env): Value = e match {
-      case Num(n: Int) =&gt; NumV(n)
-      case Id(x) =&gt; env(x)
-      case Add(l, r) =&gt; {
-        (eval(l, env), eval(r, env)) match {
-          case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
-          case _ =&gt; sys.error(&quot;can only add numbers&quot;)
-        }
-      }
-      case f@Fun(param, body) =&gt; ClosureV(f, env)
-      case Ap(f, a) =&gt; eval(f, env) match {
-        // Use environment stored in closure to realize proper lexical scoping!
-        case ClosureV(f, closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a, env)))
-        case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+  def eval(e: Exp, env: Env): Value = e match {
+    case Num(n: Int) =&gt; NumV(n)
+    case Id(x) =&gt; env(x)
+    case Add(l, r) =&gt; {
+      (eval(l, env), eval(r, env)) match {
+        case (NumV(v1), NumV(v2)) =&gt; NumV(v1 + v2)
+        case _ =&gt; sys.error(&quot;can only add numbers&quot;)
       }
     }
+    case f@Fun(param, body) =&gt; ClosureV(f, env)
+    case Ap(f, a) =&gt; eval(f, env) match {
+      // Use environment stored in closure to realize proper lexical scoping!
+      case ClosureV(f, closureEnv) =&gt; eval(f.body, closureEnv + (f.param -&gt; eval(a, env)))
+      case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+    }
+  }
 }
 </code></pre>
 <p>We will soon learn about ways to make FAE more syntactic in various ways. For instance, we will no longer rely on call-stack management
@@ -2434,7 +2434,6 @@ like that (at least conceptually).</p>
 case object Zero extends NumC {
   def fold[T](z: T, s: T =&gt; T) = z
 }
-
 case class Succ(n: NumC) extends NumC {
   def fold[T](z: T, s: T =&gt; T) = s(n.fold(z, s))
 }
@@ -2558,6 +2557,7 @@ trait evalWithMult extends eval with ExpWithMult[Env =&gt; Value] {
     case _ =&gt; sys.error(&quot;can only multiply numbers&quot;)
   }
 }
+
 object evalWithMult extends evalWithMult
 
 def testMult[T](semantics: ExpWithMult[T]) = {
@@ -2655,8 +2655,9 @@ B. Olivira, W.Cook. Extensibility for the Masses: Practical Extensibility with O
   println(prompt)
   Integer.parseInt(readLine())
 }
+
 def progSimple = {
-  println(inputNumber(&quot;First number:&quot;) + inputNumber(&quot;Second number&quot;))
+  println(inputNumber(&quot;First number:&quot;) + inputNumber(&quot;Second number:&quot;))
 }
 </code></pre>
 <p>Now consider a web version of the program:</p>
@@ -2667,7 +2668,7 @@ def progSimple = {
 </ul>
 <p>Even this &quot;addition server&quot; is difficult to implement. Because http is a stateless protocol (for good reasons),
 every web program is basically forced to terminate after every request. This means that
-the Web developer must turn this application into three programs:</p>
+the web developer must turn this application into three programs:</p>
 <ol>
 <li>The first program displays the first form.</li>
 <li>The second program consumes the form values from the first form, and generates the second form.</li>
@@ -2767,7 +2768,7 @@ such as httprequest in AJAX require to pass a callback function, which leads to 
 as the one in <code>webprog</code> above.</p>
 <p>Let's consider this &quot;web transformation&quot; - the transformation from <code>progSimple</code> to <code>webprog</code> - in more detail.
 To this end, let's make our application a bit more sophisticated. Instead of entering only two
-numbers, the user enters n numbers, e.g., the prices of a list of n items.</p>
+numbers, the user enters $n$ numbers, e.g., the prices of a list of $n$ items.</p>
 <p>Here is the &quot;non-web&quot; version of the application:</p>
 <pre><code class="language-scala">def allCosts(itemList: List[String]): Int = itemList match {
    case Nil =&gt; 0
@@ -2786,7 +2787,7 @@ Instead, it is a library procedure that may be used in many different contexts. 
 however, there is the danger that at the point of interaction, the rest of the computation -- that is, the
 computation that invoked <code>allCosts</code> -- will be lost. To prevent this, <code>allCosts</code> must consume an extra argument,
 a continuation, that represents the rest of the pending computation. To signify this change in contract, we will use
-the convention of appending <code>_k</code> to the name of the procedure and <code>k</code> to name the continuation parameter.</p>
+the convention of appending <code>_k</code> to the name of the procedure and use <code>k</code> to name the continuation parameter.</p>
 <p>Here is a first attempt to define <code>allCosts_k</code>.</p>
 <pre><code class="language-scala"> def allCosts_k(itemList: List[String], k: Int =&gt; Nothing): Nothing = itemList match {
    case Nil =&gt; 0
@@ -2876,7 +2877,7 @@ compile a program in a language like Scheme into one in a language like C!</p>
 </ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="continuations-definition"><a class="header" href="#continuations-definition">Continuations: Definition</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="16-continuations-2/./continuations-2.scala">here.</a></p>
-<p>Today's goal is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
+<p>The goal now is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
 in the previous lecture formal.</p>
 <p>In the previous lecture we have seen that we had to translate the following program:</p>
 <pre><code class="language-scala">println(&quot;The sum is: &quot; + (inputNumber(&quot;First number:&quot;) + inputNumber(&quot;Second number&quot;)))
@@ -2895,7 +2896,7 @@ reason, the program has to send its result to a continuation instead of returnin
          webdisplay(&quot;The sum is: &quot; + k(n + m))))
 </code></pre>
 <p>This version can be employed in the transformation of a larger program. In the special
-case where this is the entire program we can apply the transformed term to the identity
+case where this is the entire program, we can apply the transformed term to the identity
 function to get the same result as the previous manual transformation.</p>
 <p>In general, every term, when converted to CPS, will be have the following properties
 (see O. Danvy, Three Steps for the CPS Transformation, 1991):</p>

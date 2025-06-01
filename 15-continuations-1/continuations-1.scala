@@ -4,8 +4,9 @@ def inputNumber(prompt: String): Int = {
   println(prompt)
   Integer.parseInt(readLine())
 }
+
 def progSimple = {
-  println(inputNumber("First number:") + inputNumber("Second number"))
+  println(inputNumber("First number:") + inputNumber("Second number:"))
 }
 
 // we use the return type "Nothing" for functions that will never return (normally)

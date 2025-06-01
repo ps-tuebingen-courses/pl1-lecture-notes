@@ -179,7 +179,6 @@ like that (at least conceptually).</p>
 case object Zero extends NumC {
   def fold[T](z: T, s: T =&gt; T) = z
 }
-
 case class Succ(n: NumC) extends NumC {
   def fold[T](z: T, s: T =&gt; T) = s(n.fold(z, s))
 }
@@ -303,6 +302,7 @@ trait evalWithMult extends eval with ExpWithMult[Env =&gt; Value] {
     case _ =&gt; sys.error(&quot;can only multiply numbers&quot;)
   }
 }
+
 object evalWithMult extends evalWithMult
 
 def testMult[T](semantics: ExpWithMult[T]) = {

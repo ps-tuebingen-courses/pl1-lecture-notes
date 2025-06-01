@@ -144,7 +144,7 @@
                     <main>
                         <h1 id="continuations-definition"><a class="header" href="#continuations-definition">Continuations: Definition</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="./continuations-2.scala">here.</a></p>
-<p>Today's goal is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
+<p>The goal now is to make the &quot;web&quot; (or rather, CPS) transformation which we applied informally
 in the previous lecture formal.</p>
 <p>In the previous lecture we have seen that we had to translate the following program:</p>
 <pre><code class="language-scala">println(&quot;The sum is: &quot; + (inputNumber(&quot;First number:&quot;) + inputNumber(&quot;Second number&quot;)))
@@ -163,7 +163,7 @@ reason, the program has to send its result to a continuation instead of returnin
          webdisplay(&quot;The sum is: &quot; + k(n + m))))
 </code></pre>
 <p>This version can be employed in the transformation of a larger program. In the special
-case where this is the entire program we can apply the transformed term to the identity
+case where this is the entire program, we can apply the transformed term to the identity
 function to get the same result as the previous manual transformation.</p>
 <p>In general, every term, when converted to CPS, will be have the following properties
 (see O. Danvy, Three Steps for the CPS Transformation, 1991):</p>

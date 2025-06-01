@@ -20,7 +20,6 @@ trait NumC {
 case object Zero extends NumC {
   def fold[T](z: T, s: T => T) = z
 }
-
 case class Succ(n: NumC) extends NumC {
   def fold[T](z: T, s: T => T) = s(n.fold(z, s))
 }
@@ -115,6 +114,7 @@ trait evalWithMult extends eval with ExpWithMult[Env => Value] {
     case _ => sys.error("can only multiply numbers")
   }
 }
+
 object evalWithMult extends evalWithMult
 
 def testMult[T](semantics: ExpWithMult[T]) = {

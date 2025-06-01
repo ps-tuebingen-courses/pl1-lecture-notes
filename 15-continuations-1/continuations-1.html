@@ -149,8 +149,9 @@
   println(prompt)
   Integer.parseInt(readLine())
 }
+
 def progSimple = {
-  println(inputNumber(&quot;First number:&quot;) + inputNumber(&quot;Second number&quot;))
+  println(inputNumber(&quot;First number:&quot;) + inputNumber(&quot;Second number:&quot;))
 }
 </code></pre>
 <p>Now consider a web version of the program:</p>
@@ -161,7 +162,7 @@ def progSimple = {
 </ul>
 <p>Even this &quot;addition server&quot; is difficult to implement. Because http is a stateless protocol (for good reasons),
 every web program is basically forced to terminate after every request. This means that
-the Web developer must turn this application into three programs:</p>
+the web developer must turn this application into three programs:</p>
 <ol>
 <li>The first program displays the first form.</li>
 <li>The second program consumes the form values from the first form, and generates the second form.</li>
@@ -261,7 +262,7 @@ such as httprequest in AJAX require to pass a callback function, which leads to 
 as the one in <code>webprog</code> above.</p>
 <p>Let's consider this &quot;web transformation&quot; - the transformation from <code>progSimple</code> to <code>webprog</code> - in more detail.
 To this end, let's make our application a bit more sophisticated. Instead of entering only two
-numbers, the user enters n numbers, e.g., the prices of a list of n items.</p>
+numbers, the user enters $n$ numbers, e.g., the prices of a list of $n$ items.</p>
 <p>Here is the &quot;non-web&quot; version of the application:</p>
 <pre><code class="language-scala">def allCosts(itemList: List[String]): Int = itemList match {
    case Nil =&gt; 0
@@ -280,7 +281,7 @@ Instead, it is a library procedure that may be used in many different contexts. 
 however, there is the danger that at the point of interaction, the rest of the computation -- that is, the
 computation that invoked <code>allCosts</code> -- will be lost. To prevent this, <code>allCosts</code> must consume an extra argument,
 a continuation, that represents the rest of the pending computation. To signify this change in contract, we will use
-the convention of appending <code>_k</code> to the name of the procedure and <code>k</code> to name the continuation parameter.</p>
+the convention of appending <code>_k</code> to the name of the procedure and use <code>k</code> to name the continuation parameter.</p>
 <p>Here is a first attempt to define <code>allCosts_k</code>.</p>
 <pre><code class="language-scala"> def allCosts_k(itemList: List[String], k: Int =&gt; Nothing): Nothing = itemList match {
    case Nil =&gt; 0
