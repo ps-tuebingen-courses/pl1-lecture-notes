@@ -157,7 +157,7 @@ as the one in `webprog` above.
 
 Let's consider this "web transformation" - the transformation from `progSimple` to `webprog` - in more detail.
 To this end, let's make our application a bit more sophisticated. Instead of entering only two
-numbers, the user enters $n$ numbers, e.g., the prices of a list of $n$ items.
+numbers, the user enters \\( n \\) numbers, e.g., the prices of a list of \\( n \\) items.
 
 Here is the "non-web" version of the application:
 
