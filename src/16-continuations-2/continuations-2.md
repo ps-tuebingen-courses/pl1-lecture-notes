@@ -6,7 +6,7 @@ The content of this chapter is available as a Scala file [here.](./continuations
 import scala.language.implicitConversions
 ```
 
-Today's goal is to make the "web" (or rather, CPS) transformation which we applied informally
+The goal now is to make the "web" (or rather, CPS) transformation which we applied informally
 in the previous lecture formal.
 
 In the previous lecture we have seen that we had to translate the following program:
@@ -35,7 +35,7 @@ k => webread_k("First number", (n) =>
 ```
 
 This version can be employed in the transformation of a larger program. In the special
-case where this is the entire program we can apply the transformed term to the identity
+case where this is the entire program, we can apply the transformed term to the identity
 function to get the same result as the previous manual transformation.
 
 In general, every term, when converted to CPS, will be have the following properties

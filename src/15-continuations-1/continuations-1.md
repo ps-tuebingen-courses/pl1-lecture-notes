@@ -13,8 +13,9 @@ def inputNumber(prompt: String): Int = {
   println(prompt)
   Integer.parseInt(readLine())
 }
+
 def progSimple = {
-  println(inputNumber("First number:") + inputNumber("Second number"))
+  println(inputNumber("First number:") + inputNumber("Second number:"))
 }
 ```
 
@@ -26,7 +27,7 @@ Now consider a web version of the program:
 
 Even this "addition server" is difficult to implement. Because http is a stateless protocol (for good reasons),
 every web program is basically forced to terminate after every request. This means that
-the Web developer must turn this application into three programs:
+the web developer must turn this application into three programs:
 
   1) The first program displays the first form.
   2) The second program consumes the form values from the first form, and generates the second form.
@@ -156,7 +157,7 @@ as the one in `webprog` above.
 
 Let's consider this "web transformation" - the transformation from `progSimple` to `webprog` - in more detail.
 To this end, let's make our application a bit more sophisticated. Instead of entering only two
-numbers, the user enters n numbers, e.g., the prices of a list of n items.
+numbers, the user enters $n$ numbers, e.g., the prices of a list of $n$ items.
 
 Here is the "non-web" version of the application:
 
@@ -182,7 +183,7 @@ Instead, it is a library procedure that may be used in many different contexts. 
 however, there is the danger that at the point of interaction, the rest of the computation -- that is, the
 computation that invoked `allCosts` -- will be lost. To prevent this, `allCosts` must consume an extra argument,
 a continuation, that represents the rest of the pending computation. To signify this change in contract, we will use
-the convention of appending `_k` to the name of the procedure and `k` to name the continuation parameter.
+the convention of appending `_k` to the name of the procedure and use `k` to name the continuation parameter.
 
 Here is a first attempt to define ``allCosts_k``.
 
