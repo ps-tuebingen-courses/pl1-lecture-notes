@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 
 
 Today's goal is to formalize first-class continuations as illustrated by Scheme's let/cc construct. In the previous lecture we have
-learned why first class continuations are a powerful language construct. Today we learn the semantics of first-class continuations by
+learned why first-class continuations are a powerful language construct. Today we learn the semantics of first-class continuations by
 extending our interpreter to support let/cc. Here is the abstract syntax of the language extended with `Letcc`:
 
 ```scala mdoc
@@ -90,7 +90,7 @@ def eval(e: Exp, env: Env, k: Value => Nothing): Nothing = e match {
   case Ap(f, a) => eval(f, env, cl => cl match {
             case ClosureV(f, closureEnv) => eval(a, env, av => eval(f.body, closureEnv + (f.param -> av), k))
             case ContV(f) => eval(a, env, av => f(av))
-            case _ => sys.error("can only apply functions")
+            case _ => sys.error("can only apply functions and continuations")
   })
   /* Letcc is now surprisingly simple: We continue the evaluation in the body in an
    * extended environment in which param is bound to the current continuation k,

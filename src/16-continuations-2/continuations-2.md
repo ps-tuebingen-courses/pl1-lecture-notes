@@ -114,7 +114,7 @@ and more in line with our treatment of the store.
 The transformed version hence reads:
 
 ```scala
-k => k((x, dynk) => (k => k(x))(dynk))
+k => k((x, dynk) => (k0 => k0(x))(dynk))
 ```
 
 which is equivalent (when the inner application finally happens) to:
