@@ -214,7 +214,7 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value): Value = e match {
             case ClosureV(f, closureEnv) =&gt; eval(a, env, av =&gt; eval(f.body, closureEnv + (f.param -&gt; av), k))
             // compose continuations k2 and k
             case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av)))
-            case _ =&gt; sys.error(&quot;can only apply functions&quot;)
+            case _ =&gt; sys.error(&quot;can only apply functions and continuations&quot;)
   })
   // reset the continuation to the identity function
   case Reset(e) =&gt; k(eval(e, env, x =&gt; x))

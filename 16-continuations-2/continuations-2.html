@@ -218,7 +218,7 @@ the original function <code>x =&gt; x</code> consumes only one. What is the seco
 of function invocation, so we want to preserve it. This is in contrast to what we did with environments,
 and more in line with our treatment of the store.</p>
 <p>The transformed version hence reads:</p>
-<pre><code class="language-scala">k =&gt; k((x, dynk) =&gt; (k =&gt; k(x))(dynk))
+<pre><code class="language-scala">k =&gt; k((x, dynk) =&gt; (k0 =&gt; k0(x))(dynk))
 </code></pre>
 <p>which is equivalent (when the inner application finally happens) to:</p>
 <pre><code class="language-scala">k =&gt; k((x, dynk) =&gt; dynk(x))

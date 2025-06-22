@@ -42,7 +42,7 @@ def eval(e: Exp, env: Env, k: Value => Nothing): Nothing = e match {
   case Ap(f, a) => eval(f, env, cl => cl match {
             case ClosureV(f, closureEnv) => eval(a, env, av => eval(f.body, closureEnv + (f.param -> av), k))
             case ContV(f) => eval(a, env, av => f(av))
-            case _ => sys.error("can only apply functions")
+            case _ => sys.error("can only apply functions and continuations")
   })
   /* Letcc is now surprisingly simple: We continue the evaluation in the body in an
    * extended environment in which param is bound to the current continuation k,
