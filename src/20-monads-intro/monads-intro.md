@@ -128,7 +128,7 @@ trait Monad[M[_]] {
   // 1) "unit" acts as a kind of neutral element of "bind", that is:
   //    1a) bind(unit(x), f) == f(x) and
   //    1b) bind(x, y => unit(y)) == x
-  // 2) Bind enjoys an associative property
+  // 2) Bind enjoys an associativity property
   //     bind(bind(x, f), g) == bind(x, y => bind(f(y), g))
 }
 ```
@@ -325,13 +325,13 @@ def hRead(b: Boolean): Int => Int = sys.error("not implemented")
 Our original code,
 
 ```scala
-def clientCode = h(!g(f(27) + "z"))
+def clientCode = !g(f(27) + "z")
 ```
 
 becomes:
 
 ```scala mdoc
-def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env) + "z")(env))(env)
+def clientCodeRead(env: Int) = !(gRead(fRead(27)(env) + "z")(env))
 ```
 
 In monadic form, the explicit handling of the environment disappears again:
@@ -377,7 +377,7 @@ def hState(b: Boolean): Int => (Int, Int) = sys.error("not implemented")
 The original code,
 
 ```scala
-def clientCode = h(!g(f(27) + "z"))
+def clientCode = !g(f(27) + "z")
 ```
 
 becomes:
@@ -386,7 +386,7 @@ becomes:
 def clientCodeState(s: Int) =
   fState(27)(s) match {
     case (x, s2) => gState(x + "z")(s2) match {
-      case (y, s3) => hState(!y)(s3) }}
+      case (y, s3) => (!y, s3) }}
 ```
 
 In monadic style, however, the state handling disappears once more:
@@ -431,14 +431,14 @@ def hList(b: Boolean): List[Int] = sys.error("not implemented")
 The original code,
 
 ```scala
-def clientCode = h(!g(f(27) + "z"))
+def clientCode = !g(f(27) + "z")
 ```
 
 becomes:
 
 ```scala mdoc
 def clientCodeList =
-  fList(27).map(x => gList(x + "z")).flatten.map(y => hList(!y)).flatten
+  fList(27).map(x => gList(x + "z")).flatten.map(y => !y)
 ```
 
 The monadic version of the client code stays the same, as expected:
@@ -487,14 +487,14 @@ def hCPS[R](b: Boolean): (Int => R) => R = sys.error("not implemented")
 The original code,
 
 ```scala
-def clientCode = h(!g(f(27) + "z"))
+def clientCode = !g(f(27) + "z")
 ```
 
 becomes:
 
 ```scala mdoc
-def clientCodeCPS[R]: (Int => R) => R =
-  k => fCPS(27)((x: String) => gCPS(x + "z")((y: Boolean) =>  hCPS(!y)(k)))
+def clientCodeCPS[R]: (Boolean => R) => R =
+  k => fCPS(27)((x: String) => gCPS(x + "z")((y: Boolean) =>  k(!y)))
 ```
 
 The monadic version hides the CPS transformation in the operations of the monad.
@@ -528,7 +528,7 @@ def ex123[R](using m: ContinuationMonad[R])  = {
 def runEx123 = ex123(using new ContinuationMonad[Int]{})(x => x)
 ```
 
-Let's implement the ``(+ 1 (let/cc k (+ 2 (k 3))))`` example using ``callcc``
+Let's implement the ``(+ 1 (let/cc k (+ 2 (k 3))))`` example using ``callcc``:
 
 ```scala mdoc
 def excallcc[R](using m: ContinuationMonad[R])  = {
@@ -542,12 +542,7 @@ def runExcallcc = excallcc(using new ContinuationMonad[Int]{})(x => x)
 ```
 
 Remember how we had to CPS-transform the `map` function in the "allCosts" example when we talked about continuations?
-Now we can define a monadic version of `map` that works for any monad, including the continuation monad:
-
-```scala mdoc
-def mapM[M[_], A, B](x: List[A], f: A => M[B])(using m: Monad[M]): M[List[B]] =
-  sequence(x.map(f))
-```
+Now we can use the monadic version `mapM` of `map` from above that works for any monad, including the continuation monad.
 
 
 Monad Transformers

@@ -293,7 +293,7 @@ trait ReaderContinuationMonadForwarder extends ReaderT with ContinuationMonad {
 }
 ```
 
-Fro the implementation, we use the Continuation-monad implementation.
+For the implementation, we use the Continuation-monad implementation.
 
 ```scala mdoc
 trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
