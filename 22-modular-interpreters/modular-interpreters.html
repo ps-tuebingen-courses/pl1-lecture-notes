@@ -364,7 +364,7 @@ but for simplicity we only present the ordinary Continuation monad here.</p>
   override def callcc[A, B](f: (A =&gt; M[B]) =&gt; M[A]): M[A] = (m.callcc[A, B] _)(f)
 }
 </code></pre>
-<p>Fro the implementation, we use the Continuation-monad implementation.</p>
+<p>For the implementation, we use the Continuation-monad implementation.</p>
 <pre><code class="language-scala">trait ReaderContinuationMonadImpl extends ReaderContinuationMonadForwarder {
   type T
   val m: ContinuationMonadImpl { type T = ReaderContinuationMonadImpl.this.T } =

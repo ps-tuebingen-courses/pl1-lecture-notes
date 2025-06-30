@@ -49,7 +49,7 @@ trait Monad[M[_]] {
   // 1) "unit" acts as a kind of neutral element of "bind", that is:
   //    1a) bind(unit(x), f) == f(x) and
   //    1b) bind(x, y => unit(y)) == x
-  // 2) Bind enjoys an associative property
+  // 2) Bind enjoys an associativity property
   //     bind(bind(x, f), g) == bind(x, y => bind(f(y), g))
 }
 
@@ -124,7 +124,7 @@ def fRead(n: Int): Int => String = sys.error("not implemented")
 def gRead(x: String): Int => Boolean = sys.error("not implemented")
 def hRead(b: Boolean): Int => Int = sys.error("not implemented")
 
-def clientCodeRead(env: Int) = hRead(!gRead(fRead(27)(env) + "z")(env))(env)
+def clientCodeRead(env: Int) = !(gRead(fRead(27)(env) + "z")(env))
 
 def clientCode2Read(using m: ReaderMonad[Int]) =
   m.bind(fRead(27), (x: String) =>
@@ -152,7 +152,7 @@ def hState(b: Boolean): Int => (Int, Int) = sys.error("not implemented")
 def clientCodeState(s: Int) =
   fState(27)(s) match {
     case (x, s2) => gState(x + "z")(s2) match {
-      case (y, s3) => hState(!y)(s3) }}
+      case (y, s3) => (!y, s3) }}
 
 def clientCode2State(using m: StateMonad[Int]) =
   m.bind(fState(27), (x: String) =>
@@ -178,7 +178,7 @@ def gList(x: String): List[Boolean] = sys.error("not implemented")
 def hList(b: Boolean): List[Int] = sys.error("not implemented")
 
 def clientCodeList =
-  fList(27).map(x => gList(x + "z")).flatten.map(y => hList(!y)).flatten
+  fList(27).map(x => gList(x + "z")).flatten.map(y => !y)
 
 def clientCode2List = {
   given Monad[List] = ListMonad
@@ -207,8 +207,8 @@ def fCPS[R](n: Int): (String => R) => R = sys.error("not implemented")
 def gCPS[R](x: String): (Boolean => R) => R = sys.error("not implemented")
 def hCPS[R](b: Boolean): (Int => R) => R = sys.error("not implemented")
 
-def clientCodeCPS[R]: (Int => R) => R =
-  k => fCPS(27)((x: String) => gCPS(x + "z")((y: Boolean) =>  hCPS(!y)(k)))
+def clientCodeCPS[R]: (Boolean => R) => R =
+  k => fCPS(27)((x: String) => gCPS(x + "z")((y: Boolean) =>  k(!y)))
 
 def clientCode2CPS[R](using m: ContinuationMonad[R]) =
   m.bind(fCPS(27), (x: String) =>
@@ -241,9 +241,6 @@ def excallcc[R](using m: ContinuationMonad[R])  = {
 }
 
 def runExcallcc = excallcc(using new ContinuationMonad[Int]{})(x => x)
-
-def mapM[M[_], A, B](x: List[A], f: A => M[B])(using m: Monad[M]): M[List[B]] =
-  sequence(x.map(f))
 
 type OptionT[M[_]] = [A] =>> M[Option[A]]
 
