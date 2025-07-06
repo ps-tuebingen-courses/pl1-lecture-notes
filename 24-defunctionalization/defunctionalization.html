@@ -192,10 +192,10 @@ object CPSTransformed {
 }
 </code></pre>
 <p>However, the CPS-transformed interpreter still uses high-level features of the meta-language, most notably first-class functions.
-We will now introduce one transformation that can be used to transform a program using higher-order functions into one using only
-first-order functions. It is a general program transformation technique, not restricted only to interpreters.</p>
+We will now introduce transformations that can be used to transform a program using higher-order functions into one using only
+first-order functions. They constitute a general program transformation technique, not restricted only to interpreters.</p>
 <h2 id="lambda-lifting"><a class="header" href="#lambda-lifting">Lambda Lifting</a></h2>
-<p>The first of these techniques is <em>lambda lifting</em>. The goal of lambda lifting is to turn local functions into top-level functions.
+<p>The first of these transformations is <em>lambda lifting</em>. The goal of lambda lifting is to turn local functions into top-level functions.
 That is, all &quot;lambdas&quot; only occur at the top-level. Variables in the local environment that are normally stored in the function's
 closure are instead passed as parameters to the top-level function. Lambda lifting is accomplished by the following steps:</p>
 <ol>
@@ -261,8 +261,8 @@ is a straightforward application of the transformation steps described above:</p
 <p>The lambda-lifted interpreter contains no local functions anymore, but it still contains higher-order functions, since <code>addC1</code> etc.
 return functions that are passed as parameters to other functions.</p>
 <h2 id="defunctionalization"><a class="header" href="#defunctionalization">Defunctionalization</a></h2>
-<p><em>Defunctionalization</em> is a program transformation technique that turns higher-order programs that have already been lambda-lifted
-into first-order programs that contain no higher-order functions anymore.  Any program contains only finitely many function definitions.
+<p>The second transformation of our technique that turns higher-order programs into first-order programs that contain no higher-order
+functions anymore is <em>defunctionalization</em>. Any program contains only finitely many function definitions.
 The idea of defunctionalization is to assign a unique identifier to each of these function definitions. The function-&quot;dispatch&quot; then
 happens in a function <code>apply</code>, which receives the identifier corresponding to a function definition and dispatches the identifier
 to the right function body. Every function application within the program is then replaced by a call to the <code>apply</code> function with
