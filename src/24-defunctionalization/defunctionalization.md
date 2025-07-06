@@ -54,12 +54,12 @@ object CPSTransformed {
 ```
 
 However, the CPS-transformed interpreter still uses high-level features of the meta-language, most notably first-class functions.
-We will now introduce one transformation that can be used to transform a program using higher-order functions into one using only
-first-order functions. It is a general program transformation technique, not restricted only to interpreters.
+We will now introduce transformations that can be used to transform a program using higher-order functions into one using only
+first-order functions. They constitute a general program transformation technique, not restricted only to interpreters.
 
 ## Lambda Lifting
 
-The first of these techniques is _lambda lifting_. The goal of lambda lifting is to turn local functions into top-level functions.
+The first of these transformations is _lambda lifting_. The goal of lambda lifting is to turn local functions into top-level functions.
 That is, all "lambdas" only occur at the top-level. Variables in the local environment that are normally stored in the function's
 closure are instead passed as parameters to the top-level function. Lambda lifting is accomplished by the following steps:
 
@@ -143,8 +143,8 @@ return functions that are passed as parameters to other functions.
 
 ## Defunctionalization
 
-_Defunctionalization_ is a program transformation technique that turns higher-order programs that have already been lambda-lifted
-into first-order programs that contain no higher-order functions anymore.  Any program contains only finitely many function definitions.
+The second transformation of our technique that turns higher-order programs into first-order programs that contain no higher-order
+functions anymore is _defunctionalization_. Any program contains only finitely many function definitions.
 The idea of defunctionalization is to assign a unique identifier to each of these function definitions. The function-"dispatch" then
 happens in a function ``apply``, which receives the identifier corresponding to a function definition and dispatches the identifier
 to the right function body. Every function application within the program is then replaced by a call to the ``apply`` function with
