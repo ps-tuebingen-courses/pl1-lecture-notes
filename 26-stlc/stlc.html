@@ -177,8 +177,8 @@ enum Exp:
   case Fst(e: Exp)
   case Snd(e: Exp)
 
-  case SumLeft(left: Exp, right: Type)
-  case SumRight(left: Type, right: Exp)
+  case SumLeft(left: Exp, rightType: Type)
+  case SumRight(leftType: Type, right: Exp)
   case EliminateSum(e: Exp, fl: Exp, fr: Exp)
 
 object Exp:
