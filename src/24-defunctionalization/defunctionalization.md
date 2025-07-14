@@ -366,8 +366,8 @@ For instance, here is a constructor for the infinite list of numbers
 def allNats: MyListR[Int] = i => i
 ```
 
-The two versions hence corresponds to the two dimensions of the aforementioned "expression problem".
-These program  transformations are hence generally applicable program transformations in
+The two versions correspond to the two dimensions of the aforementioned "expression problem".
+These program transformations are hence generally applicable program transformations in
 a programmer's modularity toolbox.
 
 But what about refunctionalization in the case that there is more than one pattern-match on the
