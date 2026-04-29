@@ -152,9 +152,10 @@ assert(subst(Fun("x", Add("x", "y")), "x", 7) == Fun("x", Add("x", "y")))
 assert(subst(Fun("x", Add("x", "y")), "y", Add("x", 5)) == Fun("x0", Add("x0", Add("x", Num(5)))))
 assert(subst(Fun("x", Add("x0", "y")), "y", Add("x", 5)) == Fun("x1", Add("x0", Add("x", Num(5)))))
 ```
+
 Let's analyze why all the constituents of the line
      
-     ``val fvs = freeVars(Fun(param, body)) ++ freeVars(e2) + x``
+``val fvs = freeVars(Fun(param, body)) ++ freeVars(e2) + x``
 
 are necessary. If we dropped ``freeVars(Fun(param, body))``, then 
 ``subst(Fun("y", Add("x", "y0")),"x","y")``
