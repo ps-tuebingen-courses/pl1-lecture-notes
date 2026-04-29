@@ -1200,8 +1200,7 @@ assert(subst(Fun(&quot;x&quot;, Add(&quot;x&quot;, &quot;y&quot;)), &quot;y&quot
 assert(subst(Fun(&quot;x&quot;, Add(&quot;x0&quot;, &quot;y&quot;)), &quot;y&quot;, Add(&quot;x&quot;, 5)) == Fun(&quot;x1&quot;, Add(&quot;x0&quot;, Add(&quot;x&quot;, Num(5)))))
 </code></pre>
 <p>Let's analyze why all the constituents of the line</p>
-<pre><code> ``val fvs = freeVars(Fun(param, body)) ++ freeVars(e2) + x``
-</code></pre>
+<p><code>val fvs = freeVars(Fun(param, body)) ++ freeVars(e2) + x</code></p>
 <p>are necessary. If we dropped <code>freeVars(Fun(param, body))</code>, then 
 <code>subst(Fun(&quot;y&quot;, Add(&quot;x&quot;, &quot;y0&quot;)),&quot;x&quot;,&quot;y&quot;)</code>
 would incorrectly yield
