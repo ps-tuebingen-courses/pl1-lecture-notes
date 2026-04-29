@@ -75,7 +75,7 @@ assert(subst(Fun("x", Add("x", "y")), "x", 7) == Fun("x", Add("x", "y")))
 // test capture-avoiding substitution
 assert(subst(Fun("x", Add("x", "y")), "y", Add("x", 5)) == Fun("x0", Add("x0", Add("x", Num(5)))))
 assert(subst(Fun("x", Add("x0", "y")), "y", Add("x", 5)) == Fun("x1", Add("x0", Add("x", Num(5)))))
-
+Let's analyze why all the constituents of the line
 def eval(e: Exp): Exp = e match {
   case Id(v) => sys.error("unbound identifier: " + v)
   case Add(l, r) => (eval(l), eval(r)) match {
