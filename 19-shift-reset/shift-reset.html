@@ -222,6 +222,57 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value): Value = e match {
   case Shift(param, body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)
 }
 </code></pre>
+<h2 id="relationship-between-delimited-and-undelimited-continuations"><a class="header" href="#relationship-between-delimited-and-undelimited-continuations">Relationship between delimited and undelimited continuations.</a></h2>
+<p>The continuations captured by <code>let/cc</code> in the previous chapter and those captured by
+<code>shift</code> differ in one essential way. A <code>let/cc</code> continuation is <em>undelimited</em>: it
+represents the entire rest of the computation, all the way up to the top level of the
+program. A <code>shift</code> continuation is <em>delimited</em>: it represents only the segment of the
+computation between the <code>shift</code> and the closest enclosing <code>reset</code>. It is natural to ask
+how the two relate, and whether each can be expressed in terms of the other.</p>
+<p>In one direction the answer is simple: an undelimited continuation is just the special
+case of a delimited one whose delimiter sits at the very top of the program. Imagine
+wrapping the whole program in a single outermost <code>reset</code>:</p>
+<pre><code>reset ( ...the entire program... )
+</code></pre>
+<p>Relative to this delimiter, &quot;the segment up to the closest <code>reset</code>&quot; and &quot;the whole rest
+of the computation&quot; coincide. So <code>let/cc</code> is essentially a <code>shift</code> whose enclosing
+<code>reset</code> is fixed at the outermost level.</p>
+<p>There is one wrinkle, and it is exactly the difference we started the chapter with. A
+<code>shift</code> continuation is composable: it behaves like a function and returns a value when
+invoked. A <code>let/cc</code> continuation never returns; invoking it abandons the current
+computation (our &quot;disciplined GOTO&quot;). To recover this aborting behaviour, the reinstated
+continuation has to throw away the context it is invoked in — which <code>shift</code> itself can
+do, by capturing the surrounding continuation and ignoring it:</p>
+<pre><code>; assuming the whole program sits inside one outermost reset:
+let/cc k e
+  :=
+shift k0 (k0 (                        ; k0 = composable &quot;rest of the program&quot;
+  let k = lambda x. shift _ (k0 x)    ; make k aborting: discard the current context
+  in e))
+</code></pre>
+<p>So <code>let/cc</code> can be expressed with <code>shift</code>/<code>reset</code> and nothing else.</p>
+<p>The other direction is also possible, but not for free. To implement <code>shift</code>/<code>reset</code> on
+top of <code>let/cc</code> one has to add a single piece of mutable state — a cell that keeps track
+of the context surrounding the current delimiter (sometimes called the
+<em>metacontinuation</em>). This is Filinski's encoding (&quot;Representing Monads&quot;, 1994). With
+<code>let/cc</code> <em>alone</em>, and no mutable state, <code>shift</code>/<code>reset</code> cannot be expressed at all.</p>
+<p>This asymmetry is not accidental, and we have already met its cause. Recall the
+observation at the beginning of this chapter that programs using first-class, undelimited
+continuations &quot;often need to make use of mutable state&quot; — every interesting <code>let/cc</code>
+example in the previous chapter (the debugger, the coroutines) relied on <code>set!</code>. The
+underlying reason is composability, and it is visible directly in our interpreter.
+Applying a captured continuation there reads</p>
+<pre><code class="language-scala">case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av)))   // compose k2 with the current continuation k
+</code></pre>
+<p>The captured (delimited) continuation <code>k2</code> is composed with the current continuation <code>k</code>,
+and evaluation proceeds normally afterwards. An undelimited continuation would instead
+discard <code>k</code> and continue as <code>k2(av)</code> — it never comes back. Because undelimited
+continuations do not return, the only way to reuse &quot;the rest after the jump&quot; more than
+once is to save it somewhere in advance, and with <code>let/cc</code> the only place available is
+mutable state. Delimited continuations, being composable, can simply hold on to that
+context as an ordinary function. This is one of the reasons sometimes given (see the note
+by Kiselyov linked below) for regarding <code>shift</code>/<code>reset</code> as the more fundamental of the two
+primitives.</p>
 <!-- prevent questionnaire from showing up if there is no javascript enabled-->
 <p><noscript><style>questionnaire { display: none; }</style></noscript></p>
 <!-- warning for user - feel free to leave out or customize -->
