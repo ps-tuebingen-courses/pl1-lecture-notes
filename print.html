@@ -3453,13 +3453,14 @@ def eval(e: Exp, env: Env, k: Value =&gt; Value): Value = e match {
   case Shift(param, body) =&gt; eval(body, env + (param -&gt; ContV(k)), x =&gt; x)
 }
 </code></pre>
-<h2 id="relationship-between-delimited-and-undelimited-continuations"><a class="header" href="#relationship-between-delimited-and-undelimited-continuations">Relationship between delimited and undelimited continuations.</a></h2>
+<h2 id="delimited-versus-undelimited-continuations"><a class="header" href="#delimited-versus-undelimited-continuations">Delimited versus Undelimited Continuations</a></h2>
 <p>The continuations captured by <code>let/cc</code> in the previous chapter and those captured by
 <code>shift</code> differ in one essential way. A <code>let/cc</code> continuation is <em>undelimited</em>: it
 represents the entire rest of the computation, all the way up to the top level of the
 program. A <code>shift</code> continuation is <em>delimited</em>: it represents only the segment of the
 computation between the <code>shift</code> and the closest enclosing <code>reset</code>. It is natural to ask
 how the two relate, and whether each can be expressed in terms of the other.</p>
+<h3 id="letcc-as-a-special-case-of-shiftreset"><a class="header" href="#letcc-as-a-special-case-of-shiftreset"><code>let/cc</code> as a special case of <code>shift</code>/<code>reset</code></a></h3>
 <p>In one direction the answer is simple: an undelimited continuation is just the special
 case of a delimited one whose delimiter sits at the very top of the program. Imagine
 wrapping the whole program in a single outermost <code>reset</code>:</p>
@@ -3482,17 +3483,153 @@ shift k0 (k0 (                        ; k0 = composable &quot;rest of the progra
   in e))
 </code></pre>
 <p>So <code>let/cc</code> can be expressed with <code>shift</code>/<code>reset</code> and nothing else.</p>
-<p>The other direction is also possible, but not for free. To implement <code>shift</code>/<code>reset</code> on
-top of <code>let/cc</code> one has to add a single piece of mutable state — a cell that keeps track
-of the context surrounding the current delimiter (sometimes called the
-<em>metacontinuation</em>). This is Filinski's encoding (&quot;Representing Monads&quot;, 1994). With
-<code>let/cc</code> <em>alone</em>, and no mutable state, <code>shift</code>/<code>reset</code> cannot be expressed at all.</p>
-<p>This asymmetry is not accidental, and we have already met its cause. Recall the
-observation at the beginning of this chapter that programs using first-class, undelimited
-continuations &quot;often need to make use of mutable state&quot; — every interesting <code>let/cc</code>
-example in the previous chapter (the debugger, the coroutines) relied on <code>set!</code>. The
-underlying reason is composability, and it is visible directly in our interpreter.
-Applying a captured continuation there reads</p>
+<p>To see the encoding in action, take the small program</p>
+<pre><code>1 + (let/cc k (10 * (k 5)))
+</code></pre>
+<p>Under the real <code>let/cc</code>, the captured continuation is <code>k = lambda x. 1 + x</code>; invoking
+<code>(k 5)</code> abandons the pending <code>10 * []</code> multiplication and yields <code>1 + 5 = 6</code>. Now run the
+encoding, wrapping everything in one <code>reset</code> and writing <code>k0</code> for the continuation
+captured by the outer <code>shift</code>:</p>
+<pre><code>reset( 1 + shift k0 (k0 (let k = lambda x. shift _ (k0 x) in 10 * (k 5))) )
+</code></pre>
+<p>The outer <code>shift</code> captures the context <code>1 + []</code> as <code>k0 = lambda x. reset (1 + x)</code> and, by
+the reduction rule from above, leaves its body directly under the prompt:</p>
+<pre><code>--&gt; reset( k0 (let k = lambda x. shift _ (k0 x) in 10 * (k 5)) )
+</code></pre>
+<p>Evaluating the body binds <code>k</code> and reaches <code>(k 5) = shift _ (k0 5)</code>, whose surrounding
+context up to the prompt is <code>k0 (10 * [])</code>:</p>
+<pre><code>    reset( k0 (10 * shift _ (k0 5)) )
+</code></pre>
+<p>This inner <code>shift</code> binds that context to <code>_</code> and, because the underscore is never used,
+discards it — the <code>10 * []</code> and the pending <code>k0</code>-application simply vanish. This is the
+abort:</p>
+<pre><code>--&gt; reset( k0 5 )
+  = reset( reset (1 + 5) )
+  = 6
+</code></pre>
+<p>We obtain <code>6</code>, exactly as the real <code>let/cc</code> does, and the multiplication never happens.</p>
+<p>It is worth checking that the <code>shift _</code> is doing real work and is <em>not</em> a no-op. Suppose
+we had used the composable continuation directly (<code>k := k0</code>, dropping the <code>shift _</code>
+wrapper). Then <code>(k 5)</code> would <em>return</em> its result into the <code>10 * []</code> frame instead of
+discarding it:</p>
+<pre><code>    reset( k0 (10 * (k0 5)) )
+  = reset( k0 (10 * reset (1 + 5)) )
+  = reset( k0 (10 * 6) )
+  = reset( reset (1 + 60) )
+  = 61
+</code></pre>
+<p>The difference between <code>6</code> and <code>61</code> is precisely the difference between an abortive
+(undelimited) and a composable (delimited) continuation. The point that usually causes
+confusion is <em>where the body of a <code>shift</code> returns its value</em>: not to the position of the
+<code>shift</code>, but to the nearest enclosing <code>reset</code>. So although <code>(k0 5)</code> does compute and
+return a value, it returns it to the prompt and out of the program — not back into the
+<code>10 * []</code> context, which has already been thrown away.</p>
+<h3 id="one-shot-versus-multi-shot-continuations"><a class="header" href="#one-shot-versus-multi-shot-continuations">One-shot versus multi-shot continuations</a></h3>
+<p>The encoding above is faithful for the <em>abortive</em> use of <code>let/cc</code>: capture the
+continuation, and at some later point jump to it <em>once</em>, abandoning the current
+computation. This is the escape-like idiom behind exception handling, and it is all that
+many uses of <code>let/cc</code> require.</p>
+<p>First-class continuations are more powerful than that, however. They are <em>multi-shot</em>: a
+captured continuation is an ordinary value that may be stored and invoked <em>any number of
+times</em>, each invocation resuming the captured computation afresh. This is what makes the
+coroutine and generator examples of the previous chapter work — <code>yield</code> stores a
+continuation and the scheduler jumps back into it later, repeatedly. A faithful encoding
+of <code>let/cc</code> would have to support this too.</p>
+<p>Here the single-prompt encoding falls short, for two related reasons. First, the
+continuation <code>k0</code> only makes sense within the dynamic extent of the top-level <code>reset</code>;
+once that prompt has been left — for instance, after the program has returned normally —
+there is no prompt for a later <code>shift _</code> to abort to. Second, a continuation captured by
+<code>shift</code> is <em>re-delimited</em> and <em>composable</em>: invoking it installs a fresh prompt and
+returns a value, rather than performing an independent global jump. Our <code>shift _</code> patch
+repairs this for the <em>single, final</em> jump out of a delimited computation, but it tacitly
+assumes that this jump is the last thing that happens under the prompt. If <code>k</code> is invoked
+more than once, or invoked after the computation has already produced a value, the
+one-prompt picture breaks down and the encoded continuation stops behaving like a genuine
+undelimited one.</p>
+<p>Making the encoding multi-shot therefore needs more machinery. The essential problem is
+that an undelimited continuation must capture and reinstate the <em>entire</em> control state,
+repeatedly and independently — not just the segment up to one fixed prompt. Two routes
+are available. One is to stop relying on a single static prompt and instead keep the
+whole-program continuation in a mutable cell — the same <em>metacontinuation</em> device we use
+in the opposite direction below — re-installing a fresh top-level <code>reset</code> and restoring
+the saved global continuation on every invocation of <code>k</code>, so that each jump is
+independent and repeatable. The other is to move to the more expressive operators
+<code>shift0</code>/<code>control0</code> (or <code>control</code>/<code>prompt</code>), which, unlike <code>shift</code>/<code>reset</code>, can capture
+<em>past</em> the nearest prompt and manipulate the metacontinuation directly — enough to
+rebuild a true undelimited, multi-shot continuation. Either way, the lesson is that the
+tidy slogan &quot;undelimited = delimited at the top level&quot; is the whole story only for
+one-shot escapes; faithful multi-shot behaviour costs us, once again, either extra state
+or a stronger control operator.</p>
+<h3 id="shiftreset-in-terms-of-letcc"><a class="header" href="#shiftreset-in-terms-of-letcc"><code>shift</code>/<code>reset</code> in terms of <code>let/cc</code></a></h3>
+<p>The converse direction is also possible, but not for free: with <code>let/cc</code> <em>alone</em> and no
+mutable state, <code>shift</code>/<code>reset</code> cannot be expressed at all. The following is Filinski's
+construction (&quot;Representing Monads&quot;, 1994), which adds a single mutable cell to the
+Racket <code>let/cc</code> of the previous chapter. The cell, <code>mk</code>, holds the <em>metacontinuation</em>: a
+function representing the context <em>outside</em> the nearest enclosing <code>reset</code> — exactly the
+information an undelimited <code>let/cc</code> continuation cannot give us on its own.</p>
+<pre><code class="language-racket">; the single mutable cell: the metacontinuation (context outside the current reset)
+(define mk (box (lambda (_) (error &quot;shift used outside of any reset&quot;))))
+
+; hand the final answer of the current delimited computation to the metacontinuation
+(define (abort v) ((unbox mk) v))
+
+(define (reset thunk)
+  (let ([m (unbox mk)])             ; remember the enclosing metacontinuation
+    (let/cc k                       ; k : the (undelimited) context after this reset
+      (set-box! mk
+        (lambda (v)                 ; once the body finishes with answer v:
+          (set-box! mk m)           ;   restore the enclosing metacontinuation
+          (k v)))                   ;   and resume the context after the reset
+      (abort (thunk)))))            ; run the body; its value flows into mk
+
+(define (shift h)
+  (let/cc k                         ; k : the undelimited context, from here upward
+    (abort
+      (h (lambda (v)                ; the reified, composable delimited continuation:
+           (let/cc k2               ; k2 : the context that invokes it
+             (let ([m (unbox mk)])
+               (set-box! mk
+                 (lambda (r)        ; when the re-run delimited context finishes with r:
+                   (set-box! mk m)  ;   restore mk, and
+                   (k2 r)))         ;   *return* r to the call site — this is what makes it compose
+               (k v)))))))))        ; re-run the captured context with v
+</code></pre>
+<p>There are three moving parts. The cell <code>mk</code> plays the role of the prompt, and <code>abort</code>
+hands the final answer of the current delimited computation to whatever lies outside the
+nearest <code>reset</code>. <code>reset</code> opens a new delimited computation: it remembers the enclosing
+metacontinuation <code>m</code>, grabs the (abortive) continuation <code>k</code> after the <code>reset</code> with
+<code>let/cc</code>, installs a new metacontinuation that says &quot;when the body is done, put <code>m</code> back
+and resume <code>k</code>&quot;, and finally runs the body and aborts its value into that
+metacontinuation. <code>shift</code> grabs the undelimited continuation <code>k</code> and hands the handler a
+<em>reified</em> version of it; the interesting part is that invoking the reified continuation
+routes its exit through the cell — it points <code>mk</code> at its own call site <code>k2</code> just before
+the abortive jump <code>(k v)</code>, so that when the re-run delimited computation finishes, control
+<em>returns</em> to the call site instead of escaping. An abortive <code>let/cc</code> continuation has
+thereby been turned into a composable, returning one.</p>
+<p>The two examples from the start of this chapter evaluate as expected:</p>
+<pre><code class="language-racket">(+ 3 (reset (lambda () (+ 1 (shift (lambda (k) (+ 4 (k 2))))))))         ; =&gt; 10
+(+ (reset (lambda () (+ 2 (shift (lambda (k) (+ (k 1) (k 3))))))) 5)     ; =&gt; 13
+</code></pre>
+<p>The second is the real test: <code>k</code> is invoked twice, which works because Racket's <code>let/cc</code>
+continuations are themselves multi-shot, and because <code>mk</code> is saved and restored around
+each invocation so that the two calls do not clobber one another.</p>
+<p>One protocol wrinkle is worth flagging. Because <code>reset</code> and <code>shift</code> here are ordinary
+<em>functions</em> and Scheme is call-by-value, we cannot write <code>(reset e)</code> directly: the
+argument <code>e</code> would be evaluated <em>before</em> <code>reset</code> is even called — outside the prompt, and
+before <code>mk</code> has been set up — so any <code>shift</code> inside <code>e</code> would abort to the wrong
+metacontinuation. We therefore <em>thunkify</em> the body and write <code>(reset (lambda () e))</code>;
+similarly <code>shift</code> takes a handler <code>(lambda (k) e)</code> rather than a bare body with a free
+<code>k</code>. This is purely a matter of controlling evaluation order, and it is exactly what the
+<code>reset</code>/<code>shift</code> <em>macros</em> in Racket's <code>racket/control</code> library do for you behind the
+scenes, recovering the <code>reset e</code> / <code>shift k e</code> surface syntax used elsewhere in this
+chapter.</p>
+<p>This asymmetry — one direction free, the other requiring a cell — is not accidental, and
+we have already met its cause. Recall the observation at the beginning of this chapter
+that programs using first-class, undelimited continuations &quot;often need to make use of
+mutable state&quot;; indeed every interesting <code>let/cc</code> example in the previous chapter (the
+debugger, the coroutines) relied on <code>set!</code>. The underlying reason is composability, and
+it is visible directly in our definitional interpreter. Applying a captured continuation
+there reads</p>
 <pre><code class="language-scala">case ContV(k2) =&gt; eval(a, env, av =&gt; k(k2(av)))   // compose k2 with the current continuation k
 </code></pre>
 <p>The captured (delimited) continuation <code>k2</code> is composed with the current continuation <code>k</code>,
