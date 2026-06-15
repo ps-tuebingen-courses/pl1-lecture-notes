@@ -99,6 +99,72 @@ def eval(e: Exp, env: Env, k: Value => Value): Value = e match {
 }
 ```
 
+## Relationship between delimited and undelimited continuations. 
+
+The continuations captured by `let/cc` in the previous chapter and those captured by
+`shift` differ in one essential way. A `let/cc` continuation is *undelimited*: it
+represents the entire rest of the computation, all the way up to the top level of the
+program. A `shift` continuation is *delimited*: it represents only the segment of the
+computation between the `shift` and the closest enclosing `reset`. It is natural to ask
+how the two relate, and whether each can be expressed in terms of the other.
+
+In one direction the answer is simple: an undelimited continuation is just the special
+case of a delimited one whose delimiter sits at the very top of the program. Imagine
+wrapping the whole program in a single outermost `reset`:
+
+```
+reset ( ...the entire program... )
+```
+
+Relative to this delimiter, "the segment up to the closest `reset`" and "the whole rest
+of the computation" coincide. So `let/cc` is essentially a `shift` whose enclosing
+`reset` is fixed at the outermost level.
+
+There is one wrinkle, and it is exactly the difference we started the chapter with. A
+`shift` continuation is composable: it behaves like a function and returns a value when
+invoked. A `let/cc` continuation never returns; invoking it abandons the current
+computation (our "disciplined GOTO"). To recover this aborting behaviour, the reinstated
+continuation has to throw away the context it is invoked in — which `shift` itself can
+do, by capturing the surrounding continuation and ignoring it:
+
+```
+; assuming the whole program sits inside one outermost reset:
+let/cc k e
+  :=
+shift k0 (k0 (                        ; k0 = composable "rest of the program"
+  let k = lambda x. shift _ (k0 x)    ; make k aborting: discard the current context
+  in e))
+```
+
+So `let/cc` can be expressed with `shift`/`reset` and nothing else.
+
+The other direction is also possible, but not for free. To implement `shift`/`reset` on
+top of `let/cc` one has to add a single piece of mutable state — a cell that keeps track
+of the context surrounding the current delimiter (sometimes called the
+*metacontinuation*). This is Filinski's encoding ("Representing Monads", 1994). With
+`let/cc` *alone*, and no mutable state, `shift`/`reset` cannot be expressed at all.
+
+This asymmetry is not accidental, and we have already met its cause. Recall the
+observation at the beginning of this chapter that programs using first-class, undelimited
+continuations "often need to make use of mutable state" — every interesting `let/cc`
+example in the previous chapter (the debugger, the coroutines) relied on `set!`. The
+underlying reason is composability, and it is visible directly in our interpreter.
+Applying a captured continuation there reads
+
+```scala
+case ContV(k2) => eval(a, env, av => k(k2(av)))   // compose k2 with the current continuation k
+```
+
+The captured (delimited) continuation `k2` is composed with the current continuation `k`,
+and evaluation proceeds normally afterwards. An undelimited continuation would instead
+discard `k` and continue as `k2(av)` — it never comes back. Because undelimited
+continuations do not return, the only way to reuse "the rest after the jump" more than
+once is to save it somewhere in advance, and with `let/cc` the only place available is
+mutable state. Delimited continuations, being composable, can simply hold on to that
+context as an ordinary function. This is one of the reasons sometimes given (see the note
+by Kiselyov linked below) for regarding `shift`/`reset` as the more fundamental of the two
+primitives.
+
 <!-- prevent questionnaire from showing up if there is no javascript enabled-->
 <noscript><style>questionnaire { display: none; }</style></noscript>
 <!-- warning for user - feel free to leave out or customize -->
