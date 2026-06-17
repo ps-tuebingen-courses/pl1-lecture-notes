@@ -4561,6 +4561,175 @@ object FAEwLetcc extends Arithmetic with Functions with If0 with Letcc with Read
 
 assert(FAEwLetcc.testprog.eval(Map.empty)(identity) == FAEwLetcc.NumV(4))
 </code></pre>
+<h1 id="when-does-a-monad-have-a-transformer"><a class="header" href="#when-does-a-monad-have-a-transformer">When Does a Monad Have a Transformer?</a></h1>
+<p>We have just seen that the <code>Option</code> monad has a transformer version <code>OptionT</code>, parameterized
+by an arbitrary inner monad <code>M</code>. A natural question is whether <em>every</em> monad can be turned
+into a transformer in this way. The answer is <strong>no</strong>, and it is worth understanding precisely
+where the construction comes from and where it breaks down.</p>
+<p>The short version: a monad has a transformer exactly when its type is a <em>transparent recipe</em> —
+a type expression in which we can point to the place where the result <code>A</code> is produced. The
+transformer is then built by wrapping that place in the inner monad <code>M[_]</code> and sequencing with
+the inner monad's own <code>bind</code>. If we cannot see where the result sits — because the monad is an
+opaque primitive — there is no place to thread <code>M</code> through, and no transformer exists.</p>
+<h3 id="the-recipe"><a class="header" href="#the-recipe">The recipe</a></h3>
+<p>Look again at <code>OptionTMonad</code>. The plain <code>Option</code> monad uses the type constructor <code>M[A] = Option[A]</code>,
+and <code>bind</code> pattern-matches on <code>Some</code>/<code>None</code>. To get the transformer we changed the type constructor
+to <code>M[Option[A]]</code> and let the <em>inner</em> monad's <code>bind</code> do the sequencing:</p>
+<pre><code class="language-scala">type OptionT[M[_]] = [A] =&gt;&gt; M[Option[A]]
+
+class OptionTMonad[M[_]](val m: Monad[M]) extends Monad[OptionT[M]] {
+  override def unit[A](a: A): M[Option[A]] = m.unit(Some(a))
+  override def bind[A, B](x: M[Option[A]], f: A =&gt; M[Option[B]]): M[Option[B]] =
+    m.bind(x, (z: Option[A]) =&gt; z match {
+      case Some(y) =&gt; f(y)
+      case None    =&gt; m.unit(None)
+    })
+  def lift[A](x: M[A]): M[Option[A]] = m.bind(x, (a: A) =&gt; m.unit(Some(a)))
+}
+</code></pre>
+<p>The same recipe works for the State monad. Recall that the plain State monad uses
+<code>M[A] = S =&gt; (A, S)</code>. The result <code>A</code> is produced inside the pair returned by the function, so we
+wrap <em>that</em> in the inner monad: <code>M[A] = S =&gt; m.M[(A, S)]</code>. Everywhere the plain <code>bind</code> would
+hand the pair <code>(a, s2)</code> to the continuation, the transformer threads it through <code>m.bind</code> instead:</p>
+<pre><code class="language-scala">type StateT[S, M[_]] = [A] =&gt;&gt; S =&gt; M[(A, S)]
+
+class StateTMonad[S, M[_]](val m: Monad[M]) extends Monad[StateT[S, M]] {
+  override def unit[A](a: A): S =&gt; M[(A, S)] = s =&gt; m.unit((a, s))
+  override def bind[A, B](x: S =&gt; M[(A, S)], f: A =&gt; S =&gt; M[(B, S)]): S =&gt; M[(B, S)] =
+    s =&gt; m.bind(x(s), { case (a, s2) =&gt; f(a)(s2) })
+  def lift[A](x: M[A]): S =&gt; M[(A, S)] = s =&gt; m.bind(x, (a: A) =&gt; m.unit((a, s)))
+}
+</code></pre>
+<p>This is exactly the <code>StateT</code> we synthesize in the modular-interpreters chapter, where composing it
+with the identity monad recovers the ordinary State monad. The point to take away is that the
+construction is <em>mechanical</em>: it is driven entirely by the shape of the type. Because we can see
+that the result <code>A</code> appears inside <code>S =&gt; (A, S)</code>, we know where to insert <code>m.M[...]</code> and where to
+call <code>m.bind</code>. The <code>lift</code> function, which embeds a computation of the inner monad into the
+transformed monad, falls out of the same shape.</p>
+<h3 id="transformer-is-not-the-same-as-composition"><a class="header" href="#transformer-is-not-the-same-as-composition">Transformer is not the same as composition</a></h3>
+<p>It is tempting to think a transformer just stacks one monad on top of another. Sometimes it
+looks that way: <code>OptionT[M][A]</code> really is <code>M[Option[A]]</code>, the inner monad wrapped around the outer
+functor. But <code>StateT</code> is <strong>not</strong> a composition. Neither <code>M[S =&gt; (A, S)]</code> nor <code>(S =&gt; (A, S))</code>
+composed with <code>M</code> is the right type; the inner monad sits <em>inside</em>, wrapped only around the result
+of the state function. Composing monads naively (as in <code>Option[List[A]]</code> versus <code>List[Option[A]]</code>)
+is a strictly weaker idea. A transformer threads the inner monad through the <em>specific structure</em>
+of the outer one, which is why it needs that structure to be visible.</p>
+<h3 id="monads-that-have-a-transformer"><a class="header" href="#monads-that-have-a-transformer">Monads that have a transformer</a></h3>
+<p>All the monads from the previous chapters are transparent type formers, so each admits a
+transformer, built by the recipe above:</p>
+<ul>
+<li><strong>Option / Maybe</strong> — <code>M[Option[A]]</code>; <code>bind</code> branches on <code>Some</code>/<code>None</code>, which we can see.</li>
+<li><strong>Reader</strong> — <code>R =&gt; A</code> becomes <code>R =&gt; M[A]</code>; we wrap the result of the environment function.</li>
+<li><strong>Writer</strong> — <code>(A, W)</code> becomes <code>M[(A, W)]</code>; we wrap the value-and-output pair.</li>
+<li><strong>State</strong> — <code>S =&gt; (A, S)</code> becomes <code>S =&gt; M[(A, S)]</code>, as shown above.</li>
+<li><strong>List / nondeterminism</strong> — <code>List[A]</code> becomes <code>M[List[A]]</code> (with the caveat below).</li>
+</ul>
+<p>The continuation monad <code>Cont[A] = (A =&gt; R) =&gt; R</code> is a more interesting case. It also has a
+transformer,</p>
+<pre><code class="language-scala">type ContT[R, M[_]] = [A] =&gt;&gt; (A =&gt; M[R]) =&gt; M[R]
+</code></pre>
+<p>but notice that the inner monad barely participates: <code>unit</code> and <code>bind</code> can be written almost
+exactly as in the plain continuation monad, with <code>M[R]</code> simply standing in for <code>R</code>. This is a hint
+that <code>ContT</code> does not behave like the others — it sits awkwardly in a transformer stack, and the
+higher-order operations (<code>callcc</code>, and <code>local</code> for Reader) are the ones that are hard to lift
+through it. So a transformer can exist without being well-behaved; see the caveat at the end.</p>
+<h3 id="the-monad-that-does-not-io"><a class="header" href="#the-monad-that-does-not-io">The monad that does not: IO</a></h3>
+<p>Contrast all of this with the IO monad. In the IO chapter we deliberately presented it as an
+<strong>abstract interface</strong>, with the type constructor kept abstract:</p>
+<pre><code class="language-scala">trait IOMonad {
+  type IO[_]                              // abstract: we may not look inside
+  def unit[A](a: A): IO[A]
+  def bind[A, B](m: IO[A], f: A =&gt; IO[B]): IO[B]
+  def printString(s: String): IO[Unit]
+  def inputString: IO[String]
+  def performIO[A](action: IO[A]): A
+}
+</code></pre>
+<p>That abstraction is the whole point, not an accident of presentation. The real IO monad is a
+primitive provided by the runtime: <code>printString</code> actually prints, <code>inputString</code> actually reads, and
+<code>bind</code> sequences these <em>real effects on the real world</em>. There is no data structure with a visible
+&quot;result position&quot; that we could wrap in <code>M[_]</code>, and no seam between two real-world actions where we
+could run an arbitrary inner monad's effects. Since the recipe needs a place to insert <code>m.bind</code> and
+IO offers none, an <code>IOT[M]</code> simply cannot be written.</p>
+<p>The toy implementation in the IO chapter makes this sharp. There we modelled IO as
+<code>type IO[A] = World =&gt; (A, World)</code> — which is <em>structurally just the State monad</em> over a <code>World</code>.
+If that were genuinely the IO monad, then <code>IOT</code> would be nothing but <code>StateT[World, M]</code> and there
+would be no difficulty at all. But the genuine effect is the <code>println</code> and <code>readLine</code> performed as a
+side effect of evaluation, <em>not</em> the <code>World</code> value being threaded; the <code>World</code> string is only a
+fiction to illustrate the interface. The real effect is opaque, so it cannot be threaded through an
+inner monad. Keeping <code>type IO[_]</code> abstract is precisely the formal statement that we are not allowed
+to look inside.</p>
+<p>The consequence mirrors a fact we already use in the modular interpreters. There, the identity
+monad sits at the <em>end</em> of every transformer chain (composing <code>StateT</code> or <code>ReaderT</code> with it recovers
+the plain monad). The IO monad sits at the opposite end: it is the <em>base</em> of a chain. We build
+<code>ReaderT</code>, <code>StateT</code>, <code>OptionT</code> and so on <em>on top of</em> IO, never an <code>IOT</code> on top of something else, and
+we reach the IO operations by lifting them up through the stack (our <code>lift</code>/<code>lift2</code> functions; in
+Haskell this is the role of <code>liftIO</code>). More generally, <strong>any monad given only as an opaque primitive,
+with no inspectable structure, has no transformer for the same reason.</strong></p>
+<h3 id="caveat-existing-is-not-the-same-as-well-behaved"><a class="header" href="#caveat-existing-is-not-the-same-as-well-behaved">Caveat: existing is not the same as well-behaved</a></h3>
+<p>Even when a transformer can be written, it need not satisfy the monad laws or compose cleanly. The
+list monad is the classic warning: the obvious <code>ListT[M][A] = M[List[A]]</code> fails to be a lawful monad
+for many inner monads <code>M</code> (this is the well-known &quot;<code>ListT</code> done wrong&quot;), and a correct version is
+considerably more delicate. And as noted above, <code>ContT</code> exists but makes lifting of higher-order
+operations awkward. This is the same modularity problem mentioned earlier: the lifting that
+transformers require sometimes breaks down, which is one of the reasons alternatives such as
+extensible effects were proposed.</p>
+<h3 id="a-transformer-that-breaks-the-monad-laws"><a class="header" href="#a-transformer-that-breaks-the-monad-laws">A Transformer That Breaks the Monad Laws</a></h3>
+<p>We said that a transformer can exist without being well-behaved. The list monad is the standard
+warning, so let us see concretely how it goes wrong.</p>
+<p>Following the recipe, the obvious list transformer wraps the inner monad around the list:</p>
+<pre><code class="language-scala">type ListT[M[_]] = [A] =&gt;&gt; M[List[A]]
+
+class ListTMonad[M[_]](val m: Monad[M]) extends Monad[ListT[M]] {
+  given Monad[M] = m
+  override def unit[A](a: A): M[List[A]] = m.unit(List(a))
+  override def bind[A, B](x: M[List[A]], f: A =&gt; M[List[B]]): M[List[B]] =
+    m.bind(x, (xs: List[A]) =&gt;
+      m.bind(mapM(f, xs), (xss: List[List[B]]) =&gt;      // run f on every element
+        m.unit(xss.flatten)))                          // then concatenate
+}
+</code></pre>
+<p>This type-checks and looks reasonable: run the inner computation to get a list <code>xs</code>, apply <code>f</code> to
+every element (each application is itself an inner computation), and concatenate the results. The
+problem is that it quietly violates the associativity law</p>
+<pre><code>bind(bind(x, f), g) == bind(x, y =&gt; bind(f(y), g))
+</code></pre>
+<p>whenever the inner monad's effects are order-sensitive.</p>
+<h4 id="the-counterexample"><a class="header" href="#the-counterexample">The counterexample</a></h4>
+<p>Take the inner monad to be the <code>IO</code> monad from the previous chapter, where each step actually
+prints. Consider three computations of type <code>ListT[IO]</code>:</p>
+<ul>
+<li><code>p</code> yields the two-element list <code>List(1, 2)</code> and prints nothing.</li>
+<li><code>f(x)</code> prints <code>f(x)</code> and yields the one-element list <code>List(x)</code>.</li>
+<li><code>g(y)</code> prints <code>g(y)</code> and yields the one-element list <code>List(y)</code>.</li>
+</ul>
+<p>So <code>f</code> and <code>g</code> return their input unchanged; all that matters is <em>what they print</em>. The associativity
+law claims <code>(p &gt;&gt;= f) &gt;&gt;= g</code> and <code>p &gt;&gt;= (x =&gt; f(x) &gt;&gt;= g)</code> are interchangeable. Both do compute the
+same value, <code>List(1, 2)</code>. But they print in different orders:</p>
+<pre><code>(p &gt;&gt;= f) &gt;&gt;= g        prints   f(1) f(2) g(1) g(2)
+p &gt;&gt;= (x =&gt; f(x) &gt;&gt;= g) prints   f(1) g(1) f(2) g(2)
+</code></pre>
+<p>The left grouping runs <code>f</code> over the <em>whole</em> list before <code>g</code> runs at all (&quot;breadth first&quot;); the right
+grouping takes each element all the way through <code>f</code> and then <code>g</code> before moving on (&quot;depth first&quot;).
+Re-bracketing the binds reorders the inner effects, so the two programs are observably different and
+the law fails. (If the inner effects do not depend on order — for instance the identity, reader, or
+option monad — the reordering is invisible and <code>ListT</code> happens to work. It is lawful only for such
+inner monads.)</p>
+<h4 id="why-this-is-significant"><a class="header" href="#why-this-is-significant">Why this is significant</a></h4>
+<p>The monad laws are exactly what justify the rewriting we rely on. The desugaring of
+for-comprehensions, and any refactoring that regroups a chain of <code>bind</code>s, silently assume
+associativity. When it fails, two programs that Scala treats as equivalent can behave differently,
+and nothing warns us. Worse, the bug only surfaces once the inner monad's effects are
+order-sensitive — that is, for inner monads such as <code>IO</code> or <code>State</code>, which are precisely the ones we
+most want to combine with lists. So the construction breaks in exactly the situation that motivated
+building it.</p>
+<h4 id="how-to-fix-it"><a class="header" href="#how-to-fix-it">How to fix it</a></h4>
+<p>The mistake is collapsing the whole list into a single <code>M[List[A]]</code>, which fuses all of the list's
+effects into one lump that re-association can then regroup. The cure (&quot;<code>ListT</code> done right&quot;) is to
+interleave the effect with the <em>structure</em> of the list, producing one element at a time as an
+effectful stream. Elaborating on this idea here would be a bit much. Practical libraries provide hardened
+versions of this idea; the underlying fix is always the same move from &quot;one lump of effects&quot; to &quot;one
+effect per element.&quot;</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="monadic-reflection"><a class="header" href="#monadic-reflection">Monadic Reflection</a></h1>
 <p>The content of this chapter is available as a Racket file <a href="23-monadic-reflection/./monadic-reflection.rkt">here.</a></p>
 <pre><code class="language-racket">#lang racket
