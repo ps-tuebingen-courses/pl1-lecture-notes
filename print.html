@@ -4747,53 +4747,172 @@ effect per element.&quot;</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="monadic-reflection"><a class="header" href="#monadic-reflection">Monadic Reflection</a></h1>
 <p>The content of this chapter is available as a Racket file <a href="23-monadic-reflection/./monadic-reflection.rkt">here.</a></p>
 <pre><code class="language-racket">#lang racket
-
 (require racket/control)
 </code></pre>
-<p>Monadic style can encode continuation-passing style:</p>
-<p>Just use the continuation monad.</p>
-<p>But the converse is also true in a certain sense that was
-discovered by A. Filinski, who invented the notion of
-&quot;monadic reflection&quot;. Here, we exemplify monadic reflection
-in terms of the list monad, but it is straightforward
-to abstract over the concrete monad and make this work
-for every monad.</p>
-<p>The list monad operations</p>
+<p>We have already seen that monadic style can encode continuation-passing style:
+the continuation monad <em>is</em> CPS, dressed up as a monad. It is natural to ask
+whether the converse holds — whether continuations are powerful enough to
+recover monadic programming. They are, in a precise and surprising sense due to
+Andrzej Filinski, who introduced the notion of <em>monadic reflection</em>. The result
+can be summarised as a slogan: <em>delimited continuations let us write
+direct-style programs that nevertheless run in an arbitrary monad.</em></p>
+<p>It is worth being clear about why this is desirable. Direct style — writing
+<code>(+ e1 e2)</code> rather than <code>(bind e1 (lambda (x) (bind e2 (lambda (y) (return (+ x y))))))</code>
+— is how we like to read and write programs. But it appears to commit us to a
+fixed notion of computation: ordinary, effect-free evaluation. Monadic style is
+the opposite trade-off: by threading <code>bind</code> everywhere we gain the freedom to
+reinterpret &quot;computation&quot; as nondeterminism, failure, state, and so on, but we
+pay for that freedom with syntactic noise and a commitment to one particular
+monad. Monadic reflection dissolves the trade-off. We write in direct style and
+<em>choose</em> the monad in which that direct-style code is to be understood.</p>
+<p>We exemplify reflection with the <strong>list monad</strong>, where the effect is
+nondeterminism, but nothing below is specific to lists; abstracting over the
+concrete monad is straightforward and we do it explicitly further on.</p>
 <pre><code class="language-racket">(define (return x) (list x))
 (define (bind m f)
-  (apply append (map f m)))
+  (append-map f m))
 </code></pre>
-<h2 id="monadic-reflection-filinski"><a class="header" href="#monadic-reflection-filinski">Monadic reflection (Filinski)</a></h2>
-<pre><code class="language-racket">; List[A] -&gt; A (quasi-type)
+<p>(<code>append-map</code> is just <code>(apply append (map f m))</code> — it maps <code>f</code>, which returns a
+list, over <code>m</code> and concatenates the results.)</p>
+<h2 id="what-we-borrow-from-delimited-control"><a class="header" href="#what-we-borrow-from-delimited-control">What we borrow from delimited control</a></h2>
+<p>Reflection is built on <code>shift</code> and <code>reset</code>, the delimited control operators from
+our chapter on continuations. Two of their properties are doing the real work
+here, and it is worth naming them.</p>
+<p>First, the continuations are <em>delimited</em>. <code>(reset e)</code> marks a boundary; a
+<code>(shift k ...)</code> inside it captures the continuation only up to that boundary and
+binds it to <code>k</code>. Crucially, that captured <code>k</code> is an ordinary function that
+<em>returns a value</em> — namely whatever the delimited context computes up to the
+<code>reset</code>. This is exactly the shape <code>bind</code> demands of its second argument: a
+function <code>A -&gt; M B</code>. Undelimited <code>call/cc</code> would not do, because the
+continuation it captures never returns.</p>
+<p>Second, the continuation may be invoked <em>more than once</em> (it is <em>multi-shot</em>).
+For the list monad this is essential: each separate invocation of <code>k</code> explores
+one alternative, and we concatenate the results. A one-shot continuation would
+permit failure and state but not genuine branching.</p>
+<h2 id="reflection-and-reification-filinski"><a class="header" href="#reflection-and-reification-filinski">Reflection and reification (Filinski)</a></h2>
+<p>The two operations are mutual inverses. <code>reflect</code> turns a monadic value into an
+ordinary value (relative to an enclosing <code>reset</code>); <code>reify</code> runs a direct-style
+computation and packages its monadic effects back up as a monadic value.</p>
+<pre><code class="language-racket">; List[A] -&gt; A   (quasi-type, see below)
 (define (reflect m)
   (shift k (bind m k)))
 
-; A -&gt; List[A] (quasi-type)
-; this is a macro that transforms (reify e) into (reify-thunk (thunk e))
-; its sole purpose is to prevent the evaluation of e and wrap it into a thunk
-(define-syntaxes reify
-     (syntax-rules ()
-       [(_ e)
-        (reify-thunk (thunk e))]))
-
-(define (reify-thunk t)
-  (reset (return (t))))
+; A -&gt; List[A]   (quasi-type)
+; reify is a macro: it places its argument e textually inside the reset,
+; which both delays e's evaluation and ensures any shift inside e is captured
+; by THIS reset.
+(define-syntax-rule (reify e)
+  (reset (return e)))
 </code></pre>
-<p>Now we can write direct-style programs (in this case: a direct-style + function), yet use monadic features.</p>
+<p>The macro deserves a word. <code>reify</code> must not evaluate its argument before the
+<code>reset</code> is in place — otherwise a <code>shift</code> raised by some <code>reflect</code> inside <code>e</code>
+would escape past this delimiter, or find none at all. Writing <code>reify</code> as a
+macro guarantees that <code>e</code> is elaborated <em>inside</em> the dynamic extent of the
+<code>reset</code>. </p>
+<p>A note on the type annotations. The &quot;types&quot; <code>List[A] -&gt; A</code> and <code>A -&gt; List[A]</code>
+are wishful. No ordinary type system assigns <code>reflect</code> the type <code>List[A] -&gt; A</code>,
+because a single value of type <code>A</code> can stand for a whole list of possibilities
+only by virtue of the control context it inhabits. A faithful account requires a
+typed discipline for <code>shift</code>/<code>reset</code> in which the <em>answer type</em> records the
+ambient monad (Danvy and Filinski). For our purposes, read <code>List[A] -&gt; A</code> as the
+slogan it is: inside a <code>reify</code>, a list may masquerade as one of its elements.</p>
+<p>We can now write a direct-style addition that is nonetheless nondeterministic:</p>
 <pre><code class="language-racket">(reify (+ (reflect (list 1 2)) (reflect (list 3 4))))
 </code></pre>
-<p>More information in <a href="https://doi.org/10.1145/174675.178047">&quot;Representing Monads&quot; by A. Filinski</a>.</p>
-<p><strong>Example</strong>: Backtracking using monadic reflection: The <code>n</code>-queens problem.
-If partial results are desired, lists should be replaced by streams.</p>
+<h2 id="what-actually-happens"><a class="header" href="#what-actually-happens">What actually happens</a></h2>
+<p>The expression above is, after the macro expands, <code>(reset (return (+ (reflect '(1 2)) (reflect '(3 4)))))</code>.
+Reading it as monadic code, it is precisely the <code>bind</code>-nest we were trying to
+avoid writing by hand:</p>
+<pre><code class="language-racket">(bind (list 1 2) (lambda (x)
+  (bind (list 3 4) (lambda (y)
+    (return (+ x y))))))
+</code></pre>
+<p>To see why, evaluate left to right. The first <code>reflect</code> runs
+<code>(shift k (bind '(1 2) k))</code>, where <code>k</code> is the captured continuation
+&quot;plug a value into the first hole, then compute <code>(return (+ &lt;hole&gt; (reflect '(3 4))))</code>.&quot;
+So we get <code>(bind '(1 2) k)</code>, i.e. <code>(append (k 1) (k 2))</code>.</p>
+<p>Computing <code>(k 1)</code> resumes the program with <code>1</code> in the first hole, leaving
+<code>(return (+ 1 (reflect '(3 4))))</code>. The second <code>reflect</code> captures <em>its</em> continuation
+<code>k2</code> — &quot;wrap <code>(+ 1 &lt;hole&gt;)</code> in <code>return</code>&quot; — and produces <code>(bind '(3 4) k2)</code>,
+which is <code>(append (return (+ 1 3)) (return (+ 1 4)))</code>, i.e. <code>'(4 5)</code>. Symmetrically
+<code>(k 2)</code> yields <code>'(5 6)</code>. Concatenating: <code>'(4 5 5 6)</code>.</p>
+<pre><code class="language-racket">&gt; (reify (+ (reflect (list 1 2)) (reflect (list 3 4))))
+'(4 5 5 6)
+</code></pre>
+<p>The result is every pairwise sum, and its <em>order</em> mirrors the evaluation order of
+the program. The arithmetic was written in plain direct style; reflection
+supplied the monadic plumbing.</p>
+<h2 id="the-reflection-laws"><a class="header" href="#the-reflection-laws">The reflection laws</a></h2>
+<p>Calling <code>reflect</code> and <code>reify</code> &quot;mutual inverses&quot; is more than a metaphor. The two
+governing equations hold <em>because</em> <code>return</code> and <code>bind</code> satisfy the monad laws,
+which is the content of the title &quot;Representing Monads.&quot;</p>
+<p>The first law says that reifying a single reflected value gives that value back:</p>
+<pre><code class="language-racket">(reify (reflect m))  =  m
+</code></pre>
+<p>Unfolding, <code>(reify (reflect m))</code> is <code>(reset (return (reflect m)))</code>. The <code>reflect</code>
+captures the continuation <code>return</code>, so this reduces to <code>(bind m return)</code>, which
+is <code>m</code> by the <strong>right-identity</strong> monad law.</p>
+<p>The second law says that reflecting a reified computation re-inlines it: within
+an enclosing <code>reset</code>,</p>
+<pre><code class="language-racket">(reflect (reify e))  =  e
+</code></pre>
+<p>This one rests on <strong>associativity</strong> of <code>bind</code>: pulling a sub-computation out into
+its own <code>reify</code> and immediately reflecting it back is the same as having left it
+in place. Together the two laws make precise the sense in which direct style and
+monadic style are interchangeable views of the same program.</p>
+<h2 id="abstracting-over-the-monad"><a class="header" href="#abstracting-over-the-monad">Abstracting over the monad</a></h2>
+<p>Nothing above mentioned lists except <code>return</code> and <code>bind</code>. Packaging those two
+operations lets the <em>same</em> <code>reflect</code> and <code>reify</code> serve any monad. (This subsection
+is optional and can be deferred to a tutorial.)</p>
+<pre><code class="language-racket">(struct monad (return bind))
+
+(define (reflect M m)
+  (shift k ((monad-bind M) m k)))
+
+(define-syntax-rule (reify M e)
+  (reset ((monad-return M) e)))
+</code></pre>
+<p>The list monad becomes one instance among many:</p>
+<pre><code class="language-racket">(define list-monad
+  (monad (lambda (x) (list x))
+         (lambda (m f) (append-map f m))))
+
+&gt; (reify list-monad
+    (+ (reflect list-monad (list 1 2))
+       (reflect list-monad (list 3 4))))
+'(4 5 5 6)
+</code></pre>
+<p>Swapping in the Maybe monad changes the effect from branching to
+short-circuiting failure, with no change to <code>reflect</code>/<code>reify</code>:</p>
+<pre><code class="language-racket">(define maybe-monad
+  (monad (lambda (x) (cons 'just x))
+         (lambda (m f) (if (eq? m 'nothing) 'nothing (f (cdr m))))))
+
+&gt; (reify maybe-monad
+    (+ (reflect maybe-monad (cons 'just 3))
+       (reflect maybe-monad 'nothing)))
+'nothing
+</code></pre>
+<p>Here a single reflected <code>'nothing</code> aborts the surrounding addition: the captured
+continuation is never invoked, so the failure propagates. The state monad works
+the same way (its continuation is invoked exactly once, threading the store), and
+it is the example that makes the direct-style payoff most vivid — direct-style
+imperative code with an explicitly chosen, first-class notion of state.</p>
+<h2 id="backtracking-the-n-queens-problem"><a class="header" href="#backtracking-the-n-queens-problem">Backtracking: the n-queens problem</a></h2>
+<p>Nondeterminism plus reflection gives backtracking search almost for free. We
+introduce one combinator, <code>fail</code>, which reflects the empty list — a choice with
+no successful continuations, hence a pruned branch:</p>
 <pre><code class="language-racket">(define (fail) (reflect empty))
 
 ; Nat List[Nat] Nat -&gt; Bool
+; Is row x safe against the already-placed queens in l, the nearest of which
+; sits n columns away?
 (define (safe x l n)
   (or (empty? l)
       (let ((c (first l)))
-        (and (not (= x c))
-             (not (= x (+ c n)))
-             (not (= x (- c n)))
+        (and (not (= x c))            ; same row?
+             (not (= x (+ c n)))      ; same descending diagonal?
+             (not (= x (- c n)))      ; same ascending diagonal?
              (safe x (rest l) (+ n 1))))))
 
 (define (queens n)
@@ -4807,6 +4926,42 @@ If partial results are desired, lists should be replaced by streams.</p>
 
 (reify (queens 8))
 </code></pre>
+<p>Read <code>queens</code> column by column. The <code>foldl</code> ranges over the <code>n</code> columns; it
+ignores the column index (<code>_</code>) and accumulates <code>y</code>, the rows chosen so far, most
+recent first. For each column, <code>(reflect (inclusive-range 1 n))</code> nondeterministically
+<em>chooses a row</em> <code>next</code>. If that row is <code>safe</code> against the existing queens we
+extend the partial board with <code>(cons next y)</code>; otherwise <code>(fail)</code> prunes this
+choice. After <code>n</code> columns the accumulator is a complete solution.</p>
+<p>Two things are worth pointing out. First, the pruning is <em>eager</em>: the
+safety check happens before the next column is ever considered, so unsafe partial
+boards are abandoned immediately. This is ordinary depth-first backtracking — the
+control stack <em>is</em> the search stack — but we never wrote a backtracking loop. The
+list monad's <code>bind</code>, summoned by <code>reflect</code>, performs the enumeration and the
+concatenation of successes. Second, <code>safe</code> measures diagonals by the column
+distance <code>n</code>: two queens <code>n</code> columns apart clash on a diagonal exactly when their
+rows differ by <code>n</code>, which is what <code>(= x (+ c n))</code> and <code>(= x (- c n))</code> test.</p>
+<p><code>(reify (queens 8))</code> returns the list of all 92 solutions. Because lists are
+eager, this computes <em>every</em> solution before returning the first. If you want
+solutions on demand — say, the first valid board — replace the list monad with
+the stream monad: identical reflection code, but the search is then lazy and you
+can take results one at a time.</p>
+<h2 id="where-this-leads"><a class="header" href="#where-this-leads">Where this leads</a></h2>
+<p>Monadic reflection is the direct ancestor of <em>algebraic effects and handlers</em>.
+With hindsight, <code>reflect</code> is a restricted form of <em>performing an effect</em> and
+<code>reify</code> a restricted form of <em>handling</em> it; Filinski's later &quot;Monads in Action&quot;
+makes the connection explicit, and the modern handler calculi of Plotkin and
+Pretnar generalise it to multiple, separately handled effects. The same idea is
+now a language feature: OCaml 5's effect handlers, and languages such as Koka,
+Eff,  Unison, and Effekt (developed here at U Tübingen!) all let you program in direct style against effects you define
+yourself — exactly the freedom reflection first demonstrated, built on exactly
+the delimited continuations we used here.</p>
+<h2 id="references"><a class="header" href="#references">References</a></h2>
+<ul>
+<li>A. Filinski, <em>Representing Monads</em>, POPL 1994. <a href="https://doi.org/10.1145/174675.178047">doi:10.1145/174675.178047</a></li>
+<li>A. Filinski, <em>Monads in Action</em>, POPL 2010.</li>
+<li>O. Danvy and A. Filinski, <em>A Functional Abstraction of Typed Contexts</em> (and related work on the type discipline for <code>shift</code>/<code>reset</code>).</li>
+<li>G. Plotkin and M. Pretnar, <em>Handlers of Algebraic Effects</em>, ESOP 2009.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="defunctionalization-refunctionalization"><a class="header" href="#defunctionalization-refunctionalization">Defunctionalization, Refunctionalization</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="24-defunctionalization/./defunctionalization.scala">here.</a></p>
 <p>In the discussion of syntactic interpretation vs. meta interpretation we have learned that we only learn something about (and control)
