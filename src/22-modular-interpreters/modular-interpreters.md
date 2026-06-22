@@ -154,6 +154,7 @@ trait ContinuationMonad extends Monad {
 ```
 
 
+
 ## Implementaions
 
 Now we provide implementations of the monad interfaces.
@@ -278,6 +279,28 @@ trait ContinuationMonadImpl extends ContinuationMonad {
 }
 ```
 
+The whole thing turns on reading `M[A] = (A => T) => T` correctly: a computation that *will eventually produce an `A`* is represented as a function that, given the continuation `A => T` describing the rest of the program, produces the final answer of type `T`. This is just CPS reified as a monad, with a fixed global answer type `T`. `unit(a)` hands `a` straight to whatever continuation is waiting, and `bind(m, f)` runs `m` under a continuation that takes `m`'s result `a`, forms the next computation `f(a)`, and runs *that* under the original `k`.
+
+Now `callcc`. Its signature is
+
+```scala
+def callcc[A, B](f: (A => M[B]) => M[A]): M[A]
+```
+
+so `f` is a block that gets handed a first-class continuation of type `A => M[B]` and produces a computation `M[A]`. The implementation, with everything inlined:
+
+```scala
+k => f(a => _ => k(a))(k)
+```
+
+Read it outside-in. Since the result is an `M[A]`, it begins `k => …`, and that `k : A => T` is precisely *the continuation in force at the point where `callcc` was invoked* — the "rest of the program" relative to the `callcc` expression. This is the continuation we are capturing.
+
+The captured continuation is reified as `g = a => _ => k(a)`. Check its type: given `a : A`, the body `_ => k(a)` has type `(B => T) => T`, which is exactly `M[B]`, so `g : A => M[B]` as required. The crucial part is the underscore. When you later invoke `g(a)`, you get back a computation that **ignores its own continuation** (the `_ : B => T`) and instead applies the captured `k` to `a`. That discarding of the local continuation is what makes invoking `g` a non-local jump rather than an ordinary return.
+
+Finally, `f(g)(k)`: we give `f` the reified continuation and then run the resulting `M[A]` under the very same `k`. So there are two paths:
+
+- If `f` never calls `g`, then `f(g)(k)` just runs `f`'s body normally and its `A`-result flows into `k` exactly as it would have without `callcc`. The capture was inert.
+- If `f` *does* call `g(a)` somewhere inside, then at that moment the locally-pending continuation is thrown away and control resumes at `k(a)` — that is, `a` becomes the value of the *whole* `callcc` expression, and evaluation proceeds as if `callcc` had simply returned `a`.
 
 ## Compositions
 
