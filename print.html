@@ -4370,6 +4370,20 @@ but for simplicity we only present the ordinary Continuation monad here.</p>
   override def callcc[A, B](f: (A =&gt; M[B]) =&gt; M[A]): M[A] = k =&gt; f(a =&gt; _ =&gt; k(a))(k)
 }
 </code></pre>
+<p>The whole thing turns on reading <code>M[A] = (A =&gt; T) =&gt; T</code> correctly: a computation that <em>will eventually produce an <code>A</code></em> is represented as a function that, given the continuation <code>A =&gt; T</code> describing the rest of the program, produces the final answer of type <code>T</code>. This is just CPS reified as a monad, with a fixed global answer type <code>T</code>. <code>unit(a)</code> hands <code>a</code> straight to whatever continuation is waiting, and <code>bind(m, f)</code> runs <code>m</code> under a continuation that takes <code>m</code>'s result <code>a</code>, forms the next computation <code>f(a)</code>, and runs <em>that</em> under the original <code>k</code>.</p>
+<p>Now <code>callcc</code>. Its signature is</p>
+<pre><code class="language-scala">def callcc[A, B](f: (A =&gt; M[B]) =&gt; M[A]): M[A]
+</code></pre>
+<p>so <code>f</code> is a block that gets handed a first-class continuation of type <code>A =&gt; M[B]</code> and produces a computation <code>M[A]</code>. The implementation, with everything inlined:</p>
+<pre><code class="language-scala">k =&gt; f(a =&gt; _ =&gt; k(a))(k)
+</code></pre>
+<p>Read it outside-in. Since the result is an <code>M[A]</code>, it begins <code>k =&gt; …</code>, and that <code>k : A =&gt; T</code> is precisely <em>the continuation in force at the point where <code>callcc</code> was invoked</em> — the &quot;rest of the program&quot; relative to the <code>callcc</code> expression. This is the continuation we are capturing.</p>
+<p>The captured continuation is reified as <code>g = a =&gt; _ =&gt; k(a)</code>. Check its type: given <code>a : A</code>, the body <code>_ =&gt; k(a)</code> has type <code>(B =&gt; T) =&gt; T</code>, which is exactly <code>M[B]</code>, so <code>g : A =&gt; M[B]</code> as required. The crucial part is the underscore. When you later invoke <code>g(a)</code>, you get back a computation that <strong>ignores its own continuation</strong> (the <code>_ : B =&gt; T</code>) and instead applies the captured <code>k</code> to <code>a</code>. That discarding of the local continuation is what makes invoking <code>g</code> a non-local jump rather than an ordinary return.</p>
+<p>Finally, <code>f(g)(k)</code>: we give <code>f</code> the reified continuation and then run the resulting <code>M[A]</code> under the very same <code>k</code>. So there are two paths:</p>
+<ul>
+<li>If <code>f</code> never calls <code>g</code>, then <code>f(g)(k)</code> just runs <code>f</code>'s body normally and its <code>A</code>-result flows into <code>k</code> exactly as it would have without <code>callcc</code>. The capture was inert.</li>
+<li>If <code>f</code> <em>does</em> call <code>g(a)</code> somewhere inside, then at that moment the locally-pending continuation is thrown away and control resumes at <code>k(a)</code> — that is, <code>a</code> becomes the value of the <em>whole</em> <code>callcc</code> expression, and evaluation proceeds as if <code>callcc</code> had simply returned <code>a</code>.</li>
+</ul>
 <h2 id="compositions"><a class="header" href="#compositions">Compositions</a></h2>
 <p>Let's compose some monads.</p>
 <p>The composition of the Reader monad and some Continuation monad.</p>
