@@ -4862,8 +4862,7 @@ in place. Together the two laws make precise the sense in which direct style and
 monadic style are interchangeable views of the same program.</p>
 <h2 id="abstracting-over-the-monad"><a class="header" href="#abstracting-over-the-monad">Abstracting over the monad</a></h2>
 <p>Nothing above mentioned lists except <code>return</code> and <code>bind</code>. Packaging those two
-operations lets the <em>same</em> <code>reflect</code> and <code>reify</code> serve any monad. (This subsection
-is optional and can be deferred to a tutorial.)</p>
+operations lets the <em>same</em> <code>reflect</code> and <code>reify</code> serve any monad. </p>
 <pre><code class="language-racket">(struct monad (return bind))
 
 (define (reflect M m)
