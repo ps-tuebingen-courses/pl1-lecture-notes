@@ -79,3 +79,5 @@
 
 (reify (queens 8))
 
+(reify (+ (reflect (list 1 2)) (reflect (list 3 4))))   ; ==> '(4 5 5 6)
+

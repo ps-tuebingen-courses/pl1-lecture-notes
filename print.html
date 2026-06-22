@@ -4945,22 +4945,151 @@ eager, this computes <em>every</em> solution before returning the first. If you 
 solutions on demand — say, the first valid board — replace the list monad with
 the stream monad: identical reflection code, but the search is then lazy and you
 can take results one at a time.</p>
-<h2 id="where-this-leads"><a class="header" href="#where-this-leads">Where this leads</a></h2>
-<p>Monadic reflection is the direct ancestor of <em>algebraic effects and handlers</em>.
-With hindsight, <code>reflect</code> is a restricted form of <em>performing an effect</em> and
-<code>reify</code> a restricted form of <em>handling</em> it; Filinski's later &quot;Monads in Action&quot;
-makes the connection explicit, and the modern handler calculi of Plotkin and
-Pretnar generalise it to multiple, separately handled effects. The same idea is
-now a language feature: OCaml 5's effect handlers, and languages such as Koka,
-Eff,  Unison, and Effekt (developed here at U Tübingen!) all let you program in direct style against effects you define
-yourself — exactly the freedom reflection first demonstrated, built on exactly
-the delimited continuations we used here.</p>
+<h2 id="where-this-leads-algebraic-effects-and-handlers"><a class="header" href="#where-this-leads-algebraic-effects-and-handlers">Where this leads: algebraic effects and handlers</a></h2>
+<p>Monadic reflection already contains the seed of a larger idea. Recall what
+<code>reflect</code> and <code>reify</code> gave us: a single, ambient notion of effect (whatever monad
+we had fixed), an operation <code>reflect</code> that <em>invokes</em> it, and a delimiter <code>reify</code>
+that <em>interprets</em> it by running the captured continuation against <code>bind</code>.
+<em>Algebraic effects and handlers</em> take exactly this structure and make it plural
+and named. A program may use many different effects at once, each declared as a
+signature of operations; it invokes them in direct style; and a <em>handler</em> — a
+generalised <code>reify</code> — gives each effect its meaning by deciding what to do with
+the delimited continuation. Where Filinski had one nameless effect per <code>reset</code>,
+an effect system tracks a whole <em>set</em> of effects in the type and lets independent
+handlers discharge them one at a time.</p>
+<p>This is worth a teaser because it removes the specific frictions we hit with
+monad transformers in the <a href="23-monadic-reflection/../20-monads-intro/monads-intro.html">monads</a> and
+<a href="23-monadic-reflection/../22-modular-interpreters/modular-interpreters.html">modular interpreters</a>
+chapters.</p>
+<h3 id="the-friction-we-are-trying-to-remove"><a class="header" href="#the-friction-we-are-trying-to-remove">The friction we are trying to remove</a></h3>
+<p>Three concrete costs from those chapters:</p>
+<ul>
+<li><strong>A transformer per monad.</strong> Beside each monad we had to build a second
+artefact — <code>OptionT</code>, <code>ReaderT</code>, <code>StateT</code>, <code>ContT</code> — re-implementing the monad
+parameterised over an inner monad. The monad and its transformer are different
+objects with different code.</li>
+<li><strong>Lifting and forwarding boilerplate.</strong> To reach an inner monad's operations
+through the stack we wrote the ladder <code>lift</code>, <code>lift2</code>, <code>lift3</code>, <code>lift4</code>, plus a
+<code>…Forwarder</code> trait for each combination (<code>ReaderStateMonadForwarder</code>,
+<code>ReaderContinuationMonadForwarder</code>). With <em>n</em> effects this tends toward <em>n²</em>
+hand-written forwarding cases, and, as we observed there, the lifting
+&quot;sometimes destroys modularity.&quot;</li>
+<li><strong>Order baked into the type — and not always lawful.</strong> The interaction of two
+effects is fixed by their position in the stack, so changing it means
+re-plumbing types; and some stacks are not even lawful. <code>ListT[IO]</code> was our
+cautionary tale: collapsing the list into a single <code>IO[List[A]]</code> let
+re-association reorder the inner prints, silently breaking associativity.</li>
+</ul>
+<h3 id="reflection-again-as-an-effect"><a class="header" href="#reflection-again-as-an-effect">Reflection again, as an effect</a></h3>
+<p>We use <a href="https://effekt-lang.org">Effekt</a>, a research language developed by
+Brachthäuser and colleagues here in Tübingen, because its surface syntax lets us
+re-express <em>this very chapter</em> almost line for line. Take our running example,</p>
+<pre><code class="language-racket">(reify (+ (reflect (list 1 2)) (reflect (list 3 4))))   ; ==&gt; '(4 5 5 6)
+</code></pre>
+<p>and rebuild it in Effekt. The reflection of a list becomes a single effect
+operation:</p>
+<pre><code class="language-effekt">effect reflect(m: List[Int]): Int   // List[Int] -&gt; Int, exactly the quasi-type
+</code></pre>
+<p>A computation <em>uses</em> it with <code>do</code>, and its type records that the effect is still
+open. The addition is now written in plain direct style:</p>
+<pre><code class="language-effekt">def example(): Int / reflect =
+  (do reflect([1, 2])) + (do reflect([3, 4]))
+</code></pre>
+<p>What remains is to <em>interpret</em> <code>reflect</code>, and this is where the translation
+becomes instructive. In the Racket version the monad was baked into <code>reflect</code>
+itself, <code>(define (reflect m) (shift k (bind m k)))</code>, because there was one ambient
+monad. In Effekt the operation carries no meaning at all; the <code>bind m k</code> moves
+into the <em>handler</em>. We give it the list monad's own <code>bind</code> — the same definition
+from the start of this chapter —</p>
+<pre><code class="language-effekt">// the list monad's bind, as before: apply k to each element, concatenate
+def bind[A, R](m: List[A]) { k: A =&gt; List[R] }: List[R] =
+  m match {
+    case Nil()       =&gt; []
+    case Cons(x, xs) =&gt; k(x).append(bind(xs){k})
+  }
+</code></pre>
+<p>and <code>reify</code> becomes a handler that wraps the pure result with <code>return</code> (a
+singleton list) and interprets each <code>reflect</code> as <code>bind m resume</code>:</p>
+<pre><code class="language-effekt">def reify[R] { prog: () =&gt; R / reflect }: List[R] =
+  try { [ prog() ] }                                  // return: wrap the result
+  with reflect { (m) =&gt; bind(m) { x =&gt; resume(x) } }  // bind m k, with k = resume
+</code></pre>
+<pre><code class="language-effekt">reify { example() }   // ==&gt; [4, 5, 5, 6]
+</code></pre>
+<p>Set the two side by side. Filinski's <code>reflect</code> is <code>(shift k (bind m k))</code>; the
+Effekt handler clause is <code>bind(m) { x =&gt; resume(x) }</code>, with <code>resume</code> playing the
+role of the captured continuation <code>k</code>. <code>reify</code>'s <code>reset (return e)</code> is the <code>try</code>
+block <code>[ prog() ]</code>. The result <code>[4, 5, 5, 6]</code> is the same list, in the same
+order, as the Racket <code>(4 5 5 6)</code>. Even <code>fail</code> transfers directly: reflecting the
+empty list, <code>do reflect([])</code>, yields <code>bind [] resume = []</code>, exactly our
+<code>(define (fail) (reflect empty))</code>.</p>
+<p>The one thing that genuinely changed is <em>where the meaning lives</em>. Because the
+monad now resides in the handler rather than in <code>reflect</code>, swapping the handler
+swaps the monad with no change to <code>example</code> — which is precisely the
+&quot;abstract over the concrete monad&quot; remark from earlier in this chapter, now made
+real. And because the effect has a <em>name</em> and is <em>tracked in the type</em>, a single
+program can mention several such effects at once. That is what the rest of the
+section is about.</p>
+<h3 id="composing-two-genuinely-different-effects"><a class="header" href="#composing-two-genuinely-different-effects">Composing two genuinely different effects</a></h3>
+<p>The <code>reflect</code> handler above <em>is</em> the list monad — one effect, one handler. What
+monad transformers are <em>for</em> is composing effects that come from <em>different</em>
+monads, and that is where their machinery — a transformer per monad, the lifting
+ladder, a fixed stack order — becomes heavy. So let us add a second, independent
+effect.</p>
+<p>The order-sensitive companion to nondeterminism is the Writer monad: a
+computation that accumulates output. As an effect it is one operation,</p>
+<pre><code class="language-effekt">effect emit(msg: String): Unit
+</code></pre>
+<p>handled by collecting the emitted messages alongside the result:</p>
+<pre><code class="language-effekt">def writer[R] { prog: () =&gt; R / emit }: (R, List[String]) =
+  try { (prog(), []) }
+  with emit { (msg) =&gt; val (r, log) = resume(()); (r, Cons(msg, log)) }
+</code></pre>
+<p>Now a program that uses <em>both</em> effects, in plain direct style:</p>
+<pre><code class="language-effekt">def pick(): Int / { reflect, emit } = {
+  val x = do reflect([1, 2])
+  do emit(&quot;chose &quot; ++ x.show)
+  x
+}
+</code></pre>
+<p>Notice what did <em>not</em> happen. <code>reify</code> was written to handle <code>reflect</code> and knows
+nothing about <code>emit</code>; <code>writer</code> handles <code>emit</code> and knows nothing about <code>reflect</code>.
+Yet <code>pick</code> uses both, and we may hand it to either handler: the effect a handler
+does not discharge simply passes through to be handled further out. There is no
+<code>WriterT</code>, no <code>lift</code>, no forwarder — the leftover effect flows outward on its own.
+(This pass-through is Effekt's <em>contextual effect polymorphism</em>; it is the direct
+replacement for the <code>lift</code>/<code>lift2</code>/<code>lift3</code>/<code>lift4</code> ladder.)</p>
+<p>Because each handler discharges its own effect, the only remaining decision is
+which one sits inside the other — and that decision, not a retyped transformer
+stack, fixes their interaction:</p>
+<pre><code class="language-effekt">reify { writer { pick() } }
+// ==&gt; [(1, [&quot;chose 1&quot;]), (2, [&quot;chose 2&quot;])]   :  List[(Int, List[String])]
+
+writer { reify { pick() } }
+// ==&gt; ([1, 2], [&quot;chose 1&quot;, &quot;chose 2&quot;])        :  (List[Int], List[String])
+</code></pre>
+<p>The two readings are exactly those of the two transformer stacks. With <code>writer</code>
+<em>inside</em> <code>reify</code>, each nondeterministic branch carries its own log, and the result
+is a list of result-and-log pairs — the <code>List (Writer …)</code> order. With <code>writer</code>
+<em>outside</em> <code>reify</code>, a single log threads through the whole search and we get one log
+beside the list of results — the <code>Writer (List …)</code> order. The client code <code>pick</code>
+is identical in both; we changed only the nesting of two handlers, and the
+differing result <em>types</em> make the two orderings visibly distinct rather than
+silently equal. </p>
+<p>This connects directly to the <code>ListT[IO]</code> finding from the modular-interpreters
+chapter: there, fusing a list of order-sensitive effects into one <code>IO[List[A]]</code>
+let re-association reorder them and broke the associativity law. Here the
+corresponding interaction is <em>named</em> by handler order, the result types make the
+two orderings different on their face, and there is no monadic <code>bind</code> whose
+re-bracketing could quietly go wrong.</p>
 <h2 id="references"><a class="header" href="#references">References</a></h2>
 <ul>
 <li>A. Filinski, <em>Representing Monads</em>, POPL 1994. <a href="https://doi.org/10.1145/174675.178047">doi:10.1145/174675.178047</a></li>
 <li>A. Filinski, <em>Monads in Action</em>, POPL 2010.</li>
-<li>O. Danvy and A. Filinski, <em>A Functional Abstraction of Typed Contexts</em> (and related work on the type discipline for <code>shift</code>/<code>reset</code>).</li>
+<li>G. Plotkin and J. Power, <em>Algebraic Operations and Generic Effects</em>, Applied Categorical Structures, 2003.</li>
 <li>G. Plotkin and M. Pretnar, <em>Handlers of Algebraic Effects</em>, ESOP 2009.</li>
+<li>A. Bauer and M. Pretnar, <em>Programming with Algebraic Effects and Handlers</em>, JLAMP, 2015.</li>
+<li>J. I. Brachthäuser, P. Schuster, and K. Ostermann, <em>Effekt: Capability-passing Style for Type- and Effect-safe, Extensible Effect Handlers in Scala</em>, Journal of Functional Programming, 2020. See also <a href="https://effekt-lang.org">effekt-lang.org</a>.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="defunctionalization-refunctionalization"><a class="header" href="#defunctionalization-refunctionalization">Defunctionalization, Refunctionalization</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="24-defunctionalization/./defunctionalization.scala">here.</a></p>
