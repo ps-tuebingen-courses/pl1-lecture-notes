@@ -169,7 +169,7 @@ for every monad.</p>
 ; A -&gt; List[A] (quasi-type)
 ; this is a macro that transforms (reify e) into (reify-thunk (thunk e))
 ; its sole purpose is to prevent the evaluation of e and wrap it into a thunk
-(define-syntaxes (reify)
+(define-syntaxes reify
      (syntax-rules ()
        [(_ e)
         (reify-thunk (thunk e))]))
