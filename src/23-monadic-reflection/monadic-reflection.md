@@ -159,8 +159,7 @@ monadic style are interchangeable views of the same program.
 ## Abstracting over the monad
 
 Nothing above mentioned lists except `return` and `bind`. Packaging those two
-operations lets the *same* `reflect` and `reify` serve any monad. (This subsection
-is optional and can be deferred to a tutorial.)
+operations lets the *same* `reflect` and `reify` serve any monad. 
 
 ```racket
 (struct monad (return bind))
