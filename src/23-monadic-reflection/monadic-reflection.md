@@ -301,7 +301,10 @@ Three concrete costs from those chapters:
 
 We use [Effekt](https://effekt-lang.org), a research language developed by
 Brachthäuser and colleagues here in Tübingen, because its surface syntax lets us
-re-express *this very chapter* almost line for line. Take our running example,
+re-express *this very chapter* almost line for line. The whole Effekt code in this
+section can be edited and tried online [here](https://effekt-lang.org/playground.html?playground=fVTLjtpAELz7K0p7yVh4Fy3Z5OCIlVBOkaIciHJCPjhmAMvPjIdgZPHvqR4%2FYB%2BKBfK4Z7qqurptvdvpxMLoXc67KkJ8Txu7%2BVbayA%2FBG4D5%2FBrE%2FbNEA%2Bg2Tmx%2Bhj1o%2FDnGTXpvz7X2PG%2Brd7JZ1LlWA8R8xMfSA9S2mvg2jwEWke9j9jL8McATw4QjuVDkFICiKuPthwa%2F03IbIOZC7yqjQ8R1TSkZbAUdJwfoXBdaVCZVmcRWl%2Fw7YZK5WQVYR1Opq8hHhyzECsvnPrSOcBl2uRTNBYrYErjjGkjiRuNHmitfnngxcRNdt75WZaPaAG3jy1amWv%2BBEnW5VSJAMd5lF58Jl8Ewo9PdWcg61KbahyA0M9c31r1SZM2ZhzfuOA9T8aDlPxe9NNoeTRniZOLaGWt0c8wtAU%2BpPUxkHVThFDi9XHZo5VFOF5r1kI6EBJQDtCcLeoAMy%2BGQtE4uzxtmTBcpB6xhcT%2BtScs9h%2BNXmdrBgZNJrTbvWyCZUr9aB70HPQAbd3VC9UYEbATFjfW4TCmm2Tu0v3EOZQLklTyP5Sjf%2F%2BLCrnE82x8QnF5cnSbZdZi70Sa%2BBU4ZkWQwBJwu4e18c5NBZ8Bdcqg4IneYzdA%2BNIfqJLutR6rRL2Es4rQUAxxwzWptXio3JaSfXi9cZALZhaVM4FOAT%2B73OfJusoRjSu1tFo9dSdJGvmZXDEXBm0Hj411EP9XiGlkwEpExRN8H5T4FL1rylnqiHDW8Tz14dUsf4IZ3HGJyq%2Blz9Ircu%2FwD&repl=bWFpbigp).
+
+Take our running example,
 
 ```racket
 (reify (+ (reflect (list 1 2)) (reflect (list 3 4))))   ; ==> '(4 5 5 6)
