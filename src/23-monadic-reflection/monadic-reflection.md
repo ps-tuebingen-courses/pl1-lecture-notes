@@ -446,4 +446,4 @@ re-bracketing could quietly go wrong.
 - G. Plotkin and J. Power, *Algebraic Operations and Generic Effects*, Applied Categorical Structures, 2003.
 - G. Plotkin and M. Pretnar, *Handlers of Algebraic Effects*, ESOP 2009.
 - A. Bauer and M. Pretnar, *Programming with Algebraic Effects and Handlers*, JLAMP, 2015.
-- J. I. Brachthäuser, P. Schuster, and K. Ostermann, *Effekt: Capability-passing Style for Type- and Effect-safe, Extensible Effect Handlers in Scala*, Journal of Functional Programming, 2020. See also [effekt-lang.org](https://effekt-lang.org).
+- J. I. Brachthäuser, P. Schuster, and K. Ostermann, *Effects as Capabilities: Effect Handlers and Lightweight Effect Polymorphism}*, OOPSLA 2020. See also [effekt-lang.org](https://effekt-lang.org).
