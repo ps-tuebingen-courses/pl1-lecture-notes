@@ -5083,7 +5083,7 @@ let re-association reorder them and broke the associativity law. Here the
 corresponding interaction is <em>named</em> by handler order, the result types make the
 two orderings different on their face, and there is no monadic <code>bind</code> whose
 re-bracketing could quietly go wrong.</p>
-<p>###Outlook: Multi-Prompt Delimited Continuations</p>
+<h3 id="outlook-multi-prompt-delimited-continuations"><a class="header" href="#outlook-multi-prompt-delimited-continuations">Outlook: Multi-Prompt Delimited Continuations</a></h3>
 <p>In this section we used a single delimiter (reset) and a single control operator (shift). This is sufficient to implement monadic reflection for a single monad. However, modern effect systems often need several independently scoped effects that can coexist in the same program. For instance, consider a program with this shape:</p>
 <pre><code>handle State {
   handle Exception {
