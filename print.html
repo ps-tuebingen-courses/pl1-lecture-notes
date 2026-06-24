@@ -4744,7 +4744,7 @@ interleave the effect with the <em>structure</em> of the list, producing one ele
 effectful stream. Elaborating on this idea here would be a bit much. Practical libraries provide hardened
 versions of this idea; the underlying fix is always the same move from &quot;one lump of effects&quot; to &quot;one
 effect per element.&quot;</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="monadic-reflection"><a class="header" href="#monadic-reflection">Monadic Reflection</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="monadic-reflection-and-effect-handlers"><a class="header" href="#monadic-reflection-and-effect-handlers">Monadic Reflection and Effect Handlers</a></h1>
 <p>The content of this chapter is available as a Racket file <a href="23-monadic-reflection/./monadic-reflection.rkt">here.</a></p>
 <pre><code class="language-racket">#lang racket
 (require racket/control)
@@ -5083,6 +5083,18 @@ let re-association reorder them and broke the associativity law. Here the
 corresponding interaction is <em>named</em> by handler order, the result types make the
 two orderings different on their face, and there is no monadic <code>bind</code> whose
 re-bracketing could quietly go wrong.</p>
+<p>###Outlook: Multi-Prompt Delimited Continuations</p>
+<p>In this section we used a single delimiter (reset) and a single control operator (shift). This is sufficient to implement monadic reflection for a single monad. However, modern effect systems often need several independently scoped effects that can coexist in the same program. For instance, consider a program with this shape:</p>
+<pre><code>handle State {
+  handle Exception {
+    put(1)
+    raise(&quot;oops&quot;)
+  }
+}
+</code></pre>
+<p>The <code>put(1)</code> should be handled by the <code>State</code> handler and not the <code>Exception</code> handler. Multi-prompt delimited continuations provide separate control boundaries for these handlers, allowing operations to target the appropriate handler independently. Control operators are parameterized by a prompt and capture only up to the nearest enclosing occurrence of that prompt.
+Conceptually, prompts act as names for different control effects. A state operation can target one prompt, while an exception operation targets another. This allows multiple effect handlers to coexist without interfering with one another.</p>
+<p>For this reason, multi-prompt delimited continuations are often used as an implementation technique for algebraic effects and effect handlers. They provide the same basic mechanism as shift/reset, but with multiple independently addressable control boundaries.</p>
 <h2 id="references"><a class="header" href="#references">References</a></h2>
 <ul>
 <li>A. Filinski, <em>Representing Monads</em>, POPL 1994. <a href="https://doi.org/10.1145/174675.178047">doi:10.1145/174675.178047</a></li>
