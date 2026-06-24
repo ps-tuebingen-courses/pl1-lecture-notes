@@ -1,4 +1,4 @@
-# Monadic Reflection
+# Monadic Reflection and Effect Handlers
 
 The content of this chapter is available as a Racket file [here.](./monadic-reflection.rkt)
 
@@ -438,6 +438,23 @@ let re-association reorder them and broke the associativity law. Here the
 corresponding interaction is *named* by handler order, the result types make the
 two orderings different on their face, and there is no monadic `bind` whose
 re-bracketing could quietly go wrong.
+
+###Outlook: Multi-Prompt Delimited Continuations
+
+In this section we used a single delimiter (reset) and a single control operator (shift). This is sufficient to implement monadic reflection for a single monad. However, modern effect systems often need several independently scoped effects that can coexist in the same program. For instance, consider a program with this shape:
+
+```
+handle State {
+  handle Exception {
+    put(1)
+    raise("oops")
+  }
+}
+```
+The `put(1)` should be handled by the `State` handler and not the `Exception` handler. Multi-prompt delimited continuations provide separate control boundaries for these handlers, allowing operations to target the appropriate handler independently. Control operators are parameterized by a prompt and capture only up to the nearest enclosing occurrence of that prompt.
+Conceptually, prompts act as names for different control effects. A state operation can target one prompt, while an exception operation targets another. This allows multiple effect handlers to coexist without interfering with one another.
+
+For this reason, multi-prompt delimited continuations are often used as an implementation technique for algebraic effects and effect handlers. They provide the same basic mechanism as shift/reset, but with multiple independently addressable control boundaries.
 
 ## References
 
