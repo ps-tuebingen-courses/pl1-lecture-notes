@@ -38,7 +38,7 @@
 - [Monads Intro](./20-monads-intro/monads-intro.md)
 - [The IO Monad](./21-io-monad/io-monad.md)
 - [Modular Interpreters](./22-modular-interpreters/modular-interpreters.md)
-- [Monadic Reflection](./23-monadic-reflection/monadic-reflection.md)
+- [Monadic Reflection and Effect Handlers](./23-monadic-reflection/monadic-reflection.md)
 
 # Program Transformations
 
