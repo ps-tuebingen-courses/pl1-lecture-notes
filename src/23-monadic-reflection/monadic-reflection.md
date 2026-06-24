@@ -439,7 +439,7 @@ corresponding interaction is *named* by handler order, the result types make the
 two orderings different on their face, and there is no monadic `bind` whose
 re-bracketing could quietly go wrong.
 
-###Outlook: Multi-Prompt Delimited Continuations
+### Outlook: Multi-Prompt Delimited Continuations
 
 In this section we used a single delimiter (reset) and a single control operator (shift). This is sufficient to implement monadic reflection for a single monad. However, modern effect systems often need several independently scoped effects that can coexist in the same program. For instance, consider a program with this shape:
 
