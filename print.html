@@ -4117,6 +4117,33 @@ There are a number of alternative proposals to monad transformers, such as
 <a href="https://hackage.haskell.org/package/extensible-effects">&quot;extensible effects&quot;</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="io-monad"><a class="header" href="#io-monad">IO Monad</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="21-io-monad/./io-monad.scala">here.</a></p>
+<p>Input and output sit uneasily with pure functional programming. In a pure language an expression
+denotes only a value, and denotes the <em>same</em> value however often it is evaluated (referential
+transparency). But printing to the screen or reading a line from the keyboard is a <em>side effect</em> that
+happens in time and cannot be freely duplicated or reordered. How can such a language talk to the
+outside world without giving up its purity? The <em>IO monad</em> is the now-standard answer.</p>
+<h2 id="a-little-history"><a class="header" href="#a-little-history">A Little History</a></h2>
+<p>Several answers were tried before the monadic one prevailed. The <em>lazy stream</em> (or &quot;lazy I/O&quot;) model
+makes a program a function from a lazily-produced stream of input characters to a stream of output
+characters, with the runtime supplying and consuming characters on demand. The related <em>dialogue</em>
+style of early Haskell made a program a lazy list of requests to the operating system paired with a
+lazy list of responses. Both are genuinely pure, but fragile: the types do not tie a response to its
+request, and laziness makes the order and timing of effects hard to predict. The monadic formulation of
+Peyton Jones and Wadler (&quot;Imperative Functional Programming&quot;, POPL 1993) — building on Moggi's use of
+monads to model computational effects and Wadler's advocacy of monads for structuring functional
+programs — replaced these with a typed, composable discipline in which the sequencing of effects is
+explicit. It is the design Haskell uses today.</p>
+<h2 id="plans-and-running-them"><a class="header" href="#plans-and-running-them">Plans, and Running Them</a></h2>
+<p>The central idea is to <em>separate the description of an effect from its execution</em>. A value of type
+<code>IO[A]</code> is not an effect that has already happened; it is a <strong>plan</strong> — a first-class description of a
+computation that, <em>when performed</em>, will interact with the world and deliver a value of type <code>A</code>.
+Constructing and combining plans is pure: evaluating <code>printString(&quot;hi&quot;)</code> prints nothing, just as writing
+down a recipe cooks no food. Effects occur only when a plan is finally <em>run</em>, and there is exactly one
+place where that happens: the plan named <code>main</code> (or, interactively, an expression entered at the REPL),
+which the runtime takes and performs. A whole program is thus a pure expression that <em>computes</em> one big
+IO plan; the single impure act is the runtime feeding that plan the real world.</p>
+<p>We capture this as an interface. It is the monad of the previous chapter — <code>unit</code> and <code>bind</code> — enriched
+with two primitive effects and, crucially, a way to run a plan:</p>
 <pre><code class="language-scala">trait IOMonad {
   type IO[_]
   def unit[A](a: A): IO[A]
@@ -4127,6 +4154,16 @@ There are a number of alternative proposals to monad transformers, such as
   def performIO[A](action: IO[A]): A
 }
 </code></pre>
+<p><code>unit(a)</code> is the trivial plan &quot;do nothing, yield <code>a</code>&quot;; <code>bind(m, f)</code> is &quot;perform <code>m</code>, then perform the
+plan that <code>f</code> builds from its result&quot;, which is what forces one effect to come after another.
+<code>printString</code> and <code>inputString</code> are the primitive plans, and <code>performIO</code> is the runner that stands in
+for the language runtime.</p>
+<h2 id="threading-the-world-through"><a class="header" href="#threading-the-world-through">Threading the World Through</a></h2>
+<p>How can a <em>pure</em> function stand for an effect? By making the world an explicit argument that is threaded
+through the computation: an IO action is a function <code>World =&gt; (A, World)</code> that receives the state of the
+world before the action and returns the result together with the world after it. This is precisely the
+<strong>State monad</strong> of the previous chapter, with the state fixed to be &quot;the world&quot; — and since each action
+consumes the old world and produces a new one, the actions are forced into a definite order.</p>
 <pre><code class="language-scala">val iomonad: IOMonad = new IOMonad {
   type World = String
   type IO[A] = World =&gt; (A, World)
@@ -4148,6 +4185,11 @@ There are a number of alternative proposals to monad transformers, such as
     }
 }
 </code></pre>
+<p>Here <code>World</code> is modelled, purely for illustration, as a <code>String</code> that logs what has happened. <code>performIO</code>
+plays the role of &quot;reaching <code>main</code>&quot;: it manufactures an initial world (&quot;nothing has happened yet&quot;), hands
+it to the plan to set the chain of effects in motion, and returns the final result. Note that the
+<code>println</code> inside <code>printString</code> runs only when the resulting function is <em>applied</em> — that is, during
+<code>performIO</code> — so up to that point we have genuinely built nothing but a description.</p>
 <pre><code class="language-scala">def someIOActions(implicit m: IOMonad): m.IO[Unit] =
   m.bind(m.printString(&quot;Enter your first name:&quot;), (_: Unit) =&gt;
   m.bind(m.inputString, (firstName: String) =&gt;
@@ -4157,6 +4199,11 @@ There are a number of alternative proposals to monad transformers, such as
 
 def test = iomonad.performIO(someIOActions(iomonad))
 </code></pre>
+<p><code>someIOActions</code> is an ordinary, pure value of type <code>IO[Unit]</code>, assembled with <code>bind</code>; it does nothing
+until <code>test</code> runs it through <code>performIO</code>. GHC's real <code>IO</code> works on the same principle, defining <code>IO a</code>
+essentially as <code>World -&gt; (World, a)</code> for an abstract, unforgeable world token: the world is never truly
+copied around at run time, but the type enforces the sequencing, and effects still, conceptually, happen
+only when the plan reaches <code>main</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="modular-interpreters"><a class="header" href="#modular-interpreters">Modular Interpreters</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="22-modular-interpreters/./modular-interpreters.scala">here.</a></p>
 <h1 id="a-monad-library"><a class="header" href="#a-monad-library">A Monad Library</a></h1>
@@ -6317,7 +6364,7 @@ that requires the type-variable inference we develop there.</p>
 <blockquote>
 <p>If <code>typeCheck(e, Map.empty) == t</code>, then <code>typeCheck(eval(e), Map.empty) == t</code>.</p>
 </blockquote>
-<h3 id="a-little-history"><a class="header" href="#a-little-history">A little history</a></h3>
+<h3 id="a-little-history-1"><a class="header" href="#a-little-history-1">A little history</a></h3>
 <p>The distinction between checking a term against a known type and synthesizing a type from a term is old
 folklore, closely related to the difference between <em>normal</em> and <em>neutral</em> terms in natural deduction
 (introduction forms are checked, elimination forms synthesize — the very recipe we used above).

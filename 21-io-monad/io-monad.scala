@@ -37,3 +37,4 @@ def someIOActions(implicit m: IOMonad): m.IO[Unit] =
   m.printString("Hello, " + firstName + " " + lastName + "!")))))
 
 def test = iomonad.performIO(someIOActions(iomonad))
+
