@@ -202,97 +202,167 @@ like or dislike, and why?</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="scala-basics"><a class="header" href="#scala-basics">Scala Basics</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="02-scala-basics/./scala-basics.scala">here.</a></p>
-<pre><code class="language-scala">val x = 2 + 2;
+<p>This chapter is a whirlwind tour of the small subset of <a href="https://www.scala-lang.org/">Scala</a>
+that we use throughout these notes. It is <em>not</em> a general Scala tutorial: it assumes that you
+already know how to program in some other language, and it only introduces the handful of
+features we actually rely on — <code>val</code>, <code>def</code>, and <code>var</code>; classes, traits, and objects; case
+classes and <code>enum</code>s; and pattern matching. We finish with a tiny interpreter that is the
+blueprint for essentially everything that follows.</p>
+<p>All Scala code in these notes is compiled and executed while the notes are being built (using
+<a href="https://scalameta.org/mdoc/">mdoc</a>). Wherever you see a <code>// ...</code> comment underneath a piece of
+code, that is the <em>actual</em> output the compiler produced — the inferred type of a definition, or
+the value and type of an expression.</p>
+<h2 id="values-methods-and-variables"><a class="header" href="#values-methods-and-variables">Values, methods, and variables</a></h2>
+<p>A <code>val</code> introduces an <em>immutable</em> binding: a name for a value that, once assigned, never changes.</p>
+<pre><code class="language-scala">val x = 2 + 2
 // x: Int = 4
 </code></pre>
-<pre><code class="language-scala">// val für Konstanten
-// def für Methoden
-// var für Variablen
+<p>Note that we did not have to state the type of <code>x</code>; Scala <em>infers</em> that it is an <code>Int</code>. We could
+have written the type explicitly. In Scala, the type <em>follows</em> the name, separated by a colon:</p>
+<pre><code class="language-scala">val y: Int = 2 + 2
+// y: Int = 4
+</code></pre>
+<p>(Semicolons at the end of a line are optional, and we usually omit them.)</p>
+<p>A <code>def</code> defines a method (or function). Everything to the left of the <code>=</code> is the signature; the
+expression to its right is the body. That body is just an expression, and its value is what the
+method returns — idiomatic Scala has no <code>return</code> keyword.</p>
+<pre><code class="language-scala">def square(n: Int): Int = n * n
 
-abstract class Person(val name: String) {
-  // String name
-  // val name: String
-
-  def sayHello = {
-    print(&quot;hello, &quot; + name)
-  }
+square(5)
+// res0: Int = 25
+</code></pre>
+<p>Finally, a <code>var</code> is a <em>mutable</em> variable, whose binding can be reassigned later with <code>=</code>:</p>
+<pre><code class="language-scala">var counter = 0
+// counter: Int = 0
+counter = counter + 1
+</code></pre>
+<p>We will use <code>var</code> only rarely: almost all of the code in these notes is purely functional and
+sticks to <code>val</code>.</p>
+<h2 id="classes-traits-and-objects"><a class="header" href="#classes-traits-and-objects">Classes, traits, and objects</a></h2>
+<p>Classes work much as in other object-oriented languages. Constructor parameters are written
+directly after the class name; prefixing a parameter with <code>val</code> additionally exposes it as a
+public field.</p>
+<pre><code class="language-scala">abstract class Person(val name: String) {
+  def sayHello: Unit = print(&quot;hello, &quot; + name)
 }
-
-trait ByeBye {
-  def sayGoodbye = {
-    print(&quot;bye&quot;)
-  }
+</code></pre>
+<p>A <code>trait</code> is like an interface, except that it may also provide concrete members. Traits are
+Scala's unit of <em>mixin composition</em>.</p>
+<pre><code class="language-scala">trait ByeBye {
+  def sayGoodbye: Unit = print(&quot;bye&quot;)
 }
-
-class Tillmann(name: String) extends Person(name) with ByeBye {
-  override def sayHello = {
-    print(&quot;hi&quot;)
-  }
+</code></pre>
+<p>A class <code>extends</code> at most one superclass but may mix in any number of traits using <code>with</code>.
+Inherited members are overridden with <code>override</code>.</p>
+<pre><code class="language-scala">class Tillmann(name: String) extends Person(name) with ByeBye {
+  override def sayHello: Unit = print(&quot;hi&quot;)
 }
+</code></pre>
+<p>An <code>object</code> defines a <em>singleton</em>: a class with exactly one instance, created lazily on first
+use. Objects also serve as Scala's top-level, module-like namespaces — there are no <code>static</code>
+members, you put such things into an object instead.</p>
+<pre><code class="language-scala">object Me extends Tillmann(&quot;Tillmann&quot;)
 
-object Me extends Tillmann(&quot;Tillmann&quot;)
-
-
-
-
-trait UniPerson
-case class Student(val matrikelnummer: Int) extends UniPerson
-case class Professor(val fachgebiet: String) extends UniPerson
-
-object PatternMatching {
-  def showUniPerson(p: UniPerson): String =
-    p match {
-      case Student(m) =&gt; &quot;student nr &quot; + m
-      case Professor(f) =&gt; &quot;professor on &quot; + f
-    }
-
-  def test = {
-    print(showUniPerson(Student(123)))
-    print(showUniPerson(Professor(&quot;programming languages&quot;)))
+Me.sayHello
+// hi
+</code></pre>
+<h2 id="case-classes-and-pattern-matching"><a class="header" href="#case-classes-and-pattern-matching">Case classes and pattern matching</a></h2>
+<p>Now to the part that matters most for us. A <code>case class</code> is a class tailored to representing
+immutable data. Compared to a plain class, the compiler additionally</p>
+<ul>
+<li>makes every constructor parameter a <code>val</code> field,</li>
+<li>lets us construct instances without <code>new</code>,</li>
+<li>provides structural equality and a readable <code>toString</code>, and</li>
+<li>allows an instance to be taken <em>apart</em> again by pattern matching.</li>
+</ul>
+<p>We typically combine several case classes under a common supertype to model a fixed set of
+alternatives. Marking that supertype <code>sealed</code> promises the compiler that <em>all</em> alternatives are
+declared in this file, which in turn lets it warn us about incomplete pattern matches.</p>
+<pre><code class="language-scala">sealed trait UniPerson
+case class Student(id: Int) extends UniPerson
+case class Professor(subject: String) extends UniPerson
+</code></pre>
+<p>A <code>match</code> expression inspects a value and picks the first branch whose <em>pattern</em> fits, binding
+the constructor arguments to names along the way:</p>
+<pre><code class="language-scala">def describe(p: UniPerson): String =
+  p match {
+    case Student(id)      =&gt; &quot;student nr &quot; + id
+    case Professor(field) =&gt; &quot;professor of &quot; + field
   }
-}
 
+describe(Student(123))
+// res3: String = &quot;student nr 123&quot;
+describe(Professor(&quot;programming languages&quot;))
+// res4: String = &quot;professor of programming languages&quot;
+</code></pre>
+<p>Because <code>UniPerson</code> is <code>sealed</code> and the <code>match</code> covers both cases, the compiler is satisfied that
+the match is exhaustive. Had we forgotten the <code>Professor</code> case, we would have gotten a warning.</p>
+<h2 id="enums"><a class="header" href="#enums">Enums</a></h2>
+<p>Declaring a sealed supertype together with one case class per alternative is such a common
+pattern that Scala 3 provides dedicated syntax for it: an <code>enum</code>. The following declaration is
+equivalent to the <code>UniPerson</code> hierarchy above, only more concise.</p>
+<pre><code class="language-scala">enum UniPersonEnum:
+  case StudentEnum(id: Int)
+  case ProfessorEnum(subject: String)
+</code></pre>
+<p>The cases live inside the enum's namespace, so we <code>import</code> them before use. Pattern matching then
+works exactly as it did for case classes:</p>
+<pre><code class="language-scala">import UniPersonEnum._
 
-enum UniPersonEnum:
-  case StudentEnum(val matrikelnummer: Int)
-  case ProfessorEnum(val fachgebiet: String)
-
-object PatternMatchingEnum {
-  import UniPersonEnum._
-
-  def showUniPerson(p: UniPersonEnum): String =
-    p match {
-      case StudentEnum(m) =&gt; &quot;student nr &quot; + m
-      case ProfessorEnum(f) =&gt; &quot;professor on &quot; + f
-    }
-
-  def test = {
-    print(showUniPerson(StudentEnum(123)))
-    print(showUniPerson(ProfessorEnum(&quot;programming languages&quot;)))
+def describeEnum(p: UniPersonEnum): String =
+  p match {
+    case StudentEnum(id)      =&gt; &quot;student nr &quot; + id
+    case ProfessorEnum(field) =&gt; &quot;professor of &quot; + field
   }
-}
 
-
-object AE {
-  // Abstract Syntax Tree
+describeEnum(StudentEnum(123))
+// res5: String = &quot;student nr 123&quot;
+</code></pre>
+<p>An <code>enum</code> is automatically sealed, so we again get exhaustiveness checking for free. Throughout
+these notes we use <code>enum</code>s to describe the <em>abstract syntax</em> of the little languages we study.</p>
+<h2 id="a-tiny-interpreter"><a class="header" href="#a-tiny-interpreter">A tiny interpreter</a></h2>
+<p>We now have everything we need to write the kind of program that recurs on almost every page of
+these notes: an <em>interpreter</em> for a small language.</p>
+<p>Consider a minimal language of arithmetic expressions. An expression is either a number, or the
+addition of two subexpressions — a recursive, tree-shaped datatype, which we capture directly as
+an <code>enum</code>. We wrap the whole example in an <code>object</code> just to keep its names together.</p>
+<pre><code class="language-scala">object AE {
+  // Abstract syntax: an expression is a number, or the addition of two expressions.
   enum Exp:
     case Num(n: Int)
     case Add(lhs: Exp, rhs: Exp)
 
   import Exp._
 
-  // Example
+  // An example expression, standing for 1 + (5 + 3):
   val onePlusEight = Add(Num(1), Add(Num(5), Num(3)))
 
-  // Interpreter
+  // The interpreter: recurse over the structure of the expression.
   def eval(e: Exp): Int =
     e match {
-      case Num(n) =&gt; n
-      case Add(lhs, rhs) =&gt;
-        eval(lhs) + eval(rhs)
+      case Num(n)        =&gt; n
+      case Add(lhs, rhs) =&gt; eval(lhs) + eval(rhs)
     }
 }
 </code></pre>
+<p>Notice how an expression is just an ordinary Scala value built from constructors — no parser and
+no <code>new</code> in sight:</p>
+<pre><code class="language-scala">AE.onePlusEight
+// res6: Exp = Add(
+//   lhs = Num(n = 1),
+//   rhs = Add(lhs = Num(n = 5), rhs = Num(n = 3))
+// )
+</code></pre>
+<p>And here is the interpreter in action:</p>
+<pre><code class="language-scala">AE.eval(AE.onePlusEight)
+// res7: Int = 9
+</code></pre>
+<p>Look closely at the shape of <code>eval</code>: there is exactly one <code>case</code> per constructor of <code>Exp</code>, and a
+recursive call for every subexpression. The recursion structure of the interpreter mirrors the
+recursive structure of the datatype it walks over. Almost every evaluator, type checker, and
+program transformation in the rest of these notes has precisely this shape — an <code>enum</code> for the
+abstract syntax of a language, and a recursive <code>def</code> that pattern-matches over it to give that
+language a meaning.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="arithmetic-expressions-with-variables"><a class="header" href="#arithmetic-expressions-with-variables">Arithmetic Expressions With Variables</a></h1>
 <p>The content of this chapter is available as a Scala file <a href="03-arithmetic-expressions/./arithmetic-expressions.scala">here.</a></p>
 <p>Let us now consider an extension of the arithmetic expression language with variables. We do this by a new kind of expression, which we
