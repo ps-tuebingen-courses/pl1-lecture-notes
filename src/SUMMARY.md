@@ -48,4 +48,5 @@
 
 - [Type Systems](./25-type-systems/type-systems.md)
 - [Simply Typed Lambda Calculus (STLC)](./26-stlc/stlc.md)
-- [Type Inference](./27-type-inference/type-inference.md)
+- [Bidirectional Type Checking](./27-bidirectional-type-checking/bidirectional-type-checking.md)
+- [Type Inference](./28-type-inference/type-inference.md)
